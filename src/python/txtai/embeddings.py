@@ -250,8 +250,10 @@ class Embeddings(object):
         # Sentence embeddings index
         self.embeddings = faiss.read_index("%s/embeddings" % path)
 
-        with open("%s/lsa" % path, "rb") as handle:
-            self.lsa = pickle.load(handle)
+        # Dimensionality reduction
+        if self.config.get("pca"):
+            with open("%s/lsa" % path, "rb") as handle:
+                self.lsa = pickle.load(handle)
 
         # Embedding scoring
         if self.config.get("scoring"):
@@ -276,8 +278,9 @@ class Embeddings(object):
             # Write sentence embeddings
             faiss.write_index(self.embeddings, "%s/embeddings" % path)
 
-            with open("%s/lsa" % path, "wb") as handle:
-                pickle.dump(self.lsa, handle, protocol=pickle.HIGHEST_PROTOCOL)
+            if self.lsa:
+                with open("%s/lsa" % path, "wb") as handle:
+                    pickle.dump(self.lsa, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
             # Save embedding scoring
             if self.scoring:
