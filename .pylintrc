@@ -1,0 +1,20 @@
+[BASIC]
+module-rgx=[a-z_][a-zA-Z0-9_]{2,30}$
+method-rgx=[a-z_][a-zA-Z0-9_]{2,30}$
+function-rgx=[a-z_][a-zA-Z0-9_]{2,30}$
+argument-rgx=[a-z_][a-zA-Z0-9_]{0,30}$
+variable-rgx=[a-z_][a-zA-Z0-9_]{0,30}$
+attr-rgx=[a-z_][a-zA-Z0-9_]{0,30}$
+
+[DESIGN]
+max-args=10
+max-locals=40
+max-returns=10
+max-attributes=20
+min-public-methods=0
+
+[FORMAT]
+max-line-length=150
+
+[MESSAGES CONTROL]
+disable=I0011,R0201,W0105,W0108,W0110,W0141,W0621,W0640
