@@ -244,6 +244,7 @@ class Embeddings(object):
             path: input directory path
         """
 
+        # Index configuration
         with open("%s/config" % path, "rb") as handle:
             self.config = pickle.load(handle)
 
@@ -260,7 +261,7 @@ class Embeddings(object):
             self.scoring = Scoring.create(self.config["scoring"])
             self.scoring.load(path)
 
-        # Sentence vectors model
+        # Sentence vectors model - transforms text into sentence embeddings
         self.model = self.loadVectors(self.config["path"])
 
     def save(self, path):
@@ -272,12 +273,17 @@ class Embeddings(object):
         """
 
         if self.config:
+            # Create output directory, if necessary
+            os.makedirs(path, exist_ok=True)
+
+            # Write index configuration
             with open("%s/config" % path, "wb") as handle:
                 pickle.dump(self.config, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-            # Write sentence embeddings
+            # Write sentence embeddings index
             faiss.write_index(self.embeddings, "%s/embeddings" % path)
 
+            # Save dimensionality reduction
             if self.lsa:
                 with open("%s/lsa" % path, "wb") as handle:
                     pickle.dump(self.lsa, handle, protocol=pickle.HIGHEST_PROTOCOL)
