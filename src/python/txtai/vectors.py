@@ -259,5 +259,5 @@ class TransformersVectors(Vectors):
         if isinstance(document[1], str):
             document = (document[0], Tokenizer.tokenize(document[1]), document[2])
 
-        return self.model.encode([" ".join(document[1])])[0]
+        return self.model.encode([" ".join(document[1])], show_progress_bar=False)[0]
  
