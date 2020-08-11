@@ -23,7 +23,7 @@ The easiest way to install is via pip and PyPI
 
     pip install txtai
 
-You can also install txtai directly from GitHub using pip. Using a Python Virtual Environment is recommended.
+You can also install txtai directly from GitHub. Using a Python Virtual Environment is recommended.
 
     pip install git+https://github.com/neuml/txtai
 
