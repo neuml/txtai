@@ -1,6 +1,6 @@
 # txtai: AI-powered search engine
 
-txtai builds an AI-powered index over sets of text. txtai supports building text indices to perform similarity searches and create extractive question-answering based systems. 
+txtai builds an AI-powered index over sections of text. txtai supports building text indices to perform similarity searches and create extractive question-answering based systems. 
 
 ![demo](https://raw.githubusercontent.com/neuml/txtai/master/demo.gif)
 
@@ -35,4 +35,15 @@ This project has dependencies that require compiling native code. Linux envirome
     pip install torch===1.6.0 torchvision===0.7.0 -f https://download.pytorch.org/whl/torch_stable.html
     ```
 
-## Tutorials 
+## Examples
+
+The examples directory has a series of examples and notebooks giving an overview of txtai. See the list of notebooks below.
+
+### Notebooks
+
+| Notebook     |      Description      |   |
+|:----------|:-------------|------:|
+| [Introducing txtai](https://github.com/neuml/txtai/blob/master/examples/01_Introducing_txtai.ipynb)  | Overview of the functionality provided by txtai  |[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/01_Introducing_txtai.ipynb) |
+| [Extractive QA with txtai](https://github.com/neuml/txtai/blob/master/examples/02_Extractive_QA_with_txtai)  | Extractive question-answering with txtai  |[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/02_Extractive_QA_with_txtai.ipynb) |
+| [Build an Embeddings index from a data source](https://github.com/neuml/txtai/blob/master/examples/03_Build_an_Embeddings_index_from_a_data_source.ipynb)  | Embeddings index from a data source backed by word embeddings |[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/03_Build_an_Embeddings_index_from_a_data_source) |
+| [Extractive QA with Elasticsearch](https://github.com/neuml/txtai/blob/master/examples/04_Extractive_QA_with_Elasticsearch.ipynb)  | Extractive question-answering with Elasticsearch  |[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/04_Extractive_QA_with_Elasticsearch.ipynb) |
