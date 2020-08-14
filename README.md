@@ -1,8 +1,6 @@
 # txtai: AI-powered search engine
 
-[![LICENSE](https://img.shields.io/github/license/neuml/txtai.svg?style=flat&color=blue)](https://github.com/neuml/txtai/blob/master/LICENSE)
-[![Version](https://img.shields.io/github/release/neuml/txtai.svg?style=flat&color=success)](https://github.com/neuml/txtai/releases)
-[![Version](https://img.shields.io/pypi/v/txtai.svg?style=flat&color=blue)](https://pypi.org/project/txtai/)
+[![Version](https://img.shields.io/github/release/neuml/txtai.svg?style=flat&color=blue)](https://github.com/neuml/txtai/releases)
 [![GitHub Release Date](https://img.shields.io/github/release-date/neuml/txtai?style=flat&color=success)](https://github.com/neuml/txtai/releases)
 [![GitHub issues](https://img.shields.io/github/issues/neuml/txtai?style=flat&color=blue)](https://github.com/neuml/txtai/issues)
 [![GitHub last commit](https://img.shields.io/github/last-commit/neuml/txtai?style=flat&color=success)](https://github.com/neuml/txtai)
