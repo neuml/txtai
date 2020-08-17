@@ -5,7 +5,7 @@ with open("README.md", "r") as f:
     DESCRIPTION = f.read()
 
 setup(name="txtai",
-      version="1.0.0",
+      version="1.1.0",
       author="NeuML",
       description="AI-powered search engine",
       long_description=DESCRIPTION,
@@ -22,8 +22,10 @@ setup(name="txtai",
       keywords="search embedding machine-learning nlp",
       python_requires=">=3.6",
       install_requires=[
-          "faiss-gpu>=1.6.3",
+          "annoy>=1.16.3",
+          "faiss-cpu>=1.6.3; os_name != 'nt'",
           "fasttext>=0.9.2",
+          "hnswlib>=0.4.0",
           "nltk>=3.5",
           "numpy>=1.18.4",
           "pymagnitude-lite>=0.1.43",

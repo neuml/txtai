@@ -5,13 +5,13 @@ Embeddings module
 import pickle
 import os
 
-import faiss
 import numpy as np
 
 from sklearn.decomposition import TruncatedSVD
 
+from .ann import ANN
 from .scoring import Scoring
-from .vectors import Factory
+from .vectors import Vectors
 
 class Embeddings(object):
     """
@@ -45,20 +45,17 @@ class Embeddings(object):
         self.scoring = Scoring.create(self.config["scoring"]) if self.config and self.config.get("scoring") else None
 
         # Sentence vectors model
-        self.model = self.loadVectors(self.config["path"]) if self.config else None
+        self.model = self.loadVectors() if self.config else None
 
-    def loadVectors(self, path):
+    def loadVectors(self):
         """
-        Loads a word vector model at path.
-
-        Args:
-            path: path to word vector model
+        Loads a word vector model set in config.
 
         Returns:
             vector model
         """
 
-        return Factory.create(self.config.get("method"), path, True if not self.embeddings else False, self.scoring)
+        return Vectors.create(self.config.get("method"), self.config["path"], True if not self.embeddings else False, self.scoring)
 
     def score(self, documents):
         """
@@ -100,14 +97,15 @@ class Embeddings(object):
         # Normalize embeddings
         self.normalize(embeddings)
 
-        # pylint: disable=E1136
-        # Create embeddings index. Inner product is equal to cosine similarity on normalized vectors.
-        params = "IVF100,SQ8" if embeddings.shape[0] >= 5000 else "IDMap,SQ8"
-        self.embeddings = faiss.index_factory(embeddings.shape[1], params, faiss.METRIC_INNER_PRODUCT)
+        # Save configuration
+        self.config["ids"] = ids
+        self.config["dimensions"] = dimensions
 
-        # Train on embeddings model
-        self.embeddings.train(embeddings)
-        self.embeddings.add_with_ids(embeddings, np.array(ids))
+        # Create embeddings index, store backend used
+        self.embeddings = ANN.create(self.config)
+
+        # Build the index
+        self.embeddings.index(embeddings)
 
     def buildLSA(self, embeddings, components):
         """
@@ -205,11 +203,14 @@ class Embeddings(object):
         embedding = self.transform((None, query, None))
 
         # Search embeddings index
-        self.embeddings.nprobe = 6
-        results = self.embeddings.search(embedding.reshape(1, -1), limit)
+        results = self.embeddings.search(embedding, limit)
 
-        # Map results to [(id, score)]
-        return list(zip(results[1][0].tolist(), (results[0][0]).tolist()))
+        # Map ids if id mapping available
+        lookup = self.config.get("ids")
+        if lookup:
+            return [(lookup[i], score) for i, score in results]
+
+        return results
 
     def similarity(self, query, documents):
         """
@@ -249,7 +250,8 @@ class Embeddings(object):
             self.config = pickle.load(handle)
 
         # Sentence embeddings index
-        self.embeddings = faiss.read_index("%s/embeddings" % path)
+        self.embeddings = ANN.create(self.config)
+        self.embeddings.load("%s/embeddings" % path)
 
         # Dimensionality reduction
         if self.config.get("pca"):
@@ -262,7 +264,7 @@ class Embeddings(object):
             self.scoring.load(path)
 
         # Sentence vectors model - transforms text into sentence embeddings
-        self.model = self.loadVectors(self.config["path"])
+        self.model = self.loadVectors()
 
     def save(self, path):
         """
@@ -281,7 +283,7 @@ class Embeddings(object):
                 pickle.dump(self.config, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
             # Write sentence embeddings index
-            faiss.write_index(self.embeddings, "%s/embeddings" % path)
+            self.embeddings.save("%s/embeddings" % path)
 
             # Save dimensionality reduction
             if self.lsa:

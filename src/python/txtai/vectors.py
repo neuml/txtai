@@ -52,9 +52,9 @@ def transform(document):
 
     return (document[0], VECTORS.transform(document))
 
-class Factory(object):
+class Vectors(object):
     """
-    Creates a new Vectors model instance.
+    Base class for sentence embeddings/vector models.
     """
 
     @staticmethod
@@ -69,11 +69,6 @@ class Factory(object):
 
         # Create vector model instance
         return TransformersVectors(path) if method == "transformers" else WordVectors(path, blocking, scoring)
-
-class Vectors(object):
-    """
-    Base class for sentence embeddings/vector models.
-    """
 
     def load(self, path, blocking):
         """
