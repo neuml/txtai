@@ -35,7 +35,7 @@ You can also install txtai directly from GitHub. Using a Python Virtual Environm
 Python 3.6+ is supported
 
 ### Notes for Windows
-This project has dependencies that require compiling native code. Linux enviroments usually work without an issue. Windows requires the following extra steps.
+This project has dependencies that require compiling native code. Linux environments usually work without an issue. Windows requires the following extra steps.
 
 - Install C++ Build Tools - https://visualstudio.microsoft.com/visual-cpp-build-tools/
 - If PyTorch errors are encountered, run the following command before installing paperai. See [pytorch.org](https://pytorch.org) for more information.
