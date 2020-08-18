@@ -40,7 +40,7 @@ This project has dependencies that require compiling native code. Windows and ma
 #### Windows
 
 - Install C++ Build Tools - https://visualstudio.microsoft.com/visual-cpp-build-tools/
-- PyTorch binaries are not on pip, the following url link must be added when installing
+- PyTorch Windows binaries are not on PyPI, the following url link must be added when installing
 
     ```
     pip install txtai -f https://download.pytorch.org/whl/torch_stable.html
