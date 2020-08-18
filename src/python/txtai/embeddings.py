@@ -97,11 +97,11 @@ class Embeddings(object):
         # Normalize embeddings
         self.normalize(embeddings)
 
-        # Save configuration
+        # Save embeddings metadata
         self.config["ids"] = ids
         self.config["dimensions"] = dimensions
 
-        # Create embeddings index, store backend used
+        # Create embeddings index
         self.embeddings = ANN.create(self.config)
 
         # Build the index

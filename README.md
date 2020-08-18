@@ -34,15 +34,29 @@ You can also install txtai directly from GitHub. Using a Python Virtual Environm
 
 Python 3.6+ is supported
 
-### Notes for Windows
-This project has dependencies that require compiling native code. Linux environments usually work without an issue. Windows requires the following extra steps.
+### Troubleshooting
+This project has dependencies that require compiling native code. Windows and macOS systems require the following additional steps. Most Linux environments will install without any additional steps.
+
+#### Windows
 
 - Install C++ Build Tools - https://visualstudio.microsoft.com/visual-cpp-build-tools/
-- If PyTorch errors are encountered, run the following command before installing paperai. See [pytorch.org](https://pytorch.org) for more information.
+- PyTorch binaries are not on pip, the following url link must be added when installing
 
     ```
-    pip install torch===1.6.0 torchvision===0.7.0 -f https://download.pytorch.org/whl/torch_stable.html
+    pip install txtai -f https://download.pytorch.org/whl/torch_stable.html
     ```
+
+    See [pytorch.org](https://pytorch.org) for more information.
+
+#### macOS
+
+- Run the following before installing
+
+    ```
+    brew install libomp
+    ```
+
+    See [this link](https://github.com/kyamagu/faiss-wheels#prerequisite) for more information.
 
 ## Examples
 
