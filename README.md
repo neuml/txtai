@@ -96,14 +96,14 @@ Embeddings({"path": vectors,
 method: transformers|words
 ```
 
-Sets the sentence embeddings method to use. When set to "transformers", the embeddings object builds sentence embeddings using the sentence transformers. Otherwise a word embeddings model is used. Defaults to words.
+Sets the sentence embeddings method to use. When set to _transformers_, the embeddings object builds sentence embeddings using the sentence transformers. Otherwise a word embeddings model is used. Defaults to words.
 
 #### path
 ```yaml
 path: string
 ```
 
-Required field that sets the path for a vectors model. When method set to "transformers", this must be a path to a Hugging Face transformers model. Otherwise,
+Required field that sets the path for a vectors model. When method set to _transformers_, this must be a path to a Hugging Face transformers model. Otherwise,
 it must be a path to a local word embeddings model.
 
 #### scoring
