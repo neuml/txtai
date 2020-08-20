@@ -1,9 +1,10 @@
 # txtai: AI-powered search engine
 
-[![Version](https://img.shields.io/github/release/neuml/txtai.svg?style=flat&color=blue)](https://github.com/neuml/txtai/releases)
-[![GitHub Release Date](https://img.shields.io/github/release-date/neuml/txtai?style=flat&color=success)](https://github.com/neuml/txtai/releases)
-[![GitHub issues](https://img.shields.io/github/issues/neuml/txtai?style=flat&color=blue)](https://github.com/neuml/txtai/issues)
-[![GitHub last commit](https://img.shields.io/github/last-commit/neuml/txtai?style=flat&color=success)](https://github.com/neuml/txtai)
+[![Version](https://img.shields.io/github/release/neuml/txtai.svg?style=flat&color=success)](https://github.com/neuml/txtai/releases)
+[![GitHub Release Date](https://img.shields.io/github/release-date/neuml/txtai?style=flat&color=blue)](https://github.com/neuml/txtai/releases)
+[![GitHub issues](https://img.shields.io/github/issues/neuml/txtai?style=flat&color=success)](https://github.com/neuml/txtai/issues)
+[![GitHub last commit](https://img.shields.io/github/last-commit/neuml/txtai?style=flat&color=blue)](https://github.com/neuml/txtai)
+[![Build Status](https://img.shields.io/travis/neuml/txtai/master.svg?style=flat)](https://travis-ci.org/neuml/txtai)
 
 txtai builds an AI-powered index over sections of text. txtai supports building text indices to perform similarity searches and create extractive question-answering based systems. 
 
