@@ -1,6 +1,3 @@
 language: python
-os:
-  - linux
-  - osx
 script:
   - pip install .
