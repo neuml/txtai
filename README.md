@@ -70,3 +70,96 @@ The examples directory has a series of examples and notebooks giving an overview
 | [Extractive QA with txtai](https://github.com/neuml/txtai/blob/master/examples/02_Extractive_QA_with_txtai.ipynb)  | Extractive question-answering with txtai  |[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/02_Extractive_QA_with_txtai.ipynb) |
 | [Build an Embeddings index from a data source](https://github.com/neuml/txtai/blob/master/examples/03_Build_an_Embeddings_index_from_a_data_source.ipynb)  | Embeddings index from a data source backed by word embeddings |[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/03_Build_an_Embeddings_index_from_a_data_source.ipynb) |
 | [Extractive QA with Elasticsearch](https://github.com/neuml/txtai/blob/master/examples/04_Extractive_QA_with_Elasticsearch.ipynb)  | Extractive question-answering with Elasticsearch  |[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/04_Extractive_QA_with_Elasticsearch.ipynb) |
+
+## Configuration
+
+The following section goes over available settings for Embeddings and Extractor instances.
+
+### Embeddings
+
+Embeddings methods are set through the constructor. Examples below.
+
+```python
+# Transformers embeddings model
+Embeddings({"method": "transformers",
+            "path": "sentence-transformers/bert-base-nli-mean-tokens"})
+
+# Word embeddings model
+Embeddings({"path": vectors,
+            "scoring": "bm25",
+            "pca": 3,
+            "quantize": True})
+```
+
+#### method
+```yaml
+method: transformers|words
+```
+
+Sets the sentence embeddings method to use. When set to "transformers", the embeddings object builds sentence embeddings using the sentence transformers. Otherwise a word embeddings model is used. Defaults to words.
+
+#### path
+```yaml
+path: string
+```
+
+Required field that sets the path for a vectors model. When method set to "transformers", this must be a path to a Hugging Face transformers model. Otherwise,
+it must be a path to a local word embeddings model.
+
+#### scoring
+```yaml
+scoring: bm25|tfidf|sif
+```
+
+For word embedding models, a scoring model allows building weighted averages of word vectors for a given sentence. Supports BM25, tf-idf and SIF (smooth inverse frequency) methods. If a scoring method is not provided, mean sentence embeddings are built.
+
+#### pca
+```yaml
+pca: int
+```
+
+Removes _n_ principal components from generated sentence embeddings. When enabled, a TruncatedSVD model is built to help with dimensionality reduction. After pooling of vectors creates a single sentence embedding, this method is applied.
+
+#### backend
+```yaml
+backend: annoy|faiss|hnsw
+```
+
+Approximate Nearest Neighbor (ANN) index backend for storing generated sentence embeddings. Defaults to Faiss for Linux/macOS and Annoy for Windows. Faiss currently is not supported on Windows.
+
+#### quantize
+```yaml
+quantize: boolean
+```
+
+Enables quanitization of generated sentence embeddings. If the index backend supports it, sentence embeddings will be stored with 8-bit precision vs 32-bit.
+Only Faiss currently supports quantization.
+
+### Extractor
+
+Extractor methods are set as constructor arguments. Examples below.
+
+```python
+Extractor(embeddings, path, quantize)
+```
+
+#### embeddings
+```yaml
+embeddings: Embeddings object instance
+```
+
+Embeddings object instance. Used to query and find candidate text snippets to run the question-answer model against.
+
+#### path
+```yaml
+path: string
+```
+
+Required path to a Hugging Face SQuAD fine-tuned model. Used to answer questions.
+
+#### quantize
+```yaml
+quantize: boolean
+```
+
+Enables dynamic quantization of the Hugging Face model. This is a runtime setting and doesn't save space. It is used to improve the inference time performance of the QA model.
