@@ -1,3 +1,15 @@
-language: python
-script:
-  - pip install .
+# Travis CI build script - test on all supported platforms
+matrix:
+  include:
+    - name: "Python Linux"
+      language: python
+      script:
+        - pip install .
+    - name: "Python 3.6.5 on macOS 10.13"
+      os: osx
+      osx_image: xcode9.4
+      language: shell
+      before_install:
+        - pip3 install -U pip
+      script:
+        - pip install .
