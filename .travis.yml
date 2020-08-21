@@ -1,15 +1,13 @@
 # Travis CI build script - test on all supported platforms
-language: python
-os: linux
 matrix:
   include:
+    - name: "Linux"
+      os: linux
+      language: python
     - name: "macOS"
       os: osx
       osx_image: xcode9.4
       language: shell
-      before_install:
-        - pip3 install -U pip
-        - python --version
     - name: "Windows"
       os: windows
       language: shell
@@ -17,9 +15,8 @@ matrix:
         - choco install python --version 3.6.8
         - python --version
         - python -m pip install --upgrade pip
+        - python -m pip install torch==1.6.0+cpu torchvision==0.7.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
       env: PATH=/c/Python36:/c/Python36/Scripts:$PATH
-      script:
-        - pip install txtai -f https://download.pytorch.org/whl/torch_stable.html
 before_install:
   - pip install -U pip
   - python --version
