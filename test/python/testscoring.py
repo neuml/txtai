@@ -56,7 +56,7 @@ class TestScoring(unittest.TestCase):
 
         # Generate temp file path
         index = os.path.join(tempfile.gettempdir(), "bm25")
-        os.makedirs(index)
+        os.makedirs(index, exist_ok=True)
 
         model = self.method("bm25")
         model.save(index)
