@@ -1,9 +1,17 @@
 # Travis CI build script - test on all supported platforms
-os: linux
-language: python
 matrix:
   include:
     - name: "Linux"
+      os: linux
+      language: python
+      before_install:
+        - pip install -U pip coverage coveralls
+        - python --version
+      script:
+        - pip install .
+        - make coverage
+      after_success:
+        - coveralls
     - name: "macOS"
       os: osx
       osx_image: xcode11.4
@@ -27,11 +35,3 @@ matrix:
       script:
         - pip install .
         - make test
-before_install:
-  - pip install -U pip coverage coveralls
-  - python --version
-script:
-  - pip install .
-  - make coverage
-after_success:
-  - coveralls
