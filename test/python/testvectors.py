@@ -21,16 +21,25 @@ class TestVectors(unittest.TestCase):
         # Word vectors path
         path = os.path.join(tempfile.gettempdir(), "vectors")
 
-        # Build word vectors on README file
-        WordVectors.build("README.md", 300, 3, path)
-
         # Save model path
         self.path = path + ".magnitude"
 
+        # Build word vectors, if they don't already exist
+        if not os.path.exists(self.path):
+            WordVectors.build("README.md", 300, 3, path)
+
     def testLoad(self):
+        """
+        Test loading word vectors
+        """
+
         model = Vectors.create("words", self.path, True, None)
         self.assertEqual(len(model.transform((None, ["txtai"], None))), 300)
 
     def testLookup(self):
+        """
+        Test word vector lookup
+        """
+
         model = Vectors.create("words", self.path, True, None)
         self.assertEqual(model.lookup(["txtai", "embeddings", "sentence"]).shape, (3, 300))
