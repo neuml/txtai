@@ -2,6 +2,7 @@
 Embeddings module tests
 """
 
+import os
 import tempfile
 import unittest
 
@@ -51,8 +52,8 @@ class TestEmbeddings(unittest.TestCase):
         # Create an index for the list of sections
         self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
 
-        with tempfile.NamedTemporaryFile(mode="wb") as output:
-            index = output.name
+        # Generate temp file path
+        index = os.path.join(tempfile.gettempdir(), "embeddings")
 
         self.embeddings.save(index)
         self.embeddings.load(index)

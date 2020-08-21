@@ -4,7 +4,6 @@ Tokenizer module tests
 
 import unittest
 
-
 from txtai.tokenizer import Tokenizer
 
 class TestTokenizer(unittest.TestCase):

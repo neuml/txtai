@@ -43,8 +43,8 @@ class TestANN(unittest.TestCase):
         Tests ANN save/load.
         """
 
-        with tempfile.NamedTemporaryFile(mode="wb") as output:
-            index = output.name
+        # Generate temp file path
+        index = os.path.join(tempfile.gettempdir(), "ann")
 
         model = self.backend("annoy")
         model.save(index)
