@@ -13,7 +13,7 @@ matrix:
         - python3 --version
       script:
         - pip3 install .
-        - make test
+        - make PYTHON=python3 test
     - name: "Windows"
       os: windows
       language: shell
