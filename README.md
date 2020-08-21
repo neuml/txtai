@@ -4,6 +4,7 @@
 [![GitHub Release Date](https://img.shields.io/github/release-date/neuml/txtai.svg?style=flat&color=blue)](https://github.com/neuml/txtai/releases)
 [![GitHub issues](https://img.shields.io/github/issues/neuml/txtai.svg?style=flat&color=success)](https://github.com/neuml/txtai/issues)
 [![GitHub last commit](https://img.shields.io/github/last-commit/neuml/txtai.svg?style=flat&color=blue)](https://github.com/neuml/txtai)
+[![Coverage Status](https://coveralls.io/repos/github/neuml/txtai/badge.svg?branch=master)](https://coveralls.io/github/neuml/txtai?branch=master)
 [![Build Status](https://img.shields.io/travis/neuml/txtai/master.svg?style=flat)](https://travis-ci.org/neuml/txtai)
 
 txtai builds an AI-powered index over sections of text. txtai supports building text indices to perform similarity searches and create extractive question-answering based systems. 
