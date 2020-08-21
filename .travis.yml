@@ -6,7 +6,7 @@ matrix:
       language: python
     - name: "macOS"
       os: osx
-      osx_image: xcode9.4
+      osx_image: xcode11.4
       language: shell
       before_install:
         - pip3 install -U pip
