@@ -10,7 +10,10 @@ matrix:
       language: shell
       before_install:
         - pip3 install -U pip
-        - python --version
+        - python3 --version
+      script:
+        - pip3 install .
+        - make test
     - name: "Windows"
       os: windows
       language: shell
@@ -26,3 +29,4 @@ before_install:
   - python --version
 script:
   - pip install .
+  - make test
