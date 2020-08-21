@@ -15,7 +15,7 @@ matrix:
       os: windows
       language: shell
       before_install:
-        - make
+        - choco install make
         - choco install python --version 3.6.8
         - python --version
         - python -m pip install --upgrade pip wheel
