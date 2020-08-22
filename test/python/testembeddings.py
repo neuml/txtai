@@ -9,6 +9,7 @@ import unittest
 import numpy as np
 
 from txtai.embeddings import Embeddings
+from txtai.vectors import WordVectors
 
 class TestEmbeddings(unittest.TestCase):
     """
@@ -72,3 +73,40 @@ class TestEmbeddings(unittest.TestCase):
         uid = np.argmax(self.embeddings.similarity("feel good story", self.data))
 
         self.assertEqual(self.data[uid], self.data[4])
+
+    def testWords(self):
+        """
+        Test embeddings backed by word vectors
+        """
+
+        # Initialize model path
+        path = os.path.join(tempfile.gettempdir(), "model")
+        os.makedirs(path, exist_ok=True)
+
+        # Build tokens file
+        with tempfile.NamedTemporaryFile(mode="w", delete=False) as output:
+            tokens = output.name
+            for x in self.data:
+                output.write(x + "\n")
+
+        # Word vectors path
+        vectors = os.path.join(path, "test-300d")
+
+        # Build word vectors, if they don't already exist
+        WordVectors.build(tokens, 300, 1, vectors)
+
+        # Create dataset
+        data = [(x, row, None) for x, row in enumerate(self.data)]
+
+        # Create embeddings model, backed by word vectors
+        embeddings = Embeddings({"path": vectors + ".magnitude",
+                                 "scoring": "bm25",
+                                 "pca": 3,
+                                 "quantize": True})
+
+        # Call scoring and index methods
+        embeddings.score(data)
+        embeddings.index(data)
+
+        # Test search
+        self.assertIsNotNone(embeddings.search("win", 1))
