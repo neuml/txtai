@@ -1,9 +1,4 @@
 # Travis CI build script - test on all supported platforms
-cache:
-  directories:
-    - $HOME/.cache/pip
-before_cache:
-  - rm -f $HOME/.cache/pip/log/debug.log
 matrix:
   include:
     - name: "Linux"
