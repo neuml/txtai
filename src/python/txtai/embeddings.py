@@ -4,6 +4,7 @@ Embeddings module
 
 import pickle
 import os
+import shutil
 
 import numpy as np
 
@@ -249,6 +250,10 @@ class Embeddings(object):
         with open("%s/config" % path, "rb") as handle:
             self.config = pickle.load(handle)
 
+            # Build full path to embedded vectors file
+            if self.config.get("storevectors"):
+                self.config["path"] = os.path.join(path, self.config["path"])
+
         # Sentence embeddings index
         self.embeddings = ANN.create(self.config)
         self.embeddings.load("%s/embeddings" % path)
@@ -277,6 +282,12 @@ class Embeddings(object):
         if self.config:
             # Create output directory, if necessary
             os.makedirs(path, exist_ok=True)
+
+            # Copy vectors file
+            if self.config.get("storevectors"):
+                shutil.copyfile(self.config["path"], os.path.join(path, os.path.basename(self.config["path"])))
+
+                self.config["path"] = os.path.basename(self.config["path"])
 
             # Write index configuration
             with open("%s/config" % path, "wb") as handle:
