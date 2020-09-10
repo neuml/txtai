@@ -238,14 +238,21 @@ class TransformersVectors(Vectors):
         # Convert all documents to embedding arrays, stream embeddings to disk to control memory usage
         with tempfile.NamedTemporaryFile(mode="wb", suffix=".npy", delete=False) as output:
             stream = output.name
+            batch = []
             for document in documents:
-                embedding = self.transform(document)
-                if not dimensions:
-                    # Set number of dimensions for embeddings
-                    dimensions = embedding.shape[0]
+                batch.append(document)
 
-                ids.append(document[0])
-                pickle.dump(embedding, output)
+                if len(batch) == 500:
+                    # Convert batch to embeddings
+                    uids, dimensions = self.batch(batch, output)
+                    ids.extend(uids)
+
+                    batch = []
+
+            # Final batch
+            if batch:
+                uids, dimensions = self.batch(batch, output)
+                ids.extend(uids)
 
         return (ids, dimensions, stream)
 
@@ -255,4 +262,35 @@ class TransformersVectors(Vectors):
             document = (document[0], Tokenizer.tokenize(document[1]), document[2])
 
         return self.model.encode([" ".join(document[1])], show_progress_bar=False)[0]
- 
+
+    def batch(self, documents, output):
+        """
+        Builds a batch of embeddings.
+
+        Args:
+            documents: list of documents used to build embeddings
+            output: output temp file to store embeddings
+
+        Returns:
+            (ids, dimensions) list of ids and number of dimensions in embeddings
+        """
+
+        # Convert to tokens if necessary
+        if isinstance(documents[0][1], str):
+            documents = [(d[0], Tokenizer.tokenize(d[1]), d[2]) for d in documents]
+
+        # Get list of document texts
+        ids = [uid for uid, _, _ in documents]
+        documents = [" ".join(tokens) for _, tokens, _ in documents]
+        dimensions = None
+
+        # Convert to embeddings
+        embeddings = self.model.encode(documents, show_progress_bar=False)
+        for embedding in embeddings:
+            if not dimensions:
+                # Set number of dimensions for embeddings
+                dimensions = embedding.shape[0]
+
+            pickle.dump(embedding, output)
+
+        return (ids, dimensions)
