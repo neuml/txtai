@@ -100,6 +100,7 @@ class TestEmbeddings(unittest.TestCase):
 
         # Create embeddings model, backed by word vectors
         embeddings = Embeddings({"path": vectors + ".magnitude",
+                                 "storevectors": True,
                                  "scoring": "bm25",
                                  "pca": 3,
                                  "quantize": True})
