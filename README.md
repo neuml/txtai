@@ -88,6 +88,7 @@ Embeddings({"method": "transformers",
 
 # Word embeddings model
 Embeddings({"path": vectors,
+            "storevectors": True,
             "scoring": "bm25",
             "pca": 3,
             "quantize": True})
@@ -107,6 +108,13 @@ path: string
 
 Required field that sets the path for a vectors model. When method set to _transformers_, this must be a path to a Hugging Face transformers model. Otherwise,
 it must be a path to a local word embeddings model.
+
+#### storevectors
+```yaml
+storevectors: boolean
+```
+
+Enables copying of a vectors model set in path into the embeddings models output directory on save. This option enables a fully encapsulated index with no external file dependencies.
 
 #### scoring
 ```yaml
