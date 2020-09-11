@@ -5,7 +5,7 @@ with open("README.md", "r") as f:
     DESCRIPTION = f.read()
 
 setup(name="txtai",
-      version="1.2.0",
+      version="1.2.1",
       author="NeuML",
       description="AI-powered search engine",
       long_description=DESCRIPTION,
@@ -33,8 +33,8 @@ setup(name="txtai",
           "scikit-learn>=0.23.1",
           "torch>=1.4.0",
           "tqdm>=4.46.0",
-          "sentence-transformers>=0.3.3",
-          "transformers==3.0.2"
+          "sentence-transformers>=0.3.6",
+          "transformers>=3.1.0"
       ],
       classifiers=[
           "License :: OSI Approved :: Apache Software License",
