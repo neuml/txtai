@@ -11,7 +11,7 @@ jobs:
         - coveralls
     - name: "macOS"
       os: osx
-      osx_image: xcode11.4
+      osx_image: xcode11.6
       language: shell
       script:
         - make PYTHON=python3 test
