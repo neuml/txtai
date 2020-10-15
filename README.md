@@ -7,17 +7,20 @@
 [![Build Status](https://img.shields.io/travis/neuml/txtai/master.svg?style=flat)](https://travis-ci.org/neuml/txtai)
 [![Coverage Status](https://img.shields.io/coveralls/github/neuml/txtai)](https://coveralls.io/github/neuml/txtai?branch=master)
 
+<p align="center">
+    <img src="https://raw.githubusercontent.com/neuml/txtai/master/logo.png"/>
+</p>
+
 txtai builds an AI-powered index over sections of text. txtai supports building text indices to perform similarity searches and create extractive question-answering based systems. 
 
 ![demo](https://raw.githubusercontent.com/neuml/txtai/master/demo.gif)
 
 NeuML uses txtai and/or the concepts behind it to power all of our Natural Language Processing (NLP) applications. Example applications:
 
-- [cord19q](https://github.com/neuml/cord19q) - COVID-19 literature analysis
 - [paperai](https://github.com/neuml/paperai) - AI-powered literature discovery and review engine for medical/scientific papers
-- [neuspo](https://neuspo.com) - a fact-driven, real-time sports event and news site
-- [codequestion](https://github.com/neuml/codequestion) - Ask coding questions directly from the terminal
 - [tldrstory](https://github.com/neuml/tldrstory) - AI-powered understanding of headlines and story text
+- [codequestion](https://github.com/neuml/codequestion) - Ask coding questions directly from the terminal
+- [neuspo](https://neuspo.com) - a fact-driven, real-time sports event and news site
 
 txtai is built on the following stack:
 
