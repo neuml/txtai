@@ -8,7 +8,7 @@
 [![Coverage Status](https://img.shields.io/coveralls/github/neuml/txtai)](https://coveralls.io/github/neuml/txtai?branch=master)
 
 <p align="center">
-    <img src="https://raw.githubusercontent.com/neuml/txtai/master/logo.png"/>
+    <img width="250" src="https://raw.githubusercontent.com/neuml/txtai/master/logo.png"/>
 </p>
 
 txtai builds an AI-powered index over sections of text. txtai supports building text indices to perform similarity searches and create extractive question-answering based systems. 
