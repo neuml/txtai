@@ -19,8 +19,8 @@ NeuML uses txtai and/or the concepts behind it to power all of our Natural Langu
 
 - [paperai](https://github.com/neuml/paperai) - AI-powered literature discovery and review engine for medical/scientific papers
 - [tldrstory](https://github.com/neuml/tldrstory) - AI-powered understanding of headlines and story text
+- [neuspo](https://neuspo.com) - Fact-driven, real-time sports event and news site
 - [codequestion](https://github.com/neuml/codequestion) - Ask coding questions directly from the terminal
-- [neuspo](https://neuspo.com) - a fact-driven, real-time sports event and news site
 
 txtai is built on the following stack:
 
