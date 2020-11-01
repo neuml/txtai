@@ -85,8 +85,8 @@ class Extractor(object):
         results = []
         for query in queries:
             # Get list of required and prohibited tokens
-            must = [token.strip("+") for token in query.split() if token.startswith("+")]
-            mnot = [token.strip("-") for token in query.split() if token.startswith("-")]
+            must = [token.strip("+") for token in query.split() if token.startswith("+") and len(token) > 1]
+            mnot = [token.strip("-") for token in query.split() if token.startswith("-") and len(token) > 1]
 
             # Tokenize search query
             query = self.tokenizer.tokenize(query)
