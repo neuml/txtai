@@ -46,6 +46,33 @@ class Extractor(object):
             extracted answers
         """
 
+        # Execute embeddings query
+        results = self.query(sections, [query for _, query, _, _ in queue])
+
+        # Build question-context pairs
+        names, questions, contexts, snippets = [], [], [], []
+        for x, (name, _, question, snippet) in enumerate(queue):
+            # Build context using top n best matching segments
+            topn = sorted(results[x], key=lambda y: y[2], reverse=True)[:3]
+            context = " ".join([text for _, text, _ in sorted(topn, key=lambda y: y[0])])
+
+            names.append(name)
+            questions.append(question)
+            contexts.append(context)
+            snippets.append(snippet)
+
+        # Run qa pipeline and return answers
+        return self.answers(names, questions, contexts, snippets)
+
+    def query(self, sections, queries):
+        """
+        Executes the extractor embeddings query. Returns results sorted by best match.
+
+        Args:
+            sections: list of (id, text) sections
+            queries: list of embedding queries to run
+        """
+
         # Tokenize text
         segments, tokenlist = [], []
         for sid, text in sections:
@@ -55,10 +82,11 @@ class Extractor(object):
                 tokenlist.append(tokens)
 
         # Build question-context pairs
-        names, questions, contexts, snippets = [], [], [], []
-        for name, query, question, snippet in queue:
-            # Get list of required tokens
+        results = []
+        for query in queries:
+            # Get list of required and prohibited tokens
             must = [token.strip("+") for token in query.split() if token.startswith("+")]
+            mnot = [token.strip("-") for token in query.split() if token.startswith("-")]
 
             # Tokenize search query
             query = self.tokenizer.tokenize(query)
@@ -71,21 +99,17 @@ class Extractor(object):
                 # Get segment text
                 text = segments[x][1]
 
-                # Add result if all required tokens are present or there are not required tokens
-                if not must or all([token.lower() in text.lower() for token in must]):
+                # Add result if:
+                #   - all required tokens are present or there are not required tokens AND
+                #   - all prohibited tokens are not present or there are not prohibited tokens
+                if (not must or all([token.lower() in text.lower() for token in must])) and \
+                   (not mnot or all([token.lower() not in text.lower() for token in mnot])):
                     matches.append(segments[x] + (score,))
 
-            # Build context using top n best matching segments
-            topn = sorted(matches, key=lambda x: x[2], reverse=True)[:3]
-            context = " ".join([text for _, text, _ in sorted(topn, key=lambda x: x[0])])
+            # Sort results by score
+            results.append(sorted(matches, key=lambda x: x[2], reverse=True))
 
-            names.append(name)
-            questions.append(question)
-            contexts.append(context)
-            snippets.append(snippet)
-
-        # Run qa pipeline and return answers
-        return self.answers(names, questions, contexts, snippets)
+        return results
 
     def answers(self, names, questions, contexts, snippets):
         """
