@@ -5,7 +5,7 @@ with open("README.md", "r") as f:
     DESCRIPTION = f.read()
 
 setup(name="txtai",
-      version="1.3.0",
+      version="1.4.0",
       author="NeuML",
       description="AI-powered search engine",
       long_description=DESCRIPTION,
