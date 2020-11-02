@@ -4,17 +4,11 @@ ANN (Approximate Nearest Neighbors) module
 
 import numpy as np
 
+import faiss
+
 # pylint: disable=E0611
 from annoy import AnnoyIndex
 from hnswlib import Index
-
-# Conditionally import Faiss as it's only supported on Linux/macOS
-try:
-    import faiss
-    FAISS = True
-except ImportError as e:
-    FAISS = False
-    print(e)
 
 class ANN(object):
     """
@@ -37,9 +31,9 @@ class ANN(object):
         model = None
         backend = config.get("backend")
 
-        # Default backend if not provided, based on available libraries
+        # Default backend if not provided
         if not backend:
-            backend = "faiss" if FAISS else "annoy"
+            backend = "faiss"
 
         # Create ANN instance
         if backend == "annoy":
@@ -47,10 +41,6 @@ class ANN(object):
         elif backend == "hnsw":
             model = HNSW(config)
         else:
-            # Raise error if trying to create a Faiss index without Faiss installed
-            if not FAISS:
-                raise ImportError("Faiss library is not installed")
-
             model = Faiss(config)
 
         # Store config back
