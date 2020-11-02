@@ -20,10 +20,10 @@ jobs:
     - name: "Windows"
       os: windows
       language: shell
-      env: PATH=/c/Python36:/c/Python36/Scripts:$PATH
+      env: PATH=/c/Python38:/c/Python38/Scripts:$PATH
       before_install:
         - choco install make
-        - choco install python --version 3.6.8
+        - choco install python --version 3.8.6
         - python -m pip install -U pip wheel
         - python -m pip install torch==1.6.0+cpu torchvision==0.7.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
 install:
