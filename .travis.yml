@@ -15,10 +15,6 @@ jobs:
       language: shell
       script:
         - make PYTHON=python3 test
-      install:
-        - pip3 install -U pip wheel coverage coveralls
-        - pip3 install . --no-binary faiss-cpu
-        - python3 --version
     - name: "Windows"
       os: windows
       language: shell
@@ -29,8 +25,8 @@ jobs:
         - python -m pip install -U pip wheel
         - python -m pip install torch==1.6.0+cpu torchvision==0.7.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
 install:
-  - pip install -U pip wheel coverage coveralls
-  - pip install .
-  - python --version
+  - pip3 install -U pip wheel coverage coveralls
+  - pip3 install .
+  - python3 --version || python --version
 script:
   - make test
