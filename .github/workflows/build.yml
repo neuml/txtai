@@ -1,5 +1,5 @@
 # GitHub Actions build workflow
-name: txtai
+name: build
 
 on: ["push", "pull_request"]
 
