@@ -22,6 +22,7 @@ class TestANN(unittest.TestCase):
 
         self.assertEqual(self.backend("annoy").config["backend"], "annoy")
 
+    @unittest.skipIf(os.name == "nt", "Faiss not installed on Windows")
     def testFaiss(self):
         """
         Test Faiss backend
