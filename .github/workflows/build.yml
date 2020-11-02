@@ -3,7 +3,7 @@ name: txtai build
 on: ["push", "pull_request"]
 
 jobs:
-  build-linux:
+  linux:
     runs-on: ubuntu-latest
 
     steps:
@@ -16,11 +16,14 @@ jobs:
       - run: pip install .
       - run: python --version
       - run: make coverage
+
+      # Generate test coverage reports
+      - run: coveralls
       - uses: coverallsapp/github-action@master
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-#  build-windows:
+#  windows:
 #    runs-on: windows-latest
 
 #    steps:
