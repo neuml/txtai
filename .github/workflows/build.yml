@@ -12,7 +12,7 @@ jobs:
         with:
           python-version: 3.6
       - run: python -m pip install -U pip wheel
-      - run: pip install -U pip wheel coverage
+      - run: pip install -U pip wheel coverage coveralls
       - run: pip install .
       - run: python --version
       - run: make coverage
