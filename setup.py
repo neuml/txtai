@@ -24,7 +24,7 @@ setup(name="txtai",
       install_requires=[
           "annoy>=1.16.3",
           "faiss-cpu>=1.6.4; sys_platform != 'darwin'",
-          "faiss-cpu==1.6.3; sys_platform == 'darwin'",
+          "faiss-cpu==1.6.4; sys_platform == 'darwin'",
           "fastapi>=0.61.1",
           "fasttext>=0.9.2",
           "hnswlib>=0.4.0",

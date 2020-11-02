@@ -12,8 +12,9 @@ from hnswlib import Index
 try:
     import faiss
     FAISS = True
-except ImportError:
+except ImportError as e:
     FAISS = False
+    print(e)
 
 class ANN(object):
     """
