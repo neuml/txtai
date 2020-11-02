@@ -11,26 +11,39 @@ jobs:
       - uses: actions/setup-python@v2
         with:
           python-version: 3.6
-      - run: python -m pip install -U pip wheel
       - run: pip install -U pip wheel coverage coveralls
       - run: pip install .
       - run: python --version
       - run: make coverage
-
-      # Generate test coverage reports
       - run: coveralls
-      - uses: coverallsapp/github-action@master
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+#  macos:
+#    runs-on: macos-latest
+
+#    steps:
+#      - uses: actions/checkout@v2
+#      - uses: actions/setup-python@v2
+#        with:
+#          python-version: 3.6
+#      - run: brew install libomp
+#      - run: pip3 install -U pip wheel coverage coveralls
+#      - run: pip3 install .
+#      - run: python3 --version
+#      - run: make PYTHON=python3 test
 
 #  windows:
 #    runs-on: windows-latest
 
 #    steps:
 #      - uses: actions/checkout@v2
+#      - uses: actions/setup-python@v2
+#        with:
+#          python-version: 3.6
 #      - run: python -m pip install -U pip wheel
 #      - run: python -m pip install torch==1.6.0+cpu torchvision==0.7.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
-#      - run: pip install -U pip wheel coverage
+#      - run: pip install -U pip wheel coverage coveralls
 #      - run: pip install .
 #      - run: python --version
 #      - run: make test
