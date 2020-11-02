@@ -13,6 +13,8 @@ jobs:
       os: osx
       osx_image: xcode11.6
       language: shell
+      before_install:
+        - brew install libomp
       script:
         - make PYTHON=python3 test
     - name: "Windows"
