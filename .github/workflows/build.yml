@@ -28,7 +28,7 @@ jobs:
         run: |
           pip install -U pip wheel coverage coveralls
           pip install .
-          python --version || python --version
+          python --version
           make coverage
 
       - name: Test Coverage
