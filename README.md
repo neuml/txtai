@@ -4,7 +4,7 @@
 [![GitHub Release Date](https://img.shields.io/github/release-date/neuml/txtai.svg?style=flat&color=blue)](https://github.com/neuml/txtai/releases)
 [![GitHub issues](https://img.shields.io/github/issues/neuml/txtai.svg?style=flat&color=success)](https://github.com/neuml/txtai/issues)
 [![GitHub last commit](https://img.shields.io/github/last-commit/neuml/txtai.svg?style=flat&color=blue)](https://github.com/neuml/txtai)
-[![Build Status](https://img.shields.io/travis/neuml/txtai/master.svg?style=flat)](https://travis-ci.org/neuml/txtai)
+[![Build Status](https://github.com/neuml/txtai/workflows/build/badge.svg)](https://github.com/neuml/txtai/actions?query=workflow%3Abuild)
 [![Coverage Status](https://img.shields.io/coveralls/github/neuml/txtai)](https://coveralls.io/github/neuml/txtai?branch=master)
 
 <p align="center">
