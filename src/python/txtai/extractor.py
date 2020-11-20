@@ -23,7 +23,7 @@ class Extractor(object):
             tokenizer: Tokenizer class
         """
 
-        # Embeddings model and open database cursor
+        # Embeddings model
         self.embeddings = embeddings
 
         # QA Pipeline
