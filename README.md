@@ -11,7 +11,7 @@
     <img width="250" src="https://raw.githubusercontent.com/neuml/txtai/master/logo.png"/>
 </p>
 
-txtai builds an AI-powered index over sections of text. txtai supports building text indices to perform similarity searches and create extractive question-answering based systems. 
+txtai builds an AI-powered index over sections of text. txtai supports building text indices to perform similarity searches and create extractive question-answering based systems. txtai also has functionality for zero-shot classification.
 
 ![demo](https://raw.githubusercontent.com/neuml/txtai/master/demo.gif)
 
@@ -64,6 +64,8 @@ This project has dependencies that require compiling native code. Windows and ma
 
     See [this link](https://github.com/kyamagu/faiss-wheels#prerequisite) for more information.
 
+See this [GitHub workflow file](https://github.com/neuml/txtai/blob/master/.github/workflows/build.yml) for an example of environment-dependent installation procedures.
+
 ## Examples
 
 The examples directory has a series of examples and notebooks giving an overview of txtai. See the list of notebooks below.
@@ -84,7 +86,7 @@ The following section goes over available settings for Embeddings and Extractor 
 
 ### Embeddings
 
-Embeddings methods are set through the constructor. Examples below.
+Embeddings parameters are set through the constructor. Examples below.
 
 ```python
 # Transformers embeddings model
@@ -152,7 +154,7 @@ Only Faiss currently supports quantization.
 
 ### Extractor
 
-Extractor methods are set as constructor arguments. Examples below.
+Extractor parameters are set as constructor arguments. Examples below.
 
 ```python
 Extractor(embeddings, path, quantize)
@@ -178,3 +180,60 @@ quantize: boolean
 ```
 
 Enables dynamic quantization of the Hugging Face model. This is a runtime setting and doesn't save space. It is used to improve the inference time performance of the QA model.
+
+
+### Labels
+
+Labels parameters are set as constructor arguments. Examples below.
+
+```python
+Labels()
+Labels("roberta-large-mnli")
+```
+
+#### path
+```yaml
+path: string
+```
+
+Required path to a Hugging Face MNLI fine-tuned model. Used to answer questions.
+
+### API
+
+txtai has a full-featured API that can optionally be enabled for any txtai process. All functionality found in txtai can be accessed via the API. The following is an example configuration and startup script for the API.
+
+Note that this configuration file enables all functionality (embeddings, extractor and labels). It is suggested that separate processes are used for each instance of a txtai component.
+
+```yaml
+# Index file path
+path: /tmp/index
+
+# Allow indexing of documents
+writable: True
+
+# Embeddings settings
+embeddings:
+  method: transformers
+  path: sentence-transformers/bert-base-nli-mean-tokens
+
+# Extractor settings
+extractor:
+  path: distilbert-base-cased-distilled-squad
+
+# Labels settings
+labels:
+```
+
+Assuming this YAML content is stored in a file named index.yml, the following command starts the API process.
+
+```
+CONFIG=index.yml uvicorn "txtai.api:app"
+```
+
+### Supported language bindings
+
+The following programming languages have txtai bindings:
+
+- [JavaScript](https://github.com/neuml/txtai.js)
+
+External implementations of txtai bindings welcome, we're happy to add any additional implementations to this list.
