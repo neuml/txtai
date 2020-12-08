@@ -12,7 +12,7 @@ class Pipeline(object):
     quantization and minor interface changes.
     """
 
-    def __init__(self, task, path=None, quantize=False):
+    def __init__(self, task, path=None, quantize=False, gpu=False):
         """
         Loads a new pipeline model.
 
@@ -20,10 +20,11 @@ class Pipeline(object):
             task: pipeline task or category
             path: optional path to model, will use default model for task if not provided
             quantize: if model should be quantized, defaults to False
+            gpu: if gpu inference should be used (only works if GPUs are available)
         """
 
-        # Detect GPU
-        gpu = torch.cuda.is_available()
+        # Enable GPU inference if explicitly set and a GPU is available
+        gpu = gpu and torch.cuda.is_available()
 
         # Transformer pipeline task
         self.pipeline = pipeline(task, model=path, tokenizer=path, device=0 if gpu else -1)
@@ -38,8 +39,8 @@ class Questions(Pipeline):
     Runs extractive QA for a series of questions and contexts.
     """
 
-    def __init__(self, path=None, quantize=False):
-        super().__init__("question-answering", path, quantize)
+    def __init__(self, path=None, quantize=False, gpu=False):
+        super().__init__("question-answering", path, quantize, gpu)
 
     def __call__(self, questions, contexts):
         """
@@ -79,8 +80,8 @@ class Labels(Pipeline):
     Applies labels to text sections using a zero shot classifier.
     """
 
-    def __init__(self, path=None, quantize=False):
-        super().__init__("zero-shot-classification", path, quantize)
+    def __init__(self, path=None, quantize=False, gpu=True):
+        super().__init__("zero-shot-classification", path, quantize, gpu)
 
     def __call__(self, section, labels):
         """
