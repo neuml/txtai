@@ -12,7 +12,7 @@ from fastapi import Body, FastAPI, Request
 
 from .embeddings import Embeddings
 from .extractor import Extractor
-from .labels import Labels
+from .pipeline import Labels
 
 # API instance
 app = FastAPI()

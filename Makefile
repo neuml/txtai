@@ -8,6 +8,9 @@ export PYTHONPATH := ${SRC_DIR}:${TEST_DIR}:${PYTHONPATH}
 export PATH := ${TEST_DIR}:${PATH}
 export PYTHONWARNINGS := ignore
 
+# Disable tokenizer parallelism for tests
+export TOKENIZERS_PARALLELISM := false
+
 # Default python executable if not provided
 PYTHON ?= python
 

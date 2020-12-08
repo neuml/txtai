@@ -2,34 +2,44 @@
 Pipeline module
 """
 
-import numpy as np
-import regex as re
 import torch
 
-from transformers import AutoModelForQuestionAnswering, AutoTokenizer
+from transformers import pipeline
 
 class Pipeline(object):
     """
-    Extractive question-answering model.
-
-    Logic based on HuggingFace's transformers QuestionAnswering pipeline.
+    Light wrapper around HuggingFace's pipeline component for selected tasks. Adds support for model
+    quantization and minor interface changes.
     """
 
-    def __init__(self, path, quantize):
+    def __init__(self, task, path=None, quantize=False):
         """
         Loads a new pipeline model.
 
         Args:
-            path: path to model
-            quantize: if model should be quantized
+            task: pipeline task or category
+            path: optional path to model, will use default model for task if not provided
+            quantize: if model should be quantized, defaults to False
         """
 
-        self.model = AutoModelForQuestionAnswering.from_pretrained(path)
-        self.tokenizer = AutoTokenizer.from_pretrained(path)
+        # Detect GPU
+        gpu = torch.cuda.is_available()
 
-        if quantize:
+        # Transformer pipeline task
+        self.pipeline = pipeline(task, model=path, tokenizer=path, device=0 if gpu else -1)
+
+        # Model quantization. Compresses model to int8 precision, improves runtime performance. Only supported on CPU.
+        if not gpu and quantize:
             # pylint: disable=E1101
-            self.model = torch.quantization.quantize_dynamic(self.model, {torch.nn.Linear}, dtype=torch.qint8)
+            self.pipeline.model = torch.quantization.quantize_dynamic(self.pipeline.model, {torch.nn.Linear}, dtype=torch.qint8)
+
+class Questions(Pipeline):
+    """
+    Runs extractive QA for a series of questions and contexts.
+    """
+
+    def __init__(self, path=None, quantize=False):
+        super().__init__("question-answering", path, quantize)
 
     def __call__(self, questions, contexts):
         """
@@ -46,101 +56,43 @@ class Pipeline(object):
         answers = []
 
         for x, question in enumerate(questions):
-            # Encode question and context using model tokenizer
-            inputs = self.tokenizer.encode_plus(question, contexts[x], add_special_tokens=True, return_tensors="pt")
-            input_ids = inputs["input_ids"].tolist()[0]
+            if question and contexts[x]:
+                # Run the QA pipeline
+                result = self.pipeline(question=question, context=contexts[x])
 
-            try:
-                # Run the input against the model, get candidate start-end pairs
-                start, end = self.model(**inputs)
-                start, end = start.detach().numpy(), end.detach().numpy()
-
-                # Normalize start and end logits
-                start = np.exp(start) / np.sum(np.exp(start))
-                end = np.exp(end) / np.sum(np.exp(end))
-
-                # Tokenized questions for BERT models take the format:
-                # [CLS] Question [SEP] Answer [SEP]
-                # This logic prevents the answer coming from the question
-                separator = input_ids.index(self.tokenizer.sep_token_id)
-                pmask = np.array([1 if x <= separator else 0 for x in range(len(input_ids))])
-
-                # Mask the question tokens
-                start, end = (start * np.abs(np.array(pmask) - 1), end * np.abs(np.array(pmask) - 1))
-
-                tokens, answer = [], None
-
-                start, end, score = self.score(start, end, 15)
+                # Get answer and score
+                answer, score = result["answer"], result["score"]
 
                 # Require best score to be at least 0.05
-                if score >= 0.05:
-                    # Get span tokens
-                    tokens = self.tokenizer.convert_ids_to_tokens(input_ids[start:(end + 1)], skip_special_tokens=True)
-
-                    # Build regex to match original string
-                    answer = re.search(self.regex(tokens), contexts[x], re.IGNORECASE)
-                    answer = answer[0]
+                if score < 0.05:
+                    answer = None
 
                 # Add answer
                 answers.append({"answer": answer, "score": score})
-
-            # pylint: disable=W0702
-            except:
+            else:
                 answers.append({"answer": None, "score": 0.0})
 
         return answers
 
-    def score(self, start, end, maxlength):
+class Labels(Pipeline):
+    """
+    Applies labels to text sections using a zero shot classifier.
+    """
+
+    def __init__(self, path=None, quantize=False):
+        super().__init__("zero-shot-classification", path, quantize)
+
+    def __call__(self, section, labels):
         """
-        Scores all possible combinations of start and end index up to maxlength. Returns
-        the best match.
+        Applies a zero shot classifier to a text section using a list of labels.
 
         Args:
-            start: start index scores
-            end: end index scores
-            maxlength: max number of tokens to allow in a match
+            section: text section
+            labels: list of labels
 
         Returns:
-            (start index, end index, score) of best scoring combination
+            list of (label, score) for section
         """
 
-        # Score all possible combinations of start, end indices
-        scores = np.matmul(np.expand_dims(start, -1), np.expand_dims(end, 1))
-
-        # Zero out candidates with end < start and end - start > maxlength
-        candidates = np.tril(np.triu(scores), maxlength - 1)
-
-        # Get index of best rated combination
-        # pylint: disable=E1101
-        index = np.argmax(candidates.flatten())
-
-        # Get (start, end, score) of best rated combination
-        # pylint: disable=E1126, W0632
-        start, end = np.unravel_index(index, candidates.shape)[1:]
-        return start, end, candidates[0, start, end]
-
-    def regex(self, tokens):
-        """
-        Builds a regular expression from tokens.
-
-        Args:
-            tokens: input tokens
-
-        Returns:
-            regex to use to extract match in original text
-        """
-
-        regex = []
-
-        for token in tokens:
-            # Escape regex characters
-            token = re.escape(token)
-
-            # Handle subwords
-            if token.startswith("\\#\\#"):
-                token = re.sub(r"^\\#\\#", "", token)
-
-            regex.append(token)
-
-        # Build and return complete regular expression
-        return "\\s?".join(regex)
+        result = self.pipeline(section, labels)
+        return list(zip(result["labels"], result["scores"]))

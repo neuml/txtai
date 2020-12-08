@@ -4,7 +4,7 @@ Extractor module
 
 from nltk.tokenize import sent_tokenize
 
-from .pipeline import Pipeline
+from .pipeline import Questions
 from .tokenizer import Tokenizer
 
 class Extractor(object):
@@ -27,7 +27,7 @@ class Extractor(object):
         self.embeddings = embeddings
 
         # QA Pipeline
-        self.pipeline = Pipeline(path, quantize)
+        self.pipeline = Questions(path, quantize)
 
         # Tokenizer class use default method if not set
         self.tokenizer = tokenizer if tokenizer else Tokenizer

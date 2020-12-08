@@ -4,7 +4,7 @@ Labels module tests
 
 import unittest
 
-from txtai.labels import Labels
+from txtai.pipeline import Labels
 
 class TestLabels(unittest.TestCase):
     """
