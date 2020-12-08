@@ -28,6 +28,7 @@ jobs:
         run: |
           pip install -U pip==20.2.4 wheel coverage coveralls
           pip install .
+          pip install git+https://github.com/huggingface/transformers
           python --version
           make coverage
 
