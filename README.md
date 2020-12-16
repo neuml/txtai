@@ -235,5 +235,6 @@ CONFIG=index.yml uvicorn "txtai.api:app"
 The following programming languages have txtai bindings:
 
 - [JavaScript](https://github.com/neuml/txtai.js)
+- [Rust](https://github.com/neuml/txtai.rs)
 
 External implementations of txtai bindings welcome, we're happy to add any additional implementations to this list.
