@@ -20,10 +20,6 @@ jobs:
         run: brew install libomp
         if: matrix.os == 'macos-latest'
 
-      - name: Install dependencies - Windows
-        run: python -m pip install torch===1.7.1 -f https://download.pytorch.org/whl/torch_stable.html
-        if: matrix.os == 'windows-latest'
-
       - name: Build
         run: |
           pip install -U pip==20.2.4 wheel coverage coveralls
