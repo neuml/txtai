@@ -13,6 +13,22 @@ class TestVectors(unittest.TestCase):
     Vectors tests
     """
 
+    @staticmethod
+    def setUpClass():
+        """
+        Test a WordVectors build.
+        """
+
+        # Word vectors path
+        path = os.path.join(tempfile.gettempdir(), "vectors")
+
+        # Save model path
+        vectors = path + ".magnitude"
+
+        # Build word vectors, if they don't already exist
+        if not os.path.exists(vectors):
+            WordVectors.build("LICENSE", 300, 3, path)
+
     def setUp(self):
         """
         Test a WordVectors build.
@@ -23,10 +39,6 @@ class TestVectors(unittest.TestCase):
 
         # Save model path
         self.path = path + ".magnitude"
-
-        # Build word vectors, if they don't already exist
-        if not os.path.exists(self.path):
-            WordVectors.build("LICENSE", 300, 3, path)
 
     def testLoad(self):
         """
