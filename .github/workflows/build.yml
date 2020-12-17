@@ -23,7 +23,7 @@ jobs:
       - name: Install dependencies - Windows
         run: |
           python -m pip install torch==1.6.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
-          pip install git+https://github.com/huggingface/transformers
+          pip install git+https://github.com/huggingface/transformers@5e637e6c690e45d13ebf7296e1ea9dcc188d0f07
         if: matrix.os == 'windows-latest'
 
       - name: Build
