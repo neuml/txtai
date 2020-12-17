@@ -26,7 +26,7 @@ class TestVectors(unittest.TestCase):
 
         # Build word vectors, if they don't already exist
         if not os.path.exists(self.path):
-            WordVectors.build("README.md", 300, 3, path)
+            WordVectors.build("LICENSE", 300, 3, path)
 
     def testLoad(self):
         """
