@@ -35,8 +35,8 @@ setup(name="txtai",
           "scikit-learn>=0.23.1",
           "torch>=1.4.0",
           "tqdm>=4.46.0",
-          "sentence-transformers>=0.3.9",
-          "transformers>=4.0.0",
+          "sentence-transformers>=0.4.0",
+          "transformers>=4.1.1",
           "uvicorn>=0.12.1"
       ],
       classifiers=[
