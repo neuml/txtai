@@ -95,7 +95,7 @@ class API(object):
         """
 
         # Only add batch if index is marked writable
-        if self.config.get("writable"):
+        if self.embeddings and self.config.get("writable"):
             # Create current batch if necessary
             if not self.documents:
                 self.documents = []
@@ -109,7 +109,7 @@ class API(object):
         override this method to also store full documents in an external system.
         """
 
-        if self.config.get("writable") and self.documents:
+        if self.embeddings and self.config.get("writable") and self.documents:
             # Build scoring index if scoring method provided
             if self.config.get("scoring"):
                 embeddings.score(self.documents)
@@ -168,13 +168,16 @@ class API(object):
             extracted answers
         """
 
-        # Convert to a list of (id, text)
-        sections = [(document["id"], document["text"]) for document in documents]
+        if self.extractor:
+            # Convert to a list of (id, text)
+            sections = [(document["id"], document["text"]) for document in documents]
 
-        # Convert queue to tuples
-        queue = [(x["name"], x["query"], x.get("question"), x.get("snippet")) for x in queue]
+            # Convert queue to tuples
+            queue = [(x["name"], x["query"], x.get("question"), x.get("snippet")) for x in queue]
 
-        return self.extractor(sections, queue)
+            return self.extractor(sections, queue)
+
+        return None
 
     def label(self, text, labels):
         """
