@@ -70,7 +70,6 @@ class TestExtractor(unittest.TestCase):
         answers = self.extractor(self.sections, [(question, question, question, False)])
         self.assertIsNone(answers[0][1])
 
-    @unittest.skipIf(platform.system() == "Darwin", "Quantized models not supported on macOS")
     def testQuantize(self):
         """
         Test qa extraction backed by a quantized model
