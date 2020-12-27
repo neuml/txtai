@@ -13,8 +13,8 @@ class TestLabels(unittest.TestCase):
 
     def testLabel(self):
         """
-        Tests labeling
+        Test labels
         """
 
         labels = Labels()
-        self.assertIsNotNone(labels("This is a test", "test"))
+        self.assertEqual(labels("This is the best sentence ever", ["positive", "negative"])[0][0], "positive")

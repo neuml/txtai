@@ -34,7 +34,7 @@ class TestEmbeddings(unittest.TestCase):
 
     def testIndex(self):
         """
-        Test embeddings.index
+        Test index
         """
 
         # Create an index for the list of sections
@@ -47,7 +47,7 @@ class TestEmbeddings(unittest.TestCase):
 
     def testSave(self):
         """
-        Test embeddings.save
+        Test save
         """
 
         # Create an index for the list of sections
@@ -66,7 +66,7 @@ class TestEmbeddings(unittest.TestCase):
 
     def testSimilarity(self):
         """
-        Test embeddings.similarity
+        Test similarity
         """
 
         # Get best matching id
@@ -108,6 +108,16 @@ class TestEmbeddings(unittest.TestCase):
         # Call scoring and index methods
         embeddings.score(data)
         embeddings.index(data)
+
+        # Test search
+        self.assertIsNotNone(embeddings.search("win", 1))
+
+        # Generate temp file path
+        index = os.path.join(tempfile.gettempdir(), "embeddings")
+
+        # Test save/load
+        embeddings.save(index)
+        embeddings.load(index)
 
         # Test search
         self.assertIsNotNone(embeddings.search("win", 1))

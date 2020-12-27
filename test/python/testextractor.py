@@ -12,16 +12,11 @@ class TestExtractor(unittest.TestCase):
     Extractor tests
     """
 
-    def testQA(self):
+    @classmethod
+    def setUpClass(cls):
         """
-        Test qa extraction
+        Create single extractor instance.
         """
-
-        # Create embeddings model, backed by sentence-transformers & transformers
-        embeddings = Embeddings({"method": "transformers", "path": "sentence-transformers/bert-base-nli-mean-tokens"})
-
-        # Create extractor instance
-        extractor = Extractor(embeddings, "distilbert-base-cased-distilled-squad")
 
         sections = ["Giants hit 3 HRs to down Dodgers",
                     "Giants 5 Dodgers 4 final",
@@ -37,11 +32,22 @@ class TestExtractor(unittest.TestCase):
                     "Flyers win 4-1"]
 
         # Add unique id to each section to assist with qa extraction
-        sections = [(uid, section) for uid, section in enumerate(sections)]
+        cls.sections = [(uid, section) for uid, section in enumerate(sections)]
+
+        # Create embeddings model, backed by sentence-transformers & transformers
+        cls.embeddings = Embeddings({"method": "transformers", "path": "sentence-transformers/bert-base-nli-mean-tokens"})
+
+        # Create extractor instance
+        cls.extractor = Extractor(cls.embeddings, "distilbert-base-cased-distilled-squad")
+
+    def testAnswer(self):
+        """
+        Test qa extraction with an answer
+        """
 
         questions = ["What team won the game?", "What was score?"]
 
-        execute = lambda query: extractor(sections, [(question, query, question, False) for question in questions])
+        execute = lambda query: self.extractor(self.sections, [(question, query, question, False) for question in questions])
 
         answers = execute("Red Sox - Blue Jays")
         self.assertEqual("Blue Jays", answers[0][1])
@@ -50,5 +56,37 @@ class TestExtractor(unittest.TestCase):
         # Ad-hoc questions
         question = "What hockey team won?"
 
-        answers = extractor(sections, [(question, question, question, False)])
+        answers = self.extractor(self.sections, [(question, question, question, False)])
         self.assertEqual("Flyers", answers[0][1])
+
+    def testNoAnswer(self):
+        """
+        Test qa extraction with no answer
+        """
+
+        question = ""
+
+        answers = self.extractor(self.sections, [(question, question, question, False)])
+        self.assertIsNone(answers[0][1])
+
+    def testQuantize(self):
+        """
+        Test qa extraction backed by a quantized model
+        """
+
+        extractor = Extractor(self.embeddings, "distilbert-base-cased-distilled-squad", True)
+
+        question = "How many home runs?"
+
+        answers = extractor(self.sections, [(question, question, question, True)])
+        self.assertTrue(answers[0][1].startswith("Giants hit 3 HRs"))
+
+    def testSnippet(self):
+        """
+        Test qa extraction with a full answer snippet
+        """
+
+        question = "How many home runs?"
+
+        answers = self.extractor(self.sections, [(question, question, question, True)])
+        self.assertTrue(answers[0][1].startswith("Giants hit 3 HRs"))

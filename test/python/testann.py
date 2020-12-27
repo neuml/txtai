@@ -21,6 +21,8 @@ class TestANN(unittest.TestCase):
         """
 
         self.assertEqual(self.backend("annoy").config["backend"], "annoy")
+        self.assertIsNotNone(self.save("annoy"))
+        self.assertGreater(self.search("annoy"), 0)
 
     @unittest.skipIf(os.name == "nt", "Faiss not installed on Windows")
     def testFaiss(self):
@@ -31,43 +33,21 @@ class TestANN(unittest.TestCase):
         self.assertEqual(self.backend("faiss").config["backend"], "faiss")
         self.assertEqual(self.backend("faiss", 5000).config["backend"], "faiss")
 
+        self.assertIsNotNone(self.save("faiss"))
+        self.assertGreater(self.search("faiss"), 0)
+
     def testHnsw(self):
         """
-        Test Hnswlib
+        Test Hnswlib backend
         """
 
         self.assertEqual(self.backend("hnsw").config["backend"], "hnsw")
-
-    def testSave(self):
-        """
-        Tests ANN save/load.
-        """
-
-        # Generate temp file path
-        index = os.path.join(tempfile.gettempdir(), "ann")
-
-        model = self.backend("annoy")
-        model.save(index)
-        model.load(index)
-
-    def testSearch(self):
-        """
-        Tests ANN search
-        """
-
-        # Generate ANN index
-        model = self.backend("annoy")
-
-        # Generate query vector
-        query = np.random.rand(300).astype(np.float32)
-        self.normalize(query)
-
-        # Ensure top result has similarity > 0
-        self.assertGreater(model.search(query, 1)[0][1], 0)
+        self.assertIsNotNone(self.save("hnsw"))
+        self.assertGreater(self.search("hnsw"), 0)
 
     def backend(self, name, length=100):
         """
-        Tests a backend
+        Test a backend
         """
 
         # Generate test data
@@ -78,6 +58,36 @@ class TestANN(unittest.TestCase):
         model.index(data)
 
         return model
+
+    def save(self, backend):
+        """
+        Test save/load
+        """
+
+        model = self.backend(backend)
+
+        # Generate temp file path
+        index = os.path.join(tempfile.gettempdir(), "ann")
+
+        model.save(index)
+        model.load(index)
+
+        return model
+
+    def search(self, backend):
+        """
+        Test ANN search
+        """
+
+        # Generate ANN index
+        model = self.backend(backend)
+
+        # Generate query vector
+        query = np.random.rand(300).astype(np.float32)
+        self.normalize(query)
+
+        # Ensure top result has similarity > 0
+        return model.search(query, 1)[0][1]
 
     def normalize(self, embeddings):
         """
