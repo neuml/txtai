@@ -16,5 +16,5 @@ class TestLabels(unittest.TestCase):
         Test labels
         """
 
-        labels = Labels()
+        labels = Labels("squeezebert/squeezebert-mnli")
         self.assertEqual(labels("This is the best sentence ever", ["positive", "negative"])[0][0], "positive")

@@ -48,11 +48,14 @@ class API(object):
             # Extractor settings
             extractor = self.config["extractor"]
 
-            self.extractor = Extractor(self.embeddings, extractor["path"], extractor.get("quantize"))
+            self.extractor = Extractor(self.embeddings, extractor.get("path"), extractor.get("quantize"),
+                                       extractor.get("gpu"))
 
         # Create labels instance
         if "labels" in self.config:
-            self.labels = Labels()
+            labels = self.config["labels"]
+
+            self.labels = Labels(labels.get("path"), labels.get("quantize"), labels.get("gpu"))
 
     def size(self, request):
         """

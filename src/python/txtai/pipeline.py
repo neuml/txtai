@@ -8,7 +8,7 @@ from transformers import pipeline
 
 class Pipeline(object):
     """
-    Light wrapper around HuggingFace's pipeline component for selected tasks. Adds support for model
+    Light wrapper around Hugging Face's pipeline component for selected tasks. Adds support for model
     quantization and minor interface changes.
     """
 
@@ -18,7 +18,8 @@ class Pipeline(object):
 
         Args:
             task: pipeline task or category
-            path: optional path to model, will use default model for task if not provided
+            path: optional path to model, accepts Hugging Face model hub id or local path,
+                  uses default model for task if not provided
             quantize: if model should be quantized, defaults to False
             gpu: if gpu inference should be used (only works if GPUs are available)
         """

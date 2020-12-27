@@ -33,6 +33,7 @@ extractor:
 
 # Labels settings
 labels:
+    path: squeezebert/squeezebert-mnli
 """
 
 # Configuration that reads an existing similarity search index
