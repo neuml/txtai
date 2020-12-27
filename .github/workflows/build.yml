@@ -24,6 +24,7 @@ jobs:
         run: |
           pip install -U pip wheel coverage coveralls
           pip install .
+          python -c "import nltk; nltk.download('punkt')"
           python --version
           make coverage
 
