@@ -6,6 +6,8 @@ import os
 import tempfile
 import unittest
 
+from unittest import mock
+
 import numpy as np
 
 from fastapi.testclient import TestClient
@@ -48,7 +50,7 @@ class TestAPI(unittest.TestCase):
     """
 
     @staticmethod
-    @unittest.mock.patch.dict(os.environ, {"CONFIG": "/tmp/testapi.yml", "API_CLASS": "txtai.api.API"})
+    @mock.patch.dict(os.environ, {"CONFIG": "/tmp/testapi.yml", "API_CLASS": "txtai.api.API"})
     def start(full):
         """
         Starts a mock FastAPI client.
