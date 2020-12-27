@@ -39,7 +39,7 @@ class TestVectors(unittest.TestCase):
 
         # Test non-existent path raises an exception
         with self.assertRaises(IOError):
-            Vectors.create("words", "/tmp/noexist", True, None)
+            Vectors.create("words", os.path.join(tempfile.gettempdir(), "noexist", True, None)
 
     def testLookup(self):
         """
