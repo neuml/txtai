@@ -114,7 +114,7 @@ class TestEmbeddings(unittest.TestCase):
         self.assertIsNotNone(embeddings.search("win", 1))
 
         # Generate temp file path
-        index = os.path.join(tempfile.gettempdir(), "embeddings")
+        index = os.path.join(tempfile.gettempdir(), "wembeddings")
 
         # Test save/load
         embeddings.save(index)
