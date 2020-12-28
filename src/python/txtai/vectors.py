@@ -22,24 +22,23 @@ from .tokenizer import Tokenizer
 # pylint: disable=W0603
 VECTORS = None
 
-def create(path, scoring, blocking):
+def create(config, scoring):
     """
-    Multiprocessing helper method. Creates a global embeddings object to be accessed in a new
-    subprocess.
+    Multiprocessing helper method. Creates a global embeddings object to be accessed in a new subprocess.
 
     Args:
-        config: configuration
+        config: vector configuration
         scoring: scoring instance
     """
 
     global VECTORS
 
     # Create a global embedding object using configuration and saved
-    VECTORS = WordVectors(path, blocking, scoring)
+    VECTORS = WordVectors(config, scoring)
 
 def transform(document):
     """
-    Multiprocessing helper method. Transforms document tokens into an embedding.
+    Multiprocessing helper method. Transforms document into an embeddings vector.
 
     Args:
         document: (id, text|tokens, tags)
@@ -58,25 +57,41 @@ class Vectors(object):
     """
 
     @staticmethod
-    def create(method, path, blocking, scoring):
+    def create(config, scoring):
         """
         Create a Vectors model instance.
 
         Args:
-            path: path to word vector model
-            blocking: True if method should wait until vectors fully loaded before returning, false otherwise
+            config: vector configuration
+            scoring: scoring instance
         """
 
-        # Create vector model instance
-        return TransformersVectors(path) if method == "transformers" else WordVectors(path, blocking, scoring)
+        # Derive vector type
+        transformers = config.get("method") == "transformers"
 
-    def load(self, path, blocking):
+        # Create vector model instance
+        return TransformersVectors(config, scoring) if transformers else WordVectors(config, scoring)
+
+    def __init__(self, config, scoring):
+        # Store parameters
+        self.config = config
+        self.scoring = scoring
+
+        # Detect if this is an initialized configuration
+        self.initialized = "dimensions" in config
+
+        # Enables optional string tokenization
+        self.tokenize = "tokenize" not in config or config["tokenize"]
+
+        # pylint: disable=E1111
+        self.model = self.load(config["path"])
+
+    def load(self, path):
         """
         Loads vector model at path.
 
         Args:
             path: path to word vector model
-            blocking: True if method should wait until vectors fully loaded before returning, false otherwise
 
         Returns:
             vector model
@@ -84,11 +99,11 @@ class Vectors(object):
 
     def index(self, documents):
         """
-        Converts a list of document tokens to a temporary file with embeddings arrays. Documents are tuples of (id, text|tokens, tags).
-        Returns a tuple of document ids, number of dimensions and temporary file with embeddings.
+        Converts a list of documents to a temporary file with embeddings arrays. Returns a tuple of document ids,
+        number of dimensions and temporary file with embeddings.
 
         Args:
-            documents: list of documents
+            documents: list of (id, text|tokens, tags)
 
         Returns:
             (ids, dimensions, stream)
@@ -110,27 +125,19 @@ class WordVectors(Vectors):
     Builds sentence embeddings/vectors using weighted word embeddings.
     """
 
-    def __init__(self, path, blocking, scoring):
-        self.model = self.load(path, blocking)
-
-        # Store parameters
-        self.path = path
-        self.blocking = blocking
-        self.scoring = scoring
-
-    def load(self, path, blocking):
-        # Require that vector path exists, if a path is provided and it's not found, Magnitude will try download from it's servers
+    def load(self, path):
+        # Ensure that vector path exists
         if not path or not os.path.isfile(path):
             raise IOError(ENOENT, "Vector model file not found", path)
 
-        # Load magnitude model. If this is a training run (no embeddings yet), block until the vectors are fully loaded
-        return Magnitude(path, case_insensitive=True, blocking=blocking)
+        # Load magnitude model. If this is a training run (uninitialized config), block until vectors are fully loaded
+        return Magnitude(path, case_insensitive=True, blocking=not self.initialized)
 
     def index(self, documents):
         ids, dimensions, stream = [], None, None
 
         # Shared objects with Pool
-        args = (self.path, self.scoring, self.blocking)
+        args = (self.config, self.scoring)
 
         # Convert all documents to embedding arrays, stream embeddings to disk to control memory usage
         with Pool(os.cpu_count(), initializer=create, initargs=args) as pool:
@@ -219,14 +226,7 @@ class TransformersVectors(Vectors):
     Builds sentence embeddings/vectors using the transformers library.
     """
 
-    def __init__(self, path):
-        # Sentence transformer model
-        self.model = self.load(path, True)
-
-        # Store parameters
-        self.path = path
-
-    def load(self, path, blocking):
+    def load(self, path):
         model = Transformer(path)
         pooling = Pooling(model.get_word_embedding_dimension())
 
@@ -257,11 +257,8 @@ class TransformersVectors(Vectors):
         return (ids, dimensions, stream)
 
     def transform(self, document):
-        # Convert to tokens if necessary
-        if isinstance(document[1], str):
-            document = (document[0], Tokenizer.tokenize(document[1]), document[2])
-
-        return self.model.encode([" ".join(document[1])], show_progress_bar=False)[0]
+        # Convert input document to text and build embeddings
+        return self.model.encode([self.text(document[1])], show_progress_bar=False)[0]
 
     def batch(self, documents, output):
         """
@@ -275,16 +272,12 @@ class TransformersVectors(Vectors):
             (ids, dimensions) list of ids and number of dimensions in embeddings
         """
 
-        # Convert to tokens if necessary
-        if isinstance(documents[0][1], str):
-            documents = [(d[0], Tokenizer.tokenize(d[1]), d[2]) for d in documents]
-
-        # Get list of document texts
+        # Extract ids and convert input documents to text
         ids = [uid for uid, _, _ in documents]
-        documents = [" ".join(tokens) for _, tokens, _ in documents]
+        documents = [self.text(text) for _, text, _ in documents]
         dimensions = None
 
-        # Convert to embeddings
+        # Build embeddings
         embeddings = self.model.encode(documents, show_progress_bar=False)
         for embedding in embeddings:
             if not dimensions:
@@ -294,3 +287,22 @@ class TransformersVectors(Vectors):
             pickle.dump(embedding, output)
 
         return (ids, dimensions)
+
+    def text(self, text):
+        """
+        Converts input into text that can be processed by transformer models. This method supports
+        optional string tokenization and joins tokenized input into text.
+
+        Args:
+            text: text|tokens
+        """
+
+        # Optional string tokenization
+        if self.tokenize and isinstance(text, str):
+            text = Tokenizer.tokenize(text)
+
+        # Transformer models require string input
+        if isinstance(text, list):
+            text = " ".join(text)
+
+        return text

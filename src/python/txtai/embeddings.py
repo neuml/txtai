@@ -56,14 +56,14 @@ class Embeddings(object):
             vector model
         """
 
-        return Vectors.create(self.config.get("method"), self.config["path"], True if not self.embeddings else False, self.scoring)
+        return Vectors.create(self.config, self.scoring)
 
     def score(self, documents):
         """
-        Builds a scoring index. Documents are tuples of (id, text|tokens, tags).
+        Builds a scoring index.
 
         Args:
-            documents: list of documents
+            documents: list of (id, text|tokens, tags)
         """
 
         if self.scoring:
@@ -72,10 +72,10 @@ class Embeddings(object):
 
     def index(self, documents):
         """
-        Builds an embeddings index. Documents are tuples of (id, text|tokens, tags).
+        Builds an embeddings index.
 
         Args:
-            documents: list of documents
+            documents: list of (id, text|tokens, tags)
         """
 
         # Transform documents to embeddings vectors

@@ -13,20 +13,21 @@ class TestScoring(unittest.TestCase):
     Scoring tests
     """
 
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
         """
         Initialize test data.
         """
 
-        self.data = ["US tops 5 million confirmed virus cases",
-                     "Canada's last fully intact ice shelf has suddenly collapsed, forming a Manhattan-sized iceberg",
-                     "Beijing mobilises invasion craft along coast as Taiwan tensions escalate",
-                     "The National Park Service warns against sacrificing slower friends in a bear attack",
-                     "Maine man wins $1M from $25 lottery ticket",
-                     "wins wins wins",
-                     "Make huge profits without work, earn up to $100,000 a day"]
+        cls.data = ["US tops 5 million confirmed virus cases",
+                    "Canada's last fully intact ice shelf has suddenly collapsed, forming a Manhattan-sized iceberg",
+                    "Beijing mobilises invasion craft along coast as Taiwan tensions escalate",
+                    "The National Park Service warns against sacrificing slower friends in a bear attack",
+                    "Maine man wins $1M from $25 lottery ticket",
+                    "wins wins wins",
+                    "Make huge profits without work, earn up to $100,000 a day"]
 
-        self.data = [(uid, x, None) for uid, x in enumerate(self.data)]
+        cls.data = [(uid, x, None) for uid, x in enumerate(cls.data)]
 
     def testBM25(self):
         """

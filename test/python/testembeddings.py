@@ -16,21 +16,22 @@ class TestEmbeddings(unittest.TestCase):
     Embeddings tests
     """
 
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
         """
         Initialize test data.
         """
 
-        self.data = ["US tops 5 million confirmed virus cases",
-                     "Canada's last fully intact ice shelf has suddenly collapsed, forming a Manhattan-sized iceberg",
-                     "Beijing mobilises invasion craft along coast as Taiwan tensions escalate",
-                     "The National Park Service warns against sacrificing slower friends in a bear attack",
-                     "Maine man wins $1M from $25 lottery ticket",
-                     "Make huge profits without work, earn up to $100,000 a day"]
+        cls.data = ["US tops 5 million confirmed virus cases",
+                    "Canada's last fully intact ice shelf has suddenly collapsed, forming a Manhattan-sized iceberg",
+                    "Beijing mobilises invasion craft along coast as Taiwan tensions escalate",
+                    "The National Park Service warns against sacrificing slower friends in a bear attack",
+                    "Maine man wins $1M from $25 lottery ticket",
+                    "Make huge profits without work, earn up to $100,000 a day"]
 
         # Create embeddings model, backed by sentence-transformers & transformers
-        self.embeddings = Embeddings({"method": "transformers",
-                                      "path": "sentence-transformers/bert-base-nli-mean-tokens"})
+        cls.embeddings = Embeddings({"method": "transformers",
+                                     "path": "sentence-transformers/bert-base-nli-mean-tokens"})
 
     def testIndex(self):
         """
