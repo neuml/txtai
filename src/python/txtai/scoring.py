@@ -60,10 +60,10 @@ class Scoring(object):
 
     def index(self, documents):
         """
-        Indexes a collection of documents using a scoring method. Documents are tuples of (id, text|tokens, tags).
+        Indexes a collection of documents using a scoring method.
 
         Args:
-            documents: input documents
+            documents: list of (id, text|tokens, tags)
         """
 
         # Calculate word frequency, total tokens and total documents
