@@ -20,4 +20,5 @@ test:
 
 # Run tests while calculating code coverage
 coverage:
-	coverage run --source=${SRC_DIR} -m unittest discover -v -s ${TEST_DIR}
+	coverage run -m unittest discover -v -s ${TEST_DIR}
+	coverage combine
