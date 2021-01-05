@@ -92,3 +92,10 @@ class TestExtractor(unittest.TestCase):
 
         answers = self.extractor(self.sections, [(question, question, question, True)])
         self.assertTrue(answers[0][1].startswith("Giants hit 3 HRs"))
+
+    def testSnippetEmpty(self):
+        """
+        Test snippet method can handle empty parameters
+        """
+
+        self.assertEqual(self.extractor.snippet(None, None), None)

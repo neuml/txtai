@@ -33,7 +33,10 @@ extractor:
 
 # Labels settings
 labels:
-    path: squeezebert/squeezebert-mnli
+    path: prajjwal1/bert-medium-mnli
+
+# Enable pipeline similarity backed by zero shot classifier
+similarity:
 """
 
 # Configuration that reads an existing similarity search index
@@ -79,33 +82,33 @@ class TestAPI(unittest.TestCase):
 
         cls.client = TestAPI.start(True)
 
+        cls.data = ["US tops 5 million confirmed virus cases",
+                    "Canada's last fully intact ice shelf has suddenly collapsed, forming a Manhattan-sized iceberg",
+                    "Beijing mobilises invasion craft along coast as Taiwan tensions escalate",
+                    "The National Park Service warns against sacrificing slower friends in a bear attack",
+                    "Maine man wins $1M from $25 lottery ticket",
+                    "Make huge profits without work, earn up to $100,000 a day"]
+
     def testEmbeddings(self):
         """
         Test embeddings via API
         """
 
-        data = ["US tops 5 million confirmed virus cases",
-                "Canada's last fully intact ice shelf has suddenly collapsed, forming a Manhattan-sized iceberg",
-                "Beijing mobilises invasion craft along coast as Taiwan tensions escalate",
-                "The National Park Service warns against sacrificing slower friends in a bear attack",
-                "Maine man wins $1M from $25 lottery ticket",
-                "Make huge profits without work, earn up to $100,000 a day"]
-
         # Test similarity
         uid = np.argmax(self.client.post("similarity", json={
             "search": "feel good story",
-            "data": data
+            "data": self.data
         }).json())
 
-        self.assertEqual(data[uid], data[4])
+        self.assertEqual(self.data[uid], self.data[4])
 
         # Test indexing
-        self.client.post("add", json=[{"id": x, "text": row} for x, row in enumerate(data)])
+        self.client.post("add", json=[{"id": x, "text": row} for x, row in enumerate(self.data)])
         self.client.get("index")
 
         # Test search
         uid = self.client.get("search?q=feel%20good%20story&n=1").json()[0][0]
-        self.assertEqual(data[uid], data[4])
+        self.assertEqual(self.data[uid], self.data[4])
 
         # Test embeddings
         self.assertIsNotNone(self.client.get("embeddings?t=testembed").json())
@@ -186,4 +189,12 @@ class TestAPI(unittest.TestCase):
 
         # Test search
         uid = self.client.get("search?q=feel%20good%20story&n=1").json()[0][0]
+        self.assertEqual(uid, 4)
+
+        # Test similarity
+        uid = np.argmax(self.client.post("similarity", json={
+            "search": "feel good story",
+            "data": self.data
+        }).json())
+
         self.assertEqual(uid, 4)

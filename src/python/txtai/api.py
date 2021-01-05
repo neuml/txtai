@@ -12,7 +12,7 @@ from fastapi import Body, FastAPI, Request
 
 from .embeddings import Embeddings
 from .extractor import Extractor
-from .pipeline import Labels
+from .pipeline import Labels, Similarity
 
 # API instance
 app = FastAPI()
@@ -34,7 +34,8 @@ class API(object):
         """
 
         # Initialize member variables
-        self.config, self.documents, self.embeddings, self.extractor, self.labels = config, None, None, None, None
+        self.config, self.documents = config, None
+        self.embeddings, self.extractor, self.labels, self.similar = None, None, None, None
 
         # Create/load embeddings index depending on writable flag
         if self.config.get("writable"):
@@ -46,16 +47,26 @@ class API(object):
         # Create extractor instance
         if "extractor" in self.config:
             # Extractor settings
-            extractor = self.config["extractor"]
+            extractor = self.config["extractor"] if self.config["extractor"] else {}
 
             self.extractor = Extractor(self.embeddings, extractor.get("path"), extractor.get("quantize"),
                                        extractor.get("gpu"))
 
         # Create labels instance
         if "labels" in self.config:
-            labels = self.config["labels"]
+            labels = self.config["labels"] if self.config["labels"] else {}
 
             self.labels = Labels(labels.get("path"), labels.get("quantize"), labels.get("gpu"))
+
+        # Creates similarity instance
+        if "similarity" in self.config:
+            similarity = self.config["similarity"] if self.config["similarity"] else {}
+
+            # Share model with labels if separate model not specified
+            if "path" not in similarity and self.labels:
+                self.similar = Similarity(model=self.labels)
+            else:
+                self.similar = Similarity(similarity.get("path"), similarity.get("quantize"), similarity.get("gpu"))
 
     def size(self, request):
         """
@@ -138,6 +149,9 @@ class API(object):
             list of similarity scores
         """
 
+        # Use similarity instance if available otherwise fall back to embeddings model
+        if self.similar:
+            return [float(x) for x in self.similar(search, data)]
         if self.embeddings:
             return [float(x) for x in self.embeddings.similarity(search, data)]
 
