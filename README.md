@@ -23,6 +23,10 @@
     </a>
 </p>
 
+<h3 align="center">
+    <p>AI-powered search engine</p>
+</h3>
+
 -------------------------------------------------------------------------------------------------------------------------------------------------------
 
 txtai builds an AI-powered index over sections of text. txtai supports building text indices to perform similarity searches and create extractive question-answering based systems. txtai also has functionality for zero-shot classification.
