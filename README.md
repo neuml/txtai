@@ -2,6 +2,10 @@
     <img src="https://raw.githubusercontent.com/neuml/txtai/master/logo.png"/>
 </p>
 
+<h3 align="center">
+    <p>AI-powered search engine</p>
+</h3>
+
 <p align="center">
     <a href="https://github.com/neuml/txtai/releases">
         <img src="https://img.shields.io/github/release/neuml/txtai.svg?style=flat&color=success" alt="Version"/>
@@ -22,10 +26,6 @@
         <img src="https://img.shields.io/coveralls/github/neuml/txtai" alt="Coverage Status">
     </a>
 </p>
-
-<h3 align="center">
-    <p>AI-powered search engine</p>
-</h3>
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------
 
