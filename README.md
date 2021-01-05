@@ -1,15 +1,29 @@
-# txtai: AI-powered search engine
-
-[![Version](https://img.shields.io/github/release/neuml/txtai.svg?style=flat&color=success)](https://github.com/neuml/txtai/releases)
-[![GitHub Release Date](https://img.shields.io/github/release-date/neuml/txtai.svg?style=flat&color=blue)](https://github.com/neuml/txtai/releases)
-[![GitHub issues](https://img.shields.io/github/issues/neuml/txtai.svg?style=flat&color=success)](https://github.com/neuml/txtai/issues)
-[![GitHub last commit](https://img.shields.io/github/last-commit/neuml/txtai.svg?style=flat&color=blue)](https://github.com/neuml/txtai)
-[![Build Status](https://github.com/neuml/txtai/workflows/build/badge.svg)](https://github.com/neuml/txtai/actions?query=workflow%3Abuild)
-[![Coverage Status](https://img.shields.io/coveralls/github/neuml/txtai)](https://coveralls.io/github/neuml/txtai?branch=master)
-
 <p align="center">
     <img src="https://raw.githubusercontent.com/neuml/txtai/master/logo.png"/>
 </p>
+
+<p align="center">
+    <a href="https://github.com/neuml/txtai/releases">
+        <img src="https://img.shields.io/github/release/neuml/txtai.svg?style=flat&color=success" alt="Version"/>
+    </a>
+    <a href="https://github.com/neuml/txtai/releases">
+        <img src="https://img.shields.io/github/release-date/neuml/txtai.svg?style=flat&color=blue" alt="GitHub Release Date"/>
+    </a>
+    <a href="https://github.com/neuml/txtai/issues">
+        <img src="https://img.shields.io/github/issues/neuml/txtai.svg?style=flat&color=success" alt="GitHub issues"/>
+    </a>
+    <a href="https://github.com/neuml/txtai">
+        <img src="https://img.shields.io/github/last-commit/neuml/txtai.svg?style=flat&color=blue" alt="GitHub last commit"/>
+    </a>
+    <a href="https://github.com/neuml/txtai/actions?query=workflow%3Abuild">
+        <img src="https://github.com/neuml/txtai/workflows/build/badge.svg" alt="Build Status"/>
+    </a>
+    <a href="https://coveralls.io/github/neuml/txtai?branch=master">
+        <img src="https://img.shields.io/coveralls/github/neuml/txtai" alt="Coverage Status">
+    </a>
+</p>
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------
 
 txtai builds an AI-powered index over sections of text. txtai supports building text indices to perform similarity searches and create extractive question-answering based systems. txtai also has functionality for zero-shot classification.
 
