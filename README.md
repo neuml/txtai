@@ -98,6 +98,7 @@ The examples directory has a series of examples and notebooks giving an overview
 | [Extractive QA with Elasticsearch](https://github.com/neuml/txtai/blob/master/examples/04_Extractive_QA_with_Elasticsearch.ipynb) | Extractive question-answering with Elasticsearch | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/04_Extractive_QA_with_Elasticsearch.ipynb) |
 | [Labeling with zero-shot classification](https://github.com/neuml/txtai/blob/master/examples/05_Labeling_with_zero_shot_classification.ipynb) | Labeling with zero-shot classification | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/05_Labeling_with_zero_shot_classification.ipynb) |
 | [API Gallery](https://github.com/neuml/txtai/blob/master/examples/06_API_Gallery.ipynb) | Using txtai in JavaScript, Java, Rust and Go | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/06_API_Gallery.ipynb) |
+| [Integrate with Hugging Face Datasets](https://github.com/neuml/txtai/blob/master/examples/07_Integrate_with_Hugging_Face_Datasets.ipynb) | Index and search Hugging Face Datasets | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/07_Integrate_with_Hugging_Face_Datasets) |
 
 ## Configuration
 
