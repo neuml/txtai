@@ -36,6 +36,19 @@ class TestTransformersVectors(unittest.TestCase):
         self.assertEqual(dimension, 768)
         self.assertIsNotNone(os.path.exists(stream))
 
+    def testText(self):
+        """
+        Test transformers text conversion
+        """
+
+        self.model.tokenize = True
+        self.assertEqual(self.model.text("Y 123 This is a test!"), "test")
+        self.assertEqual(self.model.text(["This", "is", "a", "test"]), "This is a test")
+
+        self.model.tokenize = False
+        self.assertEqual(self.model.text("Y 123 This is a test!"), "Y 123 This is a test!")
+        self.assertEqual(self.model.text(["This", "is", "a", "test"]), "This is a test")
+
     def testTransform(self):
         """
         Test transformers transform
@@ -55,16 +68,3 @@ class TestTransformersVectors(unittest.TestCase):
 
         self.assertFalse(np.array_equal(embeddings1[0], embeddings2[0]))
         self.assertTrue(np.array_equal(embeddings1[1], embeddings2[1]))
-
-    def testText(self):
-        """
-        Test transformers text conversion
-        """
-
-        self.model.tokenize = True
-        self.assertEqual(self.model.text("Y 123 This is a test!"), "test")
-        self.assertEqual(self.model.text(["This", "is", "a", "test"]), "This is a test")
-
-        self.model.tokenize = False
-        self.assertEqual(self.model.text("Y 123 This is a test!"), "Y 123 This is a test!")
-        self.assertEqual(self.model.text(["This", "is", "a", "test"]), "This is a test")

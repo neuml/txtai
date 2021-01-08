@@ -6,8 +6,6 @@ import os
 import tempfile
 import unittest
 
-import numpy as np
-
 from txtai.embeddings import Embeddings
 from txtai.vectors import WordVectors
 
@@ -38,7 +36,7 @@ class TestEmbeddings(unittest.TestCase):
         Test index
         """
 
-        # Create an index for the list of sections
+        # Create an index for the list of text
         self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
 
         # Search for best match
@@ -51,7 +49,7 @@ class TestEmbeddings(unittest.TestCase):
         Test save
         """
 
-        # Create an index for the list of sections
+        # Create an index for the list of text
         self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
 
         # Generate temp file path
@@ -71,7 +69,7 @@ class TestEmbeddings(unittest.TestCase):
         """
 
         # Get best matching id
-        uid = np.argmax(self.embeddings.similarity("feel good story", self.data))
+        uid = self.embeddings.similarity("feel good story", self.data)[0][0]
 
         self.assertEqual(self.data[uid], self.data[4])
 

@@ -19,7 +19,7 @@ class TestExtractor(unittest.TestCase):
         Create single extractor instance.
         """
 
-        sections = ["Giants hit 3 HRs to down Dodgers",
+        cls.data = ["Giants hit 3 HRs to down Dodgers",
                     "Giants 5 Dodgers 4 final",
                     "Dodgers drop Game 2 against the Giants, 5-4",
                     "Blue Jays 2 Red Sox 1 final",
@@ -31,9 +31,6 @@ class TestExtractor(unittest.TestCase):
                     "Final score: Flyers 4 Lightning 1",
                     "Flyers 4 Lightning 1 final",
                     "Flyers win 4-1"]
-
-        # Add unique id to each section to assist with qa extraction
-        cls.sections = [(uid, section) for uid, section in enumerate(sections)]
 
         # Create embeddings model, backed by sentence-transformers & transformers
         cls.embeddings = Embeddings({"method": "transformers", "path": "sentence-transformers/bert-base-nli-mean-tokens"})
@@ -48,7 +45,7 @@ class TestExtractor(unittest.TestCase):
 
         questions = ["What team won the game?", "What was score?"]
 
-        execute = lambda query: self.extractor(self.sections, [(question, query, question, False) for question in questions])
+        execute = lambda query: self.extractor([(question, query, question, False) for question in questions], self.data)
 
         answers = execute("Red Sox - Blue Jays")
         self.assertEqual("Blue Jays", answers[0][1])
@@ -57,7 +54,7 @@ class TestExtractor(unittest.TestCase):
         # Ad-hoc questions
         question = "What hockey team won?"
 
-        answers = self.extractor(self.sections, [(question, question, question, False)])
+        answers = self.extractor([(question, question, question, False)], self.data)
         self.assertEqual("Flyers", answers[0][1])
 
     def testNoAnswer(self):
@@ -67,7 +64,7 @@ class TestExtractor(unittest.TestCase):
 
         question = ""
 
-        answers = self.extractor(self.sections, [(question, question, question, False)])
+        answers = self.extractor([(question, question, question, False)], self.data)
         self.assertIsNone(answers[0][1])
 
     @unittest.skipIf(platform.system() == "Darwin", "Quantized models not supported on macOS")
@@ -80,7 +77,7 @@ class TestExtractor(unittest.TestCase):
 
         question = "How many home runs?"
 
-        answers = extractor(self.sections, [(question, question, question, True)])
+        answers = extractor([(question, question, question, True)], self.data)
         self.assertTrue(answers[0][1].startswith("Giants hit 3 HRs"))
 
     def testSnippet(self):
@@ -90,7 +87,7 @@ class TestExtractor(unittest.TestCase):
 
         question = "How many home runs?"
 
-        answers = self.extractor(self.sections, [(question, question, question, True)])
+        answers = self.extractor([(question, question, question, True)], self.data)
         self.assertTrue(answers[0][1].startswith("Giants hit 3 HRs"))
 
     def testSnippetEmpty(self):

@@ -81,13 +81,16 @@ class ANN(object):
             embeddings: embeddings array
         """
 
-    def search(self, query, limit):
+    def search(self, queries, limit):
         """
         Searches ANN model for query. Returns topn results.
 
         Args:
-            query: query vector
+            queries: queries array
             limit: maximum results
+
+        Returns:
+            query results
         """
 
     def save(self, path):
@@ -119,12 +122,17 @@ class Annoy(ANN):
         # Build index
         self.model.build(10)
 
-    def search(self, query, limit):
-        # Run the query
-        ids, scores = self.model.get_nns_by_vector(query, n=limit, include_distances=True)
+    def search(self, queries, limit):
+        # Annoy doesn't have a built in batch query method
+        results = []
+        for query in queries:
+            # Run the query
+            ids, scores = self.model.get_nns_by_vector(query, n=limit, include_distances=True)
 
-        # Map results to [(id, score)]
-        return list(zip(ids, scores))
+            # Map results to [(id, score)]
+            results.append(list(zip(ids, scores)))
+
+        return results
 
     def save(self, path):
         # Write index
@@ -152,13 +160,17 @@ class Faiss(ANN):
         self.model.train(embeddings)
         self.model.add_with_ids(embeddings, np.array(range(embeddings.shape[0])))
 
-    def search(self, query, limit):
+    def search(self, queries, limit):
         # Run the query
         self.model.nprobe = 6
-        scores, ids = self.model.search(query.reshape(1, -1), limit)
+        scores, ids = self.model.search(queries, limit)
 
         # Map results to [(id, score)]
-        return list(zip(ids[0].tolist(), (scores[0]).tolist()))
+        results = []
+        for x, score in enumerate(scores):
+            results.append(list(zip(ids[x].tolist(), score.tolist())))
+
+        return results
 
     def save(self, path):
         # Write index
@@ -185,15 +197,19 @@ class HNSW(ANN):
         # Add items
         self.model.add_items(embeddings, np.array(range(embeddings.shape[0])))
 
-    def search(self, query, limit):
+    def search(self, queries, limit):
         # Run the query
-        ids, distances = self.model.knn_query(query.reshape(1, -1), k=limit)
-
-        # Convert distances to similarity scores
-        scores = [1 - d for d in distances[0]]
+        ids, distances = self.model.knn_query(queries, k=limit)
 
         # Map results to [(id, score)]
-        return list(zip(ids[0], scores))
+        results = []
+        for x, distance in enumerate(distances):
+            # Convert distances to similarity scores
+            scores = [1 - d for d in distance]
+
+            results.append(list(zip(ids[x], scores)))
+
+        return results
 
     def save(self, path):
         # Write index

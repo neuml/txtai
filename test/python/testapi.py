@@ -8,8 +8,6 @@ import unittest
 
 from unittest.mock import patch
 
-import numpy as np
-
 from fastapi.testclient import TestClient
 
 from txtai.api import API, app, start
@@ -89,29 +87,26 @@ class TestAPI(unittest.TestCase):
                     "Maine man wins $1M from $25 lottery ticket",
                     "Make huge profits without work, earn up to $100,000 a day"]
 
+        # Index data
+        cls.client.post("add", json=[{"id": x, "text": row} for x, row in enumerate(cls.data)])
+        cls.client.get("index")
+
     def testEmbeddings(self):
         """
-        Test embeddings via API
+        Test embeddings transform via API
         """
 
-        # Test similarity
-        uid = np.argmax(self.client.post("similarity", json={
-            "search": "feel good story",
-            "data": self.data
-        }).json())
+        self.assertEqual(len(self.client.get("embeddings?text=testembed").json()), 768)
 
-        self.assertEqual(self.data[uid], self.data[4])
+    def testEmbeddingsBatch(self):
+        """
+        Test batch embeddings transform via API
+        """
 
-        # Test indexing
-        self.client.post("add", json=[{"id": x, "text": row} for x, row in enumerate(self.data)])
-        self.client.get("index")
+        embeddings = self.client.post("batchembeddings", json=self.data).json()
 
-        # Test search
-        uid = self.client.get("search?q=feel%20good%20story&n=1").json()[0][0]
-        self.assertEqual(self.data[uid], self.data[4])
-
-        # Test embeddings
-        self.assertIsNotNone(self.client.get("embeddings?t=testembed").json())
+        self.assertEqual(len(embeddings), len(self.data))
+        self.assertEqual(len(embeddings[0]), 768)
 
     def testEmpty(self):
         """
@@ -121,8 +116,10 @@ class TestAPI(unittest.TestCase):
         api = API({})
 
         self.assertIsNone(api.search("test", None))
+        self.assertIsNone(api.batchsearch(["test"], None))
         self.assertIsNone(api.similarity("test", ["test"]))
-        self.assertIsNone(api.transform("test"))
+        self.assertIsNone(api.batchsimilarity(["test"], ["test"]))
+        self.assertIsNone(api.transform(["test"]))
         self.assertIsNone(api.extract(["test"], ["test"]))
         self.assertIsNone(api.label("test", ["test"]))
 
@@ -131,27 +128,24 @@ class TestAPI(unittest.TestCase):
         Test qa extraction via API
         """
 
-        sections = ["Giants hit 3 HRs to down Dodgers",
-                    "Giants 5 Dodgers 4 final",
-                    "Dodgers drop Game 2 against the Giants, 5-4",
-                    "Blue Jays 2 Red Sox 1 final",
-                    "Red Sox lost to the Blue Jays, 2-1",
-                    "Blue Jays at Red Sox is over. Score: 2-1",
-                    "Phillies win over the Braves, 5-0",
-                    "Phillies 5 Braves 0 final",
-                    "Final: Braves lose to the Phillies in the series opener, 5-0",
-                    "Final score: Flyers 4 Lightning 1",
-                    "Flyers 4 Lightning 1 final",
-                    "Flyers win 4-1"]
-
-        # Add unique id to each section to assist with qa extraction
-        sections = [{"id": uid, "text": section} for uid, section in enumerate(sections)]
+        data = ["Giants hit 3 HRs to down Dodgers",
+                "Giants 5 Dodgers 4 final",
+                "Dodgers drop Game 2 against the Giants, 5-4",
+                "Blue Jays 2 Red Sox 1 final",
+                "Red Sox lost to the Blue Jays, 2-1",
+                "Blue Jays at Red Sox is over. Score: 2-1",
+                "Phillies win over the Braves, 5-0",
+                "Phillies 5 Braves 0 final",
+                "Final: Braves lose to the Phillies in the series opener, 5-0",
+                "Final score: Flyers 4 Lightning 1",
+                "Flyers 4 Lightning 1 final",
+                "Flyers win 4-1"]
 
         questions = ["What team won the game?", "What was score?"]
 
         execute = lambda query: self.client.post("extract", json={
-            "documents": sections,
-            "queue": [{"name": question, "query": query, "question": question, "snippet": False} for question in questions]
+            "queue": [{"name": question, "query": query, "question": question, "snippet": False} for question in questions],
+            "texts": data
         }).json()
 
         answers = execute("Red Sox - Blue Jays")
@@ -162,14 +156,14 @@ class TestAPI(unittest.TestCase):
         question = "What hockey team won?"
 
         answers = self.client.post("extract", json={
-            "documents": sections,
-            "queue": [{"name": question, "query": question, "question": question, "snippet": False}]
+            "queue": [{"name": question, "query": question, "question": question, "snippet": False}],
+            "texts": data
         }).json()
         self.assertEqual("Flyers", answers[0][1])
 
-    def testLabels(self):
+    def testLabel(self):
         """
-        Test labels via API
+        Test label via API
         """
 
         labels = self.client.post("label", json={
@@ -177,9 +171,68 @@ class TestAPI(unittest.TestCase):
             "labels": ["positive", "negative"]
         }).json()
 
-        self.assertEqual(labels[0][0], "positive")
+        self.assertEqual(labels[0][0], 0)
 
-    def testReadOnly(self):
+    def testLabelBatch(self):
+        """
+        Test batch label via API
+        """
+
+        labels = self.client.post("batchlabel", json={
+            "texts": ["this is the best sentence ever", "This is terrible"],
+            "labels": ["positive", "negative"]
+        }).json()
+
+        results = [l[0][0] for l in labels]
+        self.assertEqual(results, [0, 1])
+
+    def testSearch(self):
+        """
+        Test search via API
+        """
+
+        uid = self.client.get("search?query=feel%20good%20story&limit=1").json()[0][0]
+        self.assertEqual(self.data[uid], self.data[4])
+
+    def testSearchBatch(self):
+        """
+        Test batch search via API
+        """
+
+        results = self.client.post("batchsearch", json={
+            "queries": ["feel good story", "climate change"],
+            "limit": 1
+        }).json()
+
+        uids = [result[0][0] for result in results]
+        self.assertEqual(uids, [4, 1])
+
+    def testSimilarity(self):
+        """
+        Test similarity via API
+        """
+
+        uid = self.client.post("similarity", json={
+            "query": "feel good story",
+            "texts": self.data
+        }).json()[0][0]
+
+        self.assertEqual(self.data[uid], self.data[4])
+
+    def testSimilarityBatch(self):
+        """
+        Test batch similarity via API
+        """
+
+        results = self.client.post("batchsimilarity", json={
+            "queries": ["feel good story", "climate change"],
+            "texts": self.data
+        }).json()
+
+        uids = [result[0][0] for result in results]
+        self.assertEqual(uids, [4, 1])
+
+    def testViewOnly(self):
         """
         Test read-only API instance
         """
@@ -188,13 +241,13 @@ class TestAPI(unittest.TestCase):
         self.client = TestAPI.start(False)
 
         # Test search
-        uid = self.client.get("search?q=feel%20good%20story&n=1").json()[0][0]
+        uid = self.client.get("search?query=feel%20good%20story&limit=1").json()[0][0]
         self.assertEqual(uid, 4)
 
         # Test similarity
-        uid = np.argmax(self.client.post("similarity", json={
-            "search": "feel good story",
-            "data": self.data
-        }).json())
+        uid = self.client.post("similarity", json={
+            "query": "feel good story",
+            "texts": self.data
+        }).json()[0][0]
 
         self.assertEqual(uid, 4)

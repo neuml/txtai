@@ -2,6 +2,7 @@
 Pipeline module
 """
 
+import numpy as np
 import torch
 
 from transformers import pipeline
@@ -70,68 +71,88 @@ class Questions(Pipeline):
                 # Get answer and score
                 answer, score = result["answer"], result["score"]
 
-                # Require best score to be at least 0.05
+                # Require score to be at least 0.05
                 if score < 0.05:
                     answer = None
 
                 # Add answer
-                answers.append({"answer": answer, "score": score})
+                answers.append(answer)
             else:
-                answers.append({"answer": None, "score": 0.0})
+                answers.append(None)
 
         return answers
 
 class Labels(Pipeline):
     """
-    Applies labels to text sections using a zero shot classifier.
+    Applies a zero shot classifier to text using a list of labels.
     """
 
     def __init__(self, path=None, quantize=False, gpu=True, model=None):
         super().__init__("zero-shot-classification", path, quantize, gpu, model)
 
-    def __call__(self, section, labels):
+    def __call__(self, text, labels, multiclass=False):
         """
-        Applies a zero shot classifier to a text section using a list of labels.
+        Applies a zero shot classifier to text using a list of labels. Returns a list of
+        (id, score) sorted by highest score, where id is the index in labels.
+
+        This method supports text as a string or a list. If the input is a string, the return
+        type is a 1D list of (id, score). If text is a list, a 2D list of (id, score) is
+        returned with a row per string.
 
         Args:
-            section: text|list
+            text: text|list
             labels: list of labels
 
         Returns:
-            list of (label, score) for each text section
+            list of (id, score)
         """
 
-        # Run pipeline
-        results = self.pipeline(section, labels)
+        # Run ZSL pipeline
+        results = self.pipeline(text, labels, multi_class=multiclass)
 
-        # Pipeline returns a dict for single element inputs
+        # Convert results to a list if necessary
         if not isinstance(results, list):
-            return list(zip(results["labels"], results["scores"]))
+            results = [results]
 
-        return [list(zip(result["labels"], result["scores"])) for result in results]
+        # Build list of (id, score)
+        scores = []
+        for result in results:
+            scores.append([(labels.index(label), result["scores"][x]) for x, label in enumerate(result["labels"])])
+
+        return scores[0] if isinstance(text, str) else scores
 
 class Similarity(Labels):
     """
-    Computes similarity between a query and a set of documents using a zero shot classifier.
+    Computes similarity between query and list of strings using a zero shot classifier.
     """
 
-    def __call__(self, query, documents):
+    def __call__(self, query, texts, multiclass=True):
         """
-        Computes the similarity between a query and a set of documents
+        Computes the similarity between query and list of strings. Returns a list of
+        (id, score) sorted by highest score, where id is the index in texts.
+
+        This method supports query as a string or a list. If the input is a string,
+        the return type is a 1D list of (id, score). If text is a list, a 2D list
+        of (id, score) is returned with a row per string.
 
         Args:
-            query: query text
-            documents: document text
+            query: query text|list
+            texts: list of texts
 
         Returns:
-            [computed similarity (0 - 1 with 1 being most similar)]
+            list of (id, score)
         """
 
-        # Call Labels pipeline for documents using input query as the candidate label
-        results = super().__call__(documents, [query])
+        # Call Labels pipeline for texts using input query as the candidate label
+        scores = super().__call__(texts, [query] if isinstance(query, str) else query, multiclass)
 
-        # Convert results to a list when documents only has a single input
-        if not isinstance(results[0], list):
-            results = [results]
+        # Sort on query index id
+        scores = [[score for _, score in sorted(row)] for row in scores]
 
-        return [r[0][1] for r in results]
+        # Transpose axes to get a list of text scores for each query
+        scores = np.array(scores).T.tolist()
+
+        # Build list of (id, score) per query sorted by highest score
+        scores = [sorted(enumerate(row), key=lambda x: x[1], reverse=True) for row in scores]
+
+        return scores[0] if isinstance(query, str) else scores

@@ -50,7 +50,7 @@ class Embeddings(object):
 
     def loadVectors(self):
         """
-        Loads a word vector model set in config.
+        Loads a vector model set in config.
 
         Returns:
             vector model
@@ -190,46 +190,84 @@ class Embeddings(object):
 
     def search(self, query, limit=3):
         """
-        Finds documents in the vector model most similar to the input document.
+        Finds documents in the embeddings model most similar to the input query. Returns
+        a list of (id, score) sorted by highest score, where id is the document id in
+        the embeddings model.
 
         Args:
             query: query text|tokens
             limit: maximum results
 
         Returns:
-            list of topn matched (id, score)
+            list of (id, score)
         """
 
-        # Convert tokens to embedding vector
-        embedding = self.transform((None, query, None))
+        return self.batchsearch([query], limit)[0]
+
+    def batchsearch(self, queries, limit=3):
+        """
+        Finds documents in the embeddings model most similar to the input queries. Returns
+        a list of (id, score) sorted by highest score per query, where id is the document id
+        in the embeddings model.
+
+        Args:
+            queries: queries text|tokens
+            limit: maximum results
+
+        Returns:
+            list of (id, score) per query
+        """
+
+        # Convert queries to embedding vectors
+        embeddings = np.array([self.transform((None, query, None)) for query in queries])
 
         # Search embeddings index
-        results = self.embeddings.search(embedding, limit)
+        results = self.embeddings.search(embeddings, limit)
 
         # Map ids if id mapping available
         lookup = self.config.get("ids")
         if lookup:
-            return [(lookup[i], score) for i, score in results]
+            results = [[(lookup[i], score) for i, score in r] for r in results]
 
         return results
 
-    def similarity(self, query, documents):
+    def similarity(self, query, texts):
         """
-        Computes the similarity between a query and a set of documents
+        Computes the similarity between query and list of strings. Returns a list of
+        (id, score) sorted by highest score, where id is the index in texts.
 
         Args:
             query: query text|tokens
-            documents: document text|tokens
+            texts: list of text|tokens
 
         Returns:
-            [computed similarity (0 - 1 with 1 being most similar)]
+            list of (id, score)
         """
 
-        query = self.transform((None, query, None)).reshape(1, -1)
-        documents = np.array([self.transform((None, text, None)) for text in documents])
+        return self.batchsimilarity([query], texts)[0]
+
+    def batchsimilarity(self, queries, texts):
+        """
+        Computes the similarity between list of queries and list of strings. Returns a list
+        of (id, score) sorted by highest score per query, where id is the index in texts.
+
+        Args:
+            queries: queries text|tokens
+            texts: list of text|tokens
+
+        Returns:
+            list of (id, score) per query
+        """
+
+        # Convert queries to embedding vectors
+        queries = np.array([self.transform((None, query, None)) for query in queries])
+        texts = np.array([self.transform((None, text, None)) for text in texts])
 
         # Dot product on normalized vectors is equal to cosine similarity
-        return np.dot(query, documents.T)[0]
+        scores = np.dot(queries, texts.T).tolist()
+
+        # Add index id and sort desc based on score
+        return [sorted(enumerate(score), key=lambda x: x[1], reverse=True) for score in scores]
 
     def load(self, path):
         """
@@ -240,7 +278,7 @@ class Embeddings(object):
             embeddings - sentence embeddings index
             lsa - LSA model, used to remove the principal component(s)
             scoring - scoring model used to weigh word vectors
-            vectors - word vectors model
+            vectors - vectors model
 
         Args:
             path: input directory path
@@ -250,7 +288,7 @@ class Embeddings(object):
         with open("%s/config" % path, "rb") as handle:
             self.config = pickle.load(handle)
 
-            # Build full path to embedded vectors file
+            # Build full path to embedding vectors file
             if self.config.get("storevectors"):
                 self.config["path"] = os.path.join(path, self.config["path"])
 

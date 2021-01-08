@@ -87,7 +87,7 @@ class TestANN(unittest.TestCase):
         self.normalize(query)
 
         # Ensure top result has similarity > 0
-        return model.search(query, 1)[0][1]
+        return model.search(np.array([query]), 1)[0][0][1]
 
     def normalize(self, embeddings):
         """

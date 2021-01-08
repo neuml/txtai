@@ -32,22 +32,22 @@ class Extractor(object):
         # Tokenizer class use default method if not set
         self.tokenizer = tokenizer if tokenizer else Tokenizer
 
-    def __call__(self, sections, queue):
+    def __call__(self, queue, texts):
         """
-        Extracts answers to input questions. This method runs queries against a list of text sections, finds the top n best matches
+        Extracts answers to input questions. This method runs queries against a list of text, finds the top n best matches
         and uses that as the question context. A question-answering model is then run against the context for the input question,
         with the answer returned.
 
         Args:
-            sections: list of (id, text) sections
             queue: input queue (name, query, question, snippet)
+            texts: list of strings
 
         Returns:
-            extracted answers
+            list of (name, answer)
         """
 
         # Execute embeddings query
-        results = self.query(sections, [query for _, query, _, _ in queue])
+        results = self.query([query for _, query, _, _ in queue], texts)
 
         # Build question-context pairs
         names, questions, contexts, snippets = [], [], [], []
@@ -64,22 +64,28 @@ class Extractor(object):
         # Run qa pipeline and return answers
         return self.answers(names, questions, contexts, snippets)
 
-    def query(self, sections, queries):
+    def query(self, queries, texts):
         """
         Executes the extractor embeddings query. Returns results sorted by best match.
 
         Args:
-            sections: list of (id, text) sections
             queries: list of embedding queries to run
+            texts: list of strings
+
+        Returns:
+            list of (id, text, score)
         """
 
         # Tokenize text
         segments, tokenlist = [], []
-        for sid, text in sections:
+        for text in texts:
             tokens = self.tokenizer.tokenize(text)
             if tokens:
-                segments.append((sid, text))
+                segments.append(text)
                 tokenlist.append(tokens)
+
+        # Add index id to segments to preserver ordering after filters
+        segments = list(enumerate(segments))
 
         # Build question-context pairs
         results = []
@@ -94,8 +100,9 @@ class Extractor(object):
             # List of matches
             matches = []
 
+            # Get list of (id, score) - sorted by highest score
             scores = self.embeddings.similarity(query, tokenlist)
-            for x, score in enumerate(scores):
+            for x, score in scores:
                 # Get segment text
                 text = segments[x][1]
 
@@ -106,8 +113,8 @@ class Extractor(object):
                    (not mnot or all([token.lower() not in text.lower() for token in mnot])):
                     matches.append(segments[x] + (score,))
 
-            # Sort results by score
-            results.append(sorted(matches, key=lambda x: x[2], reverse=True))
+            # Add query matches sorted by highest score
+            results.append(matches)
 
         return results
 
@@ -120,6 +127,9 @@ class Extractor(object):
             questions: questions
             contexts: question context
             snippets: flags to enable answer snippets per answer
+
+        Returns:
+            list of (name, answer)
         """
 
         results = []
@@ -129,14 +139,11 @@ class Extractor(object):
 
         # Extract and format answer
         for x, answer in enumerate(answers):
-            # Extract answer
-            value = answer["answer"]
-
             # Resolve snippet if necessary
             if answer and snippets[x]:
-                value = self.snippet(contexts[x], value)
+                answer = self.snippet(contexts[x], answer)
 
-            results.append((names[x], value))
+            results.append((names[x], answer))
 
         return results
 

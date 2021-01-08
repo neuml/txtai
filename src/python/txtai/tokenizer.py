@@ -1,5 +1,5 @@
 """
-Text tokenization methods
+Tokenizer module
 """
 
 import re
@@ -7,7 +7,7 @@ import string
 
 class Tokenizer(object):
     """
-    Text tokenization methods
+    Text tokenization methods.
     """
 
     # English Stop Word List (Standard stop words used by Apache Lucene)
