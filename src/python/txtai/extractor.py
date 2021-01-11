@@ -12,7 +12,7 @@ class Extractor(object):
     Class that uses an extractive question-answering model to extract content from a given text context.
     """
 
-    def __init__(self, embeddings, path, quantize=False, tokenizer=None):
+    def __init__(self, embeddings, path, quantize=False, gpu=False, model=None, tokenizer=None):
         """
         Builds a new extractor.
 
@@ -20,6 +20,8 @@ class Extractor(object):
             embeddings: embeddings model
             path: path to qa model
             quantize: True if model should be quantized before inference, False otherwise.
+            gpu: if gpu inference should be used (only works if GPUs are available)
+            model: optional existing pipeline model to wrap
             tokenizer: Tokenizer class
         """
 
@@ -27,7 +29,7 @@ class Extractor(object):
         self.embeddings = embeddings
 
         # QA Pipeline
-        self.pipeline = Questions(path, quantize)
+        self.pipeline = Questions(path, quantize, gpu, model)
 
         # Tokenizer class use default method if not set
         self.tokenizer = tokenizer if tokenizer else Tokenizer
