@@ -48,6 +48,7 @@ txtai is built on the following stack:
 - Python 3.6+
 
 ## Installation
+
 The easiest way to install is via pip and PyPI
 
     pip install txtai
@@ -59,6 +60,7 @@ You can also install txtai directly from GitHub. Using a Python Virtual Environm
 Python 3.6+ is supported
 
 ### Troubleshooting
+
 This project has dependencies that require compiling native code. Windows and macOS systems require the following additional steps. Most Linux environments will install without any additional steps.
 
 #### Windows
@@ -103,9 +105,11 @@ The examples directory has a series of examples and notebooks giving an overview
 
 ## Configuration
 
-The following section goes over available settings for Embeddings and Extractor instances.
+The following sections cover available settings for each txtai component. See the example notebooks for detailed examples on how to use each txtai component.
 
 ### Embeddings
+
+An Embeddings instance is the engine that provides similarity search. Embeddings can be used to run ad-hoc similarity comparisions or build/search large indices.
 
 Embeddings parameters are set through the constructor. Examples below.
 
@@ -165,6 +169,38 @@ backend: annoy|faiss|hnsw
 
 Approximate Nearest Neighbor (ANN) index backend for storing generated sentence embeddings. Defaults to Faiss for Linux/macOS and Annoy for Windows. Faiss currently is not supported on Windows.
 
+Backend-specific settings are set with a corresponding configuration object having the same name as the backend (i.e. annoy, faiss, or hnsw). None of these are required and are set to defaults if omitted.
+
+#### annoy
+```yaml
+annoy:
+  ntrees: number of trees (int) - defaults to 10
+  searchk: search_k search setting (int) - defaults to -1
+```
+
+See [Annoy documentation](https://github.com/spotify/annoy#full-python-api) for more information on these parameters.
+
+#### faiss
+```yaml
+faiss:
+  components: Comma separated list of components - defaults to None
+  nprobe: search probe setting (int) - defaults to 6
+```
+
+See Faiss documentation on the [index factory](https://github.com/facebookresearch/faiss/wiki/The-index-factory) and [search](https://github.com/facebookresearch/faiss/wiki/Faster-search) for more information on these parameters.
+
+#### hnsw
+```yaml
+hnsw:
+  efconstruction:  ef_construction param for init_index (int) - defaults to 200
+  m: M param for init_index (int) - defaults to 16
+  randomseed: random-seed param for init_index (init) - defaults to 100
+  efsearch: ef search param (int) - defaults to None and not set
+}
+```
+
+See [Hnswlib documentation](https://github.com/nmslib/hnswlib/blob/master/ALGO_PARAMS.md) for more information on these parameters.
+
 #### quantize
 ```yaml
 quantize: boolean
@@ -173,12 +209,46 @@ quantize: boolean
 Enables quanitization of generated sentence embeddings. If the index backend supports it, sentence embeddings will be stored with 8-bit precision vs 32-bit.
 Only Faiss currently supports quantization.
 
+### Pipelines
+
+txtai provides a light wrapper around a couple of the Hugging Face pipelines. All pipelines have the following common parameters.
+
+#### path
+```yaml
+path: string
+```
+
+Required path to a Hugging Face model
+
+#### quantize
+```yaml
+quantize: boolean
+```
+
+Enables dynamic quantization of the Hugging Face model. This is a runtime setting and doesn't save space. It is used to improve the inference time performance of models.
+
+#### gpu
+```yaml
+gpu: boolean
+```
+
+Enables GPU inference.
+
+#### model
+```yaml
+model: Hugging Face pipeline or txtai pipeline
+```
+
+Shares the underlying model of the passed in pipeline with this pipeline. This allows having variations of a pipeline without having to store multiple copies of the full model in memory.
+
 ### Extractor
+
+An Extractor pipeline is a combination of an embeddings query and an Extractive QA model. Filtering the context for a QA model helps maximize performance of the model.
 
 Extractor parameters are set as constructor arguments. Examples below.
 
 ```python
-Extractor(embeddings, path, quantize)
+Extractor(embeddings, path, quantize, gpu, model, tokenizer)
 ```
 
 #### embeddings
@@ -188,22 +258,16 @@ embeddings: Embeddings object instance
 
 Embeddings object instance. Used to query and find candidate text snippets to run the question-answer model against.
 
-#### path
+#### tokenizer
 ```yaml
-path: string
+tokenizer: Tokenizer function
 ```
 
-Required path to a Hugging Face SQuAD fine-tuned model. Used to answer questions.
-
-#### quantize
-```yaml
-quantize: boolean
-```
-
-Enables dynamic quantization of the Hugging Face model. This is a runtime setting and doesn't save space. It is used to improve the inference time performance of the QA model.
-
+Optional custom tokenizer function to parse input queries
 
 ### Labels
+
+A Labels pipeline uses a zero shot classification model to apply labels to input text. 
 
 Labels parameters are set as constructor arguments. Examples below.
 
@@ -212,18 +276,22 @@ Labels()
 Labels("roberta-large-mnli")
 ```
 
-#### path
-```yaml
-path: string
-```
+### Similarity
 
-Required path to a Hugging Face MNLI fine-tuned model. Used to answer questions.
+A Similarity pipeline is also a zero shot classifier model where the labels are the queries. The results are transposed to get a score per query/label vs scores per input text. 
+
+Similarity parameters are set as constructor arguments. Examples below.
+
+```python
+Similarity()
+Similarity("roberta-large-mnli")
+```
 
 ### API
 
 txtai has a full-featured API that can optionally be enabled for any txtai process. All functionality found in txtai can be accessed via the API. The following is an example configuration and startup script for the API.
 
-Note that this configuration file enables all functionality (embeddings, extractor and labels). It is suggested that separate processes are used for each instance of a txtai component.
+Note that this configuration file enables all functionality (embeddings, extractor, labels, similarity). It is suggested that separate processes are used for each instance of a txtai component.
 
 ```yaml
 # Index file path
@@ -243,6 +311,9 @@ extractor:
 
 # Labels settings
 labels:
+
+# Similarity settings
+similarity:
 ```
 
 Assuming this YAML content is stored in a file named index.yml, the following command starts the API process.
