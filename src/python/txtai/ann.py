@@ -98,6 +98,25 @@ class ANN(object):
         Saves an ANN model at path.
         """
 
+    def setting(self, name, default=None):
+        """
+        Looks up backend specific setting.
+
+        Args:
+            name: setting name
+            default: default value when setting not found
+
+        Returns:
+            setting value
+        """
+
+        # Get the backend-specific config object
+        backend = self.config.get(self.config["backend"])
+
+        # Get setting value, set default value if not found
+        setting = backend.get(name) if backend else None
+        return setting if setting else default
+
 class Annoy(ANN):
     """
     Builds an ANN model using the Annoy library.
@@ -120,14 +139,18 @@ class Annoy(ANN):
             self.model.add_item(x, embeddings[x])
 
         # Build index
-        self.model.build(10)
+        self.model.build(self.setting("ntrees", 10))
 
     def search(self, queries, limit):
+        # Lookup search k setting
+        searchk = self.setting("searchk", -1)
+
         # Annoy doesn't have a built in batch query method
         results = []
         for query in queries:
             # Run the query
-            ids, scores = self.model.get_nns_by_vector(query, n=limit, include_distances=True)
+            ids, scores = self.model.get_nns_by_vector(query, n=limit, search_k=searchk,
+                                                       include_distances=True)
 
             # Map results to [(id, score)]
             results.append(list(zip(ids, scores)))
@@ -148,8 +171,13 @@ class Faiss(ANN):
         self.model = faiss.read_index(path)
 
     def index(self, embeddings):
+        # Lookup components setting
+        components = self.setting("components")
+
         # Create embeddings index. Inner product is equal to cosine similarity on normalized vectors.
-        if self.config.get("quantize"):
+        if components:
+            params = components
+        elif self.config.get("quantize"):
             params = "IVF100,SQ8" if embeddings.shape[0] >= 5000 else "IDMap,SQ8"
         else:
             params = "IVF100,Flat" if embeddings.shape[0] >= 5000 else "IDMap,Flat"
@@ -162,7 +190,7 @@ class Faiss(ANN):
 
     def search(self, queries, limit):
         # Run the query
-        self.model.nprobe = 6
+        self.model.nprobe = self.setting("nprobe", 6)
         scores, ids = self.model.search(queries, limit)
 
         # Map results to [(id, score)]
@@ -190,14 +218,25 @@ class HNSW(ANN):
         # Inner product is equal to cosine similarity on normalized vectors
         self.config["metric"] = "ip"
 
+        # Lookup index settings
+        efconstruction = self.setting("efconstruction", 200)
+        m = self.setting("m", 16)
+        seed = self.setting("randomseed", 100)
+
         # Create index
         self.model = Index(dim=self.config["dimensions"], space=self.config["metric"])
-        self.model.init_index(max_elements=embeddings.shape[0])
+        self.model.init_index(max_elements=embeddings.shape[0], ef_construction=efconstruction,
+                              M=m, random_seed=seed)
 
         # Add items
         self.model.add_items(embeddings, np.array(range(embeddings.shape[0])))
 
     def search(self, queries, limit):
+        # Set ef query param
+        ef = self.setting("efsearch")
+        if ef:
+            self.model.set_ef(ef)
+
         # Run the query
         ids, distances = self.model.knn_query(queries, k=limit)
 
