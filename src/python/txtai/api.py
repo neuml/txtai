@@ -3,6 +3,8 @@ API module
 """
 
 import os
+import pickle
+import tempfile
 
 from typing import List
 
@@ -34,7 +36,7 @@ class API(object):
         """
 
         # Initialize member variables
-        self.config, self.documents = config, None
+        self.config, self.documents, self.batch = config, None, 0
         self.embeddings, self.extractor, self.labels, self.similar = None, None, None, None
 
         # Create/load embeddings index depending on writable flag
@@ -132,12 +134,28 @@ class API(object):
 
         # Only add batch if index is marked writable
         if self.embeddings and self.config.get("writable"):
-            # Create current batch if necessary
+            # Create documents file if not already open
             if not self.documents:
-                self.documents = []
+                self.documents = tempfile.NamedTemporaryFile(mode="wb", suffix=".docs", delete=False)
 
             # Add batch
-            self.documents.extend([(document["id"], document["text"], None) for document in documents])
+            pickle.dump([(document["id"], document["text"], None) for document in documents], self.documents)
+            self.batch += 1
+
+    def stream(self):
+        """
+        Generator that streams documents previously queued with add.
+        """
+
+        # Open stream file
+        with open(self.documents.name, "rb") as queue:
+            # Read each batch
+            for _ in range(self.batch):
+                documents = pickle.load(queue)
+
+                # Yield each document
+                for document in documents:
+                    yield document
 
     def index(self):
         """
@@ -148,18 +166,25 @@ class API(object):
         """
 
         if self.embeddings and self.config.get("writable") and self.documents:
+            # Close streaming file
+            self.documents.close()
+
             # Build scoring index if scoring method provided
             if self.config.get("scoring"):
-                embeddings.score(self.documents)
+                embeddings.score(self.stream())
 
             # Build embeddings index
-            self.embeddings.index(self.documents)
+            self.embeddings.index(self.stream())
 
             # Save index
             self.embeddings.save(self.config["path"])
 
-            # Clear buffer
+            # Cleanup stream file
+            os.remove(self.documents.name)
+
+            # Reset document parameters
             self.documents = None
+            self.batch = 0
 
     def similarity(self, query, texts):
         """
