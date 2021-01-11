@@ -62,7 +62,14 @@ class TestScoring(unittest.TestCase):
 
     def method(self, method, data=None):
         """
-        Runs scoring method
+        Runs scoring method.
+
+        Args:
+            method: scoring method
+            data: data to index with scoring method
+
+        Returns:
+            Scoring model
         """
 
         # Derive input data
@@ -83,7 +90,13 @@ class TestScoring(unittest.TestCase):
 
     def save(self, model):
         """
-        Test scoring index save/load
+        Test scoring index save/load.
+
+        Args:
+            model: Scoring model
+
+        Returns:
+            Scoring model
         """
 
         # Generate temp file path
@@ -97,7 +110,10 @@ class TestScoring(unittest.TestCase):
 
     def weights(self, method):
         """
-        Test standard and tag weighted scores
+        Test standard and tag weighted scores.
+
+        Args:
+            method: scoring method
         """
 
         document = (1, ["bear", "wins"], None)
