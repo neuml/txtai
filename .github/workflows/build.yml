@@ -29,7 +29,7 @@ jobs:
           make coverage
 
       - name: Test Coverage
-        run: coveralls
+        run: coveralls --service-name=github
         if: matrix.os == 'ubuntu-latest'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
