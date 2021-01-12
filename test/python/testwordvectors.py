@@ -16,7 +16,7 @@ class TestWordVectors(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """
-        Test a WordVectors build
+        Test a WordVectors build.
         """
 
         # Word vectors path

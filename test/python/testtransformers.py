@@ -17,7 +17,7 @@ class TestTransformersVectors(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """
-        Create single TransformersVectors instance
+        Create single TransformersVectors instance.
         """
 
         cls.model = Vectors.create({"method": "transformers", "path": "sentence-transformers/bert-base-nli-mean-tokens"}, None)

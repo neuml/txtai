@@ -14,7 +14,7 @@ class TestLabels(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """
-        Create single labels instance
+        Create single labels instance.
         """
 
         cls.data = ["US tops 5 million confirmed virus cases",

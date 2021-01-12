@@ -75,7 +75,7 @@ class TestAPI(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """
-        Create API client on creation of class
+        Create API client on creation of class.
         """
 
         cls.client = TestAPI.start(True)
