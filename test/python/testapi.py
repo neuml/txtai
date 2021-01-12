@@ -91,23 +91,6 @@ class TestAPI(unittest.TestCase):
         cls.client.post("add", json=[{"id": x, "text": row} for x, row in enumerate(cls.data)])
         cls.client.get("index")
 
-    def testEmbeddings(self):
-        """
-        Test embeddings transform via API
-        """
-
-        self.assertEqual(len(self.client.get("embeddings?text=testembed").json()), 768)
-
-    def testEmbeddingsBatch(self):
-        """
-        Test batch embeddings transform via API
-        """
-
-        embeddings = self.client.post("batchembeddings", json=self.data).json()
-
-        self.assertEqual(len(embeddings), len(self.data))
-        self.assertEqual(len(embeddings[0]), 768)
-
     def testEmpty(self):
         """
         Test empty API configuration
@@ -119,7 +102,8 @@ class TestAPI(unittest.TestCase):
         self.assertIsNone(api.batchsearch(["test"], None))
         self.assertIsNone(api.similarity("test", ["test"]))
         self.assertIsNone(api.batchsimilarity(["test"], ["test"]))
-        self.assertIsNone(api.transform(["test"]))
+        self.assertIsNone(api.transform("test"))
+        self.assertIsNone(api.batchtransform(["test"]))
         self.assertIsNone(api.extract(["test"], ["test"]))
         self.assertIsNone(api.label("test", ["test"]))
 
@@ -149,8 +133,8 @@ class TestAPI(unittest.TestCase):
         }).json()
 
         answers = execute("Red Sox - Blue Jays")
-        self.assertEqual("Blue Jays", answers[0][1])
-        self.assertEqual("2-1", answers[1][1])
+        self.assertEqual("Blue Jays", answers[0]["answer"])
+        self.assertEqual("2-1", answers[1]["answer"])
 
         # Ad-hoc questions
         question = "What hockey team won?"
@@ -159,7 +143,7 @@ class TestAPI(unittest.TestCase):
             "queue": [{"name": question, "query": question, "question": question, "snippet": False}],
             "texts": data
         }).json()
-        self.assertEqual("Flyers", answers[0][1])
+        self.assertEqual("Flyers", answers[0]["answer"])
 
     def testLabel(self):
         """
@@ -171,7 +155,7 @@ class TestAPI(unittest.TestCase):
             "labels": ["positive", "negative"]
         }).json()
 
-        self.assertEqual(labels[0][0], 0)
+        self.assertEqual(labels[0]["id"], 0)
 
     def testLabelBatch(self):
         """
@@ -183,7 +167,7 @@ class TestAPI(unittest.TestCase):
             "labels": ["positive", "negative"]
         }).json()
 
-        results = [l[0][0] for l in labels]
+        results = [l[0]["id"] for l in labels]
         self.assertEqual(results, [0, 1])
 
     def testSearch(self):
@@ -191,7 +175,7 @@ class TestAPI(unittest.TestCase):
         Test search via API
         """
 
-        uid = self.client.get("search?query=feel%20good%20story&limit=1").json()[0][0]
+        uid = self.client.get("search?query=feel%20good%20story&limit=1").json()[0]["id"]
         self.assertEqual(self.data[uid], self.data[4])
 
     def testSearchBatch(self):
@@ -204,7 +188,7 @@ class TestAPI(unittest.TestCase):
             "limit": 1
         }).json()
 
-        uids = [result[0][0] for result in results]
+        uids = [result[0]["id"] for result in results]
         self.assertEqual(uids, [4, 1])
 
     def testSimilarity(self):
@@ -215,7 +199,7 @@ class TestAPI(unittest.TestCase):
         uid = self.client.post("similarity", json={
             "query": "feel good story",
             "texts": self.data
-        }).json()[0][0]
+        }).json()[0]["id"]
 
         self.assertEqual(self.data[uid], self.data[4])
 
@@ -229,8 +213,25 @@ class TestAPI(unittest.TestCase):
             "texts": self.data
         }).json()
 
-        uids = [result[0][0] for result in results]
+        uids = [result[0]["id"] for result in results]
         self.assertEqual(uids, [4, 1])
+
+    def testTransform(self):
+        """
+        Test embeddings transform via API
+        """
+
+        self.assertEqual(len(self.client.get("transform?text=testembed").json()), 768)
+
+    def testTransformBatch(self):
+        """
+        Test batch embeddings transform via API
+        """
+
+        embeddings = self.client.post("batchtransform", json=self.data).json()
+
+        self.assertEqual(len(embeddings), len(self.data))
+        self.assertEqual(len(embeddings[0]), 768)
 
     def testViewOnly(self):
         """
@@ -241,13 +242,13 @@ class TestAPI(unittest.TestCase):
         self.client = TestAPI.start(False)
 
         # Test search
-        uid = self.client.get("search?query=feel%20good%20story&limit=1").json()[0][0]
+        uid = self.client.get("search?query=feel%20good%20story&limit=1").json()[0]["id"]
         self.assertEqual(uid, 4)
 
         # Test similarity
         uid = self.client.post("similarity", json={
             "query": "feel good story",
             "texts": self.data
-        }).json()[0][0]
+        }).json()[0]["id"]
 
         self.assertEqual(uid, 4)

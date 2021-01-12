@@ -188,6 +188,19 @@ class Embeddings(object):
 
         return embedding
 
+    def batchtransform(self, documents):
+        """
+        Transforms documents into embeddings vectors. Document text will be tokenized if not pre-tokenized.
+
+        Args:
+            documents: list of (id, text|tokens, tags)
+
+        Returns:
+            embeddings vectors
+        """
+
+        return [self.transform(document) for document in documents]
+
     def search(self, query, limit=3):
         """
         Finds documents in the embeddings model most similar to the input query. Returns

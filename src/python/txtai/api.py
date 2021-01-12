@@ -87,8 +87,8 @@ class API(object):
     def search(self, query, request):
         """
         Finds documents in the embeddings model most similar to the input query. Returns
-        a list of (id, score) sorted by highest score, where id is the document id in
-        the embeddings model.
+        a list of {id: value, score: value} sorted by highest score, where id is the
+        document id in the embeddings model.
 
         Downstream applications can override this method to provide enriched search results.
 
@@ -97,30 +97,32 @@ class API(object):
             request: FastAPI request
 
         Returns:
-            list of (id, score)
+            list of {id: value, score: value}
         """
 
         if self.embeddings:
-            return self.embeddings.search(query, self.limit(request.query_params.get("limit")))
+            limit = self.limit(request.query_params.get("limit"))
+            return [{"id": uid, "score": float(score)} for uid, score in self.embeddings.search(query, limit)]
 
         return None
 
     def batchsearch(self, queries, limit):
         """
         Finds documents in the embeddings model most similar to the input queries. Returns
-        a list of (id, score) sorted by highest score per query, where id is the document id
-        in the embeddings model.
+        a list of {id: value, score: value} sorted by highest score per query, where id is
+        the document id in the embeddings model.
 
         Args:
             queries: queries text
             limit: maximum results
 
         Returns:
-            list of (id, score) per query
+            list of {id: value, score: value} per query
         """
 
         if self.embeddings:
-            return self.embeddings.batchsearch(queries, self.limit(limit))
+            results = self.embeddings.batchsearch(queries, self.limit(limit))
+            return [[{"id": uid, "score": float(score)} for uid, score in result] for result in results]
 
         return None
 
@@ -171,7 +173,7 @@ class API(object):
 
             # Build scoring index if scoring method provided
             if self.config.get("scoring"):
-                embeddings.score(self.stream())
+                self.embeddings.score(self.stream())
 
             # Build embeddings index
             self.embeddings.index(self.stream())
@@ -189,46 +191,64 @@ class API(object):
     def similarity(self, query, texts):
         """
         Computes the similarity between query and list of text. Returns a list of
-        (id, score) sorted by highest score, where id is the index in texts.
+        {id: value, score: value} sorted by highest score, where id is the index
+        in texts.
 
         Args:
             query: query text
             texts: list of text
 
         Returns:
-            list of (id, score)
+            list of {id: value, score: value}
         """
 
         # Use similarity instance if available otherwise fall back to embeddings model
         if self.similar:
-            return [(uid, float(text)) for uid, text in self.similar(query, texts)]
+            return [{"id": uid, "score": float(score)} for uid, score in self.similar(query, texts)]
         if self.embeddings:
-            return [(uid, float(text)) for uid, text in self.embeddings.similarity(query, texts)]
+            return [{"id": uid, "score": float(score)} for uid, score in self.embeddings.similarity(query, texts)]
 
         return None
 
     def batchsimilarity(self, queries, texts):
         """
         Computes the similarity between list of queries and list of text. Returns a list
-        of (id, score) sorted by highest score per query, where id is the index in texts.
+        of {id: value, score: value} sorted by highest score per query, where id is the
+        index in texts.
 
         Args:
             queries: queries text
             texts: list of text
 
         Returns:
-            list of (id, score) per query
+            list of {id: value, score: value} per query
         """
 
         # Use similarity instance if available otherwise fall back to embeddings model
         if self.similar:
-            return [[(uid, float(text)) for uid, text in r] for r in self.similar(queries, texts)]
+            return [[{"id": uid, "score": float(score)} for uid, score in r] for r in self.similar(queries, texts)]
         if self.embeddings:
-            return [[(uid, float(text)) for uid, text in r] for r in self.embeddings.batchsimilarity(queries, texts)]
+            return [[{"id": uid, "score": float(score)} for uid, score in r] for r in self.embeddings.batchsimilarity(queries, texts)]
 
         return None
 
-    def transform(self, texts):
+    def transform(self, text):
+        """
+        Transforms input text into embeddings arrays.
+
+        Args:
+            text: input text
+
+        Returns:
+            embeddings array
+        """
+
+        if self.embeddings:
+            return [float(x) for x in self.embeddings.transform((None, text, None))]
+
+        return None
+
+    def batchtransform(self, texts):
         """
         Transforms list of texts into embeddings arrays.
 
@@ -240,7 +260,8 @@ class API(object):
         """
 
         if self.embeddings:
-            return [[float(x) for x in self.embeddings.transform((None, text, None))] for text in texts]
+            documents = [(None, text, None) for text in texts]
+            return [[float(x) for x in result] for result in self.embeddings.batchtransform(documents)]
 
         return None
 
@@ -253,31 +274,36 @@ class API(object):
             texts: list of text
 
         Returns:
-            list of (name, answer)
+            list of {name: value, answer: value}
         """
 
         if self.extractor:
             # Convert queue to tuples
             queue = [(x["name"], x["query"], x.get("question"), x.get("snippet")) for x in queue]
-            return self.extractor(queue, texts)
+            return [{"name": name, "answer": answer} for name, answer in self.extractor(queue, texts)]
 
         return None
 
     def label(self, text, labels):
         """
         Applies a zero shot classifier to text using a list of labels. Returns a list of
-        (id, score) sorted by highest score, where id is the index in labels.
+        {id: value, score: value} sorted by highest score, where id is the index in labels.
 
         Args:
             text: text|list
             labels: list of labels
 
         Returns:
-            list of (id, score) per text element
+            list of {id: value, score: value} per text element
         """
 
         if self.labels:
-            return self.labels(text, labels)
+            # Text is a string
+            if isinstance(text, str):
+                return [{"id": uid, "score": float(score)} for uid, score in self.labels(text, labels)]
+
+            # Text is a list
+            return [[{"id": uid, "score": float(score)} for uid, score in result] for result in self.labels(text, labels)]
 
         return None
 
@@ -410,8 +436,8 @@ def batchsimilarity(queries: List[str] = Body(...), texts: List[str] = Body(...)
 
     return INSTANCE.batchsimilarity(queries, texts)
 
-@app.get("/embeddings")
-def embeddings(text: str):
+@app.get("/transform")
+def transform(text: str):
     """
     Transforms text into an embeddings array.
 
@@ -422,10 +448,10 @@ def embeddings(text: str):
         embeddings array
     """
 
-    return INSTANCE.transform([text])[0]
+    return INSTANCE.transform(text)
 
-@app.post("/batchembeddings")
-def batchembeddings(texts: List[str] = Body(...)):
+@app.post("/batchtransform")
+def batchtransform(texts: List[str] = Body(...)):
     """
     Transforms list of text into embeddings arrays.
 
@@ -436,7 +462,7 @@ def batchembeddings(texts: List[str] = Body(...)):
         embeddings arrays
     """
 
-    return INSTANCE.transform(texts)
+    return INSTANCE.batchtransform(texts)
 
 @app.post("/extract")
 def extract(queue: List[dict] = Body(...), texts: List[str] = Body(...)):
