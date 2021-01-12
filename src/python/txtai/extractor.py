@@ -42,7 +42,7 @@ class Extractor(object):
 
         Args:
             queue: input queue (name, query, question, snippet)
-            texts: list of strings
+            texts: list of text
 
         Returns:
             list of (name, answer)
@@ -72,7 +72,7 @@ class Extractor(object):
 
         Args:
             queries: list of embedding queries to run
-            texts: list of strings
+            texts: list of text
 
         Returns:
             list of (id, text, score)

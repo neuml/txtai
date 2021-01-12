@@ -233,7 +233,7 @@ class Embeddings(object):
 
     def similarity(self, query, texts):
         """
-        Computes the similarity between query and list of strings. Returns a list of
+        Computes the similarity between query and list of text. Returns a list of
         (id, score) sorted by highest score, where id is the index in texts.
 
         Args:
@@ -248,7 +248,7 @@ class Embeddings(object):
 
     def batchsimilarity(self, queries, texts):
         """
-        Computes the similarity between list of queries and list of strings. Returns a list
+        Computes the similarity between list of queries and list of text. Returns a list
         of (id, score) sorted by highest score per query, where id is the index in texts.
 
         Args:

@@ -188,7 +188,7 @@ class API(object):
 
     def similarity(self, query, texts):
         """
-        Computes the similarity between query and list of strings. Returns a list of
+        Computes the similarity between query and list of text. Returns a list of
         (id, score) sorted by highest score, where id is the index in texts.
 
         Args:
@@ -209,7 +209,7 @@ class API(object):
 
     def batchsimilarity(self, queries, texts):
         """
-        Computes the similarity between list of queries and list of strings. Returns a list
+        Computes the similarity between list of queries and list of text. Returns a list
         of (id, score) sorted by highest score per query, where id is the index in texts.
 
         Args:
@@ -233,7 +233,7 @@ class API(object):
         Transforms list of texts into embeddings arrays.
 
         Args:
-            texts: list of strings
+            texts: list of text
 
         Returns:
             embeddings arrays
@@ -250,7 +250,7 @@ class API(object):
 
         Args:
             queue: list of {name: value, query: value, question: value, snippet: value}
-            texts: list of strings
+            texts: list of text
 
         Returns:
             list of (name, answer)
@@ -381,7 +381,7 @@ def index():
 @app.post("/similarity")
 def similarity(query: str = Body(...), texts: List[str] = Body(...)):
     """
-    Computes the similarity between query and list of strings. Returns a list of
+    Computes the similarity between query and list of text. Returns a list of
     (id, score) sorted by highest score, where id is the index in texts.
 
     Args:
@@ -397,7 +397,7 @@ def similarity(query: str = Body(...), texts: List[str] = Body(...)):
 @app.post("/batchsimilarity")
 def batchsimilarity(queries: List[str] = Body(...), texts: List[str] = Body(...)):
     """
-    Computes the similarity between list of queries and list of strings. Returns a list
+    Computes the similarity between list of queries and list of text. Returns a list
     of (id, score) sorted by highest score per query, where id is the index in texts.
 
     Args:
@@ -430,7 +430,7 @@ def batchembeddings(texts: List[str] = Body(...)):
     Transforms list of text into embeddings arrays.
 
     Args:
-        texts: list of strings
+        texts: list of text
 
     Returns:
         embeddings arrays
@@ -445,7 +445,7 @@ def extract(queue: List[dict] = Body(...), texts: List[str] = Body(...)):
 
     Args:
         queue: list of {name: value, query: value, question: value, snippet: value)
-        texts: list of strings
+        texts: list of text
 
     Returns:
         list of (name, answer)

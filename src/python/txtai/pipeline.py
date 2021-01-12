@@ -123,12 +123,12 @@ class Labels(Pipeline):
 
 class Similarity(Labels):
     """
-    Computes similarity between query and list of strings using a zero shot classifier.
+    Computes similarity between query and list of text using a zero shot classifier.
     """
 
     def __call__(self, query, texts, multiclass=True):
         """
-        Computes the similarity between query and list of strings. Returns a list of
+        Computes the similarity between query and list of text. Returns a list of
         (id, score) sorted by highest score, where id is the index in texts.
 
         This method supports query as a string or a list. If the input is a string,
