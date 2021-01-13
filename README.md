@@ -61,19 +61,13 @@ Python 3.6+ is supported
 
 This project has dependencies that require compiling native code. Windows and macOS systems require the following additional steps. Most Linux environments will install without any additional steps.
 
-#### Windows
+### Windows
 
 Install [C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
 
-#### macOS
+### macOS
 
-Run the following before installing, [this link](https://github.com/kyamagu/faiss-wheels#prerequisite) has more details.
-
-```
-brew install libomp
-```
-
-The [GitHub build workflow](https://github.com/neuml/txtai/blob/master/.github/workflows/build.yml) for an example of environment-dependent installation procedures.
+Run `brew install libomp` before installing, [this link](https://github.com/kyamagu/faiss-wheels#prerequisite) has more details.
 
 ## Examples
 
@@ -312,7 +306,7 @@ CONFIG=index.yml uvicorn "txtai.api:app"
 
 uvicorn is a full-featured production ready server with support for SSL and more. See the [uvicorn deployment guide](https://www.uvicorn.org/deployment/) for details.
 
-### Differences between Python and API
+#### Differences between Python and API
 The txtai API provides all the major functionality found in this project. But there are differences due to the nature of JSON and differences across the supported programming languages.
 
 |  Difference  |    Python    |  API  |  Reason  |
@@ -322,7 +316,7 @@ The txtai API provides all the major functionality found in this project. But th
 | Labels       | labels()  | label.label() | Labels pipeline is a callable object in Python that supports both string and list input. |
 | Similarity   | similarity() | similarity.similarity() | Similarity pipeline a callable object in Python that supports both string and list input. |
 
-### Supported language bindings
+#### Supported language bindings
 
 The following programming languages have txtai bindings:
 
