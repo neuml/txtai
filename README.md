@@ -196,7 +196,6 @@ hnsw:
   m: M param for init_index (int) - defaults to 16
   randomseed: random-seed param for init_index (init) - defaults to 100
   efsearch: ef search param (int) - defaults to None and not set
-}
 ```
 
 See [Hnswlib documentation](https://github.com/nmslib/hnswlib/blob/master/ALGO_PARAMS.md) for more information on these parameters.
