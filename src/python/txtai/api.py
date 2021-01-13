@@ -130,6 +130,8 @@ class API(object):
         """
         Adds a batch of documents for indexing.
 
+        Downstream applications can override this method to also store full documents in an external system.
+
         Args:
             documents: list of {id: value, text: value}
         """
@@ -163,8 +165,6 @@ class API(object):
         """
         Builds an embeddings index for previously batched documents. No further documents can be added
         after this call.
-
-        Downstream applications can override this method to also store full documents in an external system.
         """
 
         if self.embeddings and self.config.get("writable") and self.documents:
