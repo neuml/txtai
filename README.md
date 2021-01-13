@@ -67,7 +67,7 @@ Install [C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-to
 
 ### macOS
 
-Run `brew install libomp` [see this link](https://github.com/kyamagu/faiss-wheels#prerequisite)
+Run `brew install libomp` see [this link](https://github.com/kyamagu/faiss-wheels#prerequisite)
 
 ## Examples
 
