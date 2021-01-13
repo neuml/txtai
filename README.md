@@ -59,7 +59,7 @@ You can also install txtai directly from GitHub. Using a Python Virtual Environm
 
 Python 3.6+ is supported
 
-This project has dependencies that require compiling native code. Windows and macOS systems require the following additional steps. Most Linux environments will install without any additional steps.
+Windows and macOS systems must run the following before installation. No additional steps for Linux.
 
 ### Windows
 
