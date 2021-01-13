@@ -311,10 +311,10 @@ The txtai API provides all the major functionality found in this project. But th
 
 |  Difference  |    Python    |  API  |  Reason  |
 |:-------------|:-------------|:------|:---------|
-| Return Types | tuples | objects | Consistency across languages. Example (id, score) in Python is {"id": value, "score": value}. via API |
-| Extractor    | extract() | extractor.extract() | Extractor pipeline is a callable object in Python. |
-| Labels       | labels()  | label.label() | Labels pipeline is a callable object in Python that supports both string and list input. |
-| Similarity   | similarity() | similarity.similarity() | Similarity pipeline a callable object in Python that supports both string and list input. |
+| Return Types | tuples | objects | Consistency across languages. For example, (id, score) in Python is {"id": value, "score": value} via API |
+| Extractor    | extract() | extractor.extract() | Extractor pipeline is a callable object in Python |
+| Labels       | labels()  | labels.label() | Labels pipeline is a callable object in Python that supports both string and list input |
+| Similarity   | similarity() | similarity.similarity() | Similarity pipeline a callable object in Python that supports both string and list input |
 
 #### Supported language bindings
 
