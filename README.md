@@ -59,32 +59,21 @@ You can also install txtai directly from GitHub. Using a Python Virtual Environm
 
 Python 3.6+ is supported
 
-### Troubleshooting
-
 This project has dependencies that require compiling native code. Windows and macOS systems require the following additional steps. Most Linux environments will install without any additional steps.
 
 #### Windows
 
-- Install C++ Build Tools - https://visualstudio.microsoft.com/visual-cpp-build-tools/
-- PyTorch now has Windows binaries on PyPI and should work with the standard install. But if issues arise, try running the install directly from PyTorch.
-
-    ```
-    pip install txtai -f https://download.pytorch.org/whl/torch_stable.html
-    ```
-
-    See [pytorch.org](https://pytorch.org) for more information.
+Install [C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
 
 #### macOS
 
-- Run the following before installing
+Run the following before installing, [this link](https://github.com/kyamagu/faiss-wheels#prerequisite) has more details.
 
     ```
     brew install libomp
     ```
 
-    See [this link](https://github.com/kyamagu/faiss-wheels#prerequisite) for more information.
-
-See this [GitHub workflow file](https://github.com/neuml/txtai/blob/master/.github/workflows/build.yml) for an example of environment-dependent installation procedures.
+The [GitHub build workflow](https://github.com/neuml/txtai/blob/master/.github/workflows/build.yml) for an example of environment-dependent installation procedures.
 
 ## Examples
 
@@ -92,7 +81,7 @@ The examples directory has a series of examples and notebooks giving an overview
 
 ### Notebooks
 
-| Notebook     |      Description      |   |
+| Notebook  | Description  |       |
 |:----------|:-------------|------:|
 | [Introducing txtai](https://github.com/neuml/txtai/blob/master/examples/01_Introducing_txtai.ipynb) | Overview of the functionality provided by txtai | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/01_Introducing_txtai.ipynb) |
 | [Build an Embeddings index with Hugging Face Datasets](https://github.com/neuml/txtai/blob/master/examples/02_Build_an_Embeddings_index_with_Hugging_Face_Datasets.ipynb) | Index and search Hugging Face Datasets | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/02_Build_an_Embeddings_index_with_Hugging_Face_Datasets.ipynb) |
@@ -321,6 +310,18 @@ Assuming this YAML content is stored in a file named index.yml, the following co
 CONFIG=index.yml uvicorn "txtai.api:app"
 ```
 
+uvicorn is a full-featured production ready server with support for SSL and more. See the [uvicorn deployment guide](https://www.uvicorn.org/deployment/) for details.
+
+### Differences between Python and API
+The txtai API provides all the major functionality found in this project. But there are differences due to the nature of JSON and differences across the supported programming languages.
+
+|  Difference  |    Python    |  API  |  Reason  |
+|:-------------|:-------------|:------|:---------|
+| Return Types | tuples | objects | Consistency across languages. Example (id, score) in Python is {"id": value, "score": value}. via API |
+| Extractor    | extract() | extractor.extract() | Extractor pipeline is a callable object in Python. |
+| Labels       | labels()  | label.label() | Labels pipeline is a callable object in Python that supports both string and list input. |
+| Similarity   | similarity() | similarity.similarity() | Similarity pipeline a callable object in Python that supports both string and list input. |
+
 ### Supported language bindings
 
 The following programming languages have txtai bindings:
@@ -330,4 +331,4 @@ The following programming languages have txtai bindings:
 - [Rust](https://github.com/neuml/txtai.rs)
 - [Go](https://github.com/neuml/txtai.go)
 
-For additional language bindings, please add an issue!
+See each of the projects above for details on how to install and use. Please add an issue to request additional language bindings!
