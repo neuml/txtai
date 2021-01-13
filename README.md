@@ -69,9 +69,9 @@ Install [C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-to
 
 Run the following before installing, [this link](https://github.com/kyamagu/faiss-wheels#prerequisite) has more details.
 
-    ```
-    brew install libomp
-    ```
+```
+brew install libomp
+```
 
 The [GitHub build workflow](https://github.com/neuml/txtai/blob/master/.github/workflows/build.yml) for an example of environment-dependent installation procedures.
 
