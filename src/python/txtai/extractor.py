@@ -125,7 +125,7 @@ class Extractor(object):
         Executes QA pipeline and formats extracted answers.
 
         Args:
-            names: column names
+            names: question identifiers/names
             questions: questions
             contexts: question context
             snippets: flags to enable answer snippets per answer
