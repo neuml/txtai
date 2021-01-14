@@ -4,8 +4,6 @@ Demo shell
 
 from cmd import Cmd
 
-import numpy as np
-
 from txtai.embeddings import Embeddings
 
 class Shell(Cmd):
@@ -35,7 +33,7 @@ class Shell(Cmd):
 
     def default(self, line):
         # Get index of best section that best matches query
-        uid = np.argmax(self.embeddings.similarity(line, self.sections))
+        uid = self.embeddings.similarity(line, self.sections)[0][0]
         print(self.sections[uid])
         print()
 
