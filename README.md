@@ -307,6 +307,7 @@ CONFIG=index.yml uvicorn "txtai.api:app"
 uvicorn is a full-featured production ready server with support for SSL and more. See the [uvicorn deployment guide](https://www.uvicorn.org/deployment/) for details.
 
 #### Differences between Python and API
+
 The txtai API provides all the major functionality found in this project. But there are differences due to the nature of JSON and differences across the supported programming languages.
 
 |  Difference  |    Python    |  API  |  Reason  |
