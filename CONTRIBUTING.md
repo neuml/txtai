@@ -1,12 +1,12 @@
 # Getting started with txtai development
 
-Thank you showing an interest in contributing! Pull Requests are welcome and encouraged! This document gives an overview of the development standards for this project
+Thank you showing an interest in contributing! Pull Requests are welcome and encouraged! This document gives an overview of the development standards for the project.
 
 ## Principles
 
 ### Quality
 
-This project strives to develop clean, well documented code with comprehensive test coverage. Test-driven development does add some overhead in having to think hard about test cases and ensure all major functionality is covered in the tests. This doesn't mean that simple methods that return a value need to have tests but all major components should have tests. All methods should be well-documented and easy to understand.
+This project strives to develop clean, well documented code with comprehensive test coverage. Test-driven development does add some overhead in having to think hard about test cases and ensure all major functionality is covered in the tests. That doesn't mean that simple methods need to have tests but all major components should have tests. All methods should be well-documented and easy to understand.
 
 ### Performance
 
@@ -14,7 +14,7 @@ Machine learning is not fast to begin with, runtime performance is a top priorit
 
 ### Questions welcome
 
-We're here to help! The best place to reach out is via the `Issues` tab on the GitHub project. If you want to bounce ideas and verify what you're seeing before digging in, please reach out!
+We're here to help! The best place to reach out is via the [Issues](https://github.com/neuml/txtai/issues) tab on the GitHub. If you want to bounce ideas and verify what you're seeing before digging in, please reach out!
 
 ## Set up a development environment
 
@@ -44,13 +44,13 @@ An IDE isn't required but highly-recommended for any substantial changes. The re
 
 ## Review the project
 
-The README is the best place to start to learn more about this project. There is a series of example notebooks that covers all major components and functionality provided. It's suggested that you run through those examples on Google Colab to see how the code currently works. 
+The README is the best place to start to learn more about the project. There is a series of example notebooks that covers all major components and functionality in the project. It's suggested that you run through those examples on Google Colab to see how the code currently works.
 
-Given the above statement on quality, all the code should have ample documentation to help understand the logic flow. Hopefully, the code is self documenting in itself but for particularly complex situations/edge cases, additional documentation will be there to provide context. 
-
-There are a number of tools to make this easier and validate new code fits in with the standard. On each commit to GitHub (including forks), a GitHub Action script runs a full build process. This build validates that the build runs, all tests pass and that all code meets code standards. Anything that runs in the build script has a corresponding way to run locally and should be run locally before committing. 
+All the code should have ample documentation to help understand the logic flow. Hopefully, the code is self documenting in itself but for particularly complex situations/edge cases, additional documentation will be there to provide context.
 
 ## Style guide
+
+There are a couple tools integrated to help with streamlining code formatting/styling.
 
 - [Pylint](https://github.com/PyCQA/pylint) enforces best practices for code usage across the project
 - [Black](https://github.com/psf/black) enforces code formatting standards
@@ -63,7 +63,7 @@ Once comfortable with the code, let's get to developing!
 - If you're looking to contribute but don't know where to start, look at the list of issues marked as `Good First Issue` and assign it to yourself.
 - If you ran into a specific bug or have an idea for an enhancement, great! Please first file an issue to ensure it's not already being worked.
 
-Once an area of work is identified, the first thing to do is to create a branch to hold the changes. It's best practice to have a branch for each individual Pull Request (PR), ideally tied to an open issue. Example below of creating a branch.
+Once an area of work is identified, the first thing to do is to create a branch to hold the changes. It's best to have a branch for each individual Pull Request (PR), ideally tied to an open issue. Example below of creating a branch.
 
 ```bash
 git checkout -b descriptive-name
@@ -78,7 +78,7 @@ python -m unittest -v test/python/<testname>.py
 ```
 ## Submitting a Pull Request (PR)
 
-Once comfortable with the changes locally, please follow the steps below to submit a PR.
+On each commit to GitHub (including forks), a GitHub Action script runs a full build process. This build validates that the build runs, all tests pass and that all code meets code standards. Anything that runs in the build script has a corresponding way to run locally and should be run locally before committing as shown below.
 
 1. Run all tests locally
 
@@ -89,7 +89,15 @@ Once comfortable with the changes locally, please follow the steps below to subm
 
     Ensure that the test coverage has not decreased. If so, additional tests are needed to cover the new functionality.
 
-2. Stage and commit the changes locally.
+2. Run the pre-commit checks for styling/linting.
+
+    Note that the commit will fail if the pre-commit hook tests don't successfully run. If VS Code is used as the development environment, any errors would be visible during development in the problems panel. The pre-commit checks can be directly run as follows:
+
+    ```bash
+    pre-commit run
+    ```
+
+3. Stage and commit the changes locally.
 
     Before pushing and during development, it's good practice to sync with the main repository regularly as follows. This helps reduce the likelihood of merge errors. 
 
@@ -100,25 +108,19 @@ Once comfortable with the changes locally, please follow the steps below to subm
 
     ```bash
     git add . 
-    git commit -m "<descriptive message - link to #issue and/or #pr"
+    git commit -m "<descriptive message - include link to #issue and/or #pr>"
     ```
 
-    Note that the commit will fail if the pre-commit hook tests don't successfully run. If VS Code is used as the development environment, any errors would be visible during development in the problems panel. The pre-commit checks can also be run directly via:
-
-    ```bash
-    pre-commit run
-    ```
-
-3. Push the changes
+4. Push the changes
 
     ```bash
     git push -u origin descriptive-name
     ```
 
-4. Submit the PR on GitHub
+5. Submit the PR on GitHub
 
-    Go to the main project on GitHub and submit your PR via the `Pull Requests` tab. 
+    Go to the main project on GitHub and submit your PR via the [Pull Requests](https://github.com/neuml/txtai/pulls) tab.
 
-5. Changes reviewed
+6. Changes reviewed
 
     Pull requests are carefully reviewed before merging. Please don't be discouraged if a there is follow up or questions on the changes. We want to help get the changes into a state where they can be merged in!
