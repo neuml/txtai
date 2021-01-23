@@ -2,7 +2,10 @@ repos:
   - repo: https://github.com/pycqa/pylint
     rev: pylint-2.6.0
     hooks:
-    -   id: pylint
+    - id: pylint
+      args:
+      - -d import-error
+      - -d duplicate-code
   - repo: https://github.com/ambv/black
     rev: stable
     hooks:
