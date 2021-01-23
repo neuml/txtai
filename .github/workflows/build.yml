@@ -28,6 +28,13 @@ jobs:
           python --version
           make coverage
 
+      - name: Install dev environment
+        run: pip install .[dev]
+        if: matrix.os == 'ubuntu-latest'
+
+      - uses: pre-commit/action@v2.0.0
+        if: matrix.os == 'ubuntu-latest'
+
       - name: Test Coverage
         run: coveralls --service=github
         if: matrix.os == 'ubuntu-latest'
