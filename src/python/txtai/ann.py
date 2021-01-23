@@ -11,11 +11,13 @@ from hnswlib import Index
 # Conditionally import Faiss as it's only supported on Linux/macOS
 try:
     import faiss
+
     FAISS = True
 except ImportError:
     FAISS = False
 
-class ANN(object):
+
+class ANN:
     """
     Base class for ANN models.
     """
@@ -117,6 +119,7 @@ class ANN(object):
         setting = backend.get(name) if backend else None
         return setting if setting else default
 
+
 class Annoy(ANN):
     """
     Builds an ANN model using the Annoy library.
@@ -149,8 +152,7 @@ class Annoy(ANN):
         results = []
         for query in queries:
             # Run the query
-            ids, scores = self.model.get_nns_by_vector(query, n=limit, search_k=searchk,
-                                                       include_distances=True)
+            ids, scores = self.model.get_nns_by_vector(query, n=limit, search_k=searchk, include_distances=True)
 
             # Map results to [(id, score)]
             results.append(list(zip(ids, scores)))
@@ -160,6 +162,7 @@ class Annoy(ANN):
     def save(self, path):
         # Write index
         self.model.save(path)
+
 
 class Faiss(ANN):
     """
@@ -204,6 +207,7 @@ class Faiss(ANN):
         # Write index
         faiss.write_index(self.model, path)
 
+
 class HNSW(ANN):
     """
     Builds an ANN model using the hnswlib library.
@@ -225,8 +229,7 @@ class HNSW(ANN):
 
         # Create index
         self.model = Index(dim=self.config["dimensions"], space=self.config["metric"])
-        self.model.init_index(max_elements=embeddings.shape[0], ef_construction=efconstruction,
-                              M=m, random_seed=seed)
+        self.model.init_index(max_elements=embeddings.shape[0], ef_construction=efconstruction, M=m, random_seed=seed)
 
         # Add items
         self.model.add_items(embeddings, np.array(range(embeddings.shape[0])))

@@ -7,7 +7,8 @@ from nltk.tokenize import sent_tokenize
 from .pipeline import Questions
 from .tokenizer import Tokenizer
 
-class Extractor(object):
+
+class Extractor:
     """
     Class that uses an extractive question-answering model to extract content from a given text context.
     """
@@ -111,8 +112,9 @@ class Extractor(object):
                 # Add result if:
                 #   - all required tokens are present or there are not required tokens AND
                 #   - all prohibited tokens are not present or there are not prohibited tokens
-                if (not must or all([token.lower() in text.lower() for token in must])) and \
-                   (not mnot or all([token.lower() not in text.lower() for token in mnot])):
+                if (not must or all([token.lower() in text.lower() for token in must])) and (
+                    not mnot or all([token.lower() not in text.lower() for token in mnot])
+                ):
                     matches.append(segments[x] + (score,))
 
             # Add query matches sorted by highest score

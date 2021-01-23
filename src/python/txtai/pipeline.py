@@ -7,7 +7,8 @@ import torch
 
 from transformers import pipeline
 
-class Pipeline(object):
+
+class Pipeline:
     """
     Light wrapper around Hugging Face's pipeline component for selected tasks. Adds support for model
     quantization and minor interface changes.
@@ -40,6 +41,7 @@ class Pipeline(object):
             if not gpu and quantize:
                 # pylint: disable=E1101
                 self.pipeline.model = torch.quantization.quantize_dynamic(self.pipeline.model, {torch.nn.Linear}, dtype=torch.qint8)
+
 
 class Questions(Pipeline):
     """
@@ -82,6 +84,7 @@ class Questions(Pipeline):
 
         return answers
 
+
 class Labels(Pipeline):
     """
     Applies a zero shot classifier to text using a list of labels.
@@ -120,6 +123,7 @@ class Labels(Pipeline):
             scores.append([(labels.index(label), result["scores"][x]) for x, label in enumerate(result["labels"])])
 
         return scores[0] if isinstance(text, str) else scores
+
 
 class Similarity(Labels):
     """

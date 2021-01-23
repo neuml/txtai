@@ -9,6 +9,7 @@ import numpy as np
 
 from txtai.vectors import Vectors
 
+
 class TestTransformersVectors(unittest.TestCase):
     """
     TransformerVectors tests
@@ -55,8 +56,7 @@ class TestTransformersVectors(unittest.TestCase):
         """
 
         # Sample documents: one where tokenizer changes text and one with no changes to text
-        documents = [(0, "This is a test and has no tokenization", None),
-                     (1, "test tokenization", None)]
+        documents = [(0, "This is a test and has no tokenization", None), (1, "test tokenization", None)]
 
         # Run with tokenization enabled
         self.model.tokenize = True

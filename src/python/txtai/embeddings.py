@@ -14,7 +14,8 @@ from .ann import ANN
 from .scoring import Scoring
 from .vectors import Vectors
 
-class Embeddings(object):
+
+class Embeddings:
     """
     Model that builds sentence embeddings from a list of tokens.
 

@@ -8,6 +8,7 @@ import unittest
 from txtai.embeddings import Embeddings
 from txtai.extractor import Extractor
 
+
 class TestExtractor(unittest.TestCase):
     """
     Extractor tests
@@ -19,18 +20,20 @@ class TestExtractor(unittest.TestCase):
         Create single extractor instance.
         """
 
-        cls.data = ["Giants hit 3 HRs to down Dodgers",
-                    "Giants 5 Dodgers 4 final",
-                    "Dodgers drop Game 2 against the Giants, 5-4",
-                    "Blue Jays 2 Red Sox 1 final",
-                    "Red Sox lost to the Blue Jays, 2-1",
-                    "Blue Jays at Red Sox is over. Score: 2-1",
-                    "Phillies win over the Braves, 5-0",
-                    "Phillies 5 Braves 0 final",
-                    "Final: Braves lose to the Phillies in the series opener, 5-0",
-                    "Final score: Flyers 4 Lightning 1",
-                    "Flyers 4 Lightning 1 final",
-                    "Flyers win 4-1"]
+        cls.data = [
+            "Giants hit 3 HRs to down Dodgers",
+            "Giants 5 Dodgers 4 final",
+            "Dodgers drop Game 2 against the Giants, 5-4",
+            "Blue Jays 2 Red Sox 1 final",
+            "Red Sox lost to the Blue Jays, 2-1",
+            "Blue Jays at Red Sox is over. Score: 2-1",
+            "Phillies win over the Braves, 5-0",
+            "Phillies 5 Braves 0 final",
+            "Final: Braves lose to the Phillies in the series opener, 5-0",
+            "Final score: Flyers 4 Lightning 1",
+            "Flyers 4 Lightning 1 final",
+            "Flyers win 4-1",
+        ]
 
         # Create embeddings model, backed by sentence-transformers & transformers
         cls.embeddings = Embeddings({"method": "transformers", "path": "sentence-transformers/bert-base-nli-mean-tokens"})

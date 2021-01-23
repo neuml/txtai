@@ -17,4 +17,4 @@ min-public-methods=0
 max-line-length=150
 
 [MESSAGES CONTROL]
-disable=I0011,R0201,W0105,W0108,W0110,W0141,W0621,W0640
+disable=R0201

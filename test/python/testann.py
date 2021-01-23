@@ -10,6 +10,7 @@ import numpy as np
 
 from txtai.ann import ANN
 
+
 class TestANN(unittest.TestCase):
     """
     ANN tests

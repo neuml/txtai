@@ -9,6 +9,7 @@ import unittest
 from txtai.embeddings import Embeddings
 from txtai.vectors import WordVectors
 
+
 class TestEmbeddings(unittest.TestCase):
     """
     Embeddings tests
@@ -20,16 +21,17 @@ class TestEmbeddings(unittest.TestCase):
         Initialize test data.
         """
 
-        cls.data = ["US tops 5 million confirmed virus cases",
-                    "Canada's last fully intact ice shelf has suddenly collapsed, forming a Manhattan-sized iceberg",
-                    "Beijing mobilises invasion craft along coast as Taiwan tensions escalate",
-                    "The National Park Service warns against sacrificing slower friends in a bear attack",
-                    "Maine man wins $1M from $25 lottery ticket",
-                    "Make huge profits without work, earn up to $100,000 a day"]
+        cls.data = [
+            "US tops 5 million confirmed virus cases",
+            "Canada's last fully intact ice shelf has suddenly collapsed, forming a Manhattan-sized iceberg",
+            "Beijing mobilises invasion craft along coast as Taiwan tensions escalate",
+            "The National Park Service warns against sacrificing slower friends in a bear attack",
+            "Maine man wins $1M from $25 lottery ticket",
+            "Make huge profits without work, earn up to $100,000 a day",
+        ]
 
         # Create embeddings model, backed by sentence-transformers & transformers
-        cls.embeddings = Embeddings({"method": "transformers",
-                                     "path": "sentence-transformers/bert-base-nli-mean-tokens"})
+        cls.embeddings = Embeddings({"method": "transformers", "path": "sentence-transformers/bert-base-nli-mean-tokens"})
 
     def testIndex(self):
         """
@@ -98,11 +100,7 @@ class TestEmbeddings(unittest.TestCase):
         data = [(x, row, None) for x, row in enumerate(self.data)]
 
         # Create embeddings model, backed by word vectors
-        embeddings = Embeddings({"path": vectors + ".magnitude",
-                                 "storevectors": True,
-                                 "scoring": "bm25",
-                                 "pca": 3,
-                                 "quantize": True})
+        embeddings = Embeddings({"path": vectors + ".magnitude", "storevectors": True, "scoring": "bm25", "pca": 3, "quantize": True})
 
         # Call scoring and index methods
         embeddings.score(data)

@@ -22,7 +22,8 @@ app = FastAPI()
 # Global API instance
 INSTANCE = None
 
-class API(object):
+
+class API:
     """
     Base API template. Downstream applications can extend this base template to add custom search functionality.
     """
@@ -51,8 +52,7 @@ class API(object):
             # Extractor settings
             extractor = self.config["extractor"] if self.config["extractor"] else {}
 
-            self.extractor = Extractor(self.embeddings, extractor.get("path"), extractor.get("quantize"),
-                                       extractor.get("gpu"))
+            self.extractor = Extractor(self.embeddings, extractor.get("path"), extractor.get("quantize"), extractor.get("gpu"))
 
         # Create labels instance
         if "labels" in self.config:
@@ -62,13 +62,13 @@ class API(object):
 
         # Creates similarity instance
         if "similarity" in self.config:
-            similarity = self.config["similarity"] if self.config["similarity"] else {}
+            similar = self.config["similarity"] if self.config["similarity"] else {}
 
             # Share model with labels if separate model not specified
-            if "path" not in similarity and self.labels:
+            if "path" not in similar and self.labels:
                 self.similar = Similarity(model=self.labels)
             else:
-                self.similar = Similarity(similarity.get("path"), similarity.get("quantize"), similarity.get("gpu"))
+                self.similar = Similarity(similar.get("path"), similar.get("quantize"), similar.get("gpu"))
 
     def limit(self, limit):
         """
@@ -307,7 +307,8 @@ class API(object):
 
         return None
 
-class Factory(object):
+
+class Factory:
     """
     API factory. Creates new API instances.
     """
@@ -324,13 +325,14 @@ class Factory(object):
             instance of atype
         """
 
-        parts = atype.split('.')
+        parts = atype.split(".")
         module = ".".join(parts[:-1])
         m = __import__(module)
         for comp in parts[1:]:
             m = getattr(m, comp)
 
         return m
+
 
 @app.on_event("startup")
 def start():
@@ -350,6 +352,7 @@ def start():
     api = os.getenv("API_CLASS")
     INSTANCE = Factory.get(api)(config) if api else API(config)
 
+
 @app.get("/search")
 def search(query: str, request: Request):
     """
@@ -366,6 +369,7 @@ def search(query: str, request: Request):
     """
 
     return INSTANCE.search(query, request)
+
 
 @app.post("/batchsearch")
 def batchsearch(queries: List[str] = Body(...), limit: int = Body(...)):
@@ -384,6 +388,7 @@ def batchsearch(queries: List[str] = Body(...), limit: int = Body(...)):
 
     return INSTANCE.batchsearch(queries, limit)
 
+
 @app.post("/add")
 def add(documents: List[dict] = Body(...)):
     """
@@ -395,6 +400,7 @@ def add(documents: List[dict] = Body(...)):
 
     INSTANCE.add(documents)
 
+
 @app.get("/index")
 def index():
     """
@@ -403,6 +409,7 @@ def index():
     """
 
     INSTANCE.index()
+
 
 @app.post("/similarity")
 def similarity(query: str = Body(...), texts: List[str] = Body(...)):
@@ -421,6 +428,7 @@ def similarity(query: str = Body(...), texts: List[str] = Body(...)):
 
     return INSTANCE.similarity(query, texts)
 
+
 @app.post("/batchsimilarity")
 def batchsimilarity(queries: List[str] = Body(...), texts: List[str] = Body(...)):
     """
@@ -438,6 +446,7 @@ def batchsimilarity(queries: List[str] = Body(...), texts: List[str] = Body(...)
 
     return INSTANCE.batchsimilarity(queries, texts)
 
+
 @app.get("/transform")
 def transform(text: str):
     """
@@ -452,6 +461,7 @@ def transform(text: str):
 
     return INSTANCE.transform(text)
 
+
 @app.post("/batchtransform")
 def batchtransform(texts: List[str] = Body(...)):
     """
@@ -465,6 +475,7 @@ def batchtransform(texts: List[str] = Body(...)):
     """
 
     return INSTANCE.batchtransform(texts)
+
 
 @app.post("/extract")
 def extract(queue: List[dict] = Body(...), texts: List[str] = Body(...)):
@@ -481,6 +492,7 @@ def extract(queue: List[dict] = Body(...), texts: List[str] = Body(...)):
 
     return INSTANCE.extract(queue, texts)
 
+
 @app.post("/label")
 def label(text: str = Body(...), labels: List[str] = Body(...)):
     """
@@ -496,6 +508,7 @@ def label(text: str = Body(...), labels: List[str] = Body(...)):
     """
 
     return INSTANCE.label(text, labels)
+
 
 @app.post("/batchlabel")
 def batchlabel(texts: List[str] = Body(...), labels: List[str] = Body(...)):

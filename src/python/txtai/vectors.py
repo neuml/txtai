@@ -22,6 +22,7 @@ from .tokenizer import Tokenizer
 # pylint: disable=W0603
 VECTORS = None
 
+
 def create(config, scoring):
     """
     Multiprocessing helper method. Creates a global embeddings object to be accessed in a new subprocess.
@@ -35,6 +36,7 @@ def create(config, scoring):
 
     # Create a global embedding object using configuration and saved
     VECTORS = WordVectors(config, scoring)
+
 
 def transform(document):
     """
@@ -51,7 +53,8 @@ def transform(document):
 
     return (document[0], VECTORS.transform(document))
 
-class Vectors(object):
+
+class Vectors:
     """
     Base class for sentence embeddings/vector models.
     """
@@ -119,6 +122,7 @@ class Vectors(object):
         Returns:
             embeddings vector
         """
+
 
 class WordVectors(Vectors):
     """
@@ -220,6 +224,7 @@ class WordVectors(Vectors):
         # Build magnitude vectors database
         print("Converting vectors to magnitude format")
         converter.convert(path + ".txt", path + ".magnitude", subword=True)
+
 
 class TransformersVectors(Vectors):
     """

@@ -8,6 +8,7 @@ import unittest
 
 from txtai.vectors import WordVectors, Vectors
 
+
 class TestWordVectors(unittest.TestCase):
     """
     Vectors tests

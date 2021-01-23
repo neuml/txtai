@@ -5,15 +5,50 @@ Tokenizer module
 import re
 import string
 
-class Tokenizer(object):
+
+class Tokenizer:
     """
     Text tokenization methods.
     """
 
+    # fmt off
     # English Stop Word List (Standard stop words used by Apache Lucene)
-    STOP_WORDS = {"a", "an", "and", "are", "as", "at", "be", "but", "by", "for", "if", "in", "into", "is", "it",
-                  "no", "not", "of", "on", "or", "such", "that", "the", "their", "then", "there", "these",
-                  "they", "this", "to", "was", "will", "with"}
+    STOP_WORDS = {
+        "a",
+        "an",
+        "and",
+        "are",
+        "as",
+        "at",
+        "be",
+        "but",
+        "by",
+        "for",
+        "if",
+        "in",
+        "into",
+        "is",
+        "it",
+        "no",
+        "not",
+        "of",
+        "on",
+        "or",
+        "such",
+        "that",
+        "the",
+        "their",
+        "then",
+        "there",
+        "these",
+        "they",
+        "this",
+        "to",
+        "was",
+        "will",
+        "with",
+    }
+    # fmt on
 
     @staticmethod
     def tokenize(text):

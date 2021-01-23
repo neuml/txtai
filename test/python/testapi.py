@@ -46,6 +46,7 @@ path: %s
 writable: False
 """
 
+
 class TestAPI(unittest.TestCase):
     """
     API tests
@@ -80,12 +81,14 @@ class TestAPI(unittest.TestCase):
 
         cls.client = TestAPI.start(True)
 
-        cls.data = ["US tops 5 million confirmed virus cases",
-                    "Canada's last fully intact ice shelf has suddenly collapsed, forming a Manhattan-sized iceberg",
-                    "Beijing mobilises invasion craft along coast as Taiwan tensions escalate",
-                    "The National Park Service warns against sacrificing slower friends in a bear attack",
-                    "Maine man wins $1M from $25 lottery ticket",
-                    "Make huge profits without work, earn up to $100,000 a day"]
+        cls.data = [
+            "US tops 5 million confirmed virus cases",
+            "Canada's last fully intact ice shelf has suddenly collapsed, forming a Manhattan-sized iceberg",
+            "Beijing mobilises invasion craft along coast as Taiwan tensions escalate",
+            "The National Park Service warns against sacrificing slower friends in a bear attack",
+            "Maine man wins $1M from $25 lottery ticket",
+            "Make huge profits without work, earn up to $100,000 a day",
+        ]
 
         # Index data
         cls.client.post("add", json=[{"id": x, "text": row} for x, row in enumerate(cls.data)])
@@ -112,25 +115,27 @@ class TestAPI(unittest.TestCase):
         Test qa extraction via API
         """
 
-        data = ["Giants hit 3 HRs to down Dodgers",
-                "Giants 5 Dodgers 4 final",
-                "Dodgers drop Game 2 against the Giants, 5-4",
-                "Blue Jays 2 Red Sox 1 final",
-                "Red Sox lost to the Blue Jays, 2-1",
-                "Blue Jays at Red Sox is over. Score: 2-1",
-                "Phillies win over the Braves, 5-0",
-                "Phillies 5 Braves 0 final",
-                "Final: Braves lose to the Phillies in the series opener, 5-0",
-                "Final score: Flyers 4 Lightning 1",
-                "Flyers 4 Lightning 1 final",
-                "Flyers win 4-1"]
+        data = [
+            "Giants hit 3 HRs to down Dodgers",
+            "Giants 5 Dodgers 4 final",
+            "Dodgers drop Game 2 against the Giants, 5-4",
+            "Blue Jays 2 Red Sox 1 final",
+            "Red Sox lost to the Blue Jays, 2-1",
+            "Blue Jays at Red Sox is over. Score: 2-1",
+            "Phillies win over the Braves, 5-0",
+            "Phillies 5 Braves 0 final",
+            "Final: Braves lose to the Phillies in the series opener, 5-0",
+            "Final score: Flyers 4 Lightning 1",
+            "Flyers 4 Lightning 1 final",
+            "Flyers win 4-1",
+        ]
 
         questions = ["What team won the game?", "What was score?"]
 
-        execute = lambda query: self.client.post("extract", json={
-            "queue": [{"name": question, "query": query, "question": question, "snippet": False} for question in questions],
-            "texts": data
-        }).json()
+        execute = lambda query: self.client.post(
+            "extract",
+            json={"queue": [{"name": question, "query": query, "question": question, "snippet": False} for question in questions], "texts": data},
+        ).json()
 
         answers = execute("Red Sox - Blue Jays")
         self.assertEqual("Blue Jays", answers[0]["answer"])
@@ -139,10 +144,9 @@ class TestAPI(unittest.TestCase):
         # Ad-hoc questions
         question = "What hockey team won?"
 
-        answers = self.client.post("extract", json={
-            "queue": [{"name": question, "query": question, "question": question, "snippet": False}],
-            "texts": data
-        }).json()
+        answers = self.client.post(
+            "extract", json={"queue": [{"name": question, "query": question, "question": question, "snippet": False}], "texts": data}
+        ).json()
         self.assertEqual("Flyers", answers[0]["answer"])
 
     def testLabel(self):
@@ -150,10 +154,7 @@ class TestAPI(unittest.TestCase):
         Test label via API
         """
 
-        labels = self.client.post("label", json={
-            "text": "this is the best sentence ever",
-            "labels": ["positive", "negative"]
-        }).json()
+        labels = self.client.post("label", json={"text": "this is the best sentence ever", "labels": ["positive", "negative"]}).json()
 
         self.assertEqual(labels[0]["id"], 0)
 
@@ -162,10 +163,9 @@ class TestAPI(unittest.TestCase):
         Test batch label via API
         """
 
-        labels = self.client.post("batchlabel", json={
-            "texts": ["this is the best sentence ever", "This is terrible"],
-            "labels": ["positive", "negative"]
-        }).json()
+        labels = self.client.post(
+            "batchlabel", json={"texts": ["this is the best sentence ever", "This is terrible"], "labels": ["positive", "negative"]}
+        ).json()
 
         results = [l[0]["id"] for l in labels]
         self.assertEqual(results, [0, 1])
@@ -183,10 +183,7 @@ class TestAPI(unittest.TestCase):
         Test batch search via API
         """
 
-        results = self.client.post("batchsearch", json={
-            "queries": ["feel good story", "climate change"],
-            "limit": 1
-        }).json()
+        results = self.client.post("batchsearch", json={"queries": ["feel good story", "climate change"], "limit": 1}).json()
 
         uids = [result[0]["id"] for result in results]
         self.assertEqual(uids, [4, 1])
@@ -196,10 +193,7 @@ class TestAPI(unittest.TestCase):
         Test similarity via API
         """
 
-        uid = self.client.post("similarity", json={
-            "query": "feel good story",
-            "texts": self.data
-        }).json()[0]["id"]
+        uid = self.client.post("similarity", json={"query": "feel good story", "texts": self.data}).json()[0]["id"]
 
         self.assertEqual(self.data[uid], self.data[4])
 
@@ -208,10 +202,7 @@ class TestAPI(unittest.TestCase):
         Test batch similarity via API
         """
 
-        results = self.client.post("batchsimilarity", json={
-            "queries": ["feel good story", "climate change"],
-            "texts": self.data
-        }).json()
+        results = self.client.post("batchsimilarity", json={"queries": ["feel good story", "climate change"], "texts": self.data}).json()
 
         uids = [result[0]["id"] for result in results]
         self.assertEqual(uids, [4, 1])
@@ -246,9 +237,6 @@ class TestAPI(unittest.TestCase):
         self.assertEqual(uid, 4)
 
         # Test similarity
-        uid = self.client.post("similarity", json={
-            "query": "feel good story",
-            "texts": self.data
-        }).json()[0]["id"]
+        uid = self.client.post("similarity", json={"query": "feel good story", "texts": self.data}).json()[0]["id"]
 
         self.assertEqual(uid, 4)

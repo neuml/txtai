@@ -6,6 +6,7 @@ import unittest
 
 from txtai.tokenizer import Tokenizer
 
+
 class TestTokenizer(unittest.TestCase):
     """
     Tokenizer tests
