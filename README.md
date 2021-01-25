@@ -346,4 +346,4 @@ See each of the projects above for details on how to install and use. Please add
 
 ### Contributing
 
-For those who would like to contribute to txtai, please see [this guide](https://github.com/neuml/txtai/blob/master/CONTRIBUTING.md).
+For those who would like to contribute to txtai, please see [this guide](https://github.com/neuml/.github/blob/master/CONTRIBUTING.md).
