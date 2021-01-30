@@ -27,7 +27,7 @@ setup(
         "faiss-cpu>=1.6.3; os_name != 'nt'",
         "fastapi>=0.61.1",
         "fasttext>=0.9.2",
-        "hnswlib>=0.4.0",
+        "hnswlib>=0.5.0",
         "nltk>=3.5",
         "numpy>=1.18.4",
         "pymagnitude-lite>=0.1.43",
