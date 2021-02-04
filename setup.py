@@ -24,7 +24,7 @@ setup(
     python_requires=">=3.6",
     install_requires=[
         "annoy>=1.16.3",
-        "faiss-cpu>=1.6.3; os_name != 'nt'",
+        "faiss-cpu>=1.7.0; os_name != 'nt'",
         "fastapi>=0.61.1",
         "fasttext>=0.9.2",
         "hnswlib>=0.5.0",
