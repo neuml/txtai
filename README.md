@@ -124,6 +124,14 @@ path: string
 Required field that sets the path for a vectors model. When method set to _transformers_, this must be a path to a Hugging Face transformers model. Otherwise,
 it must be a path to a local word embeddings model.
 
+#### tokenize
+```yaml
+tokenize: boolean
+```
+
+Enables string tokenization (defaults to true). This method applies tokenization rules that work best with English language text and help increase the
+quality of English language sentence embeddings. This should be disabled when working with non-English text.
+
 #### storevectors
 ```yaml
 storevectors: boolean

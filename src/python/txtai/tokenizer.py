@@ -35,5 +35,5 @@ class Tokenizer:
 
         # Tokenize on alphanumeric strings.
         # Require strings to be at least 2 characters long.
-        # Require at least 1 alpha character in string.
+        # Require at least 1 non-trailing alpha character in string.
         return [token for token in tokens if re.match(r"^\d*[a-z][\-.0-9:_a-z]{1,}$", token) and token not in Tokenizer.STOP_WORDS]
