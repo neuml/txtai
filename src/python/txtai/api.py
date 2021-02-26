@@ -250,7 +250,7 @@ class API:
 
     def batchtransform(self, texts):
         """
-        Transforms list of texts into embeddings arrays.
+        Transforms list of text into embeddings arrays.
 
         Args:
             texts: list of text
@@ -518,7 +518,7 @@ def batchlabel(texts: List[str] = Body(...), labels: List[str] = Body(...)):
     text element.
 
     Args:
-        texts: list of texts
+        texts: list of text
         labels: list of labels
 
     Returns:
