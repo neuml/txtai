@@ -8,7 +8,7 @@ import unittest
 
 import numpy as np
 
-from txtai.ann import ANN
+from txtai.ann import ANNFactory
 
 
 class TestANN(unittest.TestCase):
@@ -104,7 +104,7 @@ class TestANN(unittest.TestCase):
         if params:
             config.update(params)
 
-        model = ANN.create(config)
+        model = ANNFactory.create(config)
         model.index(data)
 
         return model

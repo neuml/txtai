@@ -6,7 +6,7 @@ import os
 import tempfile
 import unittest
 
-from txtai.scoring import Scoring
+from txtai.scoring import ScoringFactory
 
 
 class TestScoring(unittest.TestCase):
@@ -61,7 +61,7 @@ class TestScoring(unittest.TestCase):
         Test unknown method
         """
 
-        self.assertIsNone(Scoring.create("unknown"))
+        self.assertIsNone(ScoringFactory.create("unknown"))
 
     def method(self, method, data=None):
         """
@@ -78,7 +78,7 @@ class TestScoring(unittest.TestCase):
         # Derive input data
         data = data if data else self.data
 
-        model = Scoring.create(method)
+        model = ScoringFactory.create(method)
         model.index(data)
 
         keys = [k for k, v in sorted(model.idf.items(), key=lambda x: x[1])]

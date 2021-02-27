@@ -7,7 +7,7 @@ import unittest
 
 import numpy as np
 
-from txtai.vectors import Vectors
+from txtai.vectors import VectorsFactory
 
 
 class TestTransformersVectors(unittest.TestCase):
@@ -21,7 +21,7 @@ class TestTransformersVectors(unittest.TestCase):
         Create single TransformersVectors instance.
         """
 
-        cls.model = Vectors.create({"method": "transformers", "path": "sentence-transformers/bert-base-nli-mean-tokens"}, None)
+        cls.model = VectorsFactory.create({"method": "transformers", "path": "sentence-transformers/bert-base-nli-mean-tokens"}, None)
 
     def testIndex(self):
         """

@@ -4,11 +4,12 @@ Extractor module
 
 from nltk.tokenize import sent_tokenize
 
-from .pipeline import Questions
+from .base import Pipeline
+from .questions import Questions
 from .tokenizer import Tokenizer
 
 
-class Extractor:
+class Extractor(Pipeline):
     """
     Class that uses an extractive question-answering model to extract content from a given text context.
     """

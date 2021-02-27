@@ -13,8 +13,7 @@ import yaml
 from fastapi import Body, FastAPI, Request
 
 from .embeddings import Embeddings
-from .extractor import Extractor
-from .pipeline import Labels, Similarity
+from .pipeline import Extractor, Labels, Similarity
 
 # API instance
 app = FastAPI()

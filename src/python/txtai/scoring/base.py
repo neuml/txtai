@@ -7,35 +7,13 @@ import pickle
 
 from collections import Counter
 
-from .tokenizer import Tokenizer
+from ..pipeline.tokenizer import Tokenizer
 
 
 class Scoring:
     """
     Base scoring object. Default method scores documents using TF-IDF.
     """
-
-    @staticmethod
-    def create(method):
-        """
-        Factory method to construct a Scoring object.
-
-        Args:
-            method: scoring method (bm25, sif, tfidf)
-
-        Returns:
-            Scoring object
-        """
-
-        if method == "bm25":
-            return BM25()
-        if method == "sif":
-            return SIF()
-        if method == "tfidf":
-            # Default scoring object implements tf-idf
-            return Scoring()
-
-        return None
 
     def __init__(self):
         """
@@ -194,42 +172,3 @@ class Scoring:
         """
 
         return idf
-
-
-class BM25(Scoring):
-    """
-    BM25 scoring. Scores using Apache Lucene's version of BM25 which adds 1 to prevent
-    negative scores.
-    """
-
-    def __init__(self, k1=0.1, b=0.75):
-        super().__init__()
-
-        # BM25 configurable parameters
-        self.k1 = k1
-        self.b = b
-
-    def computeIDF(self, freq):
-        # Calculate BM25 IDF score
-        return math.log(1 + (self.total - freq + 0.5) / (freq + 0.5))
-
-    def score(self, freq, idf, length):
-        # Calculate BM25 score
-        k = self.k1 * ((1 - self.b) + self.b * length / self.avgdl)
-        return idf * (freq * (self.k1 + 1)) / (freq + k)
-
-
-class SIF(Scoring):
-    """
-    Smooth Inverse Frequency (SIF) scoring.
-    """
-
-    def __init__(self, a=0.001):
-        super().__init__()
-
-        # SIF configurable parameters
-        self.a = a
-
-    def score(self, freq, idf, length):
-        # Calculate SIF score
-        return self.a / (self.a + freq / self.tokens)

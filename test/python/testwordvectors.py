@@ -6,7 +6,7 @@ import os
 import tempfile
 import unittest
 
-from txtai.vectors import WordVectors, Vectors
+from txtai.vectors import WordVectors, VectorsFactory
 
 
 class TestWordVectors(unittest.TestCase):
@@ -35,13 +35,13 @@ class TestWordVectors(unittest.TestCase):
         """
 
         config = {"path": self.path}
-        model = Vectors.create(config, None)
+        model = VectorsFactory.create(config, None)
 
         self.assertFalse(model.initialized)
 
         config["ids"] = ["0", "1"]
         config["dimensions"] = 300
-        model = Vectors.create(config, None)
+        model = VectorsFactory.create(config, None)
 
         self.assertTrue(model.initialized)
 
@@ -53,7 +53,7 @@ class TestWordVectors(unittest.TestCase):
         # Generate data
         documents = [(x, "This is a test", None) for x in range(1000)]
 
-        model = Vectors.create({"path": self.path}, None)
+        model = VectorsFactory.create({"path": self.path}, None)
 
         ids, dimension, stream = model.index(documents)
 
@@ -66,7 +66,7 @@ class TestWordVectors(unittest.TestCase):
         Test word vector lookup
         """
 
-        model = Vectors.create({"path": self.path}, None)
+        model = VectorsFactory.create({"path": self.path}, None)
         self.assertEqual(model.lookup(["txtai", "embeddings", "sentence"]).shape, (3, 300))
 
     def testNoExist(self):
@@ -76,12 +76,12 @@ class TestWordVectors(unittest.TestCase):
 
         # Test non-existent path raises an exception
         with self.assertRaises(IOError):
-            Vectors.create({"path": os.path.join(tempfile.gettempdir(), "noexist")}, None)
+            VectorsFactory.create({"path": os.path.join(tempfile.gettempdir(), "noexist")}, None)
 
     def testTransform(self):
         """
         Test word vector transform
         """
 
-        model = Vectors.create({"path": self.path}, None)
+        model = VectorsFactory.create({"path": self.path}, None)
         self.assertEqual(len(model.transform((None, ["txtai"], None))), 300)

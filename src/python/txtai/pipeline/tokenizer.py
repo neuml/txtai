@@ -5,10 +5,12 @@ Tokenizer module
 import re
 import string
 
+from .base import Pipeline
 
-class Tokenizer:
+
+class Tokenizer(Pipeline):
     """
-    Text tokenization methods.
+    Tokenizes text into a list of tokens. Primarily designed for English text.
     """
 
     # fmt: off
@@ -20,6 +22,19 @@ class Tokenizer:
 
     @staticmethod
     def tokenize(text):
+        """
+        Tokenizes input text into a list of tokens. Filters tokens that match a specific pattern and removes stop words.
+
+        Args:
+            text: input text
+
+        Returns:
+            list of tokens
+        """
+
+        return Tokenizer()(text)
+
+    def __call__(self, text):
         """
         Tokenizes input text into a list of tokens. Filters tokens that match a specific pattern and removes stop words.
 

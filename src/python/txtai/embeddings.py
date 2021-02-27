@@ -10,9 +10,9 @@ import numpy as np
 
 from sklearn.decomposition import TruncatedSVD
 
-from .ann import ANN
-from .scoring import Scoring
-from .vectors import Vectors
+from .ann import ANNFactory
+from .scoring import ScoringFactory
+from .vectors import VectorsFactory
 
 
 class Embeddings:
@@ -44,7 +44,7 @@ class Embeddings:
         self.lsa = None
 
         # Embedding scoring method - weighs each word in a sentence
-        self.scoring = Scoring.create(self.config["scoring"]) if self.config and self.config.get("scoring") else None
+        self.scoring = ScoringFactory.create(self.config["scoring"]) if self.config and self.config.get("scoring") else None
 
         # Sentence vectors model
         self.model = self.loadVectors() if self.config else None
@@ -57,7 +57,7 @@ class Embeddings:
             vector model
         """
 
-        return Vectors.create(self.config, self.scoring)
+        return VectorsFactory.create(self.config, self.scoring)
 
     def score(self, documents):
         """
@@ -104,7 +104,7 @@ class Embeddings:
         self.config["dimensions"] = dimensions
 
         # Create embeddings index
-        self.embeddings = ANN.create(self.config)
+        self.embeddings = ANNFactory.create(self.config)
 
         # Build the index
         self.embeddings.index(embeddings)
@@ -307,7 +307,7 @@ class Embeddings:
                 self.config["path"] = os.path.join(path, self.config["path"])
 
         # Sentence embeddings index
-        self.embeddings = ANN.create(self.config)
+        self.embeddings = ANNFactory.create(self.config)
         self.embeddings.load("%s/embeddings" % path)
 
         # Dimensionality reduction
@@ -317,7 +317,7 @@ class Embeddings:
 
         # Embedding scoring
         if self.config.get("scoring"):
-            self.scoring = Scoring.create(self.config["scoring"])
+            self.scoring = ScoringFactory.create(self.config["scoring"])
             self.scoring.load(path)
 
         # Sentence vectors model - transforms text into sentence embeddings
