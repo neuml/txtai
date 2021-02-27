@@ -3,15 +3,8 @@ Factory module
 """
 
 from .annoy import Annoy
+from .faiss import Faiss, FAISS
 from .hnsw import HNSW
-
-# Conditionally import Faiss as it's only supported on Linux/macOS
-try:
-    from .faiss import Faiss
-
-    FAISS = True
-except ImportError:
-    FAISS = False
 
 
 class ANNFactory:
