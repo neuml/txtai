@@ -12,7 +12,7 @@ class Similarity(Labels):
     Computes similarity between query and list of text using a zero shot classifier.
     """
 
-    def __call__(self, query, texts, multiclass=True):
+    def __call__(self, query, texts, multilabel=True):
         """
         Computes the similarity between query and list of text. Returns a list of
         (id, score) sorted by highest score, where id is the index in texts.
@@ -30,7 +30,7 @@ class Similarity(Labels):
         """
 
         # Call Labels pipeline for texts using input query as the candidate label
-        scores = super().__call__(texts, [query] if isinstance(query, str) else query, multiclass)
+        scores = super().__call__(texts, [query] if isinstance(query, str) else query, multilabel)
 
         # Sort on query index id
         scores = [[score for _, score in sorted(row)] for row in scores]

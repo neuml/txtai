@@ -13,7 +13,7 @@ class Labels(HFPipeline):
     def __init__(self, path=None, quantize=False, gpu=True, model=None):
         super().__init__("zero-shot-classification", path, quantize, gpu, model)
 
-    def __call__(self, text, labels, multiclass=False):
+    def __call__(self, text, labels, multilabel=False):
         """
         Applies a zero shot classifier to text using a list of labels. Returns a list of
         (id, score) sorted by highest score, where id is the index in labels.
@@ -31,7 +31,7 @@ class Labels(HFPipeline):
         """
 
         # Run ZSL pipeline
-        results = self.pipeline(text, labels, multi_class=multiclass)
+        results = self.pipeline(text, labels, multi_label=multilabel)
 
         # Convert results to a list if necessary
         if not isinstance(results, list):
