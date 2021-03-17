@@ -34,6 +34,7 @@ setup(
         "PyYAML>=5.3",
         "regex>=2020.5.14",
         "scikit-learn>=0.23.1",
+        "tika>=1.24",
         "torch>=1.4.0",
         "tqdm>=4.46.0",
         "sentence-transformers>=0.4.0",
