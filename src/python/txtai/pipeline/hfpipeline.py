@@ -2,14 +2,12 @@
 Hugging Face pipeline wrapper module
 """
 
-import torch
-
 from transformers import pipeline
 
-from .base import Pipeline
+from .tensors import Tensors
 
 
-class HFPipeline(Pipeline):
+class HFPipeline(Tensors):
     """
     Light wrapper around Hugging Face's pipeline component for selected tasks. Adds support for model
     quantization and minor interface changes.
@@ -24,21 +22,21 @@ class HFPipeline(Pipeline):
             path: optional path to model, accepts Hugging Face model hub id or local path,
                   uses default model for task if not provided
             quantize: if model should be quantized, defaults to False
-            gpu: if gpu inference should be used (only works if GPUs are available)
+            gpu: True/False if GPU should be enabled, also supports a GPU device id
             model: optional existing pipeline model to wrap
         """
 
         if model:
             # Check if input model is a Pipeline or a HF pipeline
-            self.pipeline = model.pipeline if isinstance(model, Pipeline) else model
+            self.pipeline = model.pipeline if isinstance(model, HFPipeline) else model
         else:
-            # Enable GPU inference if explicitly set and a GPU is available
-            gpu = gpu and torch.cuda.is_available()
+            # Get device id
+            deviceid = self.deviceid(gpu)
 
             # Transformer pipeline task
-            self.pipeline = pipeline(task, model=path, tokenizer=path, device=0 if gpu else -1)
+            self.pipeline = pipeline(task, model=path, tokenizer=path, device=deviceid)
 
             # Model quantization. Compresses model to int8 precision, improves runtime performance. Only supported on CPU.
-            if not gpu and quantize:
+            if deviceid == -1 and quantize:
                 # pylint: disable=E1101
-                self.pipeline.model = torch.quantization.quantize_dynamic(self.pipeline.model, {torch.nn.Linear}, dtype=torch.qint8)
+                self.pipeline.model = self.quantize(self.pipeline.model)
