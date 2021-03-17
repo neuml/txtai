@@ -126,7 +126,7 @@ class API:
                 self.documents = Documents()
 
             # Add batch
-            documents.add([(document["id"], document["text"], None) for document in documents])
+            self.documents.add([(document["id"], document["text"], None) for document in documents])
 
     def index(self):
         """
