@@ -18,7 +18,7 @@ jobs:
 
       - name: Install dependencies - Linux
         run: apt-get install libsndfile1
-        if: matrix.os == "ubuntu-latest"
+        if: matrix.os == 'ubuntu-latest'
 
       - name: Install dependencies - MacOS
         run: brew install libomp
