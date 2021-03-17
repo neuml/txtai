@@ -38,6 +38,7 @@ setup(
         "torch>=1.4.0",
         "tqdm>=4.46.0",
         "sentence-transformers>=0.4.0",
+        "soundfile>=0.10.3.post1",
         "transformers>=4.4.1",
         "uvicorn>=0.12.1",
     ],
