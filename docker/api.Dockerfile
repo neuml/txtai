@@ -11,7 +11,7 @@ EXPOSE 8000
 
 # Install required packages
 RUN apt-get update && \
-    apt-get -y --no-install-recommends install libgomp1 gcc g++ python3.6 python3-dev python3-pip && \
+    apt-get -y --no-install-recommends install libgomp1 libsndfile1 gcc g++ python3.6 python3-dev python3-pip && \
     rm -rf /var/lib/apt/lists
 
 # Install paperetl project and dependencies

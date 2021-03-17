@@ -16,6 +16,10 @@ jobs:
         with:
           python-version: 3.6
 
+      - name: Install dependencies - Linux
+        run: apt-get install libsndfile1
+        if: matrix.os == "ubuntu-latest"
+
       - name: Install dependencies - MacOS
         run: brew install libomp
         if: matrix.os == 'macos-latest'
