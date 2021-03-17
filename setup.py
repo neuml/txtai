@@ -6,7 +6,7 @@ with open("README.md", "r") as f:
 
 setup(
     name="txtai",
-    version="2.1.0",
+    version="3.0.0",
     author="NeuML",
     description="AI-powered search engine",
     long_description=DESCRIPTION,
@@ -37,7 +37,7 @@ setup(
         "torch>=1.4.0",
         "tqdm>=4.46.0",
         "sentence-transformers>=0.4.0",
-        "transformers>=4.1.1",
+        "transformers>=4.4.1",
         "uvicorn>=0.12.1",
     ],
     extras_require={"dev": ["black", "coverage", "pre-commit", "pylint"]},
