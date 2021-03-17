@@ -2,7 +2,12 @@
 Transcription module
 """
 
-import soundfile as sf
+try:
+    import soundfile as sf
+
+    SOUNDFILE = True
+except (ImportError, OSError):
+    SOUNDFILE = False
 
 from transformers import Wav2Vec2ForCTC, Wav2Vec2Processor
 
@@ -29,6 +34,9 @@ class Transcription(HFModel):
 
         # Call parent constructor
         super().__init__(path, quantize, gpu, batch)
+
+        if not SOUNDFILE:
+            raise ImportError("SoundFile library not installed or libsndfile not found")
 
         # load model and processor
         self.model = Wav2Vec2ForCTC.from_pretrained(self.path)
