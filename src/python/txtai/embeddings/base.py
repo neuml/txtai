@@ -10,9 +10,9 @@ import numpy as np
 
 from sklearn.decomposition import TruncatedSVD
 
-from .ann import ANNFactory
-from .scoring import ScoringFactory
-from .vectors import VectorsFactory
+from ..ann import ANNFactory
+from ..scoring import ScoringFactory
+from ..vectors import VectorsFactory
 
 
 class Embeddings:
