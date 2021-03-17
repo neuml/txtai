@@ -17,7 +17,7 @@ jobs:
           python-version: 3.6
 
       - name: Install dependencies - Linux
-        run: apt-get install libsndfile1
+        run: sudo apt-get install libsndfile1
         if: matrix.os == 'ubuntu-latest'
 
       - name: Install dependencies - MacOS
