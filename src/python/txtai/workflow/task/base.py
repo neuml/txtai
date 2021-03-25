@@ -10,7 +10,7 @@ class Task:
     Base class for all workflow tasks.
     """
 
-    def __init__(self, action, select=None, unpack=True):
+    def __init__(self, action=None, select=None, unpack=True):
         """
         Creates a new task. A task defines two methods, type of data it accepts and the action to execute
         for each data element. Actions are callable functions.
@@ -40,7 +40,7 @@ class Task:
         elements = [self.prepare(element) for element in elements]
 
         # Run data elements through workflow action
-        return self.action(elements)
+        return self.action(elements) if self.action else elements
 
     def accept(self, element):
         """
