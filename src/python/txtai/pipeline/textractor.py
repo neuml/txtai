@@ -35,6 +35,10 @@ class Textractor(Pipeline):
         """
         Extracts text from a file at path.
 
+        This method supports files as a string or a list. If the input is a string, the return
+        type is text|list for the file. If files is a list, a list of returned, this could be a
+        list of text or a list of lists depending on the tokenization strategy.
+
         Args:
             files: text|list
 
@@ -42,18 +46,20 @@ class Textractor(Pipeline):
             extracted text from files
         """
 
-        files = [files] if not isinstance(files, list) else files
+        # Get inputs
+        values = [files] if not isinstance(files, list) else files
 
-        content = []
-        for path in files:
+        # Extract text for each input file
+        results = []
+        for path in values:
             parsed = parser.from_file(path)
             text = parsed["content"]
 
             if text:
                 # Parse and add extracted results
-                content.append(self.parse(text))
+                results.append(self.parse(text))
 
-        return content
+        return results[0] if isinstance(files, str) else results
 
     def parse(self, text):
         """

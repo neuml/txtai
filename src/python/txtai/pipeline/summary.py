@@ -2,6 +2,8 @@
 Summary module
 """
 
+import re
+
 from .hfpipeline import HFPipeline
 
 
@@ -43,6 +45,22 @@ class Summary(HFPipeline):
             results = [results]
 
         # Pull out summary text
-        results = [x["summary_text"].strip() for x in results]
+        results = [self.clean(x["summary_text"]) for x in results]
 
         return results[0] if isinstance(text, str) else results
+
+    def clean(self, text):
+        """
+        Applies a series of rules to clean extracted text.
+
+        Args:
+            text: input text
+
+        Returns:
+            clean text
+        """
+
+        text = re.sub(r"\s*\.\s*", ". ", text)
+        text = text.strip()
+
+        return text
