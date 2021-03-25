@@ -5,7 +5,7 @@ Workflow module tests
 import unittest
 
 from txtai.embeddings import Documents, Embeddings
-from txtai.pipeline import Summary, Transcription, Translation, Textractor
+from txtai.pipeline import Summary, Translation, Textractor
 from txtai.workflow import Workflow, Task, FileTask, ImageTask, WorkflowTask
 
 # pylint: disable = C0411
@@ -38,7 +38,6 @@ class TestWorkFlow(unittest.TestCase):
 
         textractor = Textractor(paragraphs=True, minlength=150, join=True)
         summary = Summary()
-        transcribe = Transcription()
         translate = Translation()
 
         embeddings = Embeddings({"method": "transformers", "path": "sentence-transformers/paraphrase-xlm-r-multilingual-v1"})
@@ -53,17 +52,9 @@ class TestWorkFlow(unittest.TestCase):
 
         # Complex workflow that handles text extraction and audio transcription
         # Results are translated to Spanish and loaded into an embeddings index
-        tasks = [WorkflowTask(articles, r".\.pdf$"), FileTask(transcribe, r"\.wav$"), Task(lambda x: translate(x, "es")), Task(index, unpack=False)]
+        tasks = [WorkflowTask(articles, r".\.pdf$"), Task(lambda x: translate(x, "es")), Task(index, unpack=False)]
 
-        data = [
-            "article.pdf",
-            "Beijing_mobilises.wav",
-            "Canadas_last_fully.wav",
-            "Maine_man_wins_1_mil.wav",
-            "Make_huge_profits.wav",
-            "The_National_Park.wav",
-            "US_tops_5_million.wav",
-        ]
+        data = ["article.pdf", "Workflows can process audio files, documents and snippets"]
 
         # Convert file paths to data tuples
         data = [(x, "file:///%s/%s" % (Utils.PATH, element), None) for x, element in enumerate(data)]
