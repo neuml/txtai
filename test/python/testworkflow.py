@@ -40,7 +40,7 @@ class TestWorkFlow(unittest.TestCase):
         summary = Summary()
         translate = Translation()
 
-        embeddings = Embeddings({"method": "transformers", "path": "sentence-transformers/paraphrase-xlm-r-multilingual-v1"})
+        embeddings = Embeddings({"method": "transformers", "path": "sentence-transformers/bert-base-nli-mean-tokens"})
         documents = Documents()
 
         def index(x):
