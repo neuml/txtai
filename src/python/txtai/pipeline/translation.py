@@ -4,7 +4,7 @@ Translation module
 
 import fasttext
 
-from transformers import MBartForConditionalGeneration, MBart50TokenizerFast, MarianMTModel, MarianTokenizer
+from transformers import M2M100ForConditionalGeneration, M2M100Tokenizer, MarianMTModel, MarianTokenizer
 from transformers.file_utils import cached_path
 from transformers.hf_api import HfApi
 
@@ -19,7 +19,7 @@ class Translation(HFModel):
     # Default language detection model
     DEFAULT_LANG_DETECT = "https://dl.fbaipublicfiles.com/fasttext/supervised-models/lid.176.ftz"
 
-    def __init__(self, path="facebook/mbart-large-50-many-to-many-mmt", quantize=False, gpu=True, batch=64, langdetect=DEFAULT_LANG_DETECT):
+    def __init__(self, path="facebook/m2m100_418M", quantize=False, gpu=True, batch=64, langdetect=DEFAULT_LANG_DETECT):
         """
         Constructs a new language translation pipeline.
 
@@ -144,7 +144,7 @@ class Translation(HFModel):
         indices = None
 
         with self.context():
-            if isinstance(model, MBartForConditionalGeneration):
+            if isinstance(model, M2M100ForConditionalGeneration):
                 source = self.langid(tokenizer.lang_code_to_id, source)
                 target = self.langid(tokenizer.lang_code_to_id, target)
 
@@ -230,8 +230,8 @@ class Translation(HFModel):
             model = MarianMTModel.from_pretrained(path)
             tokenizer = MarianTokenizer.from_pretrained(path)
         else:
-            model = MBartForConditionalGeneration.from_pretrained(path)
-            tokenizer = MBart50TokenizerFast.from_pretrained(path)
+            model = M2M100ForConditionalGeneration.from_pretrained(path)
+            tokenizer = M2M100Tokenizer.from_pretrained(path)
 
         # Apply model initialization routines
         model = self.prepare(model)
