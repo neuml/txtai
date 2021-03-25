@@ -19,10 +19,17 @@ class TransformersVectors(Vectors):
     """
 
     def load(self, path):
-        model = Transformer(path)
-        pooling = Pooling(model.get_word_embedding_dimension())
+        modelhub = self.config.get("modelhub", True)
 
-        return SentenceTransformer(modules=[model, pooling])
+        # Download model from the model hub (default)
+        if modelhub:
+            model = Transformer(path)
+            pooling = Pooling(model.get_word_embedding_dimension())
+
+            return SentenceTransformer(modules=[model, pooling])
+
+        # Download model directly from sentence transformers if model hub disabled
+        return SentenceTransformer(path)
 
     def index(self, documents):
         ids, dimensions, stream = [], None, None
