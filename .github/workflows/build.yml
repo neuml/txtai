@@ -27,6 +27,10 @@ jobs:
         run: brew install libomp
         if: matrix.os == 'macos-latest'
 
+      - name: Install dependencies - Windows
+        run: choco install wget
+        if: matrix.os == 'windows-latest'
+
       - name: Build
         run: |
           pip install -U pip wheel coverage coveralls
