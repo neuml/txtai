@@ -14,6 +14,12 @@ export TOKENIZERS_PARALLELISM := false
 # Default python executable if not provided
 PYTHON ?= python
 
+# Download test data
+data:
+	mkdir -p /tmp/txtai
+	wget -N https://github.com/neuml/txtai/releases/download/v2.0.0/tests.tar.gz -P /tmp
+	tar -xvzf /tmp/tests.tar.gz -C /tmp
+
 # Unit tests
 test:
 	${PYTHON} -m unittest discover -v -s ${TEST_DIR}

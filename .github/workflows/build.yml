@@ -33,7 +33,7 @@ jobs:
           pip install .
           python -c "import nltk; nltk.download('punkt')"
           python --version
-          make coverage
+          make data coverage
 
       - uses: pre-commit/action@v2.0.0
         if: matrix.os == 'ubuntu-latest'
