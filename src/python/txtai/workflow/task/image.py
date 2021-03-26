@@ -2,10 +2,7 @@
 ImageTask module
 """
 
-import os
 import re
-
-from urllib.parse import urlparse
 
 from PIL import Image
 
@@ -22,8 +19,4 @@ class ImageTask(FileTask):
         return super().accept(element) and re.search(r"\.(gif|bmp|jpg|jpeg|png|webp)$", element.lower())
 
     def prepare(self, element):
-        # Read image data
-        url = urlparse(element)
-        path = os.path.abspath(os.path.join(url.netloc, url.path))
-
-        return Image.open(path)
+        return Image.open(super().prepare(element))

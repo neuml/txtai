@@ -54,10 +54,10 @@ class TestWorkFlow(unittest.TestCase):
         # Results are translated to Spanish and loaded into an embeddings index
         tasks = [WorkflowTask(articles, r".\.pdf$"), Task(lambda x: translate(x, "es")), Task(index, unpack=False)]
 
-        data = ["article.pdf", "Workflows can process audio files, documents and snippets"]
+        data = ["file://" + Utils.PATH + "/article.pdf", "Workflows can process audio files, documents and snippets"]
 
         # Convert file paths to data tuples
-        data = [(x, "file:///%s/%s" % (Utils.PATH, element), None) for x, element in enumerate(data)]
+        data = [(x, element, None) for x, element in enumerate(data)]
 
         # Execute workflow, discard results as they are streamed
         workflow = Workflow(tasks)
