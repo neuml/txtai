@@ -28,7 +28,7 @@ jobs:
         if: matrix.os == 'macos-latest'
 
       - name: Install dependencies - Windows
-        run: choco install wget jdk8
+        run: choco install wget
         if: matrix.os == 'windows-latest'
 
       - name: Build
