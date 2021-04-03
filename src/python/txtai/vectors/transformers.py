@@ -23,7 +23,7 @@ class TransformersVectors(Vectors):
 
         # Download model from the model hub (default)
         if modelhub:
-            model = Transformer(path)
+            model = Transformer(path, max_seq_length=self.config.get("maxlength"))
             pooling = Pooling(model.get_word_embedding_dimension())
 
             return SentenceTransformer(modules=[model, pooling])

@@ -21,7 +21,9 @@ class TestTransformersVectors(unittest.TestCase):
         Create single TransformersVectors instance.
         """
 
-        cls.model = VectorsFactory.create({"method": "transformers", "path": "sentence-transformers/bert-base-nli-mean-tokens"}, None)
+        cls.model = VectorsFactory.create(
+            {"method": "transformers", "path": "sentence-transformers/bert-base-nli-mean-tokens", "maxlength": 512}, None
+        )
 
     def testIndex(self):
         """
@@ -68,3 +70,15 @@ class TestTransformersVectors(unittest.TestCase):
 
         self.assertFalse(np.array_equal(embeddings1[0], embeddings2[0]))
         self.assertTrue(np.array_equal(embeddings1[1], embeddings2[1]))
+
+    def testLongTransform(self):
+        """
+        Test transformers transform on long text
+        """
+
+        # Sample documents: short text and longer text
+        documents = [(0, "This is long text " * 512, None), (1, "This is short text", None)]
+
+        # Run transform and ensure it completes without errors
+        embeddings = [self.model.transform(d) for d in documents]
+        self.assertIsNotNone(embeddings)
