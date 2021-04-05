@@ -36,10 +36,10 @@ txtai executes machine-learning workflows to transform data and build AI-powered
 Summary of txtai features:
 
 - 🔎 Large-scale similarity search with multiple index backends ([Faiss](https://github.com/facebookresearch/faiss), [Annoy](https://github.com/spotify/annoy), [Hnswlib](https://github.com/nmslib/hnswlib))
-- 📄 Create embeddings for text snippets, documents, audio and images. Supports word and transformer vectors.
+- 📄 Create embeddings for text snippets, documents, audio and images. Supports transformers and word vectors.
 - 💡 Machine-learning pipelines to run extractive question-answering, zero-shot labeling, transcription, translation, summarization and text extraction
-- ↪️️ Workflows that join multiple pipelines together to execute higher level business logic. txtai processes can be microservices or full-fledged indexing workflows.
-- 🔗 API that supports [JavaScript](https://github.com/neuml/txtai.js), [Java](https://github.com/neuml/txtai.java), [Rust](https://github.com/neuml/txtai.rs) and [Go](https://github.com/neuml/txtai.go)
+- ↪️️ Workflows that join pipelines together to aggregate business logic. txtai processes can be microservices or full-fledged indexing workflows.
+- 🔗 API bindings for [JavaScript](https://github.com/neuml/txtai.js), [Java](https://github.com/neuml/txtai.java), [Rust](https://github.com/neuml/txtai.rs) and [Go](https://github.com/neuml/txtai.go)
 - ☁️ Cloud-native architecture that scales out with container orchestration systems (e.g. Kubernetes)
 
 NeuML uses txtai and/or the concepts behind it to power all of our Natural Language Processing (NLP) applications. Applications include:
@@ -109,7 +109,7 @@ The examples directory has a series of notebooks and applications giving an over
 
 ### Documentation
 
-Full documentation on txtai including configuration settings for pipelines, workflows, indexing and the API can be found here - [https://neuml.github.io/txtai](https://neuml.github.io/txtai)
+[Full documentation on txtai]((https://neuml.github.io/txtai)) including configuration settings for pipelines, workflows, indexing and the API.
 
 ### Contributing
 
