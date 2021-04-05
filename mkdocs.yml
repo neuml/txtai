@@ -1,0 +1,21 @@
+site_name: txtai
+theme:
+    name: material
+    logo: images/logo.png
+    favicon: images/logo.png
+    palette:
+        primary: blue
+        accent: blue
+repo_name: neuml/txtai
+repo_url: https://github.com/neuml/txtai
+nav:
+    - Home: index.md
+    - Installation: install.md
+    - Examples: examples.md
+    - Embeddings: embeddings.md
+    - Pipelines:
+        - Overview: pipelines/overview.md
+        - Extractor: pipelines/extractor.md
+        - Labels: pipelines/labels.md
+        - Similarity: pipelines/similarity.md
+    - API: api.md
