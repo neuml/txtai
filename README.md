@@ -109,7 +109,7 @@ The examples directory has a series of notebooks and applications giving an over
 
 ### Documentation
 
-[Full documentation on txtai]((https://neuml.github.io/txtai)) including configuration settings for pipelines, workflows, indexing and the API.
+[Full documentation on txtai](https://neuml.github.io/txtai) including configuration settings for pipelines, workflows, indexing and the API.
 
 ### Contributing
 

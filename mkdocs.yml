@@ -3,9 +3,12 @@ theme:
     name: material
     logo: images/logo.png
     favicon: images/logo.png
+    icon:
+        repo: fontawesome/brands/github
     palette:
         primary: blue
         accent: blue
+copyright: © NeuML LLC, Apache-2.0 License
 repo_name: neuml/txtai
 repo_url: https://github.com/neuml/txtai
 nav:
