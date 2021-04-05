@@ -1,4 +1,11 @@
+#
+# txtai Material for MkDocs configuration
+#
+
 site_name: txtai
+repo_name: neuml/txtai
+repo_url: https://github.com/neuml/txtai
+copyright: © NeuML LLC, Apache-2.0 License
 theme:
     name: material
     logo: images/logo.png
@@ -8,9 +15,18 @@ theme:
     palette:
         primary: blue
         accent: blue
-copyright: © NeuML LLC, Apache-2.0 License
-repo_name: neuml/txtai
-repo_url: https://github.com/neuml/txtai
+plugins:
+    - search
+    - mkdocstrings:
+        handlers:
+            python:
+                rendering:
+                    show_root_full_path: false
+                    show_root_heading: true
+                    show_root_toc_entry: false
+markdown_extensions:
+    - pymdownx.highlight
+    - pymdownx.superfences
 nav:
     - Home: index.md
     - Installation: install.md
@@ -21,4 +37,9 @@ nav:
         - Extractor: pipelines/extractor.md
         - Labels: pipelines/labels.md
         - Similarity: pipelines/similarity.md
+        - Summary: pipelines/summary.md
+        - Textractor: pipelines/textractor.md
+        - Transcription: pipelines/transcription.md
+        - Translation: pipelines/translation.md
+    - Workflows: workflows.md
     - API: api.md

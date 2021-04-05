@@ -8,16 +8,5 @@ Extractor parameters are set as constructor arguments. Examples below.
 Extractor(embeddings, path, quantize, gpu, model, tokenizer)
 ```
 
-## embeddings
-```yaml
-embeddings: Embeddings object instance
-```
-
-Embeddings object instance. Used to query and find candidate text snippets to run the question-answer model against.
-
-## tokenizer
-```yaml
-tokenizer: Tokenizer function
-```
-
-Optional custom tokenizer function to parse input queries
+::: txtai.pipeline.Extractor.__init__
+::: txtai.pipeline.Extractor.__call__

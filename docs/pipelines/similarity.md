@@ -8,3 +8,6 @@ Similarity parameters are set as constructor arguments. Examples below.
 Similarity()
 Similarity("roberta-large-mnli")
 ```
+
+::: txtai.pipeline.Similarity.__init__
+::: txtai.pipeline.Similarity.__call__

@@ -8,3 +8,6 @@ Labels parameters are set as constructor arguments. Examples below.
 Labels()
 Labels("roberta-large-mnli")
 ```
+
+::: txtai.pipeline.Labels.__init__
+::: txtai.pipeline.Labels.__call__

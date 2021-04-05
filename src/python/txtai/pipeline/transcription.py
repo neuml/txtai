@@ -29,7 +29,6 @@ class Transcription(HFModel):
             quantize: if model should be quantized, defaults to False
             gpu: True/False if GPU should be enabled, also supports a GPU device id
             batch: batch size used to incrementally process content
-            langdetect: path to language detection model, uses a default path if not provided
         """
 
         # Call parent constructor

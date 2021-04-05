@@ -72,3 +72,5 @@ The following programming languages have txtai bindings:
 - [Go](https://github.com/neuml/txtai.go)
 
 See each of the projects above for details on how to install and use. Please add an issue to request additional language bindings!
+
+::: txtai.api.application
