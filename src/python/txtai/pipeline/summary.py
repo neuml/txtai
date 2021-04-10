@@ -31,7 +31,7 @@ class Summary(HFPipeline):
             summary text
         """
 
-        kwargs = {}
+        kwargs = {"truncation": True}
         if minlength:
             kwargs["min_length"] = minlength
         if maxlength:
