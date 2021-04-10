@@ -26,10 +26,6 @@ class TestTranslation(unittest.TestCase):
         # Validate translation text
         self.assertEqual(translation, "Esta es una traducción de prueba al español")
 
-        # Validate translation back
-        translation = translate(translation, "en")
-        self.assertEqual(translation, text)
-
     @unittest.skipIf(os.name == "nt", "M2M100 skipped on Windows")
     def testM2M100Translation(self):
         """
