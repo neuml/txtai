@@ -3,12 +3,12 @@ API module
 """
 
 from ..embeddings import Documents, Embeddings
-from ..pipeline import Extractor, Labels, Similarity
+from ..pipeline import Factory
 
 
 class API:
     """
-    Base API template. Downstream applications can extend this base template to add custom search functionality.
+    Base API template. Downstream applications can extend this base template to add/modify functionality.
     """
 
     def __init__(self, config):
@@ -20,8 +20,7 @@ class API:
         """
 
         # Initialize member variables
-        self.config, self.documents = config, None
-        self.embeddings, self.extractor, self.labels, self.similar = None, None, None, None
+        self.config, self.documents, self.embeddings = config, None, None
 
         # Create/load embeddings index depending on writable flag
         if self.config.get("writable"):
@@ -30,28 +29,29 @@ class API:
             self.embeddings = Embeddings()
             self.embeddings.load(self.config["path"])
 
-        # Create extractor instance
-        if "extractor" in self.config:
-            # Extractor settings
-            extractor = self.config["extractor"] if self.config["extractor"] else {}
+        # Pipeline definitions
+        self.pipelines = {}
 
-            self.extractor = Extractor(self.embeddings, extractor.get("path"), extractor.get("quantize"), extractor.get("gpu"))
+        # Default pipelines
+        pipelines = ["extractor", "labels", "similarity", "summary", "textractor", "transcription", "translation"]
 
-        # Create labels instance
-        if "labels" in self.config:
-            labels = self.config["labels"] if self.config["labels"] else {}
+        # Add custom pipelines
+        for key in self.config:
+            if "." in key:
+                pipelines.append(key)
 
-            self.labels = Labels(labels.get("path"), labels.get("quantize"), labels.get("gpu"))
+        # Create pipelines
+        for pipeline in pipelines:
+            if pipeline in self.config:
+                config = self.config[pipeline] if self.config[pipeline] else {}
 
-        # Creates similarity instance
-        if "similarity" in self.config:
-            similar = self.config["similarity"] if self.config["similarity"] else {}
+                # Custom pipeline parameters
+                if pipeline == "extractor":
+                    config["embeddings"] = self.embeddings
+                elif pipeline == "similarity" and "path" not in config and "labels" in self.pipelines:
+                    config["model"] = self.pipelines["labels"]
 
-            # Share model with labels if separate model not specified
-            if "path" not in similar and self.labels:
-                self.similar = Similarity(model=self.labels)
-            else:
-                self.similar = Similarity(similar.get("path"), similar.get("quantize"), similar.get("gpu"))
+                self.pipelines[pipeline] = Factory.create(config, pipeline)
 
     def limit(self, limit):
         """
@@ -164,8 +164,8 @@ class API:
         """
 
         # Use similarity instance if available otherwise fall back to embeddings model
-        if self.similar:
-            return [{"id": uid, "score": float(score)} for uid, score in self.similar(query, texts)]
+        if "similarity" in self.pipelines:
+            return [{"id": uid, "score": float(score)} for uid, score in self.pipelines["similarity"](query, texts)]
         if self.embeddings:
             return [{"id": uid, "score": float(score)} for uid, score in self.embeddings.similarity(query, texts)]
 
@@ -186,8 +186,8 @@ class API:
         """
 
         # Use similarity instance if available otherwise fall back to embeddings model
-        if self.similar:
-            return [[{"id": uid, "score": float(score)} for uid, score in r] for r in self.similar(queries, texts)]
+        if "similarity" in self.pipelines:
+            return [[{"id": uid, "score": float(score)} for uid, score in r] for r in self.pipelines["similarity"](queries, texts)]
         if self.embeddings:
             return [[{"id": uid, "score": float(score)} for uid, score in r] for r in self.embeddings.batchsimilarity(queries, texts)]
 
@@ -238,10 +238,10 @@ class API:
             list of {name: value, answer: value}
         """
 
-        if self.extractor:
+        if self.embeddings and "extractor" in self.pipelines:
             # Convert queue to tuples
             queue = [(x["name"], x["query"], x.get("question"), x.get("snippet")) for x in queue]
-            return [{"name": name, "answer": answer} for name, answer in self.extractor(queue, texts)]
+            return [{"name": name, "answer": answer} for name, answer in self.pipelines["extractor"](queue, texts)]
 
         return None
 
@@ -258,12 +258,26 @@ class API:
             list of {id: value, score: value} per text element
         """
 
-        if self.labels:
+        if "labels" in self.pipelines:
             # Text is a string
             if isinstance(text, str):
-                return [{"id": uid, "score": float(score)} for uid, score in self.labels(text, labels)]
+                return [{"id": uid, "score": float(score)} for uid, score in self.pipelines["labels"](text, labels)]
 
             # Text is a list
-            return [[{"id": uid, "score": float(score)} for uid, score in result] for result in self.labels(text, labels)]
+            return [[{"id": uid, "score": float(score)} for uid, score in result] for result in self.pipelines["labels"](text, labels)]
+
+        return None
+
+    def pipeline(self, name, args):
+        """
+        Generic pipeline execution method.
+
+        Args:
+            name: pipeline name
+            args: pipeline arguments
+        """
+
+        if name in self.pipelines:
+            return self.pipelines[name](*args)
 
         return None

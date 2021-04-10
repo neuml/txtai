@@ -1,5 +1,5 @@
 """
-API module tests
+Embeddings API module tests
 """
 
 import os
@@ -12,8 +12,8 @@ from fastapi.testclient import TestClient
 
 from txtai.api import API, app, start
 
-# Full API configuration with similarity search, extractive QA and zero-shot labeling.
-FULL = """
+# Configuration for a read/write embeddings index
+INDEX = """
 # Index file path
 path: %s
 
@@ -28,16 +28,9 @@ embeddings:
 # Extractor settings
 extractor:
     path: distilbert-base-cased-distilled-squad
-
-# Labels settings
-labels:
-    path: prajjwal1/bert-medium-mnli
-
-# Enable pipeline similarity backed by zero shot classifier
-similarity:
 """
 
-# Configuration that reads an existing similarity search index
+# Configuration for a read-only embeddings index
 READONLY = """
 # Index file path
 path: %s
@@ -47,9 +40,9 @@ writable: False
 """
 
 
-class TestAPI(unittest.TestCase):
+class TestEmbeddings(unittest.TestCase):
     """
-    API tests
+    API tests for embeddings indices
     """
 
     @staticmethod
@@ -66,7 +59,7 @@ class TestAPI(unittest.TestCase):
         index = os.path.join(tempfile.gettempdir(), "testapi")
 
         with open(config, "w") as output:
-            output.write((FULL if full else READONLY) % (index))
+            output.write((INDEX if full else READONLY) % (index))
 
         client = TestClient(app)
         start()
@@ -79,7 +72,7 @@ class TestAPI(unittest.TestCase):
         Create API client on creation of class.
         """
 
-        cls.client = TestAPI.start(True)
+        cls.client = TestEmbeddings.start(True)
 
         cls.data = [
             "US tops 5 million confirmed virus cases",
@@ -108,7 +101,6 @@ class TestAPI(unittest.TestCase):
         self.assertIsNone(api.transform("test"))
         self.assertIsNone(api.batchtransform(["test"]))
         self.assertIsNone(api.extract(["test"], ["test"]))
-        self.assertIsNone(api.label("test", ["test"]))
 
     def testExtractor(self):
         """
@@ -148,27 +140,6 @@ class TestAPI(unittest.TestCase):
             "extract", json={"queue": [{"name": question, "query": question, "question": question, "snippet": False}], "texts": data}
         ).json()
         self.assertEqual("Flyers", answers[0]["answer"])
-
-    def testLabel(self):
-        """
-        Test label via API
-        """
-
-        labels = self.client.post("label", json={"text": "this is the best sentence ever", "labels": ["positive", "negative"]}).json()
-
-        self.assertEqual(labels[0]["id"], 0)
-
-    def testLabelBatch(self):
-        """
-        Test batch label via API
-        """
-
-        labels = self.client.post(
-            "batchlabel", json={"texts": ["this is the best sentence ever", "This is terrible"], "labels": ["positive", "negative"]}
-        ).json()
-
-        results = [l[0]["id"] for l in labels]
-        self.assertEqual(results, [0, 1])
 
     def testSearch(self):
         """
@@ -230,7 +201,7 @@ class TestAPI(unittest.TestCase):
         """
 
         # Re-create read-only model
-        self.client = TestAPI.start(False)
+        self.client = TestEmbeddings.start(False)
 
         # Test search
         uid = self.client.get("search?query=feel%20good%20story&limit=1").json()[0]["id"]

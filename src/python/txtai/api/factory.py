@@ -9,21 +9,36 @@ class Factory:
     """
 
     @staticmethod
-    def get(atype):
+    def get(api):
         """
-        Gets a new instance of atype.
+        Gets a new instance of api class.
 
         Args:
-            atype: API instance class
+            api: API instance class
 
         Returns:
-            instance of atype
+            API
         """
 
-        parts = atype.split(".")
+        parts = api.split(".")
         module = ".".join(parts[:-1])
         m = __import__(module)
         for comp in parts[1:]:
             m = getattr(m, comp)
 
         return m
+
+    @staticmethod
+    def create(config, api):
+        """
+        Creates a new API instance.
+
+        Args:
+            config: API configuration
+            api: API instance class
+
+        Returns:
+            API instance
+        """
+
+        return Factory.get(api)(config)
