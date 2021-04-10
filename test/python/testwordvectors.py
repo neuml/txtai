@@ -14,8 +14,7 @@ class TestWordVectors(unittest.TestCase):
     Vectors tests
     """
 
-    @classmethod
-    def setUpClass(cls):
+    def setUp(self):
         """
         Test a WordVectors build.
         """
@@ -24,10 +23,11 @@ class TestWordVectors(unittest.TestCase):
         path = os.path.join(tempfile.gettempdir(), "vectors")
 
         # Save model path
-        cls.path = path + ".magnitude"
+        self.path = path + ".magnitude"
 
-        # Build word vectors
-        WordVectors.build("README.md", 300, 3, path)
+        if not os.path.exists(self.path):
+            # Build word vectors
+            WordVectors.build("README.md", 300, 3, path)
 
     def testBlocking(self):
         """
