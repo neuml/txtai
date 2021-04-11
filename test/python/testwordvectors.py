@@ -14,7 +14,8 @@ class TestWordVectors(unittest.TestCase):
     Vectors tests
     """
 
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
         """
         Test a WordVectors build.
         """
@@ -23,11 +24,10 @@ class TestWordVectors(unittest.TestCase):
         path = os.path.join(tempfile.gettempdir(), "vectors")
 
         # Save model path
-        self.path = path + ".magnitude"
+        cls.path = path + ".magnitude"
 
-        if not os.path.exists(self.path):
-            # Build word vectors
-            WordVectors.build("README.md", 300, 3, path)
+        # Build word vectors
+        WordVectors.build("README.md", 10, 3, path)
 
     def testBlocking(self):
         """
@@ -40,7 +40,7 @@ class TestWordVectors(unittest.TestCase):
         self.assertFalse(model.initialized)
 
         config["ids"] = ["0", "1"]
-        config["dimensions"] = 300
+        config["dimensions"] = 10
         model = VectorsFactory.create(config, None)
 
         self.assertTrue(model.initialized)
@@ -58,7 +58,7 @@ class TestWordVectors(unittest.TestCase):
         ids, dimension, stream = model.index(documents)
 
         self.assertEqual(len(ids), 1000)
-        self.assertEqual(dimension, 300)
+        self.assertEqual(dimension, 10)
         self.assertIsNotNone(os.path.exists(stream))
 
     def testLookup(self):
@@ -67,7 +67,7 @@ class TestWordVectors(unittest.TestCase):
         """
 
         model = VectorsFactory.create({"path": self.path}, None)
-        self.assertEqual(model.lookup(["txtai", "embeddings", "sentence"]).shape, (3, 300))
+        self.assertEqual(model.lookup(["txtai", "embeddings", "sentence"]).shape, (3, 10))
 
     def testNoExist(self):
         """
@@ -84,4 +84,4 @@ class TestWordVectors(unittest.TestCase):
         """
 
         model = VectorsFactory.create({"path": self.path}, None)
-        self.assertEqual(len(model.transform((None, ["txtai"], None))), 300)
+        self.assertEqual(len(model.transform((None, ["txtai"], None))), 10)

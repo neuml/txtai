@@ -91,10 +91,10 @@ class TestEmbeddings(unittest.TestCase):
                 output.write(x + "\n")
 
         # Word vectors path
-        vectors = os.path.join(path, "test-300d")
+        vectors = os.path.join(path, "test-10d")
 
         # Build word vectors, if they don't already exist
-        WordVectors.build(tokens, 300, 1, vectors)
+        WordVectors.build(tokens, 10, 1, vectors)
 
         # Create dataset
         data = [(x, row, None) for x, row in enumerate(self.data)]
