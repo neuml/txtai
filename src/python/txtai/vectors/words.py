@@ -53,6 +53,34 @@ def transform(document):
     return (document[0], VECTORS.transform(document))
 
 
+class SerialPool:
+    """
+    Custom pool to execute vector transforms serially.
+    """
+
+    def __init__(self, vectors):
+        global VECTORS
+        VECTORS = vectors
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
+
+    def imap(self, func, iterable):
+        """
+        Single process version of imap.
+
+        Args:
+            func: function to run
+            iterable: iterable to use
+        """
+
+        for x in iterable:
+            yield func(x)
+
+
 class WordVectors(Vectors):
     """
     Builds sentence embeddings/vectors using weighted word embeddings.
@@ -73,7 +101,9 @@ class WordVectors(Vectors):
         args = (self.config, self.scoring)
 
         # Convert all documents to embedding arrays, stream embeddings to disk to control memory usage
-        with Pool(os.cpu_count(), initializer=create, initargs=args) as pool:
+        with SerialPool(self) if "parallel" in self.config and not self.config["parallel"] else Pool(
+            os.cpu_count(), initializer=create, initargs=args
+        ) as pool:
             with tempfile.NamedTemporaryFile(mode="wb", suffix=".npy", delete=False) as output:
                 stream = output.name
                 for uid, embedding in pool.imap(transform, documents):

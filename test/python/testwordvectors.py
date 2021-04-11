@@ -61,6 +61,22 @@ class TestWordVectors(unittest.TestCase):
         self.assertEqual(dimension, 10)
         self.assertIsNotNone(os.path.exists(stream))
 
+    def testIndexSerial(self):
+        """
+        Test word vector indexing in single process mode
+        """
+
+        # Generate data
+        documents = [(x, "This is a test", None) for x in range(1000)]
+
+        model = VectorsFactory.create({"path": self.path, "parallel": False}, None)
+
+        ids, dimension, stream = model.index(documents)
+
+        self.assertEqual(len(ids), 1000)
+        self.assertEqual(dimension, 10)
+        self.assertIsNotNone(os.path.exists(stream))
+
     def testLookup(self):
         """
         Test word vector lookup
