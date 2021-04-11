@@ -38,7 +38,6 @@ class TestWorkFlow(unittest.TestCase):
 
         textractor = Textractor(paragraphs=True, minlength=150, join=True)
         summary = Summary("sshleifer/distilbart-xsum-12-1")
-        translate = Translation()
 
         embeddings = Embeddings({"method": "transformers", "path": "sentence-transformers/bert-base-nli-mean-tokens"})
         documents = Documents()
@@ -50,9 +49,8 @@ class TestWorkFlow(unittest.TestCase):
         # Extract text and summarize articles
         articles = Workflow([FileTask(textractor), Task(lambda x: summary(x, maxlength=15))])
 
-        # Complex workflow that handles text extraction and audio transcription
-        # Results are translated to Spanish and loaded into an embeddings index
-        tasks = [WorkflowTask(articles, r".\.pdf$"), Task(lambda x: translate(x, "es")), Task(index, unpack=False)]
+        # Complex workflow that extracts text, runs summarization then loads into an embeddings index
+        tasks = [WorkflowTask(articles, r".\.pdf$"), Task(index, unpack=False)]
 
         data = ["file://" + Utils.PATH + "/article.pdf", "Workflows can process audio files, documents and snippets"]
 
@@ -71,7 +69,7 @@ class TestWorkFlow(unittest.TestCase):
         documents.close()
 
         # Run search and validate result
-        index, _ = embeddings.search("buscar texto", 1)[0]
+        index, _ = embeddings.search("search text", 1)[0]
         self.assertEqual(index, 0)
 
     def testImageWorkflow(self):
