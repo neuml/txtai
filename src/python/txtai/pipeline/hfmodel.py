@@ -1,5 +1,5 @@
 """
-Hugging Face model wrapper module
+Hugging Face Transformers model wrapper module
 """
 
 from .tensors import Tensors
@@ -7,7 +7,7 @@ from .tensors import Tensors
 
 class HFModel(Tensors):
     """
-    Pipeline backed by a Hugging Face model.
+    Pipeline backed by a Hugging Face Transformers model.
     """
 
     def __init__(self, path=None, quantize=False, gpu=False, batch=64):

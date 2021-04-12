@@ -60,3 +60,11 @@ class TestLabels(unittest.TestCase):
 
         results = [r[0][0] for r in self.similarity(["feel good story", "climate change"], self.data)]
         self.assertEqual(results, [4, 1])
+
+    def testSimilarityLong(self):
+        """
+        Test similarity with long text
+        """
+
+        uid = self.similarity("other", ["Very long text " * 1000, "other text"])[0][0]
+        self.assertEqual(uid, 1)

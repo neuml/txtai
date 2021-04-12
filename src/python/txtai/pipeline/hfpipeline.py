@@ -1,15 +1,16 @@
 """
-Hugging Face pipeline wrapper module
+Hugging Face Transformers pipeline wrapper module
 """
 
 from transformers import pipeline
 
+from ..models import Models
 from .tensors import Tensors
 
 
 class HFPipeline(Tensors):
     """
-    Light wrapper around Hugging Face's pipeline component for selected tasks. Adds support for model
+    Light wrapper around Hugging Face Transformers pipeline component for selected tasks. Adds support for model
     quantization and minor interface changes.
     """
 
@@ -40,3 +41,6 @@ class HFPipeline(Tensors):
             if deviceid == -1 and quantize:
                 # pylint: disable=E1101
                 self.pipeline.model = self.quantize(self.pipeline.model)
+
+        # Detect unbounded tokenizer typically found in older models
+        Models.checklength(self.pipeline.model, self.pipeline.tokenizer)

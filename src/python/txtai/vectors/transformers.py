@@ -11,6 +11,7 @@ from sentence_transformers.models import Pooling, Transformer
 from ..pipeline.tokenizer import Tokenizer
 
 from .base import Vectors
+from ..models import Models
 
 
 class TransformersVectors(Vectors):
@@ -23,8 +24,11 @@ class TransformersVectors(Vectors):
 
         # Download model from the model hub (default)
         if modelhub:
-            model = Transformer(path, max_seq_length=self.config.get("maxlength"))
+            model = Transformer(path)
             pooling = Pooling(model.get_word_embedding_dimension())
+
+            # Detect unbounded tokenizer typically found in older models
+            Models.checklength(model.auto_model, model.tokenizer)
 
             return SentenceTransformer(modules=[model, pooling])
 

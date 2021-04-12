@@ -31,7 +31,7 @@ class Labels(HFPipeline):
         """
 
         # Run ZSL pipeline
-        results = self.pipeline(text, labels, multi_label=multilabel)
+        results = self.pipeline(text, labels, multi_label=multilabel, truncation=True)
 
         # Convert results to a list if necessary
         if not isinstance(results, list):
