@@ -27,7 +27,7 @@ similarity:
 
 # Summarization
 summary:
-    path: sshleifer/distilbart-xsum-12-1
+    path: t5-small
 
 # Text extraction
 textractor:
@@ -146,8 +146,8 @@ class TestPipelines(unittest.TestCase):
         Test summary via API
         """
 
-        summary = self.client.get("summary?text=%s&minlength=10&maxlength=10" % urllib.parse.quote(self.text)).json()
-        self.assertEqual(summary, "AI-powered search engine in the world")
+        summary = self.client.get("summary?text=%s&minlength=15&maxlength=15" % urllib.parse.quote(self.text)).json()
+        self.assertEqual(summary, "txtai is an AI-powered search engine that")
 
     def testSummaryBatch(self):
         """

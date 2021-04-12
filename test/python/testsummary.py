@@ -27,19 +27,19 @@ class TestSummary(unittest.TestCase):
             "that enables Natural Language Understanding (NLU) based search in any application."
         )
 
-        cls.summary = Summary("sshleifer/distilbart-xsum-12-1")
+        cls.summary = Summary("t5-small")
 
     def testSummary(self):
         """
         Test summarization of text
         """
 
-        self.assertEqual(self.summary(self.text, minlength=10, maxlength=10), "AI-powered search engine in the world")
+        self.assertEqual(self.summary(self.text, minlength=15, maxlength=15), "txtai is an AI-powered search engine that")
 
     def testSummaryBatch(self):
         """
         Test batch summarization of text
         """
 
-        summaries = self.summary([self.text, self.text], maxlength=10)
+        summaries = self.summary([self.text, self.text], maxlength=15)
         self.assertEqual(len(summaries), 2)

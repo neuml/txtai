@@ -37,7 +37,7 @@ class TestWorkFlow(unittest.TestCase):
         """
 
         textractor = Textractor(paragraphs=True, minlength=150, join=True)
-        summary = Summary("sshleifer/distilbart-xsum-12-1")
+        summary = Summary("t5-small")
 
         embeddings = Embeddings({"method": "transformers", "path": "sentence-transformers/bert-base-nli-mean-tokens"})
         documents = Documents()
