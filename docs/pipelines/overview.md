@@ -5,12 +5,12 @@ process various types of data. Pipelines can wrap machine learning models as wel
 
 The following pipeline types are currently supported.
 
-- Hugging Face pipelines
+- Hugging Face Transformers pipelines
     - [Extractive QA](../extractor)
     - [Labeling](../labels)
     - [Similarity](../similarity)
     - [Summary](../summary)
-- Hugging Face models
+- Hugging Face Transformers models
     - [Transcription](../transcription)
     - [Translation](../translation)
 - Data processing calls

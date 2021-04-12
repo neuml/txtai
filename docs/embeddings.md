@@ -30,7 +30,7 @@ Sets the sentence embeddings method to use. When set to _transformers_, the embe
 path: string
 ```
 
-Required field that sets the path for a vectors model. When method set to _transformers_, this must be a path to a Hugging Face transformers model. Otherwise,
+Required field that sets the path for a vectors model. When method set to _transformers_, this must be a path to a Hugging Face Transformers model. Otherwise,
 it must be a path to a local word embeddings model.
 
 ### tokenize
