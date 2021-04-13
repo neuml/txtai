@@ -44,7 +44,7 @@ Summary of txtai features:
 - 🔗 API bindings for [JavaScript](https://github.com/neuml/txtai.js), [Java](https://github.com/neuml/txtai.java), [Rust](https://github.com/neuml/txtai.rs) and [Go](https://github.com/neuml/txtai.go)
 - ☁️ Cloud-native architecture that scales out with container orchestration systems (e.g. Kubernetes)
 
-NeuML uses txtai and/or the concepts behind it to power all of our Natural Language Processing (NLP) applications. Applications include:
+txtai and/or the concepts behind it has already been used to power the Natural Language Processing (NLP) applications listed below:
 
 | Application  | Description  |
 |:----------|:-------------|
