@@ -116,7 +116,7 @@ class Translation(HFModel):
             self.detector = fasttext.load_model(path)
 
         # Transform texts to format expected by language detection model
-        texts = [x.lower() for x in texts]
+        texts = [x.lower().replace("\n", " ").replace("\r\n", " ") for x in texts]
 
         return [x[0].split("__")[-1] for x in self.detector.predict(texts)[0]]
 

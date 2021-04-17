@@ -31,21 +31,30 @@ class Summary(HFPipeline):
             summary text
         """
 
+        # Validate text length greater than max length
+        check = maxlength if maxlength else self.pipeline.model.config.max_length
+
+        # Skip text shorter than max length
+        texts = text if isinstance(text, list) else [text]
+        params = [(x, text if len(text) >= check else None) for x, text in enumerate(texts)]
+
         kwargs = {"truncation": True}
         if minlength:
             kwargs["min_length"] = minlength
         if maxlength:
             kwargs["max_length"] = maxlength
 
-        # Run summarization pipeline
-        results = self.pipeline(text, **kwargs)
+        inputs = [text for _, text in params if text]
+        if inputs:
+            # Run summarization pipeline
+            results = self.pipeline(inputs, **kwargs)
 
-        # Convert results to a list if necessary
-        if not isinstance(results, list):
-            results = [results]
-
-        # Pull out summary text
-        results = [self.clean(x["summary_text"]) for x in results]
+            # Pull out summary text
+            results = iter([self.clean(x["summary_text"]) for x in results])
+            results = [next(results) if text else texts[x] for x, text in params]
+        else:
+            # Return original
+            results = texts
 
         return results[0] if isinstance(text, str) else results
 

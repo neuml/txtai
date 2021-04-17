@@ -15,18 +15,20 @@ class Textractor(Pipeline):
     Extracts text from files.
     """
 
-    def __init__(self, sentences=False, paragraphs=False, minlength=None, join=False):
+    def __init__(self, sentences=False, lines=False, paragraphs=False, minlength=None, join=False):
         """
         Creates a new Textractor.
 
         Args:
             sentences: tokenize text into sentences if True, defaults to False
+            lines: tokenizes text into lines if True, defaults to False
             paragraphs: tokenizes text into paragraphs if True, defaults to False
             minlength: require at least minlength characters per text element, defaults to None
             join: joins tokenized sections back together if True, defaults to False
         """
 
         self.sentences = sentences
+        self.lines = lines
         self.paragraphs = paragraphs
         self.minlength = minlength
         self.join = join
@@ -76,6 +78,8 @@ class Textractor(Pipeline):
 
         if self.sentences:
             content = [self.clean(x) for x in sent_tokenize(text)]
+        elif self.lines:
+            content = [self.clean(x) for x in text.split("\n")]
         elif self.paragraphs:
             content = [self.clean(x) for x in text.split("\n\n")]
         else:
@@ -84,7 +88,7 @@ class Textractor(Pipeline):
         # Remove empty strings
         content = [x for x in content if x]
 
-        if self.sentences or self.paragraphs:
+        if self.sentences or self.lines or self.paragraphs:
             return " ".join(content) if self.join else content
 
         return content[0]
