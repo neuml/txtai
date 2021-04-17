@@ -104,8 +104,9 @@ The examples directory has a series of notebooks and applications giving an over
 
 | Application  | Description  | 
 |:----------|:-------------|
-| [Demo query shell](https://github.com/neuml/txtai/blob/master/examples/demo.py) | Example application for search and indexing |
+| [Workflow builder](https://github.com/neuml/txtai/blob/master/examples/workflows.py) | Streamlit application to build custom workflows |
 | [Image search](https://github.com/neuml/txtai/blob/master/examples/images.py) | Streamlit image search application |
+| [Demo query shell](https://github.com/neuml/txtai/blob/master/examples/demo.py) | Basic similarity search example |
 
 ### Documentation
 
