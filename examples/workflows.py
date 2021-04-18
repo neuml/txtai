@@ -7,6 +7,7 @@ Requires streamlit to be installed.
 
 import os
 
+import pandas as pd
 import streamlit as st
 
 from txtai.embeddings import Documents, Embeddings
@@ -142,7 +143,7 @@ class Application:
             data: input data
         """
 
-        if self.workflow:
+        if data and self.workflow:
             # Build tuples for embedding index
             if self.documents:
                 data = [(x, element, None) for x, element in enumerate(data)]
@@ -164,13 +165,29 @@ class Application:
                 # Clear workflow
                 self.documents, self.pipelines, self.workflow = None, None, None
 
-        if self.embeddings:
+        if self.embeddings and self.data:
             # Set query and limit
             query = st.text_input("Query")
             limit = min(5, len(self.data))
 
+            st.markdown(
+                """
+            <style>
+            table td:nth-child(1) {
+                display: none
+            }
+            table th:nth-child(1) {
+                display: none
+            }
+            table {text-align: left !important}
+            </style>
+            """,
+                unsafe_allow_html=True,
+            )
+
             if query:
-                st.table([{"content": self.data[uid], "score": score} for uid, score in self.embeddings.search(query, limit)])
+                df = pd.DataFrame([{"content": self.data[uid], "score": score} for uid, score in self.embeddings.search(query, limit)])
+                st.table(df)
 
     def run(self):
         """
@@ -193,15 +210,15 @@ class Application:
             with st.spinner("Building workflow...."):
                 self.build(components)
 
-        data = st.text_area("Input", height=10)
-        split = st.checkbox("Split input")
+        with st.beta_expander("Data", expanded=not self.data):
+            data = st.text_area("Input", height=10)
+            split = st.checkbox("Split input")
 
-        if data:
-            # Parse text items
-            data = data.split("\n") if "file://" in data or split else [data]
+        # Parse text items
+        data = data.split("\n") if "file://" in data or split else [data]
 
-            # Process current action
-            self.process(data)
+        # Process current action
+        self.process(data)
 
 
 @st.cache(allow_output_mutation=True)
