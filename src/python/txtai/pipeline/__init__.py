@@ -9,6 +9,7 @@ from .hfmodel import HFModel
 from .hfpipeline import HFPipeline
 from .labels import Labels
 from .questions import Questions
+from .segmentation import Segmentation
 from .similarity import Similarity
 from .summary import Summary
 from .tensors import Tensors

@@ -33,7 +33,7 @@ class API:
         self.pipelines = {}
 
         # Default pipelines
-        pipelines = ["extractor", "labels", "similarity", "summary", "textractor", "transcription", "translation"]
+        pipelines = ["extractor", "labels", "segmentation", "similarity", "summary", "textractor", "transcription", "translation"]
 
         # Add custom pipelines
         for key in self.config:

@@ -12,7 +12,7 @@ from .base import API
 from .factory import Factory
 
 # pylint: disable=R0401
-from .routers import embeddings, extractor, labels, similarity, summary, textractor, transcription, translation
+from .routers import embeddings, extractor, labels, segmentation, similarity, summary, textractor, transcription, translation
 
 # API instance
 app = FastAPI()
@@ -57,6 +57,7 @@ def start():
         ("embeddings", embeddings.router),
         ("extractor", extractor.router),
         ("labels", labels.router),
+        ("segmentation", segmentation.router),
         ("similarity", similarity.router),
         ("summary", summary.router),
         ("textractor", textractor.router),
@@ -65,8 +66,8 @@ def start():
     ]
 
     # Conditionally add routes based on configuration
-    for route, router in routers:
-        if route in config:
+    for name, router in routers:
+        if name in config:
             app.include_router(router)
 
     # Special case to add similarity instance for embeddings

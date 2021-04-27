@@ -22,6 +22,10 @@ PIPELINES = """
 labels:
     path: prajjwal1/bert-medium-mnli
 
+# Text segmentation
+segmentation:
+    sentences: true
+
 # Enable pipeline similarity backed by zero shot classifier
 similarity:
 
@@ -121,6 +125,28 @@ class TestPipelines(unittest.TestCase):
 
         results = [l[0]["id"] for l in labels]
         self.assertEqual(results, [0, 1])
+
+    def testSegment(self):
+        """
+        Test segmentation via API
+        """
+
+        text = self.client.get("segment?text=This is a test. And another test.").json()
+
+        # Check array length is 2
+        self.assertEqual(len(text), 2)
+
+    def testSegmentBatch(self):
+        """
+        Test batch segmentation via API
+        """
+
+        text = "This is a test. And another test."
+        texts = self.client.post("batchsegment", json=[text, text]).json()
+
+        # Check array length is 2 and first element length is 2
+        self.assertEqual(len(texts), 2)
+        self.assertEqual(len(texts[0]), 2)
 
     def testSimilarity(self):
         """

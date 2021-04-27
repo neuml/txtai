@@ -11,7 +11,7 @@ import pandas as pd
 import streamlit as st
 
 from txtai.embeddings import Documents, Embeddings
-from txtai.pipeline import Summary, Textractor, Transcription, Translation
+from txtai.pipeline import Segmentation, Summary, Textractor, Transcription, Translation
 from txtai.workflow import Workflow, FileTask, Task
 
 
@@ -73,8 +73,12 @@ class Application:
             options["minlength"] = self.number("Min length")
             options["maxlength"] = self.number("Max length")
 
-        elif component == "textract":
-            st.sidebar.markdown("**Textractor**  \n*Extract text from documents*")
+        elif component in ("segment", "textract"):
+            if component == "segment":
+                st.sidebar.markdown("**Segment**  \n*Split text into semantic units*")
+            else:
+                st.sidebar.markdown("**Textractor**  \n*Extract text from documents*")
+
             options["sentences"] = st.sidebar.checkbox("Split sentences")
             options["lines"] = st.sidebar.checkbox("Split lines")
             options["paragraphs"] = st.sidebar.checkbox("Split paragraphs")
@@ -115,6 +119,10 @@ class Application:
             if wtype == "summary":
                 self.pipelines[wtype] = Summary(component.pop("path"))
                 tasks.append(Task(lambda x: self.pipelines["summary"](x, **self.components["summary"])))
+
+            elif wtype == "segment":
+                self.pipelines[wtype] = Segmentation(**self.components["segment"])
+                tasks.append(Task(self.pipelines["segment"]))
 
             elif wtype == "textract":
                 self.pipelines[wtype] = Textractor(**self.components["textract"])
@@ -198,7 +206,7 @@ class Application:
         st.sidebar.markdown("# Workflow builder  \n*Build and apply workflows to data*  ")
 
         # Get selected components
-        selected = st.sidebar.multiselect("Select components", ["embeddings", "summary", "textract", "transcribe", "translate"])
+        selected = st.sidebar.multiselect("Select components", ["embeddings", "segment", "summary", "textract", "transcribe", "translate"])
 
         # Get selected options
         components = [self.options(component) for component in selected]
@@ -212,10 +220,9 @@ class Application:
 
         with st.beta_expander("Data", expanded=not self.data):
             data = st.text_area("Input", height=10)
-            split = st.checkbox("Split input")
 
         # Parse text items
-        data = data.split("\n") if "file://" in data or split else [data]
+        data = [x for x in data.split("\n") if x] if "file://" in data else [data]
 
         # Process current action
         self.process(data)
