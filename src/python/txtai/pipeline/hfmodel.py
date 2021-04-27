@@ -65,8 +65,15 @@ class HFModel(Tensors):
             (tokenization result, indices)
         """
 
+        # Pre-process and split on newlines
+        batch, positions = [], []
+        for x, text in enumerate(texts):
+            elements = [t + " " for t in text.split("\n") if t]
+            batch.extend(elements)
+            positions.extend([x] * len(elements))
+
         # Run tokenizer
-        tokens = tokenizer(texts, padding=True)
+        tokens = tokenizer(batch, padding=True)
 
         inputids, attention, indices = [], [], []
         for x, ids in enumerate(tokens["input_ids"]):
@@ -91,11 +98,11 @@ class HFModel(Tensors):
 
                     inputids.append(chunk)
                     attention.append(mask)
-                    indices.append(x)
+                    indices.append(positions[x])
             else:
                 inputids.append(ids)
                 attention.append(tokens["attention_mask"][x])
-                indices.append(x)
+                indices.append(positions[x])
 
         tokens = {"input_ids": inputids, "attention_mask": attention}
 
