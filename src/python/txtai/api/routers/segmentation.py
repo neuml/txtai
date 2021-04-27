@@ -12,7 +12,7 @@ router = APIRouter()
 
 
 @router.get("/segment")
-def textract(text: str):
+def segment(text: str):
     """
     Segments input text.
 
