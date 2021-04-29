@@ -53,6 +53,18 @@ Task that processes file urls
 
 Task that processes image urls
 
+### Service Task
+
+Task that runs content against a http service
+
+### Storage Task
+
+Task that expands a local directory or cloud storage bucket into a list of URLs to process
+
+### URL Task
+
+Task that processes urls
+
 ### Workflow Task
 
 Task that runs a Workflow. Allows creating workflows of workflows.
