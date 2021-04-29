@@ -3,7 +3,8 @@ API module
 """
 
 from ..embeddings import Documents, Embeddings
-from ..pipeline import Factory
+from ..pipeline import PipelineFactory
+from ..workflow import WorkflowFactory
 
 
 class API:
@@ -29,6 +30,17 @@ class API:
             self.embeddings = Embeddings()
             self.embeddings.load(self.config["path"])
 
+        # Create pipelines
+        self.pipes()
+
+        # Create workflows
+        self.flows()
+
+    def pipes(self):
+        """
+        Initialize pipelines.
+        """
+
         # Pipeline definitions
         self.pipelines = {}
 
@@ -51,7 +63,23 @@ class API:
                 elif pipeline == "similarity" and "path" not in config and "labels" in self.pipelines:
                     config["model"] = self.pipelines["labels"]
 
-                self.pipelines[pipeline] = Factory.create(config, pipeline)
+                self.pipelines[pipeline] = PipelineFactory.create(config, pipeline)
+
+    def flows(self):
+        """
+        Initialize workflows.
+        """
+
+        self.workflows = {}
+
+        # Resolve pipeline actions and create workflow
+        if "workflows" in self.config:
+            for workflow, config in self.config["workflows"].items():
+                for task in config["tasks"]:
+                    if "action" in task:
+                        task["action"] = self.pipelines[task["action"]]
+
+                self.workflows[workflow] = WorkflowFactory.create(config)
 
     def limit(self, limit):
         """
@@ -281,3 +309,21 @@ class API:
             return self.pipelines[name](*args)
 
         return None
+
+    def workflow(self, name, elements):
+        """
+        Executes a workflow.
+
+        Args:
+            name: workflow name
+            elements: elements to process
+
+        Returns:
+            processed elements
+        """
+
+        # Convert lists to tuples
+        elements = [tuple(element) if isinstance(element, list) else element for element in elements]
+
+        # Execute workflow
+        return self.workflows[name](elements)

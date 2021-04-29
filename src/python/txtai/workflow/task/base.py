@@ -39,8 +39,8 @@ class Task:
         # Run data preparation routines
         elements = [self.prepare(element) for element in elements]
 
-        # Run data elements through workflow action
-        return self.action(elements) if self.action else elements
+        # Run data elements through workflow execution
+        return self.execute(elements)
 
     def accept(self, element):
         """
@@ -67,3 +67,16 @@ class Task:
         """
 
         return element
+
+    def execute(self, elements):
+        """
+        Executes action on elements.
+
+        Args:
+            elements: list of data elements
+
+        Returns:
+            transformed data elements
+        """
+
+        return self.action(elements) if self.action else elements

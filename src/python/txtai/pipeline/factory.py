@@ -3,7 +3,7 @@ Pipeline factory module
 """
 
 
-class Factory:
+class PipelineFactory:
     """
     Pipeline factory. Creates new Pipeline instances.
     """
@@ -36,7 +36,7 @@ class Factory:
     @staticmethod
     def create(config, pipeline):
         """
-        Creates a new Pipeline instance
+        Creates a new Pipeline instance.
 
         Args:
             config: Pipeline configuration
@@ -47,4 +47,4 @@ class Factory:
         """
 
         # Get Pipeline instance
-        return Factory.get(pipeline)(**config)
+        return PipelineFactory.get(pipeline)(**config)

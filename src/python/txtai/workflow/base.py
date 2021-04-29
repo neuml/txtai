@@ -116,6 +116,10 @@ class Workflow:
 
         # Package data into (id, data, tag) formatted elements
         if isinstance(element, tuple):
+            # If new data is a (id, data, tag) tuple use that
+            if isinstance(data, tuple):
+                return data
+
             # Create a copy of tuple, update data element and return
             element = list(element)
             element[1] = data

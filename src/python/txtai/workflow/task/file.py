@@ -4,20 +4,14 @@ FileTask module
 
 import re
 
-from .base import Task
+from .url import UrlTask
 
 
-class FileTask(Task):
+class FileTask(UrlTask):
     """
     Task that processes file urls
     """
 
-    # File prefix
-    FILE = r"file:\/\/"
-
     def accept(self, element):
         # Only accept file URLs
-        return super().accept(element) and re.match(FileTask.FILE, element.lower())
-
-    def prepare(self, element):
-        return re.sub(FileTask.FILE, "", element)
+        return super().accept(element) and re.match(UrlTask.FILE, element.lower())

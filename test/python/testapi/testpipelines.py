@@ -54,9 +54,6 @@ class TestPipelines(unittest.TestCase):
     def start():
         """
         Starts a mock FastAPI client.
-
-        Args:
-            full: true if full api configuration should be loaded, otherwise a read-only configuration is used
         """
 
         config = os.path.join(tempfile.gettempdir(), "testapi.yml")

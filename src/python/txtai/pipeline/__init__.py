@@ -4,7 +4,7 @@ Pipeline imports
 
 from .base import Pipeline
 from .extractor import Extractor
-from .factory import Factory
+from .factory import PipelineFactory
 from .hfmodel import HFModel
 from .hfpipeline import HFPipeline
 from .labels import Labels

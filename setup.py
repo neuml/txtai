@@ -24,6 +24,7 @@ setup(
     python_requires=">=3.6",
     install_requires=[
         "annoy>=1.16.3",
+        "apache-libcloud>=3.3.1",
         "faiss-cpu>=1.7.0; os_name != 'nt'",
         "fastapi>=0.61.1",
         "fasttext>=0.9.2",
@@ -34,6 +35,7 @@ setup(
         "pillow>=7.2.0",
         "PyYAML>=5.3",
         "regex>=2020.5.14",
+        "requests>=2.24.0",
         "scikit-learn>=0.23.1",
         "sentence-transformers>=1.0.3",
         "sentencepiece>=0.1.91",
