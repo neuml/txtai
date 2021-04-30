@@ -20,7 +20,7 @@ def transcribe(file: str):
         file: file to transcribe
 
     Returns:
-        list of transcribed text
+        transcribed text
     """
 
     return application.get().pipeline("transcription", (file,))
@@ -32,7 +32,7 @@ def batchtranscribe(files: List[str] = Body(...)):
     Transcribes audio files to text.
 
     Args:
-        file: list of files to transcribe
+        files: list of files to transcribe
 
     Returns:
         list of transcribed text

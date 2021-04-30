@@ -14,7 +14,7 @@ router = APIRouter()
 @router.get("/segment")
 def segment(text: str):
     """
-    Segments input text.
+    Segments text into semantic units.
 
     Args:
         text: input text
@@ -29,10 +29,10 @@ def segment(text: str):
 @router.post("/batchsegment")
 def batchsegment(texts: List[str] = Body(...)):
     """
-    Extracts text from a file at path.
+    Segments text into semantic units.
 
     Args:
-        text: list of texts to segment
+        texts: list of texts to segment
 
     Returns:
         list of segmented text
