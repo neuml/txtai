@@ -72,10 +72,11 @@ class API:
 
         self.workflows = {}
 
-        # Resolve pipeline actions and create workflow
-        if "workflows" in self.config:
-            for workflow, config in self.config["workflows"].items():
+        # Create workflows
+        if "workflow" in self.config:
+            for workflow, config in self.config["workflow"].items():
                 for task in config["tasks"]:
+                    # Resolve pipeline action
                     if "action" in task:
                         task["action"] = self.pipelines[task["action"]]
 

@@ -21,8 +21,8 @@ WORKFLOWS = """
 segmentation:
     sentences: true
 
-# Workflows
-workflows:
+# Workflow definitions
+workflow:
     segment:
         tasks:
             - action: segmentation
