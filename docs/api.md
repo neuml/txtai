@@ -2,7 +2,7 @@
 
 txtai has a full-featured API that can optionally be enabled for any txtai process. All functionality found in txtai can be accessed via the API. The following is an example configuration and startup script for the API.
 
-Note that this configuration file enables all functionality (embeddings, extractor, labels, similarity). It is suggested that separate processes are used for each instance of a txtai component.
+Note that this configuration file enables all functionality. It is suggested that separate processes are used for each instance of a txtai component. Components can be joined together with workflows.
 
 ```yaml
 # Index file path
@@ -11,20 +11,57 @@ path: /tmp/index
 # Allow indexing of documents
 writable: True
 
-# Embeddings settings
+# Enbeddings index
 embeddings:
   method: transformers
   path: sentence-transformers/bert-base-nli-mean-tokens
 
-# Extractor settings
+# Extractive QA
 extractor:
   path: distilbert-base-cased-distilled-squad
 
-# Labels settings
+# Zero-shot labeling
 labels:
 
-# Similarity settings
+# Similarity
 similarity:
+
+# Text segmentation
+segmentation:
+    sentences: true
+
+# Text summarization
+summary:
+
+# Text extraction
+textractor:
+    paragraphs: true
+    minlength: 100
+    join: true
+
+# Transcribe audio to text
+transcription:
+
+# Translate text between languages
+translation:
+
+# Workflow definitions
+workflow:
+    sumfrench:
+        tasks:
+            - action: textractor
+              task: storage
+              ids: false
+            - action: summary
+            - action: translation
+              args: ["fr"]
+    sumspanish:
+        tasks:
+            - action: textractor
+              task: url
+            - action: summary
+            - action: translation
+              args: ["es"]
 ```
 
 Assuming this YAML content is stored in a file named index.yml, the following command starts the API process.
@@ -53,14 +90,8 @@ This will bring up an API instance without having to install Python, txtai or an
 
 ## Differences between Python and API
 
-The txtai API provides all the major functionality found in this project. But there are differences due to the nature of JSON and differences across the supported programming languages.
-
-|  Difference  |    Python    |  API  |  Reason  |
-|:-------------|:-------------|:------|:---------|
-| Return Types | tuples | objects | Consistency across languages. For example, (id, score) in Python is {"id": value, "score": value} via API |
-| Extractor    | extract() | extractor.extract() | Extractor pipeline is a callable object in Python |
-| Labels       | labels()  | labels.label() | Labels pipeline is a callable object in Python that supports both string and list input |
-| Similarity   | similarity() | similarity.similarity() | Similarity pipeline a callable object in Python that supports both string and list input |
+The txtai API provides all the major functionality found in this project. But there are differences due to the nature of JSON and differences across the supported programming languages. For example, any Python callable method is available at a named endpoint (i.e. instead of summary() the method call would be summary.summary()).
+Return types vary as tuples are returned as objects via the API.
 
 ## Supported language bindings
 
