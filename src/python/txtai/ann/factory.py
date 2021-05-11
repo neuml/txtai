@@ -30,7 +30,7 @@ class ANNFactory:
 
         # Default backend if not provided, based on available libraries
         if not backend:
-            backend = "faiss" if FAISS else "annoy"
+            backend = "faiss" if FAISS else "hnsw"
 
         # Create ANN instance
         if backend == "annoy":
