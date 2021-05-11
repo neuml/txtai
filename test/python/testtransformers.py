@@ -21,9 +21,7 @@ class TestTransformersVectors(unittest.TestCase):
         Create single TransformersVectors instance.
         """
 
-        cls.model = VectorsFactory.create(
-            {"method": "transformers", "path": "sentence-transformers/bert-base-nli-mean-tokens", "maxlength": 512}, None
-        )
+        cls.model = VectorsFactory.create({"method": "transformers", "path": "sentence-transformers/bert-base-nli-mean-tokens"}, None)
 
     def testIndex(self):
         """

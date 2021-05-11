@@ -49,16 +49,6 @@ class Embeddings:
         # Sentence vectors model
         self.model = self.loadVectors() if self.config else None
 
-    def loadVectors(self):
-        """
-        Loads a vector model set in config.
-
-        Returns:
-            vector model
-        """
-
-        return VectorsFactory.create(self.config, self.scoring)
-
     def score(self, documents):
         """
         Builds a scoring index.
@@ -73,7 +63,7 @@ class Embeddings:
 
     def index(self, documents):
         """
-        Builds an embeddings index.
+        Builds an embeddings index. This method overwrites an existing index.
 
         Args:
             documents: list of (id, text|tokens, tags)
@@ -109,61 +99,78 @@ class Embeddings:
         # Build the index
         self.embeddings.index(embeddings)
 
-    def buildLSA(self, embeddings, components):
+    def upsert(self, documents):
         """
-        Builds a LSA model. This model is used to remove the principal component within embeddings. This helps to
-        smooth out noisy embeddings (common words with less value).
+        Runs an embeddings index upsert operation. If the index exists, new
+        data is appended to the index, existing data is updated. If the index
+        doesn't exist, this method runs a standard index operation.
 
         Args:
-            embeddings: input embeddings matrix
-            components: number of model components
+            documents: list of (id, text|tokens, tags)
+        """
+
+        # Run standard insert if index doesn't exist
+        if not self.embeddings:
+            self.index(documents)
+            return
+
+        # Transform documents to embeddings vectors
+        ids, dimensions, stream = self.model.index(documents)
+
+        # Load streamed embeddings back to memory
+        embeddings = np.empty((len(ids), dimensions), dtype=np.float32)
+        with open(stream, "rb") as queue:
+            for x in range(embeddings.shape[0]):
+                embeddings[x] = pickle.load(queue)
+
+        # Remove temporary file
+        os.remove(stream)
+
+        # Normalize embeddings
+        self.normalize(embeddings)
+
+        # Delete existing elements
+        self.delete(documents)
+
+        # Append elements the index
+        self.embeddings.append(embeddings)
+
+        # Save embeddings metadata
+        self.config["ids"] = self.config["ids"] + ids
+
+    def delete(self, documents):
+        """
+        Deletes from an embeddings index. Text and tags can be None. Returns list of ids deleted.
+
+        Args:
+            documents: list of (id, text|token, tags)
 
         Returns:
-            LSA model
+            ids
         """
 
-        svd = TruncatedSVD(n_components=components, random_state=0)
-        svd.fit(embeddings)
+        # List of internal ids to delete
+        ids = []
+        deletes = []
 
-        return svd
+        # Get handle to config ids
+        cids = self.config["ids"]
 
-    def removePC(self, embeddings):
-        """
-        Applies a LSA model to embeddings, removed the top n principal components. Operation applied
-        directly on array.
+        # Find existing ids
+        for uid, _, _ in documents:
+            ids.extend([index for index, value in enumerate(cids) if uid == value])
 
-        Args:
-            embeddings: input embeddings matrix
-        """
+        # Delete any found from config ids and embeddings
+        if ids:
+            # Clear config ids
+            for index in ids:
+                deletes.append(cids[index])
+                cids[index] = None
 
-        pc = self.lsa.components_
-        factor = embeddings.dot(pc.transpose())
+            # Delete ids from index
+            self.embeddings.delete(ids)
 
-        # Apply LSA model
-        # Calculation is different if n_components = 1
-        if pc.shape[0] == 1:
-            embeddings -= factor * pc
-        elif len(embeddings.shape) > 1:
-            # Apply model on a row-wise basis to limit memory usage
-            for x in range(embeddings.shape[0]):
-                embeddings[x] -= factor[x].dot(pc)
-        else:
-            # Single embedding
-            embeddings -= factor.dot(pc)
-
-    def normalize(self, embeddings):
-        """
-        Normalizes embeddings using L2 normalization. Operation applied directly on array.
-
-        Args:
-            embeddings: input embeddings matrix
-        """
-
-        # Calculation is different for matrices vs vectors
-        if len(embeddings.shape) > 1:
-            embeddings /= np.linalg.norm(embeddings, axis=1)[:, np.newaxis]
-        else:
-            embeddings /= np.linalg.norm(embeddings)
+        return deletes
 
     def transform(self, document):
         """
@@ -201,6 +208,16 @@ class Embeddings:
         """
 
         return [self.transform(document) for document in documents]
+
+    def count(self):
+        """
+        Total number of elements in this embeddings index.
+
+        Returns:
+            number of elements in embeddings index
+        """
+
+        return self.embeddings.count()
 
     def search(self, query, limit=3):
         """
@@ -356,3 +373,69 @@ class Embeddings:
             # Save embedding scoring
             if self.scoring:
                 self.scoring.save(path)
+
+    def loadVectors(self):
+        """
+        Loads a vector model set in config.
+
+        Returns:
+            vector model
+        """
+
+        return VectorsFactory.create(self.config, self.scoring)
+
+    def buildLSA(self, embeddings, components):
+        """
+        Builds a LSA model. This model is used to remove the principal component within embeddings. This helps to
+        smooth out noisy embeddings (common words with less value).
+
+        Args:
+            embeddings: input embeddings matrix
+            components: number of model components
+
+        Returns:
+            LSA model
+        """
+
+        svd = TruncatedSVD(n_components=components, random_state=0)
+        svd.fit(embeddings)
+
+        return svd
+
+    def removePC(self, embeddings):
+        """
+        Applies a LSA model to embeddings, removed the top n principal components. Operation applied
+        directly on array.
+
+        Args:
+            embeddings: input embeddings matrix
+        """
+
+        pc = self.lsa.components_
+        factor = embeddings.dot(pc.transpose())
+
+        # Apply LSA model
+        # Calculation is different if n_components = 1
+        if pc.shape[0] == 1:
+            embeddings -= factor * pc
+        elif len(embeddings.shape) > 1:
+            # Apply model on a row-wise basis to limit memory usage
+            for x in range(embeddings.shape[0]):
+                embeddings[x] -= factor[x].dot(pc)
+        else:
+            # Single embedding
+            embeddings -= factor.dot(pc)
+
+    def normalize(self, embeddings):
+        """
+        Normalizes embeddings using L2 normalization. Operation applied directly on array.
+
+        Args:
+            embeddings: input embeddings matrix
+        """
+
+        # Calculation is different for matrices vs vectors
+        if len(embeddings.shape) > 1:
+            embeddings /= np.linalg.norm(embeddings, axis=1)[:, np.newaxis]
+        else:
+            embeddings /= np.linalg.norm(embeddings)

@@ -15,6 +15,13 @@ class HNSW(ANN):
     Builds an ANN model using the hnswlib library.
     """
 
+    def __init__(self, config):
+        # Parent constructor
+        super().__init__(config)
+
+        # Track number of successful deletes
+        self.deletes = 0
+
     def load(self, path):
         # Load index
         self.model = Index(dim=self.config["dimensions"], space=self.config["metric"])
@@ -34,7 +41,32 @@ class HNSW(ANN):
         self.model.init_index(max_elements=embeddings.shape[0], ef_construction=efconstruction, M=m, random_seed=seed)
 
         # Add items
-        self.model.add_items(embeddings, np.array(range(embeddings.shape[0])))
+        self.model.add_items(embeddings, np.arange(embeddings.shape[0]))
+
+        # Update id offset
+        self.offset = embeddings.shape[0]
+
+    def append(self, embeddings):
+        new = embeddings.shape[0]
+
+        # Resize index
+        self.model.resize_index(self.offset + new)
+
+        # Append new ids
+        self.model.add_items(embeddings, np.arange(self.offset, self.offset + new))
+
+        # Update id offset
+        self.offset += new
+
+    def delete(self, ids):
+        # Mark elements as deleted to omit from search results
+        for uid in ids:
+            try:
+                self.model.mark_deleted(uid)
+                self.deletes += 1
+            except RuntimeError:
+                # Ignore label not found error
+                continue
 
     def search(self, queries, limit):
         # Set ef query param
@@ -54,6 +86,9 @@ class HNSW(ANN):
             results.append(list(zip(ids[x], scores)))
 
         return results
+
+    def count(self):
+        return self.model.get_current_count() - self.deletes
 
     def save(self, path):
         # Write index

@@ -13,14 +13,15 @@ class Vectors:
         self.config = config
         self.scoring = scoring
 
-        # Detect if this is an initialized configuration
-        self.initialized = "dimensions" in config
+        if config:
+            # Detect if this is an initialized configuration
+            self.initialized = "dimensions" in config
 
-        # Enables optional string tokenization
-        self.tokenize = "tokenize" not in config or config["tokenize"]
+            # Enables optional string tokenization
+            self.tokenize = "tokenize" not in config or config["tokenize"]
 
-        # pylint: disable=E1111
-        self.model = self.load(config["path"])
+            # pylint: disable=E1111
+            self.model = self.load(config["path"])
 
     def load(self, path):
         """
@@ -32,6 +33,8 @@ class Vectors:
         Returns:
             vector model
         """
+
+        raise NotImplementedError
 
     def index(self, documents):
         """
@@ -45,6 +48,8 @@ class Vectors:
             (ids, dimensions, stream)
         """
 
+        raise NotImplementedError
+
     def transform(self, document):
         """
         Transforms document into an embeddings vector.
@@ -55,3 +60,5 @@ class Vectors:
         Returns:
             embeddings vector
         """
+
+        raise NotImplementedError

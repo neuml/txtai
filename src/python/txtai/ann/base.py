@@ -16,6 +16,9 @@ class ANN:
         # ANN index
         self.model = None
 
+        # Starting id offset
+        self.offset = 0
+
         # Model configuration
         self.config = config
 
@@ -24,6 +27,8 @@ class ANN:
         Loads an ANN model at path.
         """
 
+        raise NotImplementedError
+
     def index(self, embeddings):
         """
         Builds an ANN model.
@@ -31,6 +36,28 @@ class ANN:
         Args:
             embeddings: embeddings array
         """
+
+        raise NotImplementedError
+
+    def append(self, embeddings):
+        """
+        Append elements to an existing model.
+
+        Args:
+            embeddings: embeddings array
+        """
+
+        raise NotImplementedError
+
+    def delete(self, ids):
+        """
+        Deletes elements from existing model.
+
+        Args:
+            ids: ids to delete
+        """
+
+        raise NotImplementedError
 
     def search(self, queries, limit):
         """
@@ -44,10 +71,24 @@ class ANN:
             query results
         """
 
+        raise NotImplementedError
+
+    def count(self):
+        """
+        Number of elements in the ANN model.
+
+        Returns:
+            count
+        """
+
+        raise NotImplementedError
+
     def save(self, path):
         """
         Saves an ANN model at path.
         """
+
+        raise NotImplementedError
 
     def setting(self, name, default=None):
         """

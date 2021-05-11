@@ -46,6 +46,46 @@ class TestEmbeddings(unittest.TestCase):
 
         self.assertEqual(self.data[uid], self.data[4])
 
+    def testUpsert(self):
+        """
+        Test upsert
+        """
+
+        # Build data array
+        data = [(uid, text, None) for uid, text in enumerate(self.data)]
+
+        # Reset embeddings for test
+        self.embeddings.embeddings = None
+
+        # Create an index for the list of text
+        self.embeddings.upsert(data)
+
+        # Update data
+        data[0] = (0, "See it first: baby panda is born at the local zoo", None)
+        self.embeddings.upsert([data[0]])
+
+        # Search for best match
+        uid = self.embeddings.search("feel good story", 1)[0][0]
+
+        self.assertEqual(data[uid], data[4])
+
+    def testDelete(self):
+        """
+        Test delete
+        """
+
+        # Create an index for the list of text
+        self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        # Delete best match
+        self.embeddings.delete([(4, None, None)])
+
+        # Search for best match
+        uid = self.embeddings.search("feel good story", 1)[0][0]
+
+        self.assertEqual(self.embeddings.count(), 5)
+        self.assertEqual(self.data[uid], self.data[5])
+
     def testSave(self):
         """
         Test save

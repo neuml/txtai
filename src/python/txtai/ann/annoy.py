@@ -6,7 +6,7 @@ from annoy import AnnoyIndex
 
 from .base import ANN
 
-
+# pylint: disable=W0223
 class Annoy(ANN):
     """
     Builds an ANN model using the Annoy library.
@@ -45,6 +45,10 @@ class Annoy(ANN):
             results.append(list(zip(ids, scores)))
 
         return results
+
+    def count(self):
+        # Number of items in index
+        return self.model.get_n_items()
 
     def save(self, path):
         # Write index
