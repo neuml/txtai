@@ -105,6 +105,10 @@ class TestEmbeddings(unittest.TestCase):
 
         self.assertEqual(self.data[uid], self.data[4])
 
+        # Test offsets still work after save/load
+        self.embeddings.upsert([(0, "Test insert", None)])
+        self.assertEqual(self.embeddings.count(), len(self.data))
+
     def testSimilarity(self):
         """
         Test similarity
