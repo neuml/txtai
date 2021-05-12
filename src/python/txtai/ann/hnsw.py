@@ -57,7 +57,7 @@ class HNSW(ANN):
         for uid in ids:
             try:
                 self.model.mark_deleted(uid)
-                self.config["deletes"] = self.config["deletes"] + 1
+                self.config["deletes"] += 1
             except RuntimeError:
                 # Ignore label not found error
                 continue
