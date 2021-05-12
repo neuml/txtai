@@ -36,8 +36,9 @@ class HNSW(ANN):
         # Add items
         self.model.add_items(embeddings, np.arange(embeddings.shape[0]))
 
-        # Update id offset
+        # Update id offset and set delete counter
         self.config["offset"] = embeddings.shape[0]
+        self.config["deletes"] = 0
 
     def append(self, embeddings):
         new = embeddings.shape[0]
@@ -56,7 +57,7 @@ class HNSW(ANN):
         for uid in ids:
             try:
                 self.model.mark_deleted(uid)
-                self.config["deletes"] = self.config.get("deletes", 0) + 1
+                self.config["deletes"] = self.config["deletes"] + 1
             except RuntimeError:
                 # Ignore label not found error
                 continue
@@ -81,7 +82,7 @@ class HNSW(ANN):
         return results
 
     def count(self):
-        return self.model.get_current_count() - self.config.get("deletes", 0)
+        return self.model.get_current_count() - self.config["deletes"]
 
     def save(self, path):
         # Write index
