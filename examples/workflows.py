@@ -12,7 +12,7 @@ import streamlit as st
 
 from txtai.embeddings import Documents, Embeddings
 from txtai.pipeline import Segmentation, Summary, Textractor, Transcription, Translation
-from txtai.workflow import Workflow, FileTask, Task
+from txtai.workflow import Workflow, Task, UrlTask
 
 
 class Application:
@@ -126,11 +126,11 @@ class Application:
 
             elif wtype == "textract":
                 self.pipelines[wtype] = Textractor(**self.components["textract"])
-                tasks.append(FileTask(self.pipelines["textract"]))
+                tasks.append(UrlTask(self.pipelines["textract"]))
 
             elif wtype == "transcribe":
                 self.pipelines[wtype] = Transcription(component.pop("path"))
-                tasks.append(FileTask(self.pipelines["transcribe"], r".\.wav$"))
+                tasks.append(UrlTask(self.pipelines["transcribe"], r".\.wav$"))
 
             elif wtype == "translate":
                 self.pipelines[wtype] = Translation()
