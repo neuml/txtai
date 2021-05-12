@@ -61,13 +61,13 @@ class TestEmbeddings(unittest.TestCase):
         self.embeddings.upsert(data)
 
         # Update data
-        data[0] = (0, "See it first: baby panda is born at the local zoo", None)
+        data[0] = (0, "Feel good story: baby panda born", None)
         self.embeddings.upsert([data[0]])
 
         # Search for best match
         uid = self.embeddings.search("feel good story", 1)[0][0]
 
-        self.assertEqual(data[uid], data[4])
+        self.assertEqual(data[uid], data[0])
 
     def testDelete(self):
         """

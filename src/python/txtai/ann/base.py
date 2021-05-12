@@ -16,9 +16,6 @@ class ANN:
         # ANN index
         self.model = None
 
-        # Starting id offset
-        self.offset = 0
-
         # Model configuration
         self.config = config
 

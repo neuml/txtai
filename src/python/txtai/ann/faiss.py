@@ -43,16 +43,16 @@ class Faiss(ANN):
         self.model.add_with_ids(embeddings, np.arange(embeddings.shape[0]))
 
         # Update id offset
-        self.offset = embeddings.shape[0]
+        self.config["offset"] = embeddings.shape[0]
 
     def append(self, embeddings):
         new = embeddings.shape[0]
 
         # Append new ids
-        self.model.add_with_ids(embeddings, np.arange(self.offset, self.offset + new))
+        self.model.add_with_ids(embeddings, np.arange(self.config["offset"], self.config["offset"] + new))
 
         # Update id offset
-        self.offset += new
+        self.config["offset"] += new
 
     def delete(self, ids):
         # Remove specified ids
