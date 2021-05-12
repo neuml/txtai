@@ -130,7 +130,7 @@ class Embeddings:
         self.normalize(embeddings)
 
         # Delete existing elements
-        self.delete(documents)
+        self.delete(ids)
 
         # Append elements the index
         self.embeddings.append(embeddings)
@@ -138,37 +138,39 @@ class Embeddings:
         # Save embeddings metadata
         self.config["ids"] = self.config["ids"] + ids
 
-    def delete(self, documents):
+    def delete(self, ids):
         """
-        Deletes from an embeddings index. Text and tags can be None. Returns list of ids deleted.
+        Deletes from an embeddings index. Returns list of ids deleted.
 
         Args:
-            documents: list of (id, text|token, tags)
+            ids: list of ids to delete
 
         Returns:
-            ids
+            ids deleted
         """
 
-        # List of internal ids to delete
-        ids = []
+        # List of internal indices for each candidate id to delete
+        indices = []
+
+        # List of deleted ids
         deletes = []
 
         # Get handle to config ids
         cids = self.config["ids"]
 
         # Find existing ids
-        for uid, _, _ in documents:
-            ids.extend([index for index, value in enumerate(cids) if uid == value])
+        for uid in ids:
+            indices.extend([index for index, value in enumerate(cids) if uid == value])
 
         # Delete any found from config ids and embeddings
-        if ids:
+        if indices:
             # Clear config ids
-            for index in ids:
+            for index in indices:
                 deletes.append(cids[index])
                 cids[index] = None
 
             # Delete ids from index
-            self.embeddings.delete(ids)
+            self.embeddings.delete(indices)
 
         return deletes
 

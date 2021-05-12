@@ -78,7 +78,7 @@ class TestEmbeddings(unittest.TestCase):
         self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
 
         # Delete best match
-        self.embeddings.delete([(4, None, None)])
+        self.embeddings.delete([4])
 
         # Search for best match
         uid = self.embeddings.search("feel good story", 1)[0][0]
