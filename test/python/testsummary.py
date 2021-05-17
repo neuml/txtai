@@ -9,7 +9,7 @@ from txtai.pipeline import Summary
 
 class TestSummary(unittest.TestCase):
     """
-    Labels tests
+    Summary tests
     """
 
     @classmethod

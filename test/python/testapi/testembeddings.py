@@ -87,6 +87,24 @@ class TestEmbeddings(unittest.TestCase):
         cls.client.post("add", json=[{"id": x, "text": row} for x, row in enumerate(cls.data)])
         cls.client.get("index")
 
+    def testDelete(self):
+        """
+        Test delete via API
+        """
+
+        # Delete best match
+        self.client.post("delete", json=[4])
+
+        # Search for best match
+        uid = self.client.get("search?query=feel%20good%20story&limit=1").json()[0]["id"]
+
+        self.assertEqual(self.client.get("count").json(), 5)
+        self.assertEqual(uid, 5)
+
+        # Reset data
+        self.client.post("add", json=[{"id": x, "text": row} for x, row in enumerate(self.data)])
+        self.client.get("index")
+
     def testEmpty(self):
         """
         Test empty API configuration
@@ -147,7 +165,7 @@ class TestEmbeddings(unittest.TestCase):
         """
 
         uid = self.client.get("search?query=feel%20good%20story&limit=1").json()[0]["id"]
-        self.assertEqual(self.data[uid], self.data[4])
+        self.assertEqual(uid, 4)
 
     def testSearchBatch(self):
         """
@@ -166,7 +184,7 @@ class TestEmbeddings(unittest.TestCase):
 
         uid = self.client.post("similarity", json={"query": "feel good story", "texts": self.data}).json()[0]["id"]
 
-        self.assertEqual(self.data[uid], self.data[4])
+        self.assertEqual(uid, 4)
 
     def testSimilarityBatch(self):
         """
@@ -194,6 +212,24 @@ class TestEmbeddings(unittest.TestCase):
 
         self.assertEqual(len(embeddings), len(self.data))
         self.assertEqual(len(embeddings[0]), 768)
+
+    def testUpsert(self):
+        """
+        Test upsert via API
+        """
+
+        # Update data
+        self.client.post("add", json=[{"id": 0, "text": "Feel good story: baby panda born"}])
+        self.client.get("upsert")
+
+        # Search for best match
+        uid = self.client.get("search?query=feel%20good%20story&limit=1").json()[0]["id"]
+
+        self.assertEqual(uid, 0)
+
+        # Reset data
+        self.client.post("add", json=[{"id": x, "text": row} for x, row in enumerate(self.data)])
+        self.client.get("index")
 
     def testViewOnly(self):
         """

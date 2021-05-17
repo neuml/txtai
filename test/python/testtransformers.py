@@ -69,7 +69,7 @@ class TestTransformersVectors(unittest.TestCase):
         self.assertFalse(np.array_equal(embeddings1[0], embeddings2[0]))
         self.assertTrue(np.array_equal(embeddings1[1], embeddings2[1]))
 
-    def testLongTransform(self):
+    def testTransformLong(self):
         """
         Test transformers transform on long text
         """

@@ -23,12 +23,13 @@ class API:
         # Initialize member variables
         self.config, self.documents, self.embeddings = config, None, None
 
-        # Create/load embeddings index depending on writable flag
-        if self.config.get("writable"):
-            self.embeddings = Embeddings(self.config["embeddings"])
-        elif self.config.get("path"):
+        if self.config.get("path") and Embeddings().exists(self.config["path"]):
+            # Load existing index if available
             self.embeddings = Embeddings()
             self.embeddings.load(self.config["path"])
+        elif self.config.get("embeddings"):
+            # Initialize empty embeddings
+            self.embeddings = Embeddings(self.config["embeddings"])
 
         # Create pipelines
         self.pipes()
@@ -159,8 +160,7 @@ class API:
 
     def index(self):
         """
-        Builds an embeddings index for previously batched documents. No further documents can be added
-        after this call.
+        Builds an embeddings index for previously batched documents.
         """
 
         if self.embeddings and self.config.get("writable") and self.documents:
@@ -171,12 +171,59 @@ class API:
             # Build embeddings index
             self.embeddings.index(self.documents)
 
-            # Save index
-            self.embeddings.save(self.config["path"])
+            # Save index if path available, otherwise this is an memory-only index
+            if self.config.get("path"):
+                self.embeddings.save(self.config["path"])
 
             # Reset document stream
             self.documents.close()
             self.documents = None
+
+    def upsert(self):
+        """
+        Runs an embeddings upsert operation for previously batched documents.
+        """
+
+        if self.embeddings and self.config.get("writable") and self.documents:
+            # Run upsert
+            self.embeddings.upsert(self.documents)
+
+            # Save index if path available, otherwise this is an memory-only index
+            if self.config.get("path"):
+                self.embeddings.save(self.config["path"])
+
+            # Reset document stream
+            self.documents.close()
+            self.documents = None
+
+    def delete(self, ids):
+        """
+        Deletes from an embeddings index. Returns list of ids deleted.
+
+        Args:
+            ids: list of ids to delete
+
+        Returns:
+            ids deleted
+        """
+
+        if self.embeddings and self.config.get("writable"):
+            return self.embeddings.delete(ids)
+
+        return None
+
+    def count(self):
+        """
+        Total number of elements in this embeddings index.
+
+        Returns:
+            number of elements in embeddings index
+        """
+
+        if self.embeddings:
+            return self.embeddings.count()
+
+        return None
 
     def similarity(self, query, texts):
         """

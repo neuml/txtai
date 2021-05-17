@@ -10,23 +10,23 @@ from txtai.pipeline import Textractor
 from utils import Utils
 
 
-class TestSummary(unittest.TestCase):
+class TestTextractor(unittest.TestCase):
     """
-    Labels tests
+    Textractor tests
     """
 
-    def testSingle(self):
+    def testParagraphs(self):
         """
-        Tests a single extraction with no tokenization of the results
+        Tests extraction to paragraphs
         """
 
-        textractor = Textractor()
+        textractor = Textractor(paragraphs=True)
 
-        # Extract text as a single block
-        text = textractor(Utils.PATH + "/article.pdf")
+        # Extract text as sentences
+        paragraphs = textractor(Utils.PATH + "/article.pdf")
 
-        # Check length of text is as expected
-        self.assertEqual(len(text), 2301)
+        # Check number of paragraphs is as expected
+        self.assertEqual(len(paragraphs), 13)
 
     def testSentences(self):
         """
@@ -41,15 +41,15 @@ class TestSummary(unittest.TestCase):
         # Check number of sentences is as expected
         self.assertEqual(len(sentences), 17)
 
-    def testParagraphs(self):
+    def testSingle(self):
         """
-        Tests extraction to paragraphs
+        Tests a single extraction with no tokenization of the results
         """
 
-        textractor = Textractor(paragraphs=True)
+        textractor = Textractor()
 
-        # Extract text as sentences
-        paragraphs = textractor(Utils.PATH + "/article.pdf")
+        # Extract text as a single block
+        text = textractor(Utils.PATH + "/article.pdf")
 
-        # Check number of paragraphs is as expected
-        self.assertEqual(len(paragraphs), 13)
+        # Check length of text is as expected
+        self.assertEqual(len(text), 2301)

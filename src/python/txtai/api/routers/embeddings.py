@@ -62,11 +62,49 @@ def add(documents: List[dict] = Body(...)):
 @router.get("/index")
 def index():
     """
-    Builds an embeddings index for previously batched documents. No further documents can be added
-    after this call.
+    Builds an embeddings index for previously batched documents.
     """
 
     application.get().index()
+
+
+@router.get("/upsert")
+def upsert():
+    """
+    Runs an embeddings upsert operation for previously batched documents.
+    """
+
+    application.get().upsert()
+
+
+@router.post("/delete")
+def delete(ids: List = Body(...)):
+    """
+    Deletes from an embeddings index. Returns list of ids deleted.
+
+    Args:
+        ids: list of ids to delete
+
+    Returns:
+        ids deleted
+    """
+
+    application.get().delete(ids)
+
+
+@router.get("/count")
+def count():
+    """
+    Deletes from an embeddings index. Returns list of ids deleted.
+
+    Args:
+        ids: list of ids to delete
+
+    Returns:
+        ids deleted
+    """
+
+    return application.get().count()
 
 
 @router.get("/transform")

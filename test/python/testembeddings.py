@@ -33,6 +33,23 @@ class TestEmbeddings(unittest.TestCase):
         # Create embeddings model, backed by sentence-transformers & transformers
         cls.embeddings = Embeddings({"method": "transformers", "path": "sentence-transformers/bert-base-nli-mean-tokens"})
 
+    def testDelete(self):
+        """
+        Test delete
+        """
+
+        # Create an index for the list of text
+        self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        # Delete best match
+        self.embeddings.delete([4])
+
+        # Search for best match
+        uid = self.embeddings.search("feel good story", 1)[0][0]
+
+        self.assertEqual(self.embeddings.count(), 5)
+        self.assertEqual(uid, 5)
+
     def testIndex(self):
         """
         Test index
@@ -44,7 +61,40 @@ class TestEmbeddings(unittest.TestCase):
         # Search for best match
         uid = self.embeddings.search("feel good story", 1)[0][0]
 
-        self.assertEqual(self.data[uid], self.data[4])
+        self.assertEqual(uid, 4)
+
+    def testSave(self):
+        """
+        Test save
+        """
+
+        # Create an index for the list of text
+        self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        # Generate temp file path
+        index = os.path.join(tempfile.gettempdir(), "embeddings")
+
+        self.embeddings.save(index)
+        self.embeddings.load(index)
+
+        # Search for best match
+        uid = self.embeddings.search("feel good story", 1)[0][0]
+
+        self.assertEqual(uid, 4)
+
+        # Test offsets still work after save/load
+        self.embeddings.upsert([(0, "Test insert", None)])
+        self.assertEqual(self.embeddings.count(), len(self.data))
+
+    def testSimilarity(self):
+        """
+        Test similarity
+        """
+
+        # Get best matching id
+        uid = self.embeddings.similarity("feel good story", self.data)[0][0]
+
+        self.assertEqual(uid, 4)
 
     def testUpsert(self):
         """
@@ -67,57 +117,7 @@ class TestEmbeddings(unittest.TestCase):
         # Search for best match
         uid = self.embeddings.search("feel good story", 1)[0][0]
 
-        self.assertEqual(data[uid], data[0])
-
-    def testDelete(self):
-        """
-        Test delete
-        """
-
-        # Create an index for the list of text
-        self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
-
-        # Delete best match
-        self.embeddings.delete([4])
-
-        # Search for best match
-        uid = self.embeddings.search("feel good story", 1)[0][0]
-
-        self.assertEqual(self.embeddings.count(), 5)
-        self.assertEqual(self.data[uid], self.data[5])
-
-    def testSave(self):
-        """
-        Test save
-        """
-
-        # Create an index for the list of text
-        self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
-
-        # Generate temp file path
-        index = os.path.join(tempfile.gettempdir(), "embeddings")
-
-        self.embeddings.save(index)
-        self.embeddings.load(index)
-
-        # Search for best match
-        uid = self.embeddings.search("feel good story", 1)[0][0]
-
-        self.assertEqual(self.data[uid], self.data[4])
-
-        # Test offsets still work after save/load
-        self.embeddings.upsert([(0, "Test insert", None)])
-        self.assertEqual(self.embeddings.count(), len(self.data))
-
-    def testSimilarity(self):
-        """
-        Test similarity
-        """
-
-        # Get best matching id
-        uid = self.embeddings.similarity("feel good story", self.data)[0][0]
-
-        self.assertEqual(self.data[uid], self.data[4])
+        self.assertEqual(uid, 0)
 
     def testWords(self):
         """

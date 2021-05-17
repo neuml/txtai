@@ -70,16 +70,7 @@ class Embeddings:
         """
 
         # Transform documents to embeddings vectors
-        ids, dimensions, stream = self.model.index(documents)
-
-        # Load streamed embeddings back to memory
-        embeddings = np.empty((len(ids), dimensions), dtype=np.float32)
-        with open(stream, "rb") as queue:
-            for x in range(embeddings.shape[0]):
-                embeddings[x] = pickle.load(queue)
-
-        # Remove temporary file
-        os.remove(stream)
+        ids, dimensions, embeddings = self.vectors(documents)
 
         # Build LSA model (if enabled). Remove principal components from embeddings.
         if self.config.get("pca"):
@@ -115,16 +106,7 @@ class Embeddings:
             return
 
         # Transform documents to embeddings vectors
-        ids, dimensions, stream = self.model.index(documents)
-
-        # Load streamed embeddings back to memory
-        embeddings = np.empty((len(ids), dimensions), dtype=np.float32)
-        with open(stream, "rb") as queue:
-            for x in range(embeddings.shape[0]):
-                embeddings[x] = pickle.load(queue)
-
-        # Remove temporary file
-        os.remove(stream)
+        ids, _, embeddings = self.vectors(documents)
 
         # Normalize embeddings
         self.normalize(embeddings)
@@ -342,6 +324,19 @@ class Embeddings:
         # Sentence vectors model - transforms text into sentence embeddings
         self.model = self.loadVectors()
 
+    def exists(self, path):
+        """
+        Checks if an index exists at path.
+
+        Args:
+            path: input directory path
+
+        Returns:
+            true if index exists, false otherwise
+        """
+
+        return os.path.exists("%s/config" % path) and os.path.exists("%s/embeddings" % path)
+
     def save(self, path):
         """
         Saves a model.
@@ -385,6 +380,31 @@ class Embeddings:
         """
 
         return VectorsFactory.create(self.config, self.scoring)
+
+    def vectors(self, documents):
+        """
+        Transforms documents into embeddings vectors.
+
+        Args:
+            documents: list of (id, text|tokens, tags)
+
+        Returns:
+            tuple of document ids, dimensions and embeddings
+        """
+
+        # Transform documents to embeddings vectors
+        ids, dimensions, stream = self.model.index(documents)
+
+        # Load streamed embeddings back to memory
+        embeddings = np.empty((len(ids), dimensions), dtype=np.float32)
+        with open(stream, "rb") as queue:
+            for x in range(embeddings.shape[0]):
+                embeddings[x] = pickle.load(queue)
+
+        # Remove temporary file
+        os.remove(stream)
+
+        return (ids, dimensions, embeddings)
 
     def buildLSA(self, embeddings, components):
         """

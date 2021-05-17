@@ -13,6 +13,19 @@ class TestTranslation(unittest.TestCase):
     Translation tests
     """
 
+    @unittest.skipIf(os.name == "nt", "M2M100 skipped on Windows")
+    def testM2M100Translation(self):
+        """
+        Tests a translation using M2M100 models
+        """
+
+        translate = Translation()
+
+        text = translate("This is a test translation to Croatian", "hr")
+
+        # Validate translation text
+        self.assertEqual(text, "Ovo je testni prijevod na hrvatski")
+
     def testMarianTranslation(self):
         """
         Tests a translation using Marian models
@@ -30,18 +43,18 @@ class TestTranslation(unittest.TestCase):
         translation = translate(translation, "en")
         self.assertEqual(translation, text)
 
-    @unittest.skipIf(os.name == "nt", "M2M100 skipped on Windows")
-    def testM2M100Translation(self):
+    def testLongTranslation(self):
         """
-        Tests a translation using M2M100 models
+        Tests a translation longer than max tokenization length.
         """
 
         translate = Translation()
 
-        text = translate("This is a test translation to Croatian", "hr")
+        text = "This is a test translation to Spanish. " * 100
+        translation = translate(text, "es")
 
         # Validate translation text
-        self.assertEqual(text, "Ovo je testni prijevod na hrvatski")
+        self.assertIsNotNone(translation)
 
     def testNoTranslation(self):
         """
@@ -55,16 +68,3 @@ class TestTranslation(unittest.TestCase):
 
         # Validate no translation
         self.assertEqual(text, translation)
-
-    def testLongTranslation(self):
-        """
-        Tests a translation longer than max tokenization length.
-        """
-
-        translate = Translation()
-
-        text = "This is a test translation to Spanish. " * 100
-        translation = translate(text, "es")
-
-        # Validate translation text
-        self.assertIsNotNone(translation)
