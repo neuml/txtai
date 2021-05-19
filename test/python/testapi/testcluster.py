@@ -159,6 +159,7 @@ class TestCluster(unittest.TestCase):
         uid = self.client.get("search?query=feel%20good%20story&limit=1").json()[0]["id"]
         self.assertEqual(uid, 4)
 
+    @unittest.skipIf(os.name == "nt", "Cluster batchsearch skipped on Windows")
     def testSearchBatch(self):
         """
         Test cluster batch search
