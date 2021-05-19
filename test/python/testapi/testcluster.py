@@ -75,6 +75,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.wfile.flush()
 
 
+@unittest.skipIf(os.name == "nt", "TestCluster skipped on Windows")
 class TestCluster(unittest.TestCase):
     """
     API tests for embeddings clusters
@@ -127,9 +128,8 @@ class TestCluster(unittest.TestCase):
         Shutdown mock http server.
         """
 
-        if os.name != "nt":
-            cls.httpd1.shutdown()
-            cls.httpd2.shutdown()
+        cls.httpd1.shutdown()
+        cls.httpd2.shutdown()
 
     def testCount(self):
         """
