@@ -87,13 +87,21 @@ class TestEmbeddings(unittest.TestCase):
         cls.client.post("add", json=[{"id": x, "text": row} for x, row in enumerate(cls.data)])
         cls.client.get("index")
 
+    def testCount(self):
+        """
+        Test count via API
+        """
+
+        self.assertEqual(self.client.get("count").json(), 6)
+
     def testDelete(self):
         """
         Test delete via API
         """
 
         # Delete best match
-        self.client.post("delete", json=[4])
+        ids = self.client.post("delete", json=[4]).json()
+        self.assertEqual(ids, [4])
 
         # Search for best match
         uid = self.client.get("search?query=feel%20good%20story&limit=1").json()[0]["id"]
@@ -114,6 +122,8 @@ class TestEmbeddings(unittest.TestCase):
 
         self.assertIsNone(api.search("test", None))
         self.assertIsNone(api.batchsearch(["test"], None))
+        self.assertIsNone(api.delete(["test"]))
+        self.assertIsNone(api.count())
         self.assertIsNone(api.similarity("test", ["test"]))
         self.assertIsNone(api.batchsimilarity(["test"], ["test"]))
         self.assertIsNone(api.transform("test"))

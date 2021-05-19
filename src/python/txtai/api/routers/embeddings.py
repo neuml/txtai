@@ -89,7 +89,7 @@ def delete(ids: List = Body(...)):
         ids deleted
     """
 
-    application.get().delete(ids)
+    return application.get().delete(ids)
 
 
 @router.get("/count")

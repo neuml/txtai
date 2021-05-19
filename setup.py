@@ -6,7 +6,7 @@ with open("README.md", "r", encoding="utf-8") as f:
 
 setup(
     name="txtai",
-    version="3.0.0",
+    version="3.1.0",
     author="NeuML",
     description="AI-powered search engine",
     long_description=DESCRIPTION,
@@ -23,6 +23,7 @@ setup(
     keywords="search embedding machine-learning nlp",
     python_requires=">=3.6",
     install_requires=[
+        "aiohttp>=3.7.4",
         "annoy>=1.16.3",
         "apache-libcloud>=3.3.1",
         "faiss-cpu>=1.7.0; os_name != 'nt'",

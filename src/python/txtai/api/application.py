@@ -71,6 +71,10 @@ def start():
         if name in config:
             app.include_router(router)
 
+    # Special case for embeddings clusters
+    if "cluster" in config and "embeddings" not in config:
+        app.include_router(embeddings.router)
+
     # Special case to add similarity instance for embeddings
     if "embeddings" in config and "similarity" not in config:
         app.include_router(similarity.router)

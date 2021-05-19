@@ -2,6 +2,8 @@
 API module
 """
 
+from .cluster import Cluster
+
 from ..embeddings import Documents, Embeddings
 from ..pipeline import PipelineFactory
 from ..workflow import WorkflowFactory
@@ -21,8 +23,9 @@ class API:
         """
 
         # Initialize member variables
-        self.config, self.documents, self.embeddings = config, None, None
+        self.config, self.documents, self.embeddings, self.cluster = config, None, None, None
 
+        # Local embeddings index
         if self.config.get("path") and Embeddings().exists(self.config["path"]):
             # Load existing index if available
             self.embeddings = Embeddings()
@@ -30,6 +33,10 @@ class API:
         elif self.config.get("embeddings"):
             # Initialize empty embeddings
             self.embeddings = Embeddings(self.config["embeddings"])
+
+        # Embeddings cluster
+        if self.config.get("cluster"):
+            self.cluster = Cluster(self.config["cluster"])
 
         # Create pipelines
         self.pipes()
@@ -113,8 +120,11 @@ class API:
             list of {id: value, score: value}
         """
 
+        limit = self.limit(request.query_params.get("limit") if request else None)
+
+        if self.cluster:
+            return self.cluster.search(query, limit)
         if self.embeddings:
-            limit = self.limit(request.query_params.get("limit"))
             return [{"id": uid, "score": float(score)} for uid, score in self.embeddings.search(query, limit)]
 
         return None
@@ -133,6 +143,8 @@ class API:
             list of {id: value, score: value} per query
         """
 
+        if self.cluster:
+            return self.cluster.batchsearch(queries, self.limit(limit))
         if self.embeddings:
             results = self.embeddings.batchsearch(queries, self.limit(limit))
             return [[{"id": uid, "score": float(score)} for uid, score in result] for result in results]
@@ -149,8 +161,10 @@ class API:
             documents: list of {id: value, text: value}
         """
 
-        # Only add batch if index is marked writable
-        if self.embeddings and self.config.get("writable"):
+        if self.cluster:
+            self.cluster.add(documents)
+        elif self.embeddings and self.config.get("writable"):
+            # Only add batch if index is marked writable
             # Create documents file if not already open
             if not self.documents:
                 self.documents = Documents()
@@ -163,7 +177,9 @@ class API:
         Builds an embeddings index for previously batched documents.
         """
 
-        if self.embeddings and self.config.get("writable") and self.documents:
+        if self.cluster:
+            self.cluster.index()
+        elif self.embeddings and self.config.get("writable") and self.documents:
             # Build scoring index if scoring method provided
             if self.config.get("scoring"):
                 self.embeddings.score(self.documents)
@@ -184,7 +200,9 @@ class API:
         Runs an embeddings upsert operation for previously batched documents.
         """
 
-        if self.embeddings and self.config.get("writable") and self.documents:
+        if self.cluster:
+            self.cluster.upsert()
+        elif self.embeddings and self.config.get("writable") and self.documents:
             # Run upsert
             self.embeddings.upsert(self.documents)
 
@@ -207,6 +225,8 @@ class API:
             ids deleted
         """
 
+        if self.cluster:
+            return self.cluster.delete(ids)
         if self.embeddings and self.config.get("writable"):
             return self.embeddings.delete(ids)
 
@@ -220,6 +240,8 @@ class API:
             number of elements in embeddings index
         """
 
+        if self.cluster:
+            return self.cluster.count()
         if self.embeddings:
             return self.embeddings.count()
 
