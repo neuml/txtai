@@ -15,11 +15,6 @@ jobs:
       - uses: actions/setup-python@v2
         with:
           python-version: 3.6
-        if: matrix.os != 'windows-latest'
-      - uses: actions/setup-python@v2
-        with:
-          python-version: 3.7
-        if: matrix.os == 'windows-latest'
       - uses: actions/setup-java@v1
         with:
           java-version: 1.8
