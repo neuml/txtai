@@ -50,6 +50,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
         self.wfile.write(response)
+        self.wfile.flush()
 
     def do_POST(self):
         """
@@ -71,6 +72,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
         self.wfile.write(response)
+        self.wfile.flush()
 
 
 class TestCluster(unittest.TestCase):
