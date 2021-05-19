@@ -127,8 +127,9 @@ class TestCluster(unittest.TestCase):
         Shutdown mock http server.
         """
 
-        cls.httpd1.shutdown()
-        cls.httpd2.shutdown()
+        if os.name != "nt":
+            cls.httpd1.shutdown()
+            cls.httpd2.shutdown()
 
     def testCount(self):
         """
@@ -159,7 +160,6 @@ class TestCluster(unittest.TestCase):
         uid = self.client.get("search?query=feel%20good%20story&limit=1").json()[0]["id"]
         self.assertEqual(uid, 4)
 
-    @unittest.skipIf(os.name == "nt", "Cluster batchsearch skipped on Windows")
     def testSearchBatch(self):
         """
         Test cluster batch search
