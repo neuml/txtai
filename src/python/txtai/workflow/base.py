@@ -37,6 +37,7 @@ class Workflow:
 
             if len(batch) == self.batch:
                 yield from self.process(batch)
+                batch = []
 
         if batch:
             yield from self.process(batch)
