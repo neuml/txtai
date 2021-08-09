@@ -6,7 +6,7 @@ with open("README.md", "r", encoding="utf-8") as f:
 
 setup(
     name="txtai",
-    version="3.1.0",
+    version="3.2.0",
     author="NeuML",
     description="AI-powered search engine",
     long_description=DESCRIPTION,
