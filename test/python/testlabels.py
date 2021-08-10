@@ -55,8 +55,9 @@ class TestLabels(unittest.TestCase):
         # Get index of "POSITIVE" label
         index = labels.labels().index("POSITIVE")
 
-        # Run comparison
+        # Verify results
         self.assertEqual(labels("This is the best sentence ever")[0][0], index)
+        self.assertEqual(labels("This is the best sentence ever", multilabel=True)[0][0], index)
 
     def testSimilarity(self):
         """
