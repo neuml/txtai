@@ -9,9 +9,10 @@ from .labels import Labels
 
 class Similarity(Labels):
     """
-    Computes similarity between query and list of text using a zero shot classifier.
+    Computes similarity between query and list of text using a text classifier.
     """
 
+    # pylint: disable=W0222
     def __call__(self, query, texts, multilabel=True):
         """
         Computes the similarity between query and list of text. Returns a list of

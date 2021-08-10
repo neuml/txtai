@@ -45,6 +45,19 @@ class TestLabels(unittest.TestCase):
         results = [l[0][0] for l in self.labels(["This is the best sentence ever", "This is terrible"], ["positive", "negative"])]
         self.assertEqual(results, [0, 1])
 
+    def testLabelFixed(self):
+        """
+        Test labels with a fixed label text classification model
+        """
+
+        labels = Labels(dynamic=False)
+
+        # Get index of "POSITIVE" label
+        index = labels.labels().index("POSITIVE")
+
+        # Run comparison
+        self.assertEqual(labels("This is the best sentence ever")[0][0], index)
+
     def testSimilarity(self):
         """
         Test similarity with single query
