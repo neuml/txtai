@@ -20,7 +20,7 @@ class HFPipeline(Tensors):
 
         Args:
             task: pipeline task or category
-            path: optional path to model, accepts Hugging Face model hub id or local path,
+            path: optional path to model, accepts Hugging Face model hub id, local path or (model, tokenizer) tuple.
                   uses default model for task if not provided
             quantize: if model should be quantized, defaults to False
             gpu: True/False if GPU should be enabled, also supports a GPU device id
