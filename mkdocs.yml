@@ -40,6 +40,7 @@ nav:
         - Similarity: pipelines/similarity.md
         - Summary: pipelines/summary.md
         - Textractor: pipelines/textractor.md
+        - Trainer: pipelines/trainer.md
         - Transcription: pipelines/transcription.md
         - Translation: pipelines/translation.md
     - Workflows: workflows.md
