@@ -7,6 +7,7 @@ from .extractor import Extractor
 from .factory import PipelineFactory
 from .hfmodel import HFModel
 from .hfpipeline import HFPipeline
+from .hftrainer import HFTrainer
 from .labels import Labels
 from .questions import Questions
 from .segmentation import Segmentation

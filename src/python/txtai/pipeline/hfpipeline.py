@@ -35,7 +35,10 @@ class HFPipeline(Tensors):
             deviceid = self.deviceid(gpu)
 
             # Transformer pipeline task
-            self.pipeline = pipeline(task, model=path, tokenizer=path, device=deviceid)
+            if isinstance(path, tuple):
+                self.pipeline = pipeline(task, model=path[0], tokenizer=path[1], device=deviceid)
+            else:
+                self.pipeline = pipeline(task, model=path, tokenizer=path, device=deviceid)
 
             # Model quantization. Compresses model to int8 precision, improves runtime performance. Only supported on CPU.
             if deviceid == -1 and quantize:

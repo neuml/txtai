@@ -9,16 +9,20 @@ class Models:
     """
 
     @staticmethod
-    def checklength(model, tokenizer):
+    def checklength(config, tokenizer):
         """
-        Checks the length for a Hugging Face Transformers tokenizer using a Hugging Face Transformers model. Copies the
+        Checks the length for a Hugging Face Transformers tokenizer using a Hugging Face Transformers config. Copies the
         max_position_embeddings parameter if the tokenizer has no max_length set. This helps with backwards compatibility
         with older tokenizers.
 
         Args:
-            model: Transformers model
+            config: Transformers config
             tokenizer: Transformers tokenizer
         """
 
-        if hasattr(model, "config") and hasattr(model.config, "max_position_embeddings") and tokenizer.model_max_length == int(1e30):
-            tokenizer.model_max_length = model.config.max_position_embeddings
+        # Unpack nested config, handles passing model directly
+        if hasattr(config, "config"):
+            config = config.config
+
+        if hasattr(config, "max_position_embeddings") and tokenizer.model_max_length == int(1e30):
+            tokenizer.model_max_length = config.max_position_embeddings

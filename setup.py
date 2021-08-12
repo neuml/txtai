@@ -44,7 +44,7 @@ setup(
         "tika>=1.24",
         "torch>=1.4.0",
         "tqdm>=4.46.0",
-        "transformers>=4.4.2",
+        "transformers>=4.8.2",
         "uvicorn>=0.12.1",
     ],
     extras_require={"dev": ["black", "coverage", "pre-commit", "pylint"]},
