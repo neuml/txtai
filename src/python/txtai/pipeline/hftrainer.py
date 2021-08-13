@@ -17,7 +17,7 @@ from ..models import Models
 
 class HFTrainer(Tensors):
     """
-    Trains a new Hugging Face Transformer model using the Trainer API.
+    Trains a new Hugging Face Transformer model using the Trainer framework.
     """
 
     def __call__(self, base, train, validation=None, columns=None, maxlength=None, **args):
@@ -166,7 +166,7 @@ class HFTrainer(Tensors):
         if hasattr(data, "map"):
             # Hugging Face dataset
             tokens = data.map(lambda row: self.tokenize(row, columns, tokenizer, maxlength))
-            labels = sorted(data.features[columns[-1]].names)
+            labels = sorted(data.unique(columns[-1]))
         else:
             # pandas DataFrame
             if hasattr(data, "to_dict"):

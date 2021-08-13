@@ -88,11 +88,7 @@ class TestTrainer(unittest.TestCase):
 
             def __init__(self, data):
                 self.data = data
-
-                label = unittest.mock.Mock()
-                label.names = [0, 1]
-
-                self.features = {"label": label}
+                self.unique = lambda _: [0, 1]
 
             def __len__(self):
                 return len(self.data)
