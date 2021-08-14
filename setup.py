@@ -4,6 +4,9 @@ from setuptools import find_packages, setup
 with open("README.md", "r", encoding="utf-8") as f:
     DESCRIPTION = f.read()
 
+# Required dependencies
+install = ["faiss-cpu>=1.7.1.post2", "numpy>=1.18.4", "torch>=1.6.0", "transformers>=4.8.2"]
+
 # Optional dependencies
 extras = {}
 
@@ -24,7 +27,7 @@ extras["similarity"] = [
     "hnswlib>=0.5.0",
     "pymagnitude-lite>=0.1.43",
     "scikit-learn>=0.23.1",
-    "sentence-transformers>=1.0.3",
+    "sentence-transformers>=2.0.0",
 ]
 
 extras["workflow"] = ["apache-libcloud>=3.3.1", "pillow>=7.2.0", "requests>=2.24.0"]
@@ -49,7 +52,7 @@ setup(
     package_dir={"": "src/python"},
     keywords="search embedding machine-learning nlp",
     python_requires=">=3.6",
-    install_requires=["annoy>=1.16.3; os_name == 'nt'", "faiss-cpu>=1.7.0; os_name != 'nt'", "numpy>=1.18.4", "torch>=1.4.0", "transformers>=4.8.2"],
+    install_requires=install,
     extras_require=extras,
     classifiers=[
         "License :: OSI Approved :: Apache Software License",
