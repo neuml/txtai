@@ -31,7 +31,6 @@ class TestANN(unittest.TestCase):
         # Test with custom settings
         self.runTests("annoy", {"annoy": {"ntrees": 2, "searchk": 1}}, False)
 
-    @unittest.skipIf(os.name == "nt", "Faiss not installed on Windows")
     def testFaiss(self):
         """
         Test Faiss backend
@@ -39,7 +38,6 @@ class TestANN(unittest.TestCase):
 
         self.runTests("faiss")
 
-    @unittest.skipIf(os.name == "nt", "Faiss not installed on Windows")
     def testFaissCustom(self):
         """
         Test Faiss backend with custom settings
