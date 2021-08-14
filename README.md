@@ -63,40 +63,8 @@ You can also install txtai directly from GitHub. Using a Python Virtual Environm
 
     pip install git+https://github.com/neuml/txtai
 
-Python 3.6+ is supported.
-
-txtai has the following optional dependencies that can be installed as extras.
-
-```
-# Install all dependencies (mirrors txtai < 3.2)
-pip install txtai[all]
-
-# Serve txtai via a web API
-pip install txtai[api]
-
-# All pipelines - default install comes with most common pipelines
-pip install txtai[pipeline]
-
-# Word vectors, support for sentence-transformer models not on the HF Hub and additional ANN libraries
-pip install txtai[similarity]
-
-# All workflow tasks - default install comes with most common workflow tasks
-pip install txtai[workflow]
-```
-
-Additional environment specific prerequisites are below.
-
-### Linux
-
-Optional audio transcription requires a [system library to be installed](https://github.com/bastibe/python-soundfile#installation)
-
-### macOS
-
-Run `brew install libomp` see [this link](https://github.com/kyamagu/faiss-wheels#prerequisite)
-
-### Windows
-
-Install [C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
+Python 3.6+ is supported. See the detailed [install instructions](https://neuml.github.io/txtai) for more information covering optional
+dependencies and environment specific prerequisites.
 
 ## Examples
 
