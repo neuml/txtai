@@ -4,8 +4,14 @@ HNSW module
 
 import numpy as np
 
-# pylint: disable=E0611
-from hnswlib import Index
+# Conditional import
+try:
+    # pylint: disable=E0611
+    from hnswlib import Index
+
+    HNSWLIB = True
+except ImportError:
+    HNSWLIB = False
 
 from .base import ANN
 

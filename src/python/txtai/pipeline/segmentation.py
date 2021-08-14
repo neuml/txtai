@@ -4,7 +4,13 @@ Segmentation module
 
 import re
 
-from nltk import sent_tokenize
+# Conditional import
+try:
+    from nltk import sent_tokenize
+
+    NLTK = True
+except ImportError:
+    NLTK = False
 
 from .base import Pipeline
 
@@ -25,6 +31,9 @@ class Segmentation(Pipeline):
             minlength: require at least minlength characters per text element, defaults to None
             join: joins tokenized sections back together if True, defaults to False
         """
+
+        if not NLTK:
+            raise ImportError('Segmentation pipeline is not available - install "pipeline" extra to enable')
 
         self.sentences = sentences
         self.lines = lines

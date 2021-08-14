@@ -94,6 +94,7 @@ class TestANN(unittest.TestCase):
         if update:
             self.assertEqual(self.append(name, params, 500).count(), 10500)
             self.assertEqual(self.delete(name, params, [0, 1]).count(), 9998)
+            self.assertEqual(self.delete(name, params, [100000]).count(), 10000)
 
         self.assertGreater(self.search(name, params), 0)
 

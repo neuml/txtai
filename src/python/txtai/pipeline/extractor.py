@@ -2,8 +2,6 @@
 Extractor module
 """
 
-from nltk.tokenize import sent_tokenize
-
 from .base import Pipeline
 from .questions import Questions
 from .tokenizer import Tokenizer
@@ -54,7 +52,7 @@ class Extractor(Pipeline):
         results = self.query([query for _, query, _, _ in queue], texts)
 
         # Build question-context pairs
-        names, questions, contexts, snippets = [], [], [], []
+        names, questions, contexts, topns, snippets = [], [], [], [], []
         for x, (name, _, question, snippet) in enumerate(queue):
             # Build context using top n best matching segments
             topn = sorted(results[x], key=lambda y: y[2], reverse=True)[:3]
@@ -63,10 +61,11 @@ class Extractor(Pipeline):
             names.append(name)
             questions.append(question)
             contexts.append(context)
+            topns.append([text for _, text, _ in topn])
             snippets.append(snippet)
 
         # Run qa pipeline and return answers
-        return self.answers(names, questions, contexts, snippets)
+        return self.answers(names, questions, contexts, topns, snippets)
 
     def query(self, queries, texts):
         """
@@ -123,7 +122,7 @@ class Extractor(Pipeline):
 
         return results
 
-    def answers(self, names, questions, contexts, snippets):
+    def answers(self, names, questions, contexts, topns, snippets):
         """
         Executes QA pipeline and formats extracted answers.
 
@@ -131,6 +130,7 @@ class Extractor(Pipeline):
             names: question identifiers/names
             questions: questions
             contexts: question context
+            topns: same as question context but as a list with each candidate element
             snippets: flags to enable answer snippets per answer
 
         Returns:
@@ -146,18 +146,18 @@ class Extractor(Pipeline):
         for x, answer in enumerate(answers):
             # Resolve snippet if necessary
             if answer and snippets[x]:
-                answer = self.snippet(contexts[x], answer)
+                answer = self.snippet(topns[x], answer)
 
             results.append((names[x], answer))
 
         return results
 
-    def snippet(self, context, answer):
+    def snippet(self, topn, answer):
         """
         Extracts text surrounding the answer within context.
 
         Args:
-            context: full context
+            topn: topn items used as a context
             answer: answer within context
 
         Returns:
@@ -166,7 +166,7 @@ class Extractor(Pipeline):
 
         # Searches for first sentence to contain answer
         if answer:
-            for x in sent_tokenize(context):
+            for x in topn:
                 if answer in x:
                     return x
 

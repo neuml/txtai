@@ -4,6 +4,33 @@ from setuptools import find_packages, setup
 with open("README.md", "r", encoding="utf-8") as f:
     DESCRIPTION = f.read()
 
+# Optional dependencies
+extras = {}
+
+extras["dev"] = ["black", "coverage", "pre-commit", "pylint"]
+
+extras["api"] = [
+    "aiohttp>=3.7.4",
+    "fastapi>=0.61.1",
+    "PyYAML>=5.3",
+    "uvicorn>=0.12.1",
+]
+
+extras["pipeline"] = ["fasttext>=0.9.2", "nltk>=3.5", "soundfile>=0.10.3.post1", "tika>=1.24"]
+
+extras["similarity"] = [
+    "annoy>=1.16.3",
+    "fasttext>=0.9.2",
+    "hnswlib>=0.5.0",
+    "pymagnitude-lite>=0.1.43",
+    "scikit-learn>=0.23.1",
+    "sentence-transformers>=1.0.3",
+]
+
+extras["workflow"] = ["apache-libcloud>=3.3.1", "pillow>=7.2.0", "requests>=2.24.0"]
+
+extras["all"] = extras["api"] + extras["pipeline"] + extras["similarity"] + extras["workflow"]
+
 setup(
     name="txtai",
     version="3.2.0",
@@ -22,32 +49,8 @@ setup(
     package_dir={"": "src/python"},
     keywords="search embedding machine-learning nlp",
     python_requires=">=3.6",
-    install_requires=[
-        "aiohttp>=3.7.4",
-        "annoy>=1.16.3",
-        "apache-libcloud>=3.3.1",
-        "faiss-cpu>=1.7.0; os_name != 'nt'",
-        "fastapi>=0.61.1",
-        "fasttext>=0.9.2",
-        "hnswlib>=0.5.0",
-        "nltk>=3.5",
-        "numpy>=1.18.4",
-        "pymagnitude-lite>=0.1.43",
-        "pillow>=7.2.0",
-        "PyYAML>=5.3",
-        "regex>=2020.5.14",
-        "requests>=2.24.0",
-        "scikit-learn>=0.23.1",
-        "sentence-transformers>=1.0.3",
-        "sentencepiece>=0.1.91",
-        "soundfile>=0.10.3.post1",
-        "tika>=1.24",
-        "torch>=1.4.0",
-        "tqdm>=4.46.0",
-        "transformers>=4.8.2",
-        "uvicorn>=0.12.1",
-    ],
-    extras_require={"dev": ["black", "coverage", "pre-commit", "pylint"]},
+    install_requires=["annoy>=1.16.3; os_name == 'nt'", "faiss-cpu>=1.7.0; os_name != 'nt'", "numpy>=1.18.4", "torch>=1.4.0", "transformers>=4.8.2"],
+    extras_require=extras,
     classifiers=[
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",

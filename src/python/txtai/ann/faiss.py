@@ -6,7 +6,7 @@ import numpy as np
 
 from .base import ANN
 
-# Conditionally import Faiss as it's only supported on Linux/macOS
+# Conditional import
 try:
     from faiss import index_factory, METRIC_INNER_PRODUCT, read_index, write_index
 

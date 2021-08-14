@@ -2,6 +2,7 @@
 Hugging Face Transformers model wrapper module
 """
 
+from ..models import Models
 from .tensors import Tensors
 
 
@@ -29,8 +30,8 @@ class HFModel(Tensors):
         self.quantization = quantize
 
         # Get tensor device reference
-        self.deviceid = self.deviceid(gpu)
-        self.device = self.reference(self.deviceid)
+        self.deviceid = Models.deviceid(gpu)
+        self.device = Models.reference(self.deviceid)
 
         # Process batch size
         self.batchsize = batch

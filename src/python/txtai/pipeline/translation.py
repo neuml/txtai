@@ -2,7 +2,13 @@
 Translation module
 """
 
-import fasttext
+# Conditional import
+try:
+    import fasttext
+
+    FASTTEXT = True
+except ImportError:
+    FASTTEXT = False
 
 from transformers import M2M100ForConditionalGeneration, M2M100Tokenizer, MarianMTModel, MarianTokenizer
 from transformers.file_utils import cached_path
@@ -106,6 +112,9 @@ class Translation(HFModel):
         Returns:
             list of languages
         """
+
+        if not FASTTEXT:
+            raise ImportError('Language detection is not available - install "pipeline" extra to enable')
 
         if not self.detector:
             # Suppress unnecessary warning

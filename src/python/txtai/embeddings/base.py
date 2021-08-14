@@ -8,11 +8,11 @@ import shutil
 
 import numpy as np
 
-from sklearn.decomposition import TruncatedSVD
-
 from ..ann import ANNFactory
 from ..scoring import ScoringFactory
 from ..vectors import VectorsFactory
+
+from .reducer import Reducer
 
 
 class Embeddings:
@@ -40,11 +40,14 @@ class Embeddings:
         # Embeddings model
         self.embeddings = None
 
-        # Dimensionality reduction model
-        self.lsa = None
+        if self.config and self.config.get("method") != "transformers":
+            # Dimensionality reduction model
+            self.reducer = None
 
-        # Embedding scoring method - weighs each word in a sentence
-        self.scoring = ScoringFactory.create(self.config["scoring"]) if self.config and self.config.get("scoring") else None
+            # Embedding scoring method - weighs each word in a sentence
+            self.scoring = ScoringFactory.create(self.config["scoring"]) if self.config and self.config.get("scoring") else None
+        else:
+            self.reducer, self.scoring = None, None
 
         # Sentence vectors model
         self.model = self.loadVectors() if self.config else None
@@ -74,8 +77,8 @@ class Embeddings:
 
         # Build LSA model (if enabled). Remove principal components from embeddings.
         if self.config.get("pca"):
-            self.lsa = self.buildLSA(embeddings, self.config["pca"])
-            self.removePC(embeddings)
+            self.reducer = Reducer(embeddings, self.config["pca"])
+            self.reducer(embeddings)
 
         # Normalize embeddings
         self.normalize(embeddings)
@@ -172,8 +175,8 @@ class Embeddings:
 
         # Reduce the dimensionality of the embeddings. Scale the embeddings using this
         # model to reduce the noise of common but less relevant terms.
-        if self.lsa:
-            self.removePC(embedding)
+        if self.reducer:
+            self.reducer(embedding)
 
         # Normalize embeddings
         self.normalize(embedding)
@@ -314,7 +317,8 @@ class Embeddings:
         # Dimensionality reduction
         if self.config.get("pca"):
             with open("%s/lsa" % path, "rb") as handle:
-                self.lsa = pickle.load(handle)
+                self.reducer = Reducer()
+                self.reducer.load(path)
 
         # Embedding scoring
         if self.config.get("scoring"):
@@ -363,9 +367,8 @@ class Embeddings:
             self.embeddings.save("%s/embeddings" % path)
 
             # Save dimensionality reduction
-            if self.lsa:
-                with open("%s/lsa" % path, "wb") as handle:
-                    pickle.dump(self.lsa, handle, protocol=pickle.HIGHEST_PROTOCOL)
+            if self.reducer:
+                self.reducer.save(path)
 
             # Save embedding scoring
             if self.scoring:
@@ -405,48 +408,6 @@ class Embeddings:
         os.remove(stream)
 
         return (ids, dimensions, embeddings)
-
-    def buildLSA(self, embeddings, components):
-        """
-        Builds a LSA model. This model is used to remove the principal component within embeddings. This helps to
-        smooth out noisy embeddings (common words with less value).
-
-        Args:
-            embeddings: input embeddings matrix
-            components: number of model components
-
-        Returns:
-            LSA model
-        """
-
-        svd = TruncatedSVD(n_components=components, random_state=0)
-        svd.fit(embeddings)
-
-        return svd
-
-    def removePC(self, embeddings):
-        """
-        Applies a LSA model to embeddings, removed the top n principal components. Operation applied
-        directly on array.
-
-        Args:
-            embeddings: input embeddings matrix
-        """
-
-        pc = self.lsa.components_
-        factor = embeddings.dot(pc.transpose())
-
-        # Apply LSA model
-        # Calculation is different if n_components = 1
-        if pc.shape[0] == 1:
-            embeddings -= factor * pc
-        elif len(embeddings.shape) > 1:
-            # Apply model on a row-wise basis to limit memory usage
-            for x in range(embeddings.shape[0]):
-                embeddings[x] -= factor[x].dot(pc)
-        else:
-            # Single embedding
-            embeddings -= factor.dot(pc)
 
     def normalize(self, embeddings):
         """

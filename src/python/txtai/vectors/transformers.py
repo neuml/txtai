@@ -5,8 +5,17 @@ Transformers module
 import pickle
 import tempfile
 
-from sentence_transformers import SentenceTransformer
-from sentence_transformers.models import Pooling, Transformer
+import torch
+
+# Conditional import
+try:
+    from sentence_transformers import SentenceTransformer
+
+    SENTENCE_TRANSFORMERS = True
+except ImportError:
+    SENTENCE_TRANSFORMERS = False
+
+from transformers import AutoModel, AutoTokenizer
 
 from ..pipeline.tokenizer import Tokenizer
 
@@ -20,20 +29,27 @@ class TransformersVectors(Vectors):
     """
 
     def load(self, path):
+        # Flag that determines if transformers or sentence-transformers should be used to run model
         modelhub = self.config.get("modelhub", True)
 
-        # Download model from the model hub (default)
+        # Tensor device id
+        deviceid = Models.deviceid(self.config.get("gpu", True))
+
+        # Use transformers model directly (default)
         if modelhub:
-            model = Transformer(path)
-            pooling = Pooling(model.get_word_embedding_dimension())
+            model = AutoModel.from_pretrained(path)
+            tokenizer = AutoTokenizer.from_pretrained(path)
 
             # Detect unbounded tokenizer typically found in older models
-            Models.checklength(model.auto_model, model.tokenizer)
+            Models.checklength(model, tokenizer)
 
-            return SentenceTransformer(modules=[model, pooling])
+            return (model, tokenizer, Models.device(deviceid))
+
+        if not SENTENCE_TRANSFORMERS:
+            raise ImportError('sentence-transformers is not available - install "similarity" extra to enable')
 
         # Download model directly from sentence transformers if model hub disabled
-        return SentenceTransformer(path)
+        return SentenceTransformer(path, device=Models.reference(deviceid))
 
     def index(self, documents):
         ids, dimensions, stream = [], None, None
@@ -61,7 +77,7 @@ class TransformersVectors(Vectors):
 
     def transform(self, document):
         # Convert input document to text and build embeddings
-        return self.model.encode([self.text(document[1])], show_progress_bar=False)[0]
+        return self.encode([self.text(document[1])])[0]
 
     def batch(self, documents, output):
         """
@@ -81,7 +97,7 @@ class TransformersVectors(Vectors):
         dimensions = None
 
         # Build embeddings
-        embeddings = self.model.encode(documents, show_progress_bar=False)
+        embeddings = self.encode(documents)
         for embedding in embeddings:
             if not dimensions:
                 # Set number of dimensions for embeddings
@@ -109,3 +125,54 @@ class TransformersVectors(Vectors):
             text = " ".join(text)
 
         return text
+
+    def encode(self, documents):
+        """
+        Builds embeddings for input documents.
+
+        Args:
+            documents: list of text to build embeddings for
+
+        Returns:
+            embeddings
+        """
+
+        # Build embeddings using transformers
+        if isinstance(self.model, tuple):
+            # Unpack model
+            model, tokenizer, device = self.model
+
+            # Tokenize input
+            inputs = tokenizer(documents, padding=True, truncation="longest_first", return_tensors="pt")
+
+            # Move model and inputs to device
+            model = model.to(device)
+            inputs = inputs.to(device)
+
+            # Run inputs through model
+            outputs = model(**inputs)
+
+            # Run pooling logic on outputs
+            outputs = self.pooling(outputs, inputs["attention_mask"])
+
+            # Get NumPy array and return
+            return outputs.detach().cpu().numpy()
+
+        # Build embeddings using sentence transformers
+        return self.model.encode(documents, show_progress_bar=False)
+
+    def pooling(self, outputs, mask):
+        """
+        Runs mean pooling on token embeddings taking the input mask into account.
+
+        Args:
+            outputs: model outputs
+            mask: input attention mask
+
+        Returns:
+            mean pooled vector using output token embeddings (i.e. last hidden state)
+        """
+
+        # pylint: disable=E1101
+        mask = mask.unsqueeze(-1).expand(outputs[0].size()).float()
+        return torch.sum(outputs[0] * mask, 1) / torch.clamp(mask.sum(1), min=1e-9)

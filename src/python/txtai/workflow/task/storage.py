@@ -5,7 +5,13 @@ StorageTask module
 import os
 import re
 
-from libcloud.storage.providers import get_driver
+# Conditional import
+try:
+    from libcloud.storage.providers import get_driver
+
+    LIBCLOUD = True
+except ImportError:
+    LIBCLOUD = False
 
 from .base import Task
 
@@ -20,6 +26,9 @@ class StorageTask(Task):
     PATH = r"\w+:\/\/(.*)"
 
     def __init__(self, action=None, select=None, unpack=True, ids=True):
+        if not LIBCLOUD:
+            raise ImportError('StorageTask is not available - install "workflow" extra to enable')
+
         super().__init__(action, select, unpack)
 
         # If true, elements returned will be tagged with ids and converted into (id, data, tag) tuples

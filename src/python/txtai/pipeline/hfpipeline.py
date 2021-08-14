@@ -32,7 +32,7 @@ class HFPipeline(Tensors):
             self.pipeline = model.pipeline if isinstance(model, HFPipeline) else model
         else:
             # Get device id
-            deviceid = self.deviceid(gpu)
+            deviceid = Models.deviceid(gpu)
 
             # Transformer pipeline task
             if isinstance(path, tuple):

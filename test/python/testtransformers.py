@@ -37,6 +37,14 @@ class TestTransformersVectors(unittest.TestCase):
         self.assertEqual(dimension, 768)
         self.assertIsNotNone(os.path.exists(stream))
 
+    def testSentenceTransformers(self):
+        """
+        Test creating a direct sentence transformers model
+        """
+
+        model = VectorsFactory.create({"method": "transformers", "path": "paraphrase-MiniLM-L3-v2", "modelhub": False}, None)
+        self.assertIsNotNone(model.transform("This is a test"))
+
     def testText(self):
         """
         Test transformers text conversion

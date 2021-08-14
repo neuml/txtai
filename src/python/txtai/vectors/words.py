@@ -9,10 +9,16 @@ import tempfile
 from errno import ENOENT
 from multiprocessing import Pool
 
-import fasttext
 import numpy as np
 
-from pymagnitude import converter, Magnitude
+# Conditionally import Word Vector libraries as they aren't installed by default
+try:
+    import fasttext
+    from pymagnitude import converter, Magnitude
+
+    WORDS = True
+except ImportError:
+    WORDS = False
 
 from .base import Vectors
 from ..pipeline.tokenizer import Tokenizer

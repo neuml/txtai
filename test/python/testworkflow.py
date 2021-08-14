@@ -77,7 +77,7 @@ class TestWorkflow(unittest.TestCase):
         Tests an image task
         """
 
-        workflow = Workflow([ImageTask()])
+        workflow = Workflow([ImageTask()], 1)
 
         results = list(workflow(["file://" + Utils.PATH + "/books.jpg"]))
 

@@ -12,43 +12,6 @@ class Tensors(Pipeline):
     Pipeline backed by a tensor processing framework. Currently supports PyTorch.
     """
 
-    def deviceid(self, gpu):
-        """
-        Translates a gpu flag into a device id.
-
-        Args:
-            gpu: True/False if GPU should be enabled, also supports a GPU device id
-
-        Returns:
-            device id
-        """
-
-        # Always return -1 if gpu is None or CUDA is unavailable
-        if gpu is None or not torch.cuda.is_available():
-            return -1
-
-        # Default to device 0 if gpu is True and not otherwise specified
-        if isinstance(gpu, bool):
-            return 0 if gpu else -1
-
-        # Return gpu as device id if gpu flag is an int
-        return int(gpu)
-
-    def reference(self, device):
-        """
-        Gets a tensor device reference.
-
-        Args:
-            device: device id
-
-        Returns:
-            tensor device
-        """
-
-        # Torch device
-        # pylint: disable=E1101
-        return torch.device("cpu" if device < 0 else "cuda:{}".format(device))
-
     def quantize(self, model):
         """
         Quantizes input model and returns. This only is supported for CPU devices.

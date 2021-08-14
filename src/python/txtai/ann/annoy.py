@@ -2,7 +2,13 @@
 Annoy module
 """
 
-from annoy import AnnoyIndex
+# Conditional import
+try:
+    from annoy import AnnoyIndex
+
+    ANNOY = True
+except ImportError:
+    ANNOY = False
 
 from .base import ANN
 

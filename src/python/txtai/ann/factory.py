@@ -2,9 +2,9 @@
 Factory module
 """
 
-from .annoy import Annoy
+from .annoy import Annoy, ANNOY
 from .faiss import Faiss, FAISS
-from .hnsw import HNSW
+from .hnsw import HNSW, HNSWLIB
 
 
 class ANNFactory:
@@ -34,13 +34,18 @@ class ANNFactory:
 
         # Create ANN instance
         if backend == "annoy":
+            if not ANNOY:
+                raise ImportError('annoy library is not available - install "similarity" extra to enable')
+
             model = Annoy(config)
         elif backend == "hnsw":
+            if not HNSWLIB:
+                raise ImportError('hnswlib library is not available - install "similarity" extra to enable')
+
             model = HNSW(config)
         else:
-            # Raise error if trying to create a Faiss index without Faiss installed
             if not FAISS:
-                raise ImportError("Faiss library is not installed")
+                raise ImportError("Faiss library is not available for this platform")
 
             model = Faiss(config)
 
