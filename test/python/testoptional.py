@@ -25,7 +25,6 @@ class TestOptional(unittest.TestCase):
         """
 
         txtai.ann.factory.ANNOY = not txtai.ann.factory.ANNOY
-        txtai.ann.factory.FAISS = not txtai.ann.factory.FAISS
         txtai.ann.factory.HNSWLIB = not txtai.ann.factory.HNSWLIB
 
         txtai.pipeline.segmentation.NLTK = not txtai.pipeline.segmentation.NLTK
@@ -64,10 +63,6 @@ class TestOptional(unittest.TestCase):
 
         with self.assertRaises(ImportError):
             ANNFactory.create({"backend": "annoy"})
-
-        if not txtai.ann.factory.FAISS:
-            with self.assertRaises(ImportError):
-                ANNFactory.create({"backend": "faiss"})
 
         with self.assertRaises(ImportError):
             ANNFactory.create({"backend": "hnsw"})

@@ -4,15 +4,9 @@ Faiss module
 
 import numpy as np
 
+from faiss import index_factory, METRIC_INNER_PRODUCT, read_index, write_index
+
 from .base import ANN
-
-# Conditional import
-try:
-    from faiss import index_factory, METRIC_INNER_PRODUCT, read_index, write_index
-
-    FAISS = True
-except ImportError:
-    FAISS = False
 
 
 class Faiss(ANN):

@@ -3,7 +3,7 @@ Factory module
 """
 
 from .annoy import Annoy, ANNOY
-from .faiss import Faiss, FAISS
+from .faiss import Faiss
 from .hnsw import HNSW, HNSWLIB
 
 
@@ -26,11 +26,7 @@ class ANNFactory:
 
         # ANN model
         model = None
-        backend = config.get("backend")
-
-        # Default backend if not provided, based on available libraries
-        if not backend:
-            backend = "faiss" if FAISS else "hnsw"
+        backend = config.get("backend", "faiss")
 
         # Create ANN instance
         if backend == "annoy":
@@ -44,9 +40,6 @@ class ANNFactory:
 
             model = HNSW(config)
         else:
-            if not FAISS:
-                raise ImportError("Faiss library is not available for this platform")
-
             model = Faiss(config)
 
         # Store config back
