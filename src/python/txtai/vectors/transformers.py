@@ -5,6 +5,7 @@ Transformers module
 import pickle
 import tempfile
 
+import numpy as np
 import torch
 
 # Conditional import
@@ -142,24 +143,46 @@ class TransformersVectors(Vectors):
             # Unpack model
             model, tokenizer, device = self.model
 
-            # Tokenize input
-            inputs = tokenizer(documents, padding=True, truncation="longest_first", return_tensors="pt")
-
-            # Move model and inputs to device
+            # Move model to device
             model = model.to(device)
-            inputs = inputs.to(device)
 
-            # Run inputs through model
-            outputs = model(**inputs)
+            # Split documents into batches and process
+            results = []
+            for chunk in self.chunk(documents, 32):
+                # Tokenize input
+                inputs = tokenizer(chunk, padding=True, truncation="longest_first", return_tensors="pt")
 
-            # Run pooling logic on outputs
-            outputs = self.pooling(outputs, inputs["attention_mask"])
+                # Move inputs to device
+                inputs = inputs.to(device)
 
-            # Get NumPy array and return
-            return outputs.detach().cpu().numpy()
+                # Run inputs through model
+                with torch.no_grad():
+                    outputs = model(**inputs)
+
+                # Run pooling logic on outputs
+                outputs = self.pooling(outputs, inputs["attention_mask"])
+
+                # Add batch result
+                results.extend(outputs.cpu().numpy())
+
+            return np.asarray(results)
 
         # Build embeddings using sentence transformers
         return self.model.encode(documents, show_progress_bar=False)
+
+    def chunk(self, texts, size):
+        """
+        Splits texts into separate batch sizes specified by size.
+
+        Args:
+            texts: text elements
+            size: batch size
+
+        Returns:
+            list of evenly sized batches with the last batch having the remaining elements
+        """
+
+        return [texts[x : x + size] for x in range(0, len(texts), size)]
 
     def pooling(self, outputs, mask):
         """
