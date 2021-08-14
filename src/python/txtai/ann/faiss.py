@@ -40,7 +40,7 @@ class Faiss(ANN):
 
         # Train model
         self.model.train(embeddings)
-        self.model.add_with_ids(embeddings, np.arange(embeddings.shape[0]))
+        self.model.add_with_ids(embeddings, np.arange(embeddings.shape[0], dtype=np.int64))
 
         # Update id offset
         self.config["offset"] = embeddings.shape[0]
@@ -49,14 +49,14 @@ class Faiss(ANN):
         new = embeddings.shape[0]
 
         # Append new ids
-        self.model.add_with_ids(embeddings, np.arange(self.config["offset"], self.config["offset"] + new))
+        self.model.add_with_ids(embeddings, np.arange(self.config["offset"], self.config["offset"] + new, dtype=np.int64))
 
         # Update id offset
         self.config["offset"] += new
 
     def delete(self, ids):
         # Remove specified ids
-        self.model.remove_ids(np.array(ids))
+        self.model.remove_ids(np.array(ids, dtype=np.int64))
 
     def search(self, queries, limit):
         # Run the query
