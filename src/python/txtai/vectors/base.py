@@ -18,7 +18,7 @@ class Vectors:
             self.initialized = "dimensions" in config
 
             # Enables optional string tokenization
-            self.tokenize = "tokenize" not in config or config["tokenize"]
+            self.tokenize = config.get("tokenize")
 
             # pylint: disable=E1111
             self.model = self.load(config["path"])
