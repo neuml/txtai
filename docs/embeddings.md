@@ -48,8 +48,8 @@ English language sentence embeddings in some situations.
 backend: faiss|annoy|hnsw
 ```
 
-Approximate Nearest Neighbor (ANN) index backend for storing generated sentence embeddings. Defaults to Faiss. Additional backends require the "similarity extras
-package to be installed.
+Approximate Nearest Neighbor (ANN) index backend for storing generated sentence embeddings. Defaults to Faiss. Additional backends require the
+[similarity](https://neuml.github.io/txtai/install/) extras package to be installed.
 
 Backend-specific settings are set with a corresponding configuration object having the same name as the backend (i.e. annoy, faiss, or hnsw). None of these are required and are set to defaults if omitted.
 
