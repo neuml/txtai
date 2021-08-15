@@ -31,7 +31,7 @@ class TestEmbeddings(unittest.TestCase):
         ]
 
         # Create embeddings model, backed by sentence-transformers & transformers
-        cls.embeddings = Embeddings({"method": "transformers", "path": "sentence-transformers/bert-base-nli-mean-tokens"})
+        cls.embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2"})
 
     def testDelete(self):
         """

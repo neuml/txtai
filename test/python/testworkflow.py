@@ -39,7 +39,7 @@ class TestWorkflow(unittest.TestCase):
         textractor = Textractor(paragraphs=True, minlength=150, join=True)
         summary = Summary("t5-small")
 
-        embeddings = Embeddings({"method": "transformers", "path": "sentence-transformers/bert-base-nli-mean-tokens"})
+        embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2"})
         documents = Documents()
 
         def index(x):

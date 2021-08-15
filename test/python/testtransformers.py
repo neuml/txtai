@@ -21,7 +21,7 @@ class TestTransformersVectors(unittest.TestCase):
         Create single TransformersVectors instance.
         """
 
-        cls.model = VectorsFactory.create({"method": "transformers", "path": "sentence-transformers/bert-base-nli-mean-tokens"}, None)
+        cls.model = VectorsFactory.create({"path": "sentence-transformers/nli-mpnet-base-v2"}, None)
 
     def testIndex(self):
         """
@@ -42,7 +42,7 @@ class TestTransformersVectors(unittest.TestCase):
         Test creating a direct sentence transformers model
         """
 
-        model = VectorsFactory.create({"method": "transformers", "path": "paraphrase-MiniLM-L3-v2", "modelhub": False}, None)
+        model = VectorsFactory.create({"path": "paraphrase-MiniLM-L3-v2", "modelhub": False}, None)
         self.assertIsNotNone(model.transform("This is a test"))
 
     def testText(self):
