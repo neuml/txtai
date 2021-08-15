@@ -6,10 +6,11 @@ Embeddings parameters are set through the constructor. Examples below.
 ```python
 # Transformers embeddings model
 Embeddings({"method": "transformers",
-            "path": "sentence-transformers/bert-base-nli-mean-tokens"})
+            "path": "sentence-transformers/nli-mpnet-base-v2"})
 
 # Word embeddings model
-Embeddings({"path": vectors,
+Embeddings({"method": "words",
+            "path": vectors,
             "storevectors": True,
             "scoring": "bm25",
             "pca": 3,
@@ -23,7 +24,8 @@ Embeddings({"path": vectors,
 method: transformers|words
 ```
 
-Sets the sentence embeddings method to use. When set to _transformers_, the embeddings object builds sentence embeddings using the sentence transformers. Otherwise a word embeddings model is used. Defaults to words.
+Sets the sentence embeddings method to use. When set to _transformers_, the embeddings object builds sentence embeddings using a sentence transformers model.
+Otherwise a word embeddings model is used. The method is inferred using the _path_ if not provided.
 
 ### path
 ```yaml
@@ -38,47 +40,18 @@ it must be a path to a local word embeddings model.
 tokenize: boolean
 ```
 
-Enables string tokenization (defaults to true). This method applies tokenization rules that work best with English language text and help increase the
-quality of English language sentence embeddings. This should be disabled when working with non-English text.
-
-### storevectors
-```yaml
-storevectors: boolean
-```
-
-Enables copying of a vectors model set in path into the embeddings models output directory on save. This option enables a fully encapsulated index with no external file dependencies.
-
-### scoring
-```yaml
-scoring: bm25|tfidf|sif
-```
-
-For word embedding models, a scoring model allows building weighted averages of word vectors for a given sentence. Supports BM25, tf-idf and SIF (smooth inverse frequency) methods. If a scoring method is not provided, mean sentence embeddings are built.
-
-### pca
-```yaml
-pca: int
-```
-
-Removes _n_ principal components from generated sentence embeddings. When enabled, a TruncatedSVD model is built to help with dimensionality reduction. After pooling of vectors creates a single sentence embedding, this method is applied.
+Enables string tokenization (defaults to false). This method applies tokenization rules that only work with English language text and may increase the quality of
+English language sentence embeddings in some situations.
 
 ### backend
 ```yaml
-backend: annoy|faiss|hnsw
+backend: faiss|annoy|hnsw
 ```
 
-Approximate Nearest Neighbor (ANN) index backend for storing generated sentence embeddings. Defaults to Faiss for Linux/macOS and Annoy for Windows. Faiss currently is not supported on Windows.
+Approximate Nearest Neighbor (ANN) index backend for storing generated sentence embeddings. Defaults to Faiss. Additional backends require the "similarity extras
+package to be installed.
 
 Backend-specific settings are set with a corresponding configuration object having the same name as the backend (i.e. annoy, faiss, or hnsw). None of these are required and are set to defaults if omitted.
-
-### annoy
-```yaml
-annoy:
-    ntrees: number of trees (int) - defaults to 10
-    searchk: search_k search setting (int) - defaults to -1
-```
-
-See [Annoy documentation](https://github.com/spotify/annoy#full-python-api) for more information on these parameters.
 
 ### faiss
 ```yaml
@@ -88,6 +61,15 @@ faiss:
 ```
 
 See Faiss documentation on the [index factory](https://github.com/facebookresearch/faiss/wiki/The-index-factory) and [search](https://github.com/facebookresearch/faiss/wiki/Faster-search) for more information on these parameters.
+
+### annoy
+```yaml
+annoy:
+    ntrees: number of trees (int) - defaults to 10
+    searchk: search_k search setting (int) - defaults to -1
+```
+
+See [Annoy documentation](https://github.com/spotify/annoy#full-python-api) for more information on these parameters.
 
 ### hnsw
 ```yaml
@@ -107,6 +89,33 @@ quantize: boolean
 
 Enables quanitization of generated sentence embeddings. If the index backend supports it, sentence embeddings will be stored with 8-bit precision vs 32-bit.
 Only Faiss currently supports quantization.
+
+## Additional configuration for Word embedding models
+
+Word embeddings provide a good tradeoff of performance to functionality for a similarity search system. With that being said, Transformers models are making great progress in scaling performance down to smaller models and are the preferred vector backend in txtai for most cases.
+
+Word embeddings models require the [similarity](https://neuml.github.io/txtai/install/) extras package to be installed.
+
+### storevectors
+```yaml
+storevectors: boolean
+```
+
+Enables copying of a vectors model set in path into the embeddings models output directory on save. This option enables a fully encapsulated index with no external file dependencies.
+
+### scoring
+```yaml
+scoring: bm25|tfidf|sif
+```
+
+A scoring model builds weighted averages of word vectors for a given sentence. Supports BM25, TF-IDF and SIF (smooth inverse frequency) methods. If a scoring method is not provided, mean sentence embeddings are built.
+
+### pca
+```yaml
+pca: int
+```
+
+Removes _n_ principal components from generated sentence embeddings. When enabled, a TruncatedSVD model is built to help with dimensionality reduction. After pooling of vectors creates a single sentence embedding, this method is applied.
 
 ::: txtai.embeddings.Embeddings.__init__
 ::: txtai.embeddings.Embeddings.batchsearch

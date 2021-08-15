@@ -13,8 +13,7 @@ writable: True
 
 # Enbeddings index
 embeddings:
-  method: transformers
-  path: sentence-transformers/bert-base-nli-mean-tokens
+  path: sentence-transformers/nli-mpnet-base-v2
 
 # Extractive QA
 extractor:
