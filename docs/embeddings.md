@@ -49,7 +49,7 @@ backend: faiss|annoy|hnsw
 ```
 
 Approximate Nearest Neighbor (ANN) index backend for storing generated sentence embeddings. Defaults to Faiss. Additional backends require the
-[similarity](https://neuml.github.io/txtai/install/) extras package to be installed.
+[similarity](https://neuml.github.io/txtai/install/#similarity) extras package to be installed.
 
 Backend-specific settings are set with a corresponding configuration object having the same name as the backend (i.e. annoy, faiss, or hnsw). None of these are required and are set to defaults if omitted.
 
@@ -94,7 +94,7 @@ Only Faiss currently supports quantization.
 
 Word embeddings provide a good tradeoff of performance to functionality for a similarity search system. With that being said, Transformers models are making great progress in scaling performance down to smaller models and are the preferred vector backend in txtai for most cases.
 
-Word embeddings models require the [similarity](https://neuml.github.io/txtai/install/) extras package to be installed.
+Word embeddings models require the [similarity](https://neuml.github.io/txtai/install/#similarity) extras package to be installed.
 
 ### storevectors
 ```yaml
