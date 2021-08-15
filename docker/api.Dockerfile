@@ -28,13 +28,13 @@ RUN echo "path: /txtai" > index.yml && \
     echo "writable: True" >> index.yml && \
     echo "embeddings:" >> index.yml && \ 
     echo "  method: transformers" >> index.yml && \
-    echo "  path: sentence-transformers/bert-base-nli-mean-tokens" >> index.yml && \
+    echo "  path: sentence-transformers/nli-mpnet-base-v2" >> index.yml && \
     echo "extractor:" >> index.yml && \
     echo "  path: distilbert-base-cased-distilled-squad" >> index.yml && \
     echo "labels:" >> index.yml
 
 # Cache models in Docker image
-RUN python -c "from transformers import AutoModel; AutoModel.from_pretrained('sentence-transformers/bert-base-nli-mean-tokens')" && \ 
+RUN python -c "from transformers import AutoModel; AutoModel.from_pretrained('sentence-transformers/nli-mpnet-base-v2')" && \
     python -c "from transformers import AutoModel; AutoModel.from_pretrained('distilbert-base-cased-distilled-squad')" && \
     python -c "from transformers import AutoModel; AutoModel.from_pretrained('facebook/bart-large-mnli')"
 

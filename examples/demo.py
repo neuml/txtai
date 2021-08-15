@@ -23,7 +23,7 @@ class Shell(Cmd):
 
     def preloop(self):
         # Create embeddings model, backed by sentence-transformers & transformers
-        self.embeddings = Embeddings({"method": "transformers", "path": "sentence-transformers/bert-base-nli-mean-tokens"})
+        self.embeddings = Embeddings({"method": "transformers", "path": "sentence-transformers/nli-mpnet-base-v2"})
 
         self.data = [
             "US tops 5 million confirmed virus cases",
