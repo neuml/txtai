@@ -4,21 +4,27 @@ The easiest way to install is via pip and PyPI
 
     pip install txtai
 
-You can also install txtai directly from GitHub. Using a Python Virtual Environment is recommended.
+Python 3.6+ is supported. Using a Python [virtual environment](https://docs.python.org/3/library/venv.html) is recommended.
+
+## Install from source
+
+txtai can also be installed directly from GitHub to access the latest, unreleased features.
 
     pip install git+https://github.com/neuml/txtai
 
-Python 3.6+ is supported. Additional environment specific prerequisites are below.
+## Environment specific prerequisites
 
-## Linux
+Additional environment specific prerequisites are below.
+
+### Linux
 
 Optional audio transcription requires a [system library to be installed](https://github.com/bastibe/python-soundfile#installation)
 
-## macOS
+### macOS
 
 Run `brew install libomp` see [this link](https://github.com/kyamagu/faiss-wheels#prerequisite)
 
-## Windows
+### Windows
 
 Optional dependencies require [C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
 

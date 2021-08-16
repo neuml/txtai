@@ -59,12 +59,12 @@ The easiest way to install is via pip and PyPI
 
     pip install txtai
 
-You can also install txtai directly from GitHub. Using a Python Virtual Environment is recommended.
+Python 3.6+ is supported. Using a Python [virtual environment](https://docs.python.org/3/library/venv.html) is recommended.
 
-    pip install git+https://github.com/neuml/txtai
-
-Python 3.6+ is supported. See the detailed [install instructions](https://neuml.github.io/txtai/install) for more information covering optional
-dependencies and environment specific prerequisites.
+See the detailed [install instructions](https://neuml.github.io/txtai/install) for more information covering
+[installing from source](https://neuml.github.io/txtai/install/#install-from-source),
+[environment specific prerequisites](https://neuml.github.io/txtai/install/#environment-specific-prerequisites) and
+[optional dependencies](https://neuml.github.io/txtai/install/#optional-dependencies).
 
 ## Examples
 
