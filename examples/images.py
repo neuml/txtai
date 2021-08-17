@@ -39,7 +39,7 @@ def build(directory):
         Embeddings index
     """
 
-    embeddings = Embeddings({"method": "transformers", "path": "clip-ViT-B-32", "modelhub": False})
+    embeddings = Embeddings({"method": "sentence-transformers", "path": "clip-ViT-B-32"})
     embeddings.index(images(directory))
 
     return embeddings

@@ -95,7 +95,7 @@ class Application:
 
         elif component == "embeddings":
             st.sidebar.markdown("**Embeddings Index**  \n*Index workflow output*")
-            options["path"] = st.sidebar.text_area("Embeddings model path", value="sentence-transformers/bert-base-nli-mean-tokens")
+            options["path"] = st.sidebar.text_area("Embeddings model path", value="sentence-transformers/nli-mpnet-base-v2")
 
         return options
 
@@ -137,7 +137,7 @@ class Application:
                 tasks.append(Task(lambda x: self.pipelines["translate"](x, **self.components["translate"])))
 
             elif wtype == "embeddings":
-                self.embeddings = Embeddings({"method": "transformers", **component})
+                self.embeddings = Embeddings({**component})
                 self.documents = Documents()
                 tasks.append(Task(self.documents.add, unpack=False))
 

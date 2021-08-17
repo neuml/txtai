@@ -104,7 +104,7 @@ class Application:
         """
 
         # Build embeddings index
-        embeddings = Embeddings({"method": "transformers", "path": "sentence-transformers/msmarco-distilbert-base-v3"})
+        embeddings = Embeddings({"path": "sentence-transformers/msmarco-distilbert-base-v4"})
         embeddings.index(self.rows(True))
         embeddings.save(self.dbpath)
 
