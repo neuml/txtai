@@ -42,7 +42,7 @@ class Pooling(nn.Module):
         self.maxlength = maxlength if maxlength else self.tokenizer.model_max_length
 
         # Move to device
-        self.to(device)
+        self.to(self.device)
 
     def encode(self, documents):
         """
