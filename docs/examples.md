@@ -4,7 +4,7 @@ The examples directory has a series of notebooks and applications giving an over
 
 ## Similarity Search
 
-Build similarity/semantic/vector search applications with txtai.
+Build similarity/semantic/vector search applications.
 
 | Notebook  | Description  |       |
 |:----------|:-------------|------:|
@@ -18,7 +18,7 @@ Build similarity/semantic/vector search applications with txtai.
 
 ## Pipelines and Workflows
 
-NLP-backed data transformation pipelines and workflows. Run existing models and train new ones.
+NLP-backed data transformation pipelines and workflows.
 
 | Notebook  | Description  |       |
 |:----------|:-------------|------:|
@@ -30,6 +30,15 @@ NLP-backed data transformation pipelines and workflows. Run existing models and 
 | [Transcribe audio to text](https://github.com/neuml/txtai/blob/master/examples/11_Transcribe_audio_to_text.ipynb) | Convert audio files to text | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/11_Transcribe_audio_to_text.ipynb) |
 | [Translate text between languages](https://github.com/neuml/txtai/blob/master/examples/12_Translate_text_between_languages.ipynb) | Streamline machine translation and language detection | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/12_Translate_text_between_languages.ipynb) |
 | [Run pipeline workflows](https://github.com/neuml/txtai/blob/master/examples/14_Run_pipeline_workflows.ipynb) | Simple yet powerful constructs to efficiently process data | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/14_Run_pipeline_workflows.ipynb) |
+
+## Model Training
+
+Train NLP models.
+
+| Notebook  | Description  |       |
+|:----------|:-------------|------:|
+| [Train a text labeler](https://github.com/neuml/txtai/blob/master/examples/16_Train_a_text_labeler.ipynb) | Train a text classifier | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/16_Train_a_text_labeler.ipynb) |
+| [Train without labels](https://github.com/neuml/txtai/blob/master/examples/17_Train_without_labels.ipynb) | Use a zero-shot classifier to build training data and train a new classifier | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/17_Train_without_labels.ipynb) |
 
 ## Applications
 
