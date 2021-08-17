@@ -19,7 +19,7 @@ extras["api"] = [
     "uvicorn>=0.12.1",
 ]
 
-extras["pipeline"] = ["fasttext>=0.9.2", "nltk>=3.5", "soundfile>=0.10.3.post1", "tika>=1.24"]
+extras["pipeline"] = ["fasttext>=0.9.2", "nltk>=3.5", "sentencepiece>=0.1.91", "soundfile>=0.10.3.post1", "tika>=1.24"]
 
 extras["similarity"] = [
     "annoy>=1.16.3",
