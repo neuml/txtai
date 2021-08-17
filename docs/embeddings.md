@@ -21,27 +21,35 @@ Embeddings({"method": "words",
 
 ### method
 ```yaml
-method: transformers|words
+method: transformers|sentence-transformers|words
 ```
 
-Sets the sentence embeddings method to use. When set to _transformers_, the embeddings object builds sentence embeddings using a sentence transformers model.
-Otherwise a word embeddings model is used. The method is inferred using the _path_ if not provided.
+Sentence embeddings method to use. Options listed below.
+
+#### transformers
+
+Builds sentence embeddings using a transformers model. While this can be any transformers model, it works best with
+[models trained](https://huggingface.co/models?search=sentence-transformers) to build sentence embeddings.
+
+#### sentence-transformers
+
+Same as transformers but loads models with the sentence-transformers library.
+
+#### words
+
+Builds sentence embeddings using a word embeddings model.
+
+sentence-transformers and words require the [similarity](https://neuml.github.io/txtai/install/#similarity) extras package to be installed.
+
+The method is inferred using the _path_ if not provided.
 
 ### path
 ```yaml
 path: string
 ```
 
-Required field that sets the path for a vectors model. When method set to _transformers_, this must be a path to a Hugging Face Transformers model. Otherwise,
-it must be a path to a local word embeddings model.
-
-### tokenize
-```yaml
-tokenize: boolean
-```
-
-Enables string tokenization (defaults to false). This method applies tokenization rules that only work with English language text and may increase the quality of
-English language sentence embeddings in some situations.
+Required field that sets the path for a vectors model. When using a transformers/sentence-transformers model, this can be any model on the
+[Hugging Face Model Hub](https://huggingface.co/models) or a local file path. Otherwise, it must be a local file path to a word embeddings model.
 
 ### backend
 ```yaml
@@ -89,6 +97,16 @@ quantize: boolean
 
 Enables quanitization of generated sentence embeddings. If the index backend supports it, sentence embeddings will be stored with 8-bit precision vs 32-bit.
 Only Faiss currently supports quantization.
+
+## Additional configuration for Transformers models
+
+### tokenize
+```yaml
+tokenize: boolean
+```
+
+Enables string tokenization (defaults to false). This method applies tokenization rules that only work with English language text and may increase the quality of
+English language sentence embeddings in some situations.
 
 ## Additional configuration for Word embedding models
 

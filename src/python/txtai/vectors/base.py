@@ -28,7 +28,7 @@ class Vectors:
         Loads vector model at path.
 
         Args:
-            path: path to word vector model
+            path: path to vector model
 
         Returns:
             vector model

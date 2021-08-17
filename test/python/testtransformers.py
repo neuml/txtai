@@ -39,10 +39,10 @@ class TestTransformersVectors(unittest.TestCase):
 
     def testSentenceTransformers(self):
         """
-        Test creating a direct sentence transformers model
+        Test creating a model with sentence transformers
         """
 
-        model = VectorsFactory.create({"path": "paraphrase-MiniLM-L3-v2", "modelhub": False}, None)
+        model = VectorsFactory.create({"method": "sentence-transformers", "path": "paraphrase-MiniLM-L3-v2"}, None)
         self.assertIsNotNone(model.transform("This is a test"))
 
     def testText(self):

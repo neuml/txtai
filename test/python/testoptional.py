@@ -93,7 +93,7 @@ class TestOptional(unittest.TestCase):
             VectorsFactory.create({"method": "words"}, None)
 
         with self.assertRaises(ImportError):
-            VectorsFactory.create({"method": "transformers", "path": "", "modelhub": False}, None)
+            VectorsFactory.create({"method": "sentence-transformers", "path": ""}, None)
 
     def testWorkflow(self):
         """
