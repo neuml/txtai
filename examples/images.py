@@ -6,6 +6,7 @@ Requires streamlit and torchvision to be installed.
 """
 
 import glob
+import os
 import sys
 
 import streamlit as st
@@ -42,6 +43,10 @@ def build(directory):
     embeddings = Embeddings({"method": "sentence-transformers", "path": "clip-ViT-B-32"})
     embeddings.index(images(directory))
 
+    # Update model to support multilingual queries
+    embeddings.config["path"] = "sentence-transformers/clip-ViT-B-32-multilingual-v1"
+    embeddings.model = embeddings.loadVectors()
+
     return embeddings
 
 
@@ -72,4 +77,6 @@ def app(directory):
 
 
 if __name__ == "__main__":
+    os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
     app(sys.argv[1])
