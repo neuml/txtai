@@ -36,7 +36,7 @@ extras["all"] = extras["api"] + extras["pipeline"] + extras["similarity"] + extr
 
 setup(
     name="txtai",
-    version="3.2.0",
+    version="3.3.0",
     author="NeuML",
     description="AI-powered search engine",
     long_description=DESCRIPTION,
