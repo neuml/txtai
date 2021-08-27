@@ -9,7 +9,7 @@ from torch import nn
 
 from transformers import AutoModel, AutoTokenizer
 
-from ..models import Models
+from .models import Models
 
 
 class Pooling(nn.Module):
@@ -72,7 +72,7 @@ class Pooling(nn.Module):
 
             # Run inputs through model
             with torch.no_grad():
-                outputs = self.forward(inputs)
+                outputs = self.forward(**inputs)
 
             # Add batch result
             results.extend(outputs.cpu().numpy())
@@ -94,7 +94,7 @@ class Pooling(nn.Module):
 
         return [texts[x : x + size] for x in range(0, len(texts), size)]
 
-    def forward(self, inputs):
+    def forward(self, **inputs):
         """
         Runs inputs through transformers model and returns outputs.
 
@@ -113,7 +113,7 @@ class MeanPooling(Pooling):
     Builds mean pooled vectors usings outputs from a transformers model.
     """
 
-    def forward(self, inputs):
+    def forward(self, **inputs):
         """
         Runs mean pooling on token embeddings taking the input mask into account.
 
@@ -126,7 +126,7 @@ class MeanPooling(Pooling):
         """
 
         # Run through transformers model
-        tokens = super().forward(inputs)
+        tokens = super().forward(**inputs)
         mask = inputs["attention_mask"]
 
         # Mean pooling

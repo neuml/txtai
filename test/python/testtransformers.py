@@ -43,7 +43,7 @@ class TestTransformersVectors(unittest.TestCase):
         """
 
         model = VectorsFactory.create({"method": "sentence-transformers", "path": "paraphrase-MiniLM-L3-v2"}, None)
-        self.assertIsNotNone(model.transform("This is a test"))
+        self.assertEqual(model.transform("This is a test").shape, (384,))
 
     def testText(self):
         """

@@ -6,6 +6,7 @@ from .base import Pipeline
 from .extractor import Extractor
 from .factory import PipelineFactory
 from .hfmodel import HFModel
+from .hfonnx import HFOnnx
 from .hfpipeline import HFPipeline
 from .hftrainer import HFTrainer
 from .labels import Labels

@@ -11,6 +11,7 @@ The following pipeline types are currently supported.
     - [Similarity](../similarity)
     - [Summary](../summary)
 - Hugging Face Transformers models
+    - [ONNX](../onnx)
     - [Trainer](../trainer)
     - [Transcription](../transcription)
     - [Translation](../translation)

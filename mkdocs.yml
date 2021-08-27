@@ -36,6 +36,7 @@ nav:
         - Overview: pipelines/overview.md
         - Extractor: pipelines/extractor.md
         - Labels: pipelines/labels.md
+        - ONNX: pipelines/onnx.md
         - Segmentation: pipelines/segmentation.md
         - Similarity: pipelines/similarity.md
         - Summary: pipelines/summary.md

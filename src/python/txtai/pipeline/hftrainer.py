@@ -25,7 +25,7 @@ class HFTrainer(Tensors):
         Builds a new model using arguments.
 
         Args:
-            base: base model - supports a file path or (model, tokenizer) tuple
+            base: path to base model, accepts Hugging Face model hub id, local path or (model, tokenizer) tuple
             train: training data
             validation: validation data
             columns: tuple of columns to use for text/label, defaults to (text, None, label)

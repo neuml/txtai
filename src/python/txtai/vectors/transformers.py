@@ -14,9 +14,8 @@ except ImportError:
     SENTENCE_TRANSFORMERS = False
 
 from .base import Vectors
-from ..models import Models
+from ..models import MeanPooling, Models
 from ..pipeline.tokenizer import Tokenizer
-from .pooling import MeanPooling
 
 
 class TransformersVectors(Vectors):

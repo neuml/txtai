@@ -7,7 +7,7 @@ import unittest
 import txtai.ann.factory
 
 from txtai.ann import ANNFactory
-from txtai.pipeline import Segmentation, Textractor, Transcription, Translation
+from txtai.pipeline import HFOnnx, Segmentation, Textractor, Transcription, Translation
 from txtai.vectors import VectorsFactory
 from txtai.workflow.task.image import ImageTask
 from txtai.workflow.task.storage import StorageTask
@@ -27,6 +27,7 @@ class TestOptional(unittest.TestCase):
         txtai.ann.factory.ANNOY = not txtai.ann.factory.ANNOY
         txtai.ann.factory.HNSWLIB = not txtai.ann.factory.HNSWLIB
 
+        txtai.pipeline.hfonnx.ONNX_RUNTIME = not txtai.pipeline.hfonnx.ONNX_RUNTIME
         txtai.pipeline.segmentation.NLTK = not txtai.pipeline.segmentation.NLTK
         txtai.pipeline.textractor.TIKA = not txtai.pipeline.textractor.TIKA
         txtai.pipeline.transcription.SOUNDFILE = not txtai.pipeline.transcription.SOUNDFILE
@@ -71,6 +72,9 @@ class TestOptional(unittest.TestCase):
         """
         Test missing pipeline dependencies
         """
+
+        with self.assertRaises(ImportError):
+            HFOnnx()("google/bert_uncased_L-2_H-128_A-2", quantize=True)
 
         with self.assertRaises(ImportError):
             Segmentation()
