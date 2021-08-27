@@ -62,8 +62,9 @@ class TestOnnx(unittest.TestCase):
         options = SessionOptions()
         session = InferenceSession(model, options)
 
-        # Tokenize
+        # Tokenize and cast to int64 to support all platforms
         tokens = tokenizer(["cat"], return_tensors="np")
+        tokens = {x: tokens[x].astype(np.int64) for x in tokens}
 
         # Run inference and validate
         outputs = session.run(None, dict(tokens))
@@ -84,8 +85,9 @@ class TestOnnx(unittest.TestCase):
         options = SessionOptions()
         session = InferenceSession(model, options)
 
-        # Tokenize
+        # Tokenize and cast to int64 to support all platforms
         tokens = tokenizer(["cat"], return_tensors="np")
+        tokens = {x: tokens[x].astype(np.int64) for x in tokens}
 
         # Run inference and validate
         outputs = session.run(None, dict(tokens))
