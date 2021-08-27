@@ -37,7 +37,9 @@ class HFOnnx(Tensors):
         Args:
             path: path to model, accepts Hugging Face model hub id, local path or (model, tokenizer) tuple
             task: optional model task or category, determines the model type and outputs, defaults to export hidden state
-            output: optional output model path
+            output: optional output model path, defaults to return byte array if None
+            quantize: if model should be quantized (requires onnx to be installed), defaults to False
+            opset: onnx opset, defaults to 12
         """
 
         inputs, outputs, model = self.parameters(task)
@@ -86,7 +88,7 @@ class HFOnnx(Tensors):
         Quantizes an ONNX model.
 
         Args:
-            data: path to ONNX model or BytesIO with model data
+            output: path to ONNX model or BytesIO with model data
 
         Returns:
             quantized model as file path or bytes
