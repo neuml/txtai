@@ -138,10 +138,7 @@ class HFOnnx(Tensors):
         )
 
         config = {
-            "default": (
-                OrderedDict({"last_hidden_state": {0: "batch", 1: "sequence"}}),
-                AutoModel.from_pretrained,
-            ),
+            "default": (OrderedDict({"last_hidden_state": {0: "batch", 1: "sequence"}}), AutoModel.from_pretrained),
             "causal-lm": (OrderedDict({"logits": {0: "batch", 1: "sequence"}}), AutoModelForCausalLM.from_pretrained),
             "pooling": (OrderedDict({"embeddings": {0: "batch", 1: "sequence"}}), lambda x: MeanPoolingOnnx(x, -1)),
             "seq2seq-lm": (OrderedDict({"logits": {0: "batch", 1: "decoder_sequence"}}), AutoModelForSeq2SeqLM.from_pretrained),
