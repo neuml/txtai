@@ -2,7 +2,13 @@
 Models module
 """
 
+import os
+
 import torch
+
+from transformers import AutoModel, AutoModelForQuestionAnswering, AutoModelForSeq2SeqLM, AutoModelForSequenceClassification
+
+from .onnx import OnnxModel
 
 
 class Models:
@@ -81,3 +87,36 @@ class Models:
         """
 
         return "cpu" if deviceid < 0 else "cuda:{}".format(deviceid)
+
+    @staticmethod
+    def load(path, task="default"):
+        """
+        Loads a machine learning model. Handles multiple model frameworks (ONNX, Transformers).
+
+        Args:
+            path: path to model
+            task: task name used to lookup model configuration
+
+        Returns:
+            machine learning model
+        """
+
+        # Detect ONNX models
+        if isinstance(path, bytes) or (isinstance(path, str) and os.path.isfile(path)):
+            return OnnxModel(path)
+
+        # Return path, if path isn't a string
+        if not isinstance(path, str):
+            return path
+
+        # Transformer models
+        config = {
+            "default": AutoModel.from_pretrained,
+            "question-answering": AutoModelForQuestionAnswering.from_pretrained,
+            "summarization": AutoModelForSeq2SeqLM.from_pretrained,
+            "text-classification": AutoModelForSequenceClassification.from_pretrained,
+            "zero-shot-classification": AutoModelForSequenceClassification.from_pretrained,
+        }
+
+        # Load model for supported tasks. Return path for unsupported tasks.
+        return config[task](path) if task in config else path

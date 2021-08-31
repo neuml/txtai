@@ -7,7 +7,7 @@ import torch
 
 from torch import nn
 
-from transformers import AutoModel, AutoTokenizer
+from transformers import AutoTokenizer
 
 from .models import Models
 
@@ -17,21 +17,22 @@ class Pooling(nn.Module):
     Builds pooled vectors usings outputs from a transformers model.
     """
 
-    def __init__(self, path, device, batch=32, maxlength=None):
+    def __init__(self, path, device, tokenizer=None, batch=32, maxlength=None):
         """
         Creates a new Pooling model.
 
         Args:
-            path: path to transformers model
+            path: path to model, accepts Hugging Face model hub id or local path
             device: tensor device id
+            tokenizer: optional path to tokenizer
             batch: batch size
             maxlength: max sequence length
         """
 
         super().__init__()
 
-        self.model = AutoModel.from_pretrained(path)
-        self.tokenizer = AutoTokenizer.from_pretrained(path)
+        self.model = Models.load(path)
+        self.tokenizer = AutoTokenizer.from_pretrained(tokenizer if tokenizer else path)
         self.device = Models.device(device)
 
         # Detect unbounded tokenizer typically found in older models

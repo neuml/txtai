@@ -154,6 +154,28 @@ class WordVectors(Vectors):
         return self.model.query(tokens)
 
     @staticmethod
+    def isDatabase(path):
+        """
+        Checks if this is a SQLite database file which is the file format used for word vectors databases.
+
+        Args:
+            path: path to check
+
+        Returns:
+            True if this is a SQLite database
+        """
+
+        if isinstance(path, str) and os.path.isfile(path) and os.path.getsize(path) >= 100:
+            # Read 100 byte SQLite header
+            with open(path, "rb") as f:
+                header = f.read(100)
+
+            # Check for SQLite header
+            return header.startswith(b"SQLite format 3\000")
+
+        return False
+
+    @staticmethod
     def build(data, size, mincount, path):
         """
         Builds fastText vectors from a file.

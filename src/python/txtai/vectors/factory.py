@@ -2,8 +2,6 @@
 Factory module
 """
 
-import os
-
 from .transformers import TransformersVectors
 from .words import WordVectors, WORDS
 
@@ -58,6 +56,6 @@ class VectorsFactory:
 
         # Infer method from path, if blank
         if not method and path:
-            method = "words" if os.path.isfile(path) else "transformers"
+            method = "words" if WordVectors.isDatabase(path) else "transformers"
 
         return method

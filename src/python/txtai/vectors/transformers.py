@@ -2,6 +2,7 @@
 Transformers module
 """
 
+import os
 import pickle
 import tempfile
 
@@ -14,7 +15,7 @@ except ImportError:
     SENTENCE_TRANSFORMERS = False
 
 from .base import Vectors
-from ..models import MeanPooling, Models
+from ..models import MeanPooling, Models, Pooling
 from ..pipeline.tokenizer import Tokenizer
 
 
@@ -32,7 +33,10 @@ class TransformersVectors(Vectors):
 
         # Build embeddings with transformers (default)
         if transformers:
-            return MeanPooling(path, device=deviceid)
+            if isinstance(path, bytes) or (isinstance(path, str) and os.path.isfile(path)):
+                return Pooling(path, device=deviceid, tokenizer=self.config.get("tokenizer"))
+
+            return MeanPooling(path, device=deviceid, tokenizer=self.config.get("tokenizer"))
 
         if not SENTENCE_TRANSFORMERS:
             raise ImportError('sentence-transformers is not available - install "similarity" extra to enable')

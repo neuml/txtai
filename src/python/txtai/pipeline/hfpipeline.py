@@ -36,7 +36,7 @@ class HFPipeline(Tensors):
 
             # Transformer pipeline task
             if isinstance(path, tuple):
-                self.pipeline = pipeline(task, model=path[0], tokenizer=path[1], device=deviceid)
+                self.pipeline = pipeline(task, model=Models.load(path[0], task), tokenizer=path[1], device=deviceid)
             else:
                 self.pipeline = pipeline(task, model=path, tokenizer=path, device=deviceid)
 

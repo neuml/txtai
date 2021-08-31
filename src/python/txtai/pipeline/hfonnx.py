@@ -18,8 +18,7 @@ except ImportError:
 
 from torch.onnx import export
 
-from transformers import AutoModel, AutoModelForCausalLM, AutoModelForMultipleChoice, AutoModelForQuestionAnswering
-from transformers import AutoModelForSeq2SeqLM, AutoModelForSequenceClassification, AutoModelForTokenClassification, AutoTokenizer
+from transformers import AutoModel, AutoModelForQuestionAnswering, AutoModelForSequenceClassification, AutoTokenizer
 
 from ..models import MeanPooling
 from .tensors import Tensors
@@ -40,6 +39,9 @@ class HFOnnx(Tensors):
             output: optional output model path, defaults to return byte array if None
             quantize: if model should be quantized (requires onnx to be installed), defaults to False
             opset: onnx opset, defaults to 12
+
+        Returns:
+            path to model output or model as bytes depending on output parameter
         """
 
         inputs, outputs, model = self.parameters(task)
@@ -141,12 +143,7 @@ class HFOnnx(Tensors):
 
         config = {
             "default": (OrderedDict({"last_hidden_state": {0: "batch", 1: "sequence"}}), AutoModel.from_pretrained),
-            "causal-lm": (OrderedDict({"logits": {0: "batch", 1: "sequence"}}), AutoModelForCausalLM.from_pretrained),
             "pooling": (OrderedDict({"embeddings": {0: "batch", 1: "sequence"}}), lambda x: MeanPoolingOnnx(x, -1)),
-            "seq2seq-lm": (OrderedDict({"logits": {0: "batch", 1: "decoder_sequence"}}), AutoModelForSeq2SeqLM.from_pretrained),
-            "sequence-classification": (OrderedDict({"logits": {0: "batch"}}), AutoModelForSequenceClassification.from_pretrained),
-            "token-classification": (OrderedDict({"logits": {0: "batch", 1: "sequence"}}), AutoModelForTokenClassification.from_pretrained),
-            "multiple-choice": (OrderedDict({"logits": {0: "batch"}}), AutoModelForMultipleChoice.from_pretrained),
             "question-answering": (
                 OrderedDict(
                     {
@@ -156,7 +153,11 @@ class HFOnnx(Tensors):
                 ),
                 AutoModelForQuestionAnswering.from_pretrained,
             ),
+            "text-classification": (OrderedDict({"logits": {0: "batch"}}), AutoModelForSequenceClassification.from_pretrained),
         }
+
+        # Aliases
+        config["zero-shot-classification"] = config["text-classification"]
 
         return (inputs,) + config[task]
 

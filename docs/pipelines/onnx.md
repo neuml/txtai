@@ -1,33 +1,23 @@
 # HFOnnx
 
-Exports a Hugging Face Transformer model to ONNX.
+Exports a Hugging Face Transformer model to ONNX. Currently, this works best with classification/pooling/qa models. Work is ongoing for sequence to
+sequence models (summarization, transcription, translation).
 
 Example on how to use the pipeline below.
 
 ```python
-from onnxruntime import InferenceSession, SessionOptions
-from transformers import AutoTokenizer
+from txtai.pipeline import HFOnnx, Labels
 
-from txtai.pipeline import HFOnnx
-
-# Normalize logits using sigmoid function
-sigmoid = lambda x: 1.0 / (1.0 + np.exp(-x))
+# Model path
+path = "distilbert-base-uncased-finetuned-sst-2-english"
 
 # Export model to ONNX
 onnx = HFOnnx()
-model = onnx("distilbert-base-uncased-finetuned-sst-2-english", "sequence-classification", "model.onnx", True)
-
-# Build ONNX session
-options = SessionOptions()
-session = InferenceSession(model, options)
-
-# Tokenize
-tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased-finetuned-sst-2-english")
-tokens = tokenizer(["I am happy"], return_tensors="np")
+model = onnx(path, "text-classification", "model.onnx", True)
 
 # Run inference and validate
-outputs = session.run(None, dict(tokens))
-outputs = sigmoid(outputs[0])
+labels = Labels((model, path), dynamic=False)
+labels("I am happy")
 ```
 
 ::: txtai.pipeline.HFOnnx.__init__

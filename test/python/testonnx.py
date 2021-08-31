@@ -6,13 +6,8 @@ import os
 import tempfile
 import unittest
 
-import numpy as np
-
-from onnxruntime import InferenceSession, SessionOptions
-
-from transformers import AutoTokenizer
-
-from txtai.pipeline import HFOnnx, HFTrainer
+from txtai.embeddings import Embeddings
+from txtai.pipeline import HFOnnx, HFTrainer, Labels, Questions
 
 
 class TestOnnx(unittest.TestCase):
@@ -45,50 +40,61 @@ class TestOnnx(unittest.TestCase):
         Test exporting a classification model to ONNX and running inference
         """
 
-        # Normalize logits using sigmoid function
-        sigmoid = lambda x: 1.0 / (1.0 + np.exp(-x))
+        path = "google/bert_uncased_L-2_H-128_A-2"
 
         trainer = HFTrainer()
-        model, tokenizer = trainer("google/bert_uncased_L-2_H-128_A-2", self.data)
+        model, tokenizer = trainer(path, self.data)
 
         # Output file path
         output = os.path.join(tempfile.gettempdir(), "onnx")
 
         # Export model to ONNX
         onnx = HFOnnx()
-        model = onnx((model, tokenizer), "sequence-classification", output, True)
+        model = onnx((model, tokenizer), "text-classification", output, True)
 
-        # Build ONNX session
-        options = SessionOptions()
-        session = InferenceSession(model, options)
-
-        # Tokenize and cast to int64 to support all platforms
-        tokens = tokenizer(["cat"], return_tensors="np")
-        tokens = {x: tokens[x].astype(np.int64) for x in tokens}
-
-        # Run inference and validate
-        outputs = session.run(None, dict(tokens))
-        outputs = sigmoid(outputs[0])
-        self.assertEqual(np.argmax(outputs[0]), 1)
+        # Test classification
+        labels = Labels((model, path), dynamic=False)
+        self.assertEqual(labels("cat")[0][0], 1)
 
     def testPooling(self):
         """
         Test exporting a pooling model to ONNX and running inference
         """
 
+        path = "sentence-transformers/paraphrase-MiniLM-L3-v2"
+
         # Export model to ONNX
         onnx = HFOnnx()
-        model = onnx("sentence-transformers/paraphrase-MiniLM-L3-v2", "pooling", quantize=True)
-        tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/paraphrase-MiniLM-L3-v2")
+        model = onnx(path, "pooling", quantize=True)
 
-        # Build ONNX session
-        options = SessionOptions()
-        session = InferenceSession(model, options)
+        embeddings = Embeddings({"path": model, "tokenizer": path})
+        self.assertEqual(embeddings.similarity("animal", ["dog", "book", "rug"])[0][0], 0)
 
-        # Tokenize and cast to int64 to support all platforms
-        tokens = tokenizer(["cat"], return_tensors="np")
-        tokens = {x: tokens[x].astype(np.int64) for x in tokens}
+    def testQA(self):
+        """
+        Test exporting a QA model to ONNX and running inference
+        """
 
-        # Run inference and validate
-        outputs = session.run(None, dict(tokens))
-        self.assertEqual(outputs[0].shape, (1, 384))
+        path = "distilbert-base-cased-distilled-squad"
+
+        # Export model to ONNX
+        onnx = HFOnnx()
+        model = onnx(path, "question-answering")
+
+        questions = Questions((model, path))
+        self.assertEqual(questions(["What is the price?"], ["The price is $30"])[0], "$30")
+
+    def testZeroShot(self):
+        """
+        Test exporing a zero shot classification model to ONNX and running inference
+        """
+
+        path = "prajjwal1/bert-medium-mnli"
+
+        # Export model to ONNX
+        onnx = HFOnnx()
+        model = onnx(path, "zero-shot-classification", quantize=True)
+
+        # Test zero shot classification
+        labels = Labels((model, path))
+        self.assertEqual(labels("That is great news", ["negative", "positive"])[0][0], 1)

@@ -19,6 +19,8 @@ extras["api"] = [
     "uvicorn>=0.12.1",
 ]
 
+extras["model"] = ["onnxruntime>=1.8.1"]
+
 extras["pipeline"] = [
     "fasttext>=0.9.2",
     "nltk>=3.5",
@@ -33,7 +35,6 @@ extras["similarity"] = [
     "annoy>=1.16.3",
     "fasttext>=0.9.2",
     "hnswlib>=0.5.0",
-    "onnxruntime>=1.8.1",
     "pymagnitude-lite>=0.1.43",
     "scikit-learn>=0.23.1",
     "sentence-transformers>=2.0.0",
@@ -41,7 +42,7 @@ extras["similarity"] = [
 
 extras["workflow"] = ["apache-libcloud>=3.3.1", "pillow>=7.2.0", "requests>=2.24.0"]
 
-extras["all"] = extras["api"] + extras["pipeline"] + extras["similarity"] + extras["workflow"]
+extras["all"] = extras["api"] + extras["model"] + extras["pipeline"] + extras["similarity"] + extras["workflow"]
 
 setup(
     name="txtai",

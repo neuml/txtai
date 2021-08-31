@@ -7,6 +7,7 @@ import unittest
 import txtai.ann.factory
 
 from txtai.ann import ANNFactory
+from txtai.models import OnnxModel
 from txtai.pipeline import HFOnnx, Segmentation, Textractor, Transcription, Translation
 from txtai.vectors import VectorsFactory
 from txtai.workflow.task.image import ImageTask
@@ -26,6 +27,8 @@ class TestOptional(unittest.TestCase):
 
         txtai.ann.factory.ANNOY = not txtai.ann.factory.ANNOY
         txtai.ann.factory.HNSWLIB = not txtai.ann.factory.HNSWLIB
+
+        txtai.models.onnx.ONNX_RUNTIME = not txtai.models.onnx.ONNX_RUNTIME
 
         txtai.pipeline.hfonnx.ONNX_RUNTIME = not txtai.pipeline.hfonnx.ONNX_RUNTIME
         txtai.pipeline.segmentation.NLTK = not txtai.pipeline.segmentation.NLTK
@@ -67,6 +70,14 @@ class TestOptional(unittest.TestCase):
 
         with self.assertRaises(ImportError):
             ANNFactory.create({"backend": "hnsw"})
+
+    def testModel(self):
+        """
+        Test missing model dependencies
+        """
+
+        with self.assertRaises(ImportError):
+            OnnxModel(None)
 
     def testPipeline(self):
         """
