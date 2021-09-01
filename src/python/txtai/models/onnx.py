@@ -2,6 +2,8 @@
 ONNX module
 """
 
+from collections import namedtuple
+
 # Conditional import
 try:
     from onnxruntime import InferenceSession, SessionOptions
@@ -40,7 +42,7 @@ class OnnxModel(PreTrainedModel):
         if not ONNX_RUNTIME:
             raise ImportError('onnxruntime is not available - install "model" extra to enable')
 
-        super().__init__(PretrainedConfig())
+        super().__init__(OnnxConfig())
 
         # Create ONNX session
         self.model = InferenceSession(model, SessionOptions())
@@ -48,13 +50,34 @@ class OnnxModel(PreTrainedModel):
         # Add references for this class to supported AutoModel classes
         name = self.__class__.__name__
         if name not in MODEL_MAPPING:
-            MODEL_MAPPING[name] = self.__class__
-            MODEL_FOR_SEQUENCE_CLASSIFICATION_MAPPING[name] = self.__class__
-            MODEL_FOR_QUESTION_ANSWERING_MAPPING[name] = self.__class__
+            for mapping in [MODEL_MAPPING, MODEL_FOR_SEQUENCE_CLASSIFICATION_MAPPING, MODEL_FOR_QUESTION_ANSWERING_MAPPING]:
+                self.autoadd(mapping, name, self.__class__)
 
         # Add references for this class to support pipeline AutoTokenizers
         if type(self.config) not in TOKENIZER_MAPPING:
-            TOKENIZER_MAPPING[type(self.config)] = None
+            self.autoadd(TOKENIZER_MAPPING, type(self.config), type(self.config).__name__)
+
+    def autoadd(self, mapping, key, value):
+        """
+        Adds OnnxModel to auto model configuration to fully support pipelines.
+
+        Args:
+            mapping: auto model mapping
+            key: key to add
+            value: value to add
+        """
+
+        # pylint: disable=W0212
+        if hasattr(mapping, "_config_mapping"):
+            Params = namedtuple("Params", ["config", "model"])
+            params = Params(key, value)
+
+            mapping._modules[key] = params
+            mapping._config_mapping[key] = "config"
+            mapping._reverse_config_mapping[value] = key
+            mapping._model_mapping[key] = "model"
+        else:
+            mapping[key] = value
 
     def forward(self, **inputs):
         """
@@ -102,3 +125,9 @@ class OnnxModel(PreTrainedModel):
                 features[key] = np.asarray(value)
 
         return features
+
+
+class OnnxConfig(PretrainedConfig):
+    """
+    Configuration for ONNX models.
+    """

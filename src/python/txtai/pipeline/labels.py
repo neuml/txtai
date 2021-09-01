@@ -18,6 +18,9 @@ class Labels(HFPipeline):
         # Set if labels are dynamic (zero shot) or fixed (standard text classification)
         self.dynamic = dynamic
 
+        # Save handle to pipeline tokenizer
+        self.tokenizer = self.pipeline.tokenizer
+
     def __call__(self, text, labels=None, multilabel=False):
         """
         Applies a text classifier to text. Returns a list of (id, score) sorted by highest score,
@@ -38,8 +41,14 @@ class Labels(HFPipeline):
         """
 
         if self.dynamic:
+            # Override tokenizer to set truncation parameter
+            self.pipeline.tokenizer = self.tokenize
+
             # Run zero shot classification pipeline
             results = self.pipeline(text, labels, multi_label=multilabel, truncation=True)
+
+            # Reset tokenizer
+            self.pipeline.tokenizer = self.tokenizer
         else:
             # Run text classification pipeline
             results = self.textclassify(text, multilabel)
@@ -94,3 +103,17 @@ class Labels(HFPipeline):
         """
 
         return list(self.pipeline.model.config.id2label.values())
+
+    def tokenize(self, **kwargs):
+        """
+        Tokenization method that forces truncation=True.
+
+        Args:
+            kwargs: arguments
+
+        Returns:
+            tokenized output
+        """
+
+        kwargs["truncation"] = True
+        return self.tokenizer(**kwargs)
