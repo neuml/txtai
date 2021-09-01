@@ -6,7 +6,10 @@ import os
 import tempfile
 import unittest
 
+from collections import OrderedDict
+
 from txtai.embeddings import Embeddings
+from txtai.models import OnnxModel
 from txtai.pipeline import HFOnnx, HFTrainer, Labels, Questions
 
 
@@ -22,6 +25,44 @@ class TestOnnx(unittest.TestCase):
         """
 
         cls.data = [{"text": "Dogs", "label": 0}, {"text": "dog", "label": 0}, {"text": "Cats", "label": 1}, {"text": "cat", "label": 1}] * 100
+
+    def testAutoAdd(self):
+        """
+        Tests methods for adding ONNX models to auto classes
+        """
+
+        class Mapping(OrderedDict):
+            """
+            Helper class to support autoadd tests.
+            """
+
+            def __init__(self):
+                super().__init__()
+
+                self._config_mapping = {}
+                self._reverse_config_mapping = {}
+                self._model_mapping = {}
+                self._modules = {}
+
+        # Export model to ONNX, use default parameters
+        onnx = HFOnnx()
+        model = OnnxModel(onnx("google/bert_uncased_L-2_H-128_A-2"))
+
+        # Test lazy auto mapping
+        mapping = Mapping()
+        model.autoadd(mapping, "key", "value")
+
+        # pylint: disable=W0212
+        self.assertTrue("key" in mapping._config_mapping)
+        self.assertTrue("value" in mapping._reverse_config_mapping)
+        self.assertTrue("key" in mapping._model_mapping)
+        self.assertTrue("key" in mapping._modules)
+
+        # Test mapping backed by dict
+        mapping = {}
+        model.autoadd(mapping, "key", "value")
+
+        self.assertTrue("key" in mapping)
 
     def testDefault(self):
         """

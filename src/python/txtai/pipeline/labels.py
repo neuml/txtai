@@ -104,16 +104,17 @@ class Labels(HFPipeline):
 
         return list(self.pipeline.model.config.id2label.values())
 
-    def tokenize(self, **kwargs):
+    def tokenize(self, *args, **kwargs):
         """
         Tokenization method that forces truncation=True.
 
         Args:
-            kwargs: arguments
+            args: arguments
+            kwargs: named arguments
 
         Returns:
             tokenized output
         """
 
         kwargs["truncation"] = True
-        return self.tokenizer(**kwargs)
+        return self.tokenizer(*args, **kwargs)
