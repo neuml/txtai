@@ -10,9 +10,9 @@ try:
 except ImportError:
     FASTTEXT = False
 
+from huggingface_hub.hf_api import HfApi
 from transformers import M2M100ForConditionalGeneration, M2M100Tokenizer, MarianMTModel, MarianTokenizer
 from transformers.file_utils import cached_path
-from transformers.hf_api import HfApi
 
 from .hfmodel import HFModel
 
@@ -100,7 +100,7 @@ class Translation(HFModel):
             list of available language name ids
         """
 
-        return set(x.modelId for x in HfApi().model_list() if x.modelId.startswith("Helsinki-NLP"))
+        return set(x.modelId for x in HfApi().list_models() if x.modelId.startswith("Helsinki-NLP"))
 
     def detect(self, texts):
         """
