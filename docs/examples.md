@@ -2,9 +2,9 @@
 
 The examples directory has a series of notebooks and applications giving an overview of txtai. See the sections below.
 
-## Similarity Search
+## Semantic Search
 
-Build similarity/semantic/vector search applications.
+Build semantic/similarity/vector search applications.
 
 | Notebook  | Description  |       |
 |:----------|:-------------|------:|

@@ -3,7 +3,7 @@
 </p>
 
 <h3 align="center">
-    <p>AI-powered search engine</p>
+    <p>Build AI-powered semantic search applications</p>
 </h3>
 
 <p align="center">
@@ -29,20 +29,22 @@
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------
 
-txtai executes machine-learning workflows to transform data and build AI-powered text indices to perform similarity search.
+txtai executes machine-learning workflows to transform data and build AI-powered semantic search applications.
 
 ![demo](https://raw.githubusercontent.com/neuml/txtai/master/demo.gif)
+
+Traditional search systems use keywords to find data. Semantic search applications have an understanding of natural language and identify results that have the same meaning, not necessarily the same keywords. Backed by state-of-the-art machine learning models, data is transformed into vector representations for search (also known as embeddings). Innovation is happening at a rapid pace, models can understand concepts in documents, audio, images and more.
 
 Summary of txtai features:
 
 - 🔎 Large-scale similarity search with multiple index backends ([Faiss](https://github.com/facebookresearch/faiss), [Annoy](https://github.com/spotify/annoy), [Hnswlib](https://github.com/nmslib/hnswlib))
-- 📄 Create embeddings for text snippets, documents, audio and images. Supports transformers and word vectors.
+- 📄 Create embeddings for text snippets, documents, audio, images and video. Supports transformers and word vectors.
 - 💡 Machine-learning pipelines to run extractive question-answering, zero-shot labeling, transcription, translation, summarization and text extraction
 - ↪️️ Workflows that join pipelines together to aggregate business logic. txtai processes can be microservices or full-fledged indexing workflows.
 - 🔗 API bindings for [JavaScript](https://github.com/neuml/txtai.js), [Java](https://github.com/neuml/txtai.java), [Rust](https://github.com/neuml/txtai.rs) and [Go](https://github.com/neuml/txtai.go)
 - ☁️ Cloud-native architecture that scales out with container orchestration systems (e.g. Kubernetes)
 
-txtai and/or the concepts behind it has already been used to power the Natural Language Processing (NLP) applications listed below:
+Applications range from similarity search to complex NLP-driven data extractions to generate structured databases. The following applications are powered by txtai.
 
 | Application  | Description  |
 |:----------|:-------------|
@@ -70,9 +72,9 @@ See the detailed [install instructions](https://neuml.github.io/txtai/install) f
 
 The examples directory has a series of notebooks and applications giving an overview of txtai. See the sections below.
 
-### Similarity Search
+### Semantic Search
 
-Build similarity/semantic/vector search applications.
+Build semantic/similarity/vector search applications.
 
 | Notebook  | Description  |       |
 |:----------|:-------------|------:|
