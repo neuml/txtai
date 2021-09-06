@@ -48,7 +48,7 @@ setup(
     name="txtai",
     version="3.3.0",
     author="NeuML",
-    description="AI-powered search engine",
+    description="Build AI-powered semantic search applications",
     long_description=DESCRIPTION,
     long_description_content_type="text/markdown",
     url="https://github.com/neuml/txtai",
