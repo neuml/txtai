@@ -6,7 +6,7 @@ import platform
 import unittest
 
 from txtai.embeddings import Embeddings
-from txtai.extractor import Extractor
+from txtai.pipeline import Extractor
 
 
 class TestExtractor(unittest.TestCase):
