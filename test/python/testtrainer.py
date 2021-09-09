@@ -97,8 +97,18 @@ class TestTrainer(unittest.TestCase):
             def __getitem__(self, index):
                 return self.data[index]
 
+            def column_names(self):
+                """
+                Returns column names for this dataset
+
+                Returns:
+                    list of columns
+                """
+
+                return ["text", "label"]
+
             # pylint: disable=W0613
-            def map(self, fn, batched):
+            def map(self, fn, batched, remove_columns):
                 """
                 Map each dataset row using fn.
 

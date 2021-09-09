@@ -52,7 +52,7 @@ class Data:
 
         if hasattr(data, "map"):
             # Hugging Face dataset
-            tokens = data.map(fn, batched=True)
+            tokens = data.map(fn, batched=True, remove_columns=data.column_names)
         else:
             # pandas DataFrame
             if hasattr(data, "to_dict"):
