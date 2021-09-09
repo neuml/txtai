@@ -53,7 +53,7 @@ class Questions(Data):
             # Get and format answer
             answers = self.answers(data, samples[x])
 
-            # If no answers are given, set the cls_index as answer.
+            # If no answers are given, set cls token as answer.
             if len(answers["answer_start"]) == 0:
                 tokenized["start_positions"].append(clstoken)
                 tokenized["end_positions"].append(clstoken)
