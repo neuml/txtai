@@ -10,7 +10,7 @@ import torch
 
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
-from txtai.pipeline import HFTrainer, Labels
+from txtai.pipeline import HFTrainer, Labels, Questions
 
 
 class TestTrainer(unittest.TestCase):
@@ -42,6 +42,7 @@ class TestTrainer(unittest.TestCase):
         Test training a model with custom parameters
         """
 
+        # pylint: disable=E1120
         model = AutoModelForSequenceClassification.from_pretrained("google/bert_uncased_L-2_H-128_A-2")
         tokenizer = AutoTokenizer.from_pretrained("google/bert_uncased_L-2_H-128_A-2")
 
@@ -96,12 +97,14 @@ class TestTrainer(unittest.TestCase):
             def __getitem__(self, index):
                 return self.data[index]
 
-            def map(self, fn):
+            # pylint: disable=W0613
+            def map(self, fn, batched):
                 """
                 Map each dataset row using fn.
 
                 Args:
                     fn: function
+                    batched: batch records
 
                 Returns:
                     updated Dataset
@@ -117,6 +120,28 @@ class TestTrainer(unittest.TestCase):
 
         labels = Labels((model, tokenizer), dynamic=False)
         self.assertEqual(labels("cat")[0][0], 1)
+
+    def testQA(self):
+        """
+        Tests training a QA model.
+        """
+
+        # Training data
+        data = [
+            {"question": "What ingredient?", "context": "1 can whole tomatoes", "answers": "tomatoes"},
+            {"question": "What ingredient?", "context": "1 yellow onion", "answers": "onion"},
+            {"question": "What ingredient?", "context": "1 red pepper", "answers": "pepper"},
+            {"question": "What ingredient?", "context": "1 clove garlic", "answers": "garlic"},
+            {"question": "What ingredient?", "context": "1/2 lb beef", "answers": "beef"},
+            {"question": "What ingredient?", "context": "a " * 500 + "1/2 lb beef", "answers": "beef"},
+            {"question": "What ingredient?", "context": "Forest through the trees", "answers": None},
+        ]
+
+        trainer = HFTrainer()
+        model, tokenizer = trainer("google/bert_uncased_L-2_H-128_A-2", data, data, task="question-answering", num_train_epochs=10)
+
+        questions = Questions((model, tokenizer), gpu=True)
+        self.assertEqual(questions(["What ingredient?"], ["Peel 1 onion"])[0], "onion")
 
     def testRegression(self):
         """

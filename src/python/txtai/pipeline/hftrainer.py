@@ -4,15 +4,14 @@ Hugging Face Transformers trainer wrapper module
 
 import sys
 
-import torch
-
-from transformers import AutoConfig, AutoModelForSequenceClassification, AutoTokenizer
+from transformers import AutoConfig, AutoModelForQuestionAnswering, AutoModelForSequenceClassification, AutoTokenizer
 from transformers import Trainer, set_seed
 
 from transformers import TrainingArguments as HFTrainingArguments
 
-from .tensors import Tensors
+from ..data import Labels, Questions
 from ..models import Models
+from .tensors import Tensors
 
 
 class HFTrainer(Tensors):
@@ -20,7 +19,7 @@ class HFTrainer(Tensors):
     Trains a new Hugging Face Transformer model using the Trainer framework.
     """
 
-    def __call__(self, base, train, validation=None, columns=None, maxlength=None, **args):
+    def __call__(self, base, train, validation=None, columns=None, maxlength=None, stride=128, task="text-classification", **args):
         """
         Builds a new model using arguments.
 
@@ -30,6 +29,8 @@ class HFTrainer(Tensors):
             validation: validation data
             columns: tuple of columns to use for text/label, defaults to (text, None, label)
             maxlength: maximum sequence length, defaults to tokenizer.model_max_length
+            stride: chunk size for splitting data for QA tasks
+            task: optional model task or category, determines the model type, defaults to "text-classification"
             args: training arguments
 
         Returns:
@@ -45,11 +46,21 @@ class HFTrainer(Tensors):
         # Load model configuration, tokenizer and max sequence length
         config, tokenizer, maxlength = self.load(base, maxlength)
 
+        # List of labels (only for classification models)
+        labels = None
+
         # Prepare datasets
-        train, validation, labels = self.datasets(train, validation, columns, tokenizer, maxlength)
+        if task == "question-answering":
+            process = Questions(tokenizer, columns, maxlength, stride)
+        else:
+            process = Labels(tokenizer, columns, maxlength)
+            labels = process.labels(train)
+
+        # Tokenize training and validation data
+        train, validation = process(train, validation)
 
         # Create model to train
-        model = self.model(base, config, labels)
+        model = self.model(task, base, config, labels)
 
         # Build trainer
         trainer = Trainer(model=model, tokenizer=tokenizer, args=args, train_dataset=train, eval_dataset=validation if validation else None)
@@ -119,99 +130,12 @@ class HFTrainer(Tensors):
 
         return (config, tokenizer, maxlength)
 
-    def datasets(self, train, validation, columns, tokenizer, maxlength):
-        """
-        Prepares training and validation datasets for training.
-
-        Args:
-            train: training data
-            validation: validation data
-            columns: tuple of columns to use for text/label
-            tokenizer: model tokenizer
-            maxlength: maximum sequence length
-
-        Returns:
-            (train, validation, labels)
-        """
-
-        # Standardize columns
-        if not columns:
-            columns = ("text", None, "label")
-        elif len(columns) < 3:
-            columns = (columns[0], None, columns[-1])
-
-        # Prepare training data and labels
-        train, labels = self.prepare(train, columns, tokenizer, maxlength)
-
-        # Prepare validation data
-        if validation:
-            validation, _ = self.prepare(validation, columns, tokenizer, maxlength)
-
-        return (train, validation, labels)
-
-    def prepare(self, data, columns, tokenizer, maxlength):
-        """
-        Prepares and tokenizes data for training.
-
-        Args:
-            data: input data
-            columns: tuple of columns to use for text/label
-            tokenizer: model tokenizer
-            maxlength: maximum sequence length
-
-        Returns:
-            (tokens, labels)
-        """
-
-        if hasattr(data, "map"):
-            # Hugging Face dataset
-            tokens = data.map(lambda row: self.tokenize(row, columns, tokenizer, maxlength))
-            labels = sorted(data.unique(columns[-1]))
-        else:
-            # pandas DataFrame
-            if hasattr(data, "to_dict"):
-                data = data.to_dict("records")
-
-            # Process list of dicts
-            tokens = TokenDataset([self.tokenize(row, columns, tokenizer, maxlength) for row in data])
-            labels = sorted({row[columns[-1]] for row in data})
-
-        # Determine number of labels, account for regression tasks
-        labels = 1 if [x for x in labels if isinstance(x, float)] else len(labels)
-
-        return (tokens, labels)
-
-    def tokenize(self, row, columns, tokenizer, maxlength):
-        """
-        Tokenizes data row.
-
-        Args:
-            row: input data
-            columns: tuple of columns to use for text/label
-            tokenizer: model tokenizer
-            maxlength: maximum sequence length
-
-        Returns:
-            tokens
-        """
-
-        # Column keys
-        text1, text2, label = columns
-
-        # Tokenizer inputs can be single string or string pair, depending on task
-        text = (row[text1], row[text2]) if text2 else (row[text1],)
-
-        # Tokenize text and add label
-        inputs = tokenizer(*text, max_length=maxlength, padding=True, truncation=True)
-        inputs[label] = row[label]
-
-        return inputs
-
-    def model(self, base, config, labels):
+    def model(self, task, base, config, labels):
         """
         Loads the base model to train.
 
         Args:
+            task: optional model task or category, determines the model type, defaults to "text-classification"
             base: base model - supports a file path or (model, tokenizer) tuple
             config: model configuration
             labels: number of labels
@@ -220,26 +144,18 @@ class HFTrainer(Tensors):
             model
         """
 
-        # Add number of labels to config
-        config.update({"num_labels": labels})
+        if labels is not None:
+            # Add number of labels to config
+            config.update({"num_labels": labels})
 
+        # pylint: disable=E1120
         # Unpack existing model or create new model from config
-        return base[0] if isinstance(base, tuple) else AutoModelForSequenceClassification.from_pretrained(base, config=config)
+        if isinstance(base, tuple):
+            return base[0]
+        if task == "question-answering":
+            return AutoModelForQuestionAnswering.from_pretrained(base, config=config)
 
-
-class TokenDataset(torch.utils.data.Dataset):
-    """
-    Default dataset used to hold tokenized data.
-    """
-
-    def __init__(self, data):
-        self.data = data
-
-    def __len__(self):
-        return len(self.data)
-
-    def __getitem__(self, index):
-        return self.data[index]
+        return AutoModelForSequenceClassification.from_pretrained(base, config=config)
 
 
 class TrainingArguments(HFTrainingArguments):
