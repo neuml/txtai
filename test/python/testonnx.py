@@ -58,12 +58,6 @@ class TestOnnx(unittest.TestCase):
         self.assertTrue("key" in mapping._model_mapping)
         self.assertTrue("key" in mapping._modules)
 
-        # Test mapping backed by dict
-        mapping = {}
-        model.autoadd(mapping, "key", "value")
-
-        self.assertTrue("key" in mapping)
-
     def testDefault(self):
         """
         Test exporting an ONNX model with default parameters

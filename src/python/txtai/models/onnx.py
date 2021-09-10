@@ -68,16 +68,13 @@ class OnnxModel(PreTrainedModel):
         """
 
         # pylint: disable=W0212
-        if hasattr(mapping, "_config_mapping"):
-            Params = namedtuple("Params", ["config", "model"])
-            params = Params(key, value)
+        Params = namedtuple("Params", ["config", "model"])
+        params = Params(key, value)
 
-            mapping._modules[key] = params
-            mapping._config_mapping[key] = "config"
-            mapping._reverse_config_mapping[value] = key
-            mapping._model_mapping[key] = "model"
-        else:
-            mapping[key] = value
+        mapping._modules[key] = params
+        mapping._config_mapping[key] = "config"
+        mapping._reverse_config_mapping[value] = key
+        mapping._model_mapping[key] = "model"
 
     def forward(self, **inputs):
         """
