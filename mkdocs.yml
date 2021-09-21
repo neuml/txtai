@@ -29,6 +29,7 @@ markdown_extensions:
     - pymdownx.superfences
 nav:
     - Home: index.md
+    - Why txtai?: why.md
     - Installation: install.md
     - Examples: examples.md
     - Embeddings: embeddings.md

@@ -57,6 +57,17 @@ Applications range from similarity search to complex NLP-driven data extractions
 
 txtai is built with Python 3.6+, [Hugging Face Transformers](https://github.com/huggingface/transformers), [Sentence Transformers](https://github.com/UKPLab/sentence-transformers) and [FastAPI](https://github.com/tiangolo/fastapi)
 
+## Why txtai?
+
+In addition to traditional search systems, a growing number of semantic search solutions are available, so why txtai?
+
+- `pip install txtai` is all that is needed to get started
+- Works well with both small and big data, prototypes can be built in a couple lines of code and then scaled up as needed
+- Rich data processing framework (pipelines and workflows) to pre and post process data
+- Work with your programming language of choice via the API
+- Modular with low install footprint, most dependencies optional and only required when you need them
+- Learn by example, notebooks cover all available functionality
+
 ## Installation
 
 The easiest way to install is via pip and PyPI
