@@ -21,8 +21,8 @@ class Labels(HFPipeline):
     def __call__(self, text, labels=None, multilabel=False):
         """
         Applies a text classifier to text. Returns a list of (id, score) sorted by highest score,
-        where id is the index in labels. For zero shot classification, a list of labels is required,
-        otherwise the labels indices are taken from the trained text classification model.
+        where id is the index in labels. For zero shot classification, a list of labels is required.
+        For text classification models, a list of labels is optional, otherwise all trained labels are returned.
 
         This method supports text as a string or a list. If the input is a string, the return
         type is a 1D list of (id, score). If text is a list, a 2D list of (id, score) is
@@ -30,7 +30,7 @@ class Labels(HFPipeline):
 
         Args:
             text: text|list
-            labels: list of labels (zero shot classification only)
+            labels: list of labels
             multilabel: labels are independent if True, otherwise scores are normalized to sum to 1 per text item
 
         Returns:
@@ -54,6 +54,9 @@ class Labels(HFPipeline):
             if self.dynamic:
                 scores.append([(labels.index(label), result["scores"][x]) for x, label in enumerate(result["labels"])])
             else:
+                # Filter results using labels, if provided
+                result = self.limit(result, labels)
+
                 scores.append(sorted(enumerate(result), key=lambda x: x[1], reverse=True))
 
         return scores[0] if isinstance(text, str) else scores
@@ -94,3 +97,34 @@ class Labels(HFPipeline):
         """
 
         return list(self.pipeline.model.config.id2label.values())
+
+    def limit(self, result, labels):
+        """
+        Filter result using labels. If labels is None, original result is returned.
+
+        Args:
+            result: results array
+            labels: list of labels or None
+
+        Returns:
+            filtered results
+        """
+
+        if labels:
+            config = self.pipeline.model.config
+            indices = []
+            for label in labels:
+                # Lookup label keys from model config
+                if label.isdigit():
+                    label = int(label)
+                    keys = list(config.id2label.keys())
+                else:
+                    label = label.lower()
+                    keys = [x.lower() for x in config.label2id.keys()]
+
+                # Get index, default to 0 if not found
+                indices.append(keys.index(label) if label in keys else 0)
+
+            return [result[i] for i in indices]
+
+        return result

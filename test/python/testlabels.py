@@ -75,6 +75,17 @@ class TestLabels(unittest.TestCase):
         results = [r[0][0] for r in self.similarity(["feel good story", "climate change"], self.data)]
         self.assertEqual(results, [4, 1])
 
+    def testSimilarityFixed(self):
+        """
+        Test similarity with a fixed label text classification model
+        """
+
+        similarity = Similarity(dynamic=False)
+
+        # Test with query as label text and label id
+        self.assertLessEqual(similarity("negative", ["This is the best sentence ever"])[0][1], 0.1)
+        self.assertLessEqual(similarity("0", ["This is the best sentence ever"])[0][1], 0.1)
+
     def testSimilarityLong(self):
         """
         Test similarity with long text
