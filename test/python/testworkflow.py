@@ -2,6 +2,7 @@
 Workflow module tests
 """
 
+import os
 import unittest
 
 from txtai.embeddings import Documents, Embeddings
@@ -31,6 +32,7 @@ class TestWorkflow(unittest.TestCase):
 
         self.assertEqual(len(results), 2)
 
+    @unittest.skipIf(os.name == "nt", "testComplexWorkflow skipped on Windows")
     def testComplexWorkflow(self):
         """
         Tests a complex workflow

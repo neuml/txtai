@@ -30,6 +30,7 @@ class TestSummary(unittest.TestCase):
 
         cls.summary = Summary("t5-small")
 
+    @unittest.skipIf(os.name == "nt", "testSummary skipped on Windows")
     def testSummary(self):
         """
         Test summarization of text
