@@ -16,7 +16,7 @@ class Labels(HFPipeline):
         # Set if labels are dynamic (zero shot) or fixed (standard text classification)
         self.dynamic = dynamic
 
-    def __call__(self, text, labels=None, multilabel=False):
+    def __call__(self, text, labels=None, multilabel=False, workers=0):
         """
         Applies a text classifier to text. Returns a list of (id, score) sorted by highest score,
         where id is the index in labels. For zero shot classification, a list of labels is required.
@@ -30,6 +30,7 @@ class Labels(HFPipeline):
             text: text|list
             labels: list of labels
             multilabel: labels are independent if True, otherwise scores are normalized to sum to 1 per text item
+            workers: number of parallel workers to use for processing data, defaults to none
 
         Returns:
             list of (id, score)
@@ -37,7 +38,7 @@ class Labels(HFPipeline):
 
         if self.dynamic:
             # Run zero shot classification pipeline
-            results = self.pipeline(text, labels, multi_label=multilabel, truncation=True)
+            results = self.pipeline(text, labels, multi_label=multilabel, truncation=True, num_workers=workers)
 
             # Convert results to a list if necessary
             if not isinstance(results, list):
@@ -50,7 +51,7 @@ class Labels(HFPipeline):
             function = "sigmoid" if multilabel or len(self.labels()) == 1 else "softmax"
 
             # Run text classification pipeline
-            results = self.pipeline(text, return_all_scores=True, function_to_apply=function)
+            results = self.pipeline(text, return_all_scores=True, function_to_apply=function, num_workers=workers)
 
         # Build list of (id, score)
         scores = []

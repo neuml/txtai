@@ -15,7 +15,7 @@ class Summary(HFPipeline):
     def __init__(self, path=None, quantize=False, gpu=True, model=None):
         super().__init__("summarization", path, quantize, gpu, model)
 
-    def __call__(self, text, minlength=None, maxlength=None):
+    def __call__(self, text, minlength=None, maxlength=None, workers=0):
         """
         Runs a summarization model against a block of text.
 
@@ -26,6 +26,7 @@ class Summary(HFPipeline):
             text: text|list
             minlength: minimum length for summary
             maxlength: maximum length for summary
+            workers: number of parallel workers to use for processing data, defaults to none
 
         Returns:
             summary text
@@ -47,7 +48,7 @@ class Summary(HFPipeline):
         inputs = [text for _, text in params if text]
         if inputs:
             # Run summarization pipeline
-            results = self.pipeline(inputs, **kwargs)
+            results = self.pipeline(inputs, num_workers=workers, **kwargs)
 
             # Pull out summary text
             results = iter([self.clean(x["summary_text"]) for x in results])

@@ -2,7 +2,6 @@
 Summary module tests
 """
 
-import os
 import unittest
 
 from txtai.pipeline import Summary
@@ -30,7 +29,6 @@ class TestSummary(unittest.TestCase):
 
         cls.summary = Summary("t5-small")
 
-    @unittest.skipIf(os.name == "nt", "testSummary skipped on Windows")
     def testSummary(self):
         """
         Test summarization of text
@@ -38,7 +36,6 @@ class TestSummary(unittest.TestCase):
 
         self.assertEqual(self.summary(self.text, minlength=15, maxlength=15), "txtai is an AI-powered search engine that")
 
-    @unittest.skipIf(os.name == "nt", "testSummaryBatch skipped on Windows")
     def testSummaryBatch(self):
         """
         Test batch summarization of text

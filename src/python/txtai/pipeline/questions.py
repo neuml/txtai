@@ -13,13 +13,14 @@ class Questions(HFPipeline):
     def __init__(self, path=None, quantize=False, gpu=False, model=None):
         super().__init__("question-answering", path, quantize, gpu, model)
 
-    def __call__(self, questions, contexts):
+    def __call__(self, questions, contexts, workers=0):
         """
         Runs a extractive question-answering model against each question-context pair, finding the best answers.
 
         Args:
             questions: list of questions
             contexts: list of contexts to pull answers from
+            workers: number of parallel workers to use for processing data, defaults to none
 
         Returns:
             list of answers
@@ -30,7 +31,7 @@ class Questions(HFPipeline):
         for x, question in enumerate(questions):
             if question and contexts[x]:
                 # Run the QA pipeline
-                result = self.pipeline(question=question, context=contexts[x])
+                result = self.pipeline(question=question, context=contexts[x], num_workers=workers)
 
                 # Get answer and score
                 answer, score = result["answer"], result["score"]
