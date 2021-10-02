@@ -2,8 +2,6 @@
 Labels module
 """
 
-import numpy as np
-
 from .hfpipeline import HFPipeline
 
 
@@ -40,13 +38,19 @@ class Labels(HFPipeline):
         if self.dynamic:
             # Run zero shot classification pipeline
             results = self.pipeline(text, labels, multi_label=multilabel, truncation=True)
-        else:
-            # Run text classification pipeline
-            results = self.textclassify(text, multilabel)
 
-        # Convert results to a list if necessary
-        if not isinstance(results, list):
-            results = [results]
+            # Convert results to a list if necessary
+            if not isinstance(results, list):
+                results = [results]
+
+            # Unpack nested lists if necessary
+            results = [result[0] if isinstance(result, list) else result for result in results]
+        else:
+            # Set classification function based on inputs
+            function = "sigmoid" if multilabel or len(self.labels()) == 1 else "softmax"
+
+            # Run text classification pipeline
+            results = self.pipeline(text, return_all_scores=True, function_to_apply=function)
 
         # Build list of (id, score)
         scores = []
@@ -60,33 +64,6 @@ class Labels(HFPipeline):
                 scores.append(sorted(enumerate(result), key=lambda x: x[1], reverse=True))
 
         return scores[0] if isinstance(text, str) else scores
-
-    def textclassify(self, text, multilabel):
-        """
-        Wrapper of the text-classification pipeline to be more flexible with the logits transformation
-        function. While these methods are in later versions of Hugging Face Transformers, this method supports
-        older versions.
-
-        Args:
-            text: text|list
-            multilabel: labels are independent if True, otherwise scores are normalized to sum to 1 per text item
-
-        Returns:
-            list of scores for each label in model
-        """
-
-        # pylint: disable=W0212
-        inputs = self.pipeline._parse_and_tokenize(text, truncation=True)
-        outputs = self.pipeline._forward(inputs)
-
-        # Apply sigmoid to outputs
-        if multilabel or len(self.labels()) == 1:
-            return (1.0 / (1.0 + np.exp(-outputs))).tolist()
-
-        # Apply softmax to outputs
-        maxes = np.max(outputs, axis=-1, keepdims=True)
-        shift = np.exp(outputs - maxes)
-        return (shift / shift.sum(axis=-1, keepdims=True)).tolist()
 
     def labels(self):
         """
@@ -109,6 +86,9 @@ class Labels(HFPipeline):
         Returns:
             filtered results
         """
+
+        # Extract scores from result
+        result = [x["score"] for x in result]
 
         if labels:
             config = self.pipeline.model.config

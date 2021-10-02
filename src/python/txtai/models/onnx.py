@@ -22,6 +22,7 @@ from transformers.models.auto.modeling_auto import (
     MODEL_FOR_SEQUENCE_CLASSIFICATION_MAPPING,
 )
 from transformers.models.auto.tokenization_auto import TOKENIZER_MAPPING
+from transformers.modeling_outputs import SequenceClassifierOutput
 from transformers.modeling_utils import PreTrainedModel
 
 # pylint: disable=W0223
@@ -94,6 +95,10 @@ class OnnxModel(PreTrainedModel):
         results = self.model.run(None, inputs)
 
         # pylint: disable=E1101
+        # Detect if logits is an output and return classifier output in that case
+        if any([x.name for x in self.model.get_outputs() if x.name == "logits"]):
+            return SequenceClassifierOutput(logits=torch.from_numpy(np.array(results[0])))
+
         return torch.from_numpy(np.array(results))
 
     def parse(self, inputs):

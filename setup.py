@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as f:
     DESCRIPTION = f.read()
 
 # Required dependencies
-install = ["faiss-cpu>=1.7.1.post2", "numpy>=1.18.4", "torch>=1.6.0", "transformers>=4.10.2"]
+install = ["faiss-cpu>=1.7.1.post2", "numpy>=1.18.4", "torch>=1.6.0", "transformers>=4.11.2"]
 
 # Optional dependencies
 extras = {}

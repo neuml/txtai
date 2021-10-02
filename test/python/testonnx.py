@@ -121,7 +121,7 @@ class TestOnnx(unittest.TestCase):
 
     def testZeroShot(self):
         """
-        Test exporing a zero shot classification model to ONNX and running inference
+        Test exporting a zero shot classification model to ONNX and running inference
         """
 
         path = "prajjwal1/bert-medium-mnli"
