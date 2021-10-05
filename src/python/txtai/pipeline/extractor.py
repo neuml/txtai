@@ -18,7 +18,7 @@ class Extractor(Pipeline):
         Builds a new extractor.
 
         Args:
-            similarity: similarity instance (Embeddings or Similarity instance)
+            similarity: similarity instance (embeddings or similarity instance)
             path: path to qa model
             quantize: True if model should be quantized before inference, False otherwise.
             gpu: if gpu inference should be used (only works if GPUs are available)
@@ -111,7 +111,7 @@ class Extractor(Pipeline):
             if isinstance(self.similarity, Similarity):
                 scores = self.similarity(query, [t for _, t in segments])
             else:
-                # Assume this is an Embeddings instance, tokenize and run similarity query
+                # Assume this is an embeddings instance, tokenize and run similarity query
                 query = self.tokenizer.tokenize(query)
                 scores = self.similarity.similarity(query, tokenlist)
 
