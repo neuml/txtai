@@ -4,6 +4,7 @@ Extractor module
 
 from .base import Pipeline
 from .questions import Questions
+from .similarity import Similarity
 from .tokenizer import Tokenizer
 
 
@@ -12,12 +13,12 @@ class Extractor(Pipeline):
     Class that uses an extractive question-answering model to extract content from a given text context.
     """
 
-    def __init__(self, embeddings, path, quantize=False, gpu=False, model=None, tokenizer=None):
+    def __init__(self, similarity, path, quantize=False, gpu=True, model=None, tokenizer=None, minscore=None, mintokens=None):
         """
         Builds a new extractor.
 
         Args:
-            embeddings: embeddings model
+            similarity: similarity instance (Embeddings or Similarity instance)
             path: path to qa model
             quantize: True if model should be quantized before inference, False otherwise.
             gpu: if gpu inference should be used (only works if GPUs are available)
@@ -25,14 +26,20 @@ class Extractor(Pipeline):
             tokenizer: Tokenizer class
         """
 
-        # Embeddings model
-        self.embeddings = embeddings
+        # Similarity instance
+        self.similarity = similarity
 
         # QA Pipeline
         self.pipeline = Questions(path, quantize, gpu, model)
 
         # Tokenizer class use default method if not set
         self.tokenizer = tokenizer if tokenizer else Tokenizer
+
+        # Minimum score to include context match
+        self.minscore = minscore if minscore is not None else 0.0
+
+        # Minimum number of tokens to include context match
+        self.mintokens = mintokens if mintokens is not None else 0.0
 
     def __call__(self, queue, texts):
         """
@@ -97,14 +104,17 @@ class Extractor(Pipeline):
             must = [token.strip("+") for token in query.split() if token.startswith("+") and len(token) > 1]
             mnot = [token.strip("-") for token in query.split() if token.startswith("-") and len(token) > 1]
 
-            # Tokenize search query
-            query = self.tokenizer.tokenize(query)
-
             # List of matches
             matches = []
 
             # Get list of (id, score) - sorted by highest score
-            scores = self.embeddings.similarity(query, tokenlist)
+            if isinstance(self.similarity, Similarity):
+                scores = self.similarity(query, [t for _, t in segments])
+            else:
+                # Assume this is an Embeddings instance, tokenize and run similarity query
+                query = self.tokenizer.tokenize(query)
+                scores = self.similarity.similarity(query, tokenlist)
+
             for x, score in scores:
                 # Get segment text
                 text = segments[x][1]
@@ -112,10 +122,13 @@ class Extractor(Pipeline):
                 # Add result if:
                 #   - all required tokens are present or there are not required tokens AND
                 #   - all prohibited tokens are not present or there are not prohibited tokens
+                #   - score is above minimum score required
+                #   - number of tokens is above minimum number of tokens required
                 if (not must or all([token.lower() in text.lower() for token in must])) and (
                     not mnot or all([token.lower() not in text.lower() for token in mnot])
                 ):
-                    matches.append(segments[x] + (score,))
+                    if score >= self.minscore and len(tokenlist[x]) >= self.mintokens:
+                        matches.append(segments[x] + (score,))
 
             # Add query matches sorted by highest score
             results.append(matches)

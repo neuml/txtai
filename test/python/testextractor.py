@@ -6,7 +6,7 @@ import platform
 import unittest
 
 from txtai.embeddings import Embeddings
-from txtai.pipeline import Extractor
+from txtai.pipeline import Extractor, Similarity
 
 
 class TestExtractor(unittest.TestCase):
@@ -81,6 +81,19 @@ class TestExtractor(unittest.TestCase):
         question = "How many home runs?"
 
         answers = extractor([(question, question, question, True)], self.data)
+        self.assertTrue(answers[0][1].startswith("Giants hit 3 HRs"))
+
+    def testSimilarity(self):
+        """
+        Test qa extraction using a Similarity pipeline to build context
+        """
+
+        # Create extractor instance
+        extractor = Extractor(Similarity("prajjwal1/bert-medium-mnli"), "distilbert-base-cased-distilled-squad")
+
+        question = "How many home runs?"
+
+        answers = extractor([(question, "HRs", question, True)], self.data)
         self.assertTrue(answers[0][1].startswith("Giants hit 3 HRs"))
 
     def testSnippet(self):

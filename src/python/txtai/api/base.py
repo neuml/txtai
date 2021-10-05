@@ -67,7 +67,7 @@ class API:
 
                 # Custom pipeline parameters
                 if pipeline == "extractor":
-                    config["embeddings"] = self.embeddings
+                    config["similarity"] = self.embeddings
                 elif pipeline == "similarity" and "path" not in config and "labels" in self.pipelines:
                     config["model"] = self.pipelines["labels"]
 
