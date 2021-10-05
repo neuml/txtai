@@ -10,7 +10,7 @@ class Questions(HFPipeline):
     Runs extractive QA for a series of questions and contexts.
     """
 
-    def __init__(self, path=None, quantize=False, gpu=False, model=None):
+    def __init__(self, path=None, quantize=False, gpu=True, model=None):
         super().__init__("question-answering", path, quantize, gpu, model)
 
     def __call__(self, questions, contexts, workers=0):
