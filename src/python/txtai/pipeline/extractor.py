@@ -86,6 +86,9 @@ class Extractor(Pipeline):
             list of (id, text, score)
         """
 
+        if not queries:
+            return []
+
         # Tokenize text
         segments, tokenlist = [], []
         for text in texts:
@@ -97,25 +100,24 @@ class Extractor(Pipeline):
         # Add index id to segments to preserver ordering after filters
         segments = list(enumerate(segments))
 
+        # Run batch queries for performance purposes
+        if isinstance(self.similarity, Similarity):
+            # Get list of (id, score) - sorted by highest score per query
+            scores = self.similarity(queries, [t for _, t in segments])
+        else:
+            # Assume this is an embeddings instance, tokenize and run similarity queries
+            scores = self.similarity.batchsimilarity([self.tokenizer.tokenize(x) for x in queries], tokenlist)
+
         # Build question-context pairs
         results = []
-        for query in queries:
+        for i, query in enumerate(queries):
             # Get list of required and prohibited tokens
             must = [token.strip("+") for token in query.split() if token.startswith("+") and len(token) > 1]
             mnot = [token.strip("-") for token in query.split() if token.startswith("-") and len(token) > 1]
 
             # List of matches
             matches = []
-
-            # Get list of (id, score) - sorted by highest score
-            if isinstance(self.similarity, Similarity):
-                scores = self.similarity(query, [t for _, t in segments])
-            else:
-                # Assume this is an embeddings instance, tokenize and run similarity query
-                query = self.tokenizer.tokenize(query)
-                scores = self.similarity.similarity(query, tokenlist)
-
-            for x, score in scores:
+            for x, score in scores[i]:
                 # Get segment text
                 text = segments[x][1]
 
