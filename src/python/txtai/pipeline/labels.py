@@ -39,19 +39,16 @@ class Labels(HFPipeline):
         if self.dynamic:
             # Run zero shot classification pipeline
             results = self.pipeline(text, labels, multi_label=multilabel, truncation=True, num_workers=workers)
-
-            # Convert results to a list if necessary
-            if not isinstance(results, list):
-                results = [results]
-
-            # Unpack nested lists if necessary
-            results = [result[0] if isinstance(result, list) else result for result in results]
         else:
             # Set classification function based on inputs
             function = "sigmoid" if multilabel or len(self.labels()) == 1 else "softmax"
 
             # Run text classification pipeline
             results = self.pipeline(text, return_all_scores=True, function_to_apply=function, num_workers=workers)
+
+        # Convert results to a list if necessary
+        if not isinstance(results, list):
+            results = [results]
 
         # Build list of (id, score)
         scores = []
