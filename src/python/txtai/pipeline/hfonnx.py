@@ -46,7 +46,7 @@ class HFOnnx(Tensors):
 
         inputs, outputs, model = self.parameters(task)
 
-        if isinstance(path, tuple):
+        if isinstance(path, (list, tuple)):
             model, tokenizer = path
             model = model.cpu()
         else:

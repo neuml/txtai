@@ -111,7 +111,7 @@ class HFTrainer(Tensors):
             (config, tokenizer, maxlength)
         """
 
-        if isinstance(base, tuple):
+        if isinstance(base, (list, tuple)):
             # Unpack existing config and tokenizer
             model, tokenizer = base
             config = model.config
@@ -150,7 +150,7 @@ class HFTrainer(Tensors):
 
         # pylint: disable=E1120
         # Unpack existing model or create new model from config
-        if isinstance(base, tuple):
+        if isinstance(base, (list, tuple)):
             return base[0]
         if task == "question-answering":
             return AutoModelForQuestionAnswering.from_pretrained(base, config=config)

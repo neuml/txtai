@@ -15,6 +15,7 @@ except ImportError:
 import numpy as np
 import torch
 
+from transformers import AutoConfig
 from transformers.configuration_utils import PretrainedConfig
 from transformers.models.auto.modeling_auto import (
     MODEL_MAPPING,
@@ -32,18 +33,19 @@ class OnnxModel(PreTrainedModel):
     and outputs with minimal to no copying of data.
     """
 
-    def __init__(self, model):
+    def __init__(self, model, config=None):
         """
         Creates a new OnnxModel.
 
         Args:
             model: path to model or InferenceSession
+            config: path to model configuration
         """
 
         if not ONNX_RUNTIME:
             raise ImportError('onnxruntime is not available - install "model" extra to enable')
 
-        super().__init__(OnnxConfig())
+        super().__init__(AutoConfig.from_pretrained(config) if config else OnnxConfig())
 
         # Create ONNX session
         self.model = InferenceSession(model, SessionOptions())

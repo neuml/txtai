@@ -89,13 +89,14 @@ class Models:
         return "cpu" if deviceid < 0 else "cuda:{}".format(deviceid)
 
     @staticmethod
-    def load(path, task="default"):
+    def load(path, config=None, task="default"):
         """
         Loads a machine learning model. Handles multiple model frameworks (ONNX, Transformers).
 
         Args:
             path: path to model
-            task: task name used to lookup model configuration
+            config: path to model configuration
+            task: task name used to lookup model type
 
         Returns:
             machine learning model
@@ -103,14 +104,14 @@ class Models:
 
         # Detect ONNX models
         if isinstance(path, bytes) or (isinstance(path, str) and os.path.isfile(path)):
-            return OnnxModel(path)
+            return OnnxModel(path, config)
 
         # Return path, if path isn't a string
         if not isinstance(path, str):
             return path
 
         # Transformer models
-        config = {
+        models = {
             "default": AutoModel.from_pretrained,
             "question-answering": AutoModelForQuestionAnswering.from_pretrained,
             "summarization": AutoModelForSeq2SeqLM.from_pretrained,
@@ -119,4 +120,4 @@ class Models:
         }
 
         # Load model for supported tasks. Return path for unsupported tasks.
-        return config[task](path) if task in config else path
+        return models[task](path) if task in models else path

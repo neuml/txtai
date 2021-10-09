@@ -35,8 +35,11 @@ class HFPipeline(Tensors):
             deviceid = Models.deviceid(gpu)
 
             # Transformer pipeline task
-            if isinstance(path, tuple):
-                self.pipeline = pipeline(task, model=Models.load(path[0], task), tokenizer=path[1], device=deviceid)
+            if isinstance(path, (list, tuple)):
+                # Derive configuration, if possible
+                config = path[1] if path[1] and isinstance(path[1], str) else None
+
+                self.pipeline = pipeline(task, model=Models.load(path[0], config, task), tokenizer=path[1], device=deviceid)
             else:
                 self.pipeline = pipeline(task, model=path, tokenizer=path, device=deviceid)
 
