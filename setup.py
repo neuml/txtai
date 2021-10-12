@@ -25,6 +25,7 @@ extras["pipeline"] = [
     "fasttext>=0.9.2",
     "nltk>=3.5",
     "onnx>=1.10.1",
+    "onnxmltools>=1.9.1",
     "onnxruntime>=1.8.1",
     "sentencepiece>=0.1.91",
     "soundfile>=0.10.3.post1",

@@ -8,9 +8,13 @@ import unittest
 
 from collections import OrderedDict
 
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import Pipeline
+
 from txtai.embeddings import Embeddings
 from txtai.models import OnnxModel
-from txtai.pipeline import HFOnnx, HFTrainer, Labels, Questions
+from txtai.pipeline import HFOnnx, HFTrainer, Labels, MLOnnx, Questions
 
 
 class TestOnnx(unittest.TestCase):
@@ -118,6 +122,30 @@ class TestOnnx(unittest.TestCase):
 
         questions = Questions((model, path))
         self.assertEqual(questions(["What is the price?"], ["The price is $30"])[0], "$30")
+
+    def testScikit(self):
+        """
+        Test exporting a scikit-learn model to ONNX and running inference
+        """
+
+        # pylint: disable=W0613
+        def tokenizer(inputs, **kwargs):
+            if isinstance(inputs, str):
+                inputs = [inputs]
+
+            return {"input_ids": [[x] for x in inputs]}
+
+        # Train a scikit-learn model
+        model = Pipeline([("tfidf", TfidfVectorizer()), ("lr", LogisticRegression())])
+        model.fit([x["text"] for x in self.data], [x["label"] for x in self.data])
+
+        # Export model to ONNX
+        onnx = MLOnnx()
+        model = onnx(model)
+
+        # Test classification
+        labels = Labels((model, tokenizer), dynamic=False)
+        self.assertEqual(labels("cat")[0][0], 1)
 
     def testZeroShot(self):
         """

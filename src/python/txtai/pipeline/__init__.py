@@ -10,6 +10,7 @@ from .hfonnx import HFOnnx
 from .hfpipeline import HFPipeline
 from .hftrainer import HFTrainer
 from .labels import Labels
+from .mlonnx import MLOnnx
 from .questions import Questions
 from .segmentation import Segmentation
 from .similarity import Similarity
