@@ -29,8 +29,8 @@ class Labels(HFPipeline):
         Args:
             text: text|list
             labels: list of labels
-            multilabel: labels are independent if True, otherwise scores are normalized to sum to 1 per text item
-            workers: number of parallel workers to use for processing data, defaults to none
+            multilabel: labels are independent if True, scores are normalized to sum to 1 per text item if False, raw scores returned if None
+            workers: number of parallel workers to use for processing data, defaults to None
 
         Returns:
             list of (id, score)
@@ -41,7 +41,7 @@ class Labels(HFPipeline):
             results = self.pipeline(text, labels, multi_label=multilabel, truncation=True, num_workers=workers)
         else:
             # Set classification function based on inputs
-            function = "sigmoid" if multilabel or len(self.labels()) == 1 else "softmax"
+            function = "none" if multilabel is None else "sigmoid" if multilabel or len(self.labels()) == 1 else "softmax"
 
             # Run text classification pipeline
             results = self.pipeline(text, return_all_scores=True, function_to_apply=function, num_workers=workers)
