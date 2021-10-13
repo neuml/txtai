@@ -13,7 +13,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 
 from txtai.embeddings import Embeddings
-from txtai.models import OnnxModel
+from txtai.models import Registry
 from txtai.pipeline import HFOnnx, HFTrainer, Labels, MLOnnx, Questions
 
 
@@ -48,13 +48,9 @@ class TestOnnx(unittest.TestCase):
                 self._model_mapping = {}
                 self._modules = {}
 
-        # Export model to ONNX, use default parameters
-        onnx = HFOnnx()
-        model = OnnxModel(onnx("google/bert_uncased_L-2_H-128_A-2"))
-
         # Test lazy auto mapping
         mapping = Mapping()
-        model.autoadd(mapping, "key", "value")
+        Registry.autoadd(mapping, "key", "value")
 
         # pylint: disable=W0212
         self.assertTrue("key" in mapping._config_mapping)
