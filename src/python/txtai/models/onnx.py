@@ -2,8 +2,6 @@
 ONNX module
 """
 
-from collections import namedtuple
-
 # Conditional import
 try:
     from onnxruntime import InferenceSession, SessionOptions
@@ -17,14 +15,10 @@ import torch
 
 from transformers import AutoConfig
 from transformers.configuration_utils import PretrainedConfig
-from transformers.models.auto.modeling_auto import (
-    MODEL_MAPPING,
-    MODEL_FOR_QUESTION_ANSWERING_MAPPING,
-    MODEL_FOR_SEQUENCE_CLASSIFICATION_MAPPING,
-)
-from transformers.models.auto.tokenization_auto import TOKENIZER_MAPPING
 from transformers.modeling_outputs import SequenceClassifierOutput
 from transformers.modeling_utils import PreTrainedModel
+
+from .registry import Registry
 
 # pylint: disable=W0223
 class OnnxModel(PreTrainedModel):
@@ -51,33 +45,7 @@ class OnnxModel(PreTrainedModel):
         self.model = InferenceSession(model, SessionOptions())
 
         # Add references for this class to supported AutoModel classes
-        name = self.__class__.__name__
-        if name not in MODEL_MAPPING:
-            for mapping in [MODEL_MAPPING, MODEL_FOR_SEQUENCE_CLASSIFICATION_MAPPING, MODEL_FOR_QUESTION_ANSWERING_MAPPING]:
-                self.autoadd(mapping, name, self.__class__)
-
-        # Add references for this class to support pipeline AutoTokenizers
-        if type(self.config) not in TOKENIZER_MAPPING:
-            self.autoadd(TOKENIZER_MAPPING, type(self.config), type(self.config).__name__)
-
-    def autoadd(self, mapping, key, value):
-        """
-        Adds OnnxModel to auto model configuration to fully support pipelines.
-
-        Args:
-            mapping: auto model mapping
-            key: key to add
-            value: value to add
-        """
-
-        # pylint: disable=W0212
-        Params = namedtuple("Params", ["config", "model"])
-        params = Params(key, value)
-
-        mapping._modules[key] = params
-        mapping._config_mapping[key] = "config"
-        mapping._reverse_config_mapping[value] = key
-        mapping._model_mapping[key] = "model"
+        Registry.register(self)
 
     def forward(self, **inputs):
         """
