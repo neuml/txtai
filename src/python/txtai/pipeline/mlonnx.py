@@ -28,12 +28,13 @@ class MLOnnx(Pipeline):
         if not ONNX_MLTOOLS:
             raise ImportError('MLOnnx pipeline is not available - install "pipeline" extra to enable')
 
-    def __call__(self, model, output=None, opset=12):
+    def __call__(self, model, task="default", output=None, opset=12):
         """
         Exports a machine learning model to ONNX using ONNXMLTools.
 
         Args:
             model: model to export
+            task: optional model task or category
             output: optional output model path, defaults to return byte array if None
             opset: onnx opset, defaults to 12
 
@@ -42,7 +43,7 @@ class MLOnnx(Pipeline):
         """
 
         # Convert scikit-learn model to ONNX
-        model = convert_sklearn(model, "onnxmltools", initial_types=[("input_ids", StringTensorType([None, None]))], target_opset=opset)
+        model = convert_sklearn(model, task, initial_types=[("input_ids", StringTensorType([None, None]))], target_opset=opset)
 
         # Prune model graph down to only output probabilities
         model = select_model_inputs_outputs(model, outputs="probabilities")
