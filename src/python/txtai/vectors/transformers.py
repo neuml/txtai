@@ -26,14 +26,15 @@ class TransformersVectors(Vectors):
 
     def load(self, path):
         # Flag that determines if transformers or sentence-transformers should be used to build embeddings
-        transformers = self.config.get("method") != "sentence-transformers"
+        method = self.config.get("method")
+        transformers = method != "sentence-transformers"
 
         # Tensor device id
         deviceid = Models.deviceid(self.config.get("gpu", True))
 
         # Build embeddings with transformers (default)
         if transformers:
-            if isinstance(path, bytes) or (isinstance(path, str) and os.path.isfile(path)):
+            if isinstance(path, bytes) or (isinstance(path, str) and os.path.isfile(path)) or method == "pooling":
                 return Pooling(path, device=deviceid, tokenizer=self.config.get("tokenizer"))
 
             return MeanPooling(path, device=deviceid, tokenizer=self.config.get("tokenizer"))
