@@ -47,7 +47,7 @@ extras["all"] = extras["api"] + extras["model"] + extras["pipeline"] + extras["s
 
 setup(
     name="txtai",
-    version="3.5.0",
+    version="3.6.0",
     author="NeuML",
     description="Build AI-powered semantic search applications",
     long_description=DESCRIPTION,
