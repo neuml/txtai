@@ -6,6 +6,7 @@ Requires streamlit to be installed.
 """
 
 import os
+import re
 
 import pandas as pd
 import streamlit as st
@@ -218,11 +219,11 @@ class Application:
             with st.spinner("Building workflow...."):
                 self.build(components)
 
-        with st.beta_expander("Data", expanded=not self.data):
+        with st.expander("Data", expanded=not self.data):
             data = st.text_area("Input", height=10)
 
         # Parse text items
-        data = [x for x in data.split("\n") if x] if "file://" in data else [data]
+        data = [x for x in data.split("\n") if x] if re.match(r"^(http|https|file):\/\/", data) else [data]
 
         # Process current action
         self.process(data)
