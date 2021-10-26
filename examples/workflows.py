@@ -5,15 +5,59 @@ Requires streamlit to be installed.
   pip install streamlit
 """
 
+import contextlib
 import os
 import re
+import tempfile
+import threading
+import time
+
+import uvicorn
+import yaml
 
 import pandas as pd
 import streamlit as st
 
+import txtai.api.application
+
 from txtai.embeddings import Documents, Embeddings
 from txtai.pipeline import Segmentation, Summary, Textractor, Transcription, Translation
 from txtai.workflow import Workflow, Task, UrlTask
+
+
+class Server(uvicorn.Server):
+    """
+    Threaded uvicorn server used to bring up an API service.
+    """
+
+    def __init__(self, application=None, host="127.0.0.1", port=8000, log_level="info"):
+        """
+        Initialize server configuration.
+        """
+
+        config = uvicorn.Config(application, host=host, port=port, log_level=log_level)
+        super().__init__(config)
+
+    def install_signal_handlers(self):
+        """
+        Signal handlers no-op.
+        """
+
+    @contextlib.contextmanager
+    def service(self):
+        """
+        Runs threaded server service.
+        """
+
+        thread = threading.Thread(target=self.run)
+        thread.start()
+        try:
+            while not self.started:
+                time.sleep(1e-3)
+            yield
+
+        finally:
+            thread.join()
 
 
 class Application:
@@ -96,7 +140,9 @@ class Application:
 
         elif component == "embeddings":
             st.sidebar.markdown("**Embeddings Index**  \n*Index workflow output*")
+            options["index"] = st.sidebar.text_input("Embeddings storage path")
             options["path"] = st.sidebar.text_area("Embeddings model path", value="sentence-transformers/nli-mpnet-base-v2")
+            options["upsert"] = st.sidebar.checkbox("Upsert")
 
         return options
 
@@ -114,6 +160,7 @@ class Application:
         # pylint: disable=W0108
         tasks = []
         for component in components:
+            component = dict(component)
             wtype = component.pop("type")
             self.components[wtype] = component
 
@@ -143,6 +190,90 @@ class Application:
                 tasks.append(Task(self.documents.add, unpack=False))
 
         self.workflow = Workflow(tasks)
+
+    def yaml(self, components):
+        """
+        Builds a yaml string for components.
+
+        Args:
+            components: list of components to export to YAML
+
+        Returns:
+            YAML string
+        """
+
+        # pylint: disable=W0108
+        data = {}
+        tasks = []
+        name = None
+
+        for component in components:
+            component = dict(component)
+            name = wtype = component.pop("type")
+
+            if wtype == "summary":
+                data["summary"] = {"path": component.pop("path")}
+                tasks.append({"action": "summary"})
+
+            elif wtype == "segment":
+                data["segmentation"] = component
+                tasks.append({"action": "segmentation"})
+
+            elif wtype == "textract":
+                data["textractor"] = component
+                tasks.append({"action": "textractor", "task": "url"})
+
+            elif wtype == "transcribe":
+                data["transcription"] = {"path": component.pop("path")}
+                tasks.append({"action": "transcription", "task": "url"})
+
+            elif wtype == "translate":
+                data["translation"] = {}
+                tasks.append({"action": "translation", "args": list(**component.values())})
+
+            elif wtype == "embeddings":
+                index = component.pop("index")
+                upsert = component.pop("upsert")
+
+                data["embeddings"] = component
+                data["writable"] = True
+
+                if index:
+                    data["path"] = index
+
+                name = "index"
+                tasks.append({"action": "upsert" if upsert else "index"})
+
+        # Add in workflow
+        data["workflow"] = {name: {"tasks": tasks}}
+
+        return (name, yaml.dump(data))
+
+    def api(self, config):
+        """
+        Starts an internal uvicorn server to host an API service for the current workflow.
+
+        Args:
+            config: workflow configuration
+        """
+
+        # Generate temporary file name
+        yml = os.path.join(tempfile.gettempdir(), "workflow.yml")
+        with open(yml, "w") as f:
+            f.write(config)
+
+        os.environ["CONFIG"] = yml
+        txtai.api.application.start()
+        server = Server(txtai.api.application.app)
+        with server.service():
+            uid = 0
+            while True:
+                stop = st.empty()
+                click = stop.button("stop", key=uid)
+                if not click:
+                    time.sleep(5)
+                    uid += 1
+                stop.empty()
 
     def process(self, data):
         """
@@ -213,11 +344,24 @@ class Application:
         components = [self.options(component) for component in selected]
         st.sidebar.markdown("---")
 
-        # Build or re-build workflow when build button clicked
-        build = st.sidebar.button("Build")
-        if build:
-            with st.spinner("Building workflow...."):
-                self.build(components)
+        with st.sidebar:
+            col1, col2, col3 = st.columns(3)
+
+            # Build or re-build workflow when build button clicked
+            build = col1.button("Build", help="Build the workflow and run within this application")
+            if build:
+                with st.spinner("Building workflow...."):
+                    self.build(components)
+
+            # Generate API configuration
+            workflow, config = self.yaml(components)
+
+            api = col2.button("API", help="Start an API instance within this application")
+            if api:
+                with st.spinner("Running workflow '%s' via API service, click stop to terminate" % workflow):
+                    self.api(config)
+
+            col3.download_button("Export", config, file_name="workflow.yml", mime="text/yaml", help="Export the API workflow as YAML")
 
         with st.expander("Data", expanded=not self.data):
             data = st.text_area("Input", height=10)
