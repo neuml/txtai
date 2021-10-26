@@ -204,7 +204,7 @@ class Embeddings:
             number of elements in embeddings index
         """
 
-        return self.embeddings.count()
+        return self.embeddings.count() if self.embeddings else 0
 
     def search(self, query, limit=3):
         """

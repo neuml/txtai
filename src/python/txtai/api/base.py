@@ -78,7 +78,11 @@ class API:
         Initialize workflows.
         """
 
+        # Workflow definitions
         self.workflows = {}
+
+        # Post workflow actions
+        self.actions = {}
 
         # Create workflows
         if "workflow" in self.config:
@@ -86,7 +90,11 @@ class API:
                 for task in config["tasks"]:
                     # Resolve pipeline action
                     if "action" in task:
-                        task["action"] = self.pipelines[task["action"]]
+                        action = task["action"]
+                        task["action"] = self.pipelines.get(action)
+
+                        if action in ["index", "upsert"]:
+                            self.actions[workflow] = action
 
                 self.workflows[workflow] = WorkflowFactory.create(config)
 
@@ -396,4 +404,29 @@ class API:
         elements = [tuple(element) if isinstance(element, list) else element for element in elements]
 
         # Execute workflow
-        return self.workflows[name](elements)
+        elements = self.workflows[name](elements)
+
+        # Run post workflow action, if any
+        if name in self.actions:
+            documents = []
+            action = self.actions[name]
+            index = self.count() if self.count() and action != "index" else 0
+
+            # Consume all elements
+            elements = list(elements)
+
+            for element in elements:
+                if isinstance(element, (tuple, list)):
+                    element = {"id": element[0], "text": element[1]}
+                else:
+                    element = {"id": index, "text": element}
+
+                documents.append(element)
+                index += 1
+
+            # pylint: disable=W0106
+            # Add documents and run index operation
+            self.add(documents)
+            self.index() if self.actions[name] == "index" else self.upsert()
+
+        return elements

@@ -17,6 +17,11 @@ from txtai.api import app, start
 
 # Configuration for workflows
 WORKFLOWS = """
+# Embeddings index
+writable: true
+embeddings:
+    path: sentence-transformers/nli-mpnet-base-v2
+
 # Text segmentation
 segmentation:
     sentences: true
@@ -26,6 +31,7 @@ workflow:
     segment:
         tasks:
             - action: segmentation
+            - action: index
     get:
         tasks:
             - task: service
@@ -151,4 +157,7 @@ class TestWorkflow(unittest.TestCase):
 
         text = "This is a test sentence. And another sentence to split."
         results = self.client.post("workflow", json={"name": "segment", "elements": [text]}).json()
+        self.assertEqual(len(results), 2)
+
+        results = self.client.post("workflow", json={"name": "segment", "elements": [[0, text]]}).json()
         self.assertEqual(len(results), 2)
