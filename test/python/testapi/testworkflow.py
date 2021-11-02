@@ -42,8 +42,18 @@ workflow:
     post:
         tasks:
             - task: service
-              url: http://127.0.0.1:8001/batchsegment
+              url: http://127.0.0.1:8001/testpost
               params:
+
+    xml:
+        tasks:
+            - task: service
+              url: http://127.0.0.1:8001/xml
+              method: get
+              batch: false
+              extract: row
+              params:
+                text:
 """
 
 
@@ -57,10 +67,16 @@ class RequestHandler(BaseHTTPRequestHandler):
         GET request handler.
         """
 
-        response = '[{"text": "test"}]'.encode("utf-8")
-
         self.send_response(200)
-        self.send_header("content-type", "application/json")
+
+        if self.path.startswith("/xml"):
+            response = "<row><text>test</text></row>".encode("utf-8")
+            mime = "application/xml"
+        else:
+            response = '[{"text": "test"}]'.encode("utf-8")
+            mime = "application/json"
+
+        self.send_header("content-type", mime)
         self.send_header("content-length", len(response))
         self.end_headers()
 
@@ -149,6 +165,16 @@ class TestWorkflow(unittest.TestCase):
         results = self.client.post("workflow", json={"name": "post", "elements": [text]}).json()
 
         self.assertEqual(len(results), 2)
+
+    def testServiceXML(self):
+        """
+        Test workflow with ServiceTask GET via API and XML response.
+        """
+
+        text = "This is a test sentence. And another sentence to split."
+        results = self.client.post("workflow", json={"name": "xml", "elements": [text]}).json()
+
+        self.assertEqual(len(results), 1)
 
     def testWorkflow(self):
         """

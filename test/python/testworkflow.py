@@ -92,4 +92,4 @@ class TestWorkflow(unittest.TestCase):
 
         results = list(workflow(["local://" + Utils.PATH]))
 
-        self.assertEqual(len(results), 17)
+        self.assertEqual(len(results), 19)
