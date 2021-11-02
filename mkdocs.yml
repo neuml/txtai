@@ -41,6 +41,7 @@ nav:
         - Segmentation: pipelines/segmentation.md
         - Similarity: pipelines/similarity.md
         - Summary: pipelines/summary.md
+        - Tabular: pipelines/tabular.md
         - Textractor: pipelines/textractor.md
         - Trainer: pipelines/trainer.md
         - Transcription: pipelines/transcription.md
