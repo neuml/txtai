@@ -27,6 +27,7 @@ extras["pipeline"] = [
     "onnx>=1.10.1",
     "onnxmltools>=1.9.1",
     "onnxruntime>=1.8.1",
+    "openpyxl>=3.0.9",
     "pandas>=1.1.0",
     "sentencepiece>=0.1.91",
     "soundfile>=0.10.3.post1",
