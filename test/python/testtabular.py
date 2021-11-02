@@ -67,14 +67,3 @@ class TestTabular(unittest.TestCase):
 
         self.assertEqual(uid, 0)
         self.assertEqual(text, "This is a test. Describes text in more detail")
-
-    def testXLSX(self):
-        """
-        Tests parsing a XLSX file
-        """
-
-        rows = self.tabular([Utils.PATH + "/tabular.xlsx"])
-        uid, text, _ = rows[0][0]
-
-        self.assertEqual(uid, 0)
-        self.assertEqual(text, "The first sentence")

@@ -58,9 +58,7 @@ class Tabular(Pipeline):
                 _, extension = os.path.splitext(item)
                 extension = extension.replace(".", "").lower()
 
-                if extension in ["xlsx", "xls"]:
-                    df = pd.read_excel(item)
-                else:
+                if extension == "csv":
                     df = pd.read_csv(item)
 
                 results.append(self.process(df))
