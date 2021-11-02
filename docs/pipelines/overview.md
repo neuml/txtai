@@ -15,7 +15,7 @@ The following pipeline types are currently supported.
     - [Trainer](../trainer)
     - [Transcription](../transcription)
     - [Translation](../translation)
-- Data processing calls
+- Data processing
     - [Segmentation](../segmentation)
     - [Tabular](../tabular)
     - [Text extraction](../textractor)
