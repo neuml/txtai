@@ -8,7 +8,7 @@ import txtai.ann.factory
 
 from txtai.ann import ANNFactory
 from txtai.models import OnnxModel
-from txtai.pipeline import HFOnnx, MLOnnx, Segmentation, Textractor, Transcription, Translation
+from txtai.pipeline import HFOnnx, MLOnnx, Segmentation, Tabular, Textractor, Transcription, Translation
 from txtai.vectors import VectorsFactory
 from txtai.workflow.task.image import ImageTask
 from txtai.workflow.task.storage import StorageTask
@@ -33,6 +33,7 @@ class TestOptional(unittest.TestCase):
         txtai.pipeline.hfonnx.ONNX_RUNTIME = not txtai.pipeline.hfonnx.ONNX_RUNTIME
         txtai.pipeline.mlonnx.ONNX_MLTOOLS = not txtai.pipeline.mlonnx.ONNX_MLTOOLS
         txtai.pipeline.segmentation.NLTK = not txtai.pipeline.segmentation.NLTK
+        txtai.pipeline.tabular.PANDAS = not txtai.pipeline.tabular.PANDAS
         txtai.pipeline.textractor.TIKA = not txtai.pipeline.textractor.TIKA
         txtai.pipeline.transcription.SOUNDFILE = not txtai.pipeline.transcription.SOUNDFILE
         txtai.pipeline.translation.FASTTEXT = not txtai.pipeline.translation.FASTTEXT
@@ -93,6 +94,9 @@ class TestOptional(unittest.TestCase):
 
         with self.assertRaises(ImportError):
             Segmentation()
+
+        with self.assertRaises(ImportError):
+            Tabular()
 
         with self.assertRaises(ImportError):
             Textractor()

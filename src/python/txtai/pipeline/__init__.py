@@ -15,6 +15,7 @@ from .questions import Questions
 from .segmentation import Segmentation
 from .similarity import Similarity
 from .summary import Summary
+from .tabular import Tabular
 from .tensors import Tensors
 from .textractor import Textractor
 from .tokenizer import Tokenizer

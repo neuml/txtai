@@ -27,6 +27,7 @@ extras["pipeline"] = [
     "onnx>=1.10.1",
     "onnxmltools>=1.9.1",
     "onnxruntime>=1.8.1",
+    "pandas>=1.1.0",
     "sentencepiece>=0.1.91",
     "soundfile>=0.10.3.post1",
     "tika>=1.24",
@@ -41,7 +42,7 @@ extras["similarity"] = [
     "sentence-transformers>=2.0.0",
 ]
 
-extras["workflow"] = ["apache-libcloud>=3.3.1", "pillow>=7.2.0", "requests>=2.24.0"]
+extras["workflow"] = ["apache-libcloud>=3.3.1", "pillow>=7.2.0", "requests>=2.24.0", "xmltodict>=0.12.0"]
 
 extras["all"] = extras["api"] + extras["model"] + extras["pipeline"] + extras["similarity"] + extras["workflow"]
 
