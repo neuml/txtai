@@ -166,7 +166,7 @@ class TestWorkflow(unittest.TestCase):
 
         self.assertEqual(len(results), 2)
 
-    def testServiceXML(self):
+    def testServiceXml(self):
         """
         Test workflow with ServiceTask GET via API and XML response.
         """

@@ -57,9 +57,13 @@ Task that processes image urls
 
 Task that runs content against a http service
 
+::: txtai.workflow.ServiceTask.__init__
+
 ### Storage Task
 
 Task that expands a local directory or cloud storage bucket into a list of URLs to process
+
+::: txtai.workflow.StorageTask.__init__
 
 ### URL Task
 
