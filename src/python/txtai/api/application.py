@@ -12,7 +12,7 @@ from .base import API
 from .factory import Factory
 
 # pylint: disable=R0401
-from .routers import embeddings, extractor, labels, segmentation, similarity, summary, textractor, transcription, translation, workflow
+from .routers import embeddings, extractor, labels, segmentation, similarity, summary, tabular, textractor, transcription, translation, workflow
 
 # API instance
 app = FastAPI()
@@ -60,6 +60,7 @@ def start():
         ("segmentation", segmentation.router),
         ("similarity", similarity.router),
         ("summary", summary.router),
+        ("tabular", tabular.router),
         ("textractor", textractor.router),
         ("transcription", transcription.router),
         ("translation", translation.router),

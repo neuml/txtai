@@ -33,6 +33,9 @@ similarity:
 summary:
     path: t5-small
 
+# Tabular
+tabular:
+
 # Text extraction
 textractor:
 
@@ -179,6 +182,26 @@ class TestPipelines(unittest.TestCase):
 
         summaries = self.client.post("batchsummary", json={"texts": [self.text, self.text], "maxlength": 10}).json()
         self.assertEqual(len(summaries), 2)
+
+    def testTabular(self):
+        """
+        Test tabular via API
+        """
+
+        results = self.client.get("tabular?file=%s" % Utils.PATH + "/tabular.csv").json()
+
+        # Check length of results is as expected
+        self.assertEqual(len(results), 6)
+
+    def testTabularBatch(self):
+        """
+        Test batch tabular via API
+        """
+
+        path = Utils.PATH + "/tabular.csv"
+
+        texts = self.client.post("batchtabular", json=[path, path]).json()
+        self.assertEqual(len(texts), 2)
 
     def testTextractor(self):
         """
