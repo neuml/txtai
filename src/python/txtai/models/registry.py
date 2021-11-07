@@ -2,13 +2,7 @@
 Registry module
 """
 
-from collections import namedtuple
-
-from transformers.models.auto.modeling_auto import (
-    MODEL_MAPPING,
-    MODEL_FOR_QUESTION_ANSWERING_MAPPING,
-    MODEL_FOR_SEQUENCE_CLASSIFICATION_MAPPING,
-)
+from transformers import AutoModel, AutoModelForQuestionAnswering, AutoModelForSequenceClassification
 from transformers.models.auto.tokenization_auto import TOKENIZER_MAPPING
 
 
@@ -18,40 +12,28 @@ class Registry:
     """
 
     @staticmethod
-    def register(model):
+    def register(model, config=None):
         """
         Registers a model with auto model and tokenizer configuration to fully support pipelines.
 
         Args:
             model: model to register
+            config: config class name
         """
 
-        # Add references for this class to supported AutoModel classes
+        # Default config class name to model name if not provided
         name = model.__class__.__name__
-        if name not in MODEL_MAPPING:
-            for mapping in [MODEL_MAPPING, MODEL_FOR_SEQUENCE_CLASSIFICATION_MAPPING, MODEL_FOR_QUESTION_ANSWERING_MAPPING]:
-                Registry.autoadd(mapping, name, model.__class__)
+        if not config:
+            config = name
+
+        # Default model config_class if empty
+        if hasattr(model.__class__, "config_class") and not model.__class__.config_class:
+            model.__class__.config_class = config
+
+        # Add references for this class to supported AutoModel classes
+        for mapping in [AutoModel, AutoModelForQuestionAnswering, AutoModelForSequenceClassification]:
+            mapping.register(config, model.__class__)
 
         # Add references for this class to support pipeline AutoTokenizers
         if hasattr(model, "config") and type(model.config) not in TOKENIZER_MAPPING:
-            Registry.autoadd(TOKENIZER_MAPPING, type(model.config), type(model.config).__name__)
-
-    @staticmethod
-    def autoadd(mapping, key, value):
-        """
-        Adds auto model configuration to fully support pipelines.
-
-        Args:
-            mapping: auto model mapping
-            key: key to add
-            value: value to add
-        """
-
-        # pylint: disable=W0212
-        Params = namedtuple("Params", ["config", "model"])
-        params = Params(key, value)
-
-        mapping._modules[key] = params
-        mapping._config_mapping[key] = "config"
-        mapping._reverse_config_mapping[value] = key
-        mapping._model_mapping[key] = "model"
+            TOKENIZER_MAPPING.register(type(model.config), type(model.config).__name__)

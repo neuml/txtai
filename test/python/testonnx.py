@@ -6,14 +6,11 @@ import os
 import tempfile
 import unittest
 
-from collections import OrderedDict
-
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 
 from txtai.embeddings import Embeddings
-from txtai.models import Registry
 from txtai.pipeline import HFOnnx, HFTrainer, Labels, MLOnnx, Questions
 
 
@@ -29,34 +26,6 @@ class TestOnnx(unittest.TestCase):
         """
 
         cls.data = [{"text": "Dogs", "label": 0}, {"text": "dog", "label": 0}, {"text": "Cats", "label": 1}, {"text": "cat", "label": 1}] * 100
-
-    def testAutoAdd(self):
-        """
-        Tests methods for adding ONNX models to auto classes
-        """
-
-        class Mapping(OrderedDict):
-            """
-            Helper class to support autoadd tests.
-            """
-
-            def __init__(self):
-                super().__init__()
-
-                self._config_mapping = {}
-                self._reverse_config_mapping = {}
-                self._model_mapping = {}
-                self._modules = {}
-
-        # Test lazy auto mapping
-        mapping = Mapping()
-        Registry.autoadd(mapping, "key", "value")
-
-        # pylint: disable=W0212
-        self.assertTrue("key" in mapping._config_mapping)
-        self.assertTrue("value" in mapping._reverse_config_mapping)
-        self.assertTrue("key" in mapping._model_mapping)
-        self.assertTrue("key" in mapping._modules)
 
     def testDefault(self):
         """
