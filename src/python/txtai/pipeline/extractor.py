@@ -13,7 +13,7 @@ class Extractor(Pipeline):
     Class that uses an extractive question-answering model to extract content from a given text context.
     """
 
-    def __init__(self, similarity, path, quantize=False, gpu=True, model=None, tokenizer=None, minscore=None, mintokens=None):
+    def __init__(self, similarity, path, quantize=False, gpu=True, model=None, tokenizer=None, minscore=None, mintokens=None, topn=None):
         """
         Builds a new extractor.
 
@@ -24,6 +24,9 @@ class Extractor(Pipeline):
             gpu: if gpu inference should be used (only works if GPUs are available)
             model: optional existing pipeline model to wrap
             tokenizer: Tokenizer class
+            minscore: minimum score to include context match, defaults to None
+            mintokens: minimum number of tokens to include context match, defaults to None
+            topn: topn context matches to include, defaults to 3
         """
 
         # Similarity instance
@@ -40,6 +43,9 @@ class Extractor(Pipeline):
 
         # Minimum number of tokens to include context match
         self.mintokens = mintokens if mintokens is not None else 0.0
+
+        # Top N context matches to include for question-answering
+        self.topn = topn if topn else 3
 
     def __call__(self, queue, texts):
         """
@@ -62,7 +68,7 @@ class Extractor(Pipeline):
         names, questions, contexts, topns, snippets = [], [], [], [], []
         for x, (name, _, question, snippet) in enumerate(queue):
             # Build context using top n best matching segments
-            topn = sorted(results[x], key=lambda y: y[2], reverse=True)[:3]
+            topn = sorted(results[x], key=lambda y: y[2], reverse=True)[: self.topn]
             context = " ".join([text for _, text, _ in sorted(topn, key=lambda y: y[0])])
 
             names.append(name)
