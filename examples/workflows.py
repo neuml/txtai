@@ -21,8 +21,8 @@ import streamlit as st
 import txtai.api.application
 
 from txtai.embeddings import Documents, Embeddings
-from txtai.pipeline import Segmentation, Summary, Textractor, Transcription, Translation
-from txtai.workflow import Workflow, Task, UrlTask
+from txtai.pipeline import Segmentation, Summary, Tabular, Textractor, Transcription, Translation
+from txtai.workflow import ServiceTask, Task, UrlTask, Workflow
 
 
 class Server(uvicorn.Server):
@@ -49,6 +49,7 @@ class Server(uvicorn.Server):
         Runs threaded server service.
         """
 
+        # pylint: disable=W0201
         thread = threading.Thread(target=self.run)
         thread.start()
         try:
@@ -57,6 +58,7 @@ class Server(uvicorn.Server):
             yield
 
         finally:
+            self.should_exit = True
             thread.join()
 
 
@@ -98,6 +100,19 @@ class Application:
         value = st.sidebar.text_input(label)
         return int(value) if value else None
 
+    def split(self, text):
+        """
+        Splits text on commas and returns a list.
+
+        Args:
+            text: input text
+
+        Returns:
+            list
+        """
+
+        return [x.strip() for x in text.split(",")]
+
     def options(self, component):
         """
         Extracts component settings into a component configuration dict.
@@ -112,7 +127,14 @@ class Application:
         options = {"type": component}
 
         st.sidebar.markdown("---")
-        if component == "summary":
+
+        if component == "embeddings":
+            st.sidebar.markdown("**Embeddings Index**  \n*Index workflow output*")
+            options["index"] = st.sidebar.text_input("Embeddings storage path")
+            options["path"] = st.sidebar.text_area("Embeddings model path", value="sentence-transformers/nli-mpnet-base-v2")
+            options["upsert"] = st.sidebar.checkbox("Upsert")
+
+        elif component == "summary":
             st.sidebar.markdown("**Summary**  \n*Abstractive text summarization*")
             options["path"] = st.sidebar.text_input("Model", value="sshleifer/distilbart-cnn-12-6")
             options["minlength"] = self.number("Min length")
@@ -130,6 +152,24 @@ class Application:
             options["join"] = st.sidebar.checkbox("Join tokenized")
             options["minlength"] = self.number("Min section length")
 
+        elif component == "service":
+            options["url"] = st.sidebar.text_input("URL")
+            options["method"] = st.sidebar.selectbox("Method", ["get", "post"], index=0)
+            options["params"] = st.sidebar.text_input("URL parameters")
+            options["batch"] = st.sidebar.checkbox("Run as batch", value=True)
+            options["extract"] = st.sidebar.text_input("Subsection(s) to extract")
+
+            if options["params"]:
+                options["params"] = {key: None for key in self.split(options["params"])}
+            if options["extract"]:
+                options["extract"] = self.split(options["extract"])
+
+        elif component == "tabular":
+            options["idcolumn"] = st.sidebar.text_input("Id columns")
+            options["textcolumns"] = st.sidebar.text_input("Text columns")
+            if options["textcolumns"]:
+                options["textcolumns"] = self.split(options["textcolumns"])
+
         elif component == "transcribe":
             st.sidebar.markdown("**Transcribe**  \n*Transcribe audio to text*")
             options["path"] = st.sidebar.text_input("Model", value="facebook/wav2vec2-base-960h")
@@ -137,12 +177,6 @@ class Application:
         elif component == "translate":
             st.sidebar.markdown("**Translate**  \n*Machine translation*")
             options["target"] = st.sidebar.text_input("Target language code", value="en")
-
-        elif component == "embeddings":
-            st.sidebar.markdown("**Embeddings Index**  \n*Index workflow output*")
-            options["index"] = st.sidebar.text_input("Embeddings storage path")
-            options["path"] = st.sidebar.text_area("Embeddings model path", value="sentence-transformers/nli-mpnet-base-v2")
-            options["upsert"] = st.sidebar.checkbox("Upsert")
 
         return options
 
@@ -164,13 +198,25 @@ class Application:
             wtype = component.pop("type")
             self.components[wtype] = component
 
-            if wtype == "summary":
-                self.pipelines[wtype] = Summary(component.pop("path"))
-                tasks.append(Task(lambda x: self.pipelines["summary"](x, **self.components["summary"])))
+            if wtype == "embeddings":
+                self.embeddings = Embeddings({**component})
+                self.documents = Documents()
+                tasks.append(Task(self.documents.add, unpack=False))
 
             elif wtype == "segment":
                 self.pipelines[wtype] = Segmentation(**self.components["segment"])
                 tasks.append(Task(self.pipelines["segment"]))
+
+            elif wtype == "service":
+                tasks.append(ServiceTask(**self.components["service"]))
+
+            elif wtype == "summary":
+                self.pipelines[wtype] = Summary(component.pop("path"))
+                tasks.append(Task(lambda x: self.pipelines["summary"](x, **self.components["summary"])))
+
+            elif wtype == "tabular":
+                self.pipelines[wtype] = Tabular(**self.components["tabular"])
+                tasks.append(Task(self.pipelines["tabular"]))
 
             elif wtype == "textract":
                 self.pipelines[wtype] = Textractor(**self.components["textract"])
@@ -183,11 +229,6 @@ class Application:
             elif wtype == "translate":
                 self.pipelines[wtype] = Translation()
                 tasks.append(Task(lambda x: self.pipelines["translate"](x, **self.components["translate"])))
-
-            elif wtype == "embeddings":
-                self.embeddings = Embeddings({**component})
-                self.documents = Documents()
-                tasks.append(Task(self.documents.add, unpack=False))
 
         self.workflow = Workflow(tasks)
 
@@ -218,6 +259,15 @@ class Application:
             elif wtype == "segment":
                 data["segmentation"] = component
                 tasks.append({"action": "segmentation"})
+
+            elif wtype == "service":
+                config = dict(**component)
+                config["task"] = "service"
+                tasks.append(config)
+
+            elif wtype == "tabular":
+                data["tabular"] = component
+                tasks.append({"action": "tabular"})
 
             elif wtype == "textract":
                 data["textractor"] = component
@@ -275,6 +325,19 @@ class Application:
                     uid += 1
                 stop.empty()
 
+    def find(self, key):
+        """
+        Lookup record from cached data by uid key.
+
+        Args:
+            key: uid to search for
+
+        Returns:
+            text for matching uid
+        """
+
+        return [text for uid, text, _ in self.data if uid == key][0]
+
     def process(self, data):
         """
         Processes the current application action.
@@ -296,7 +359,7 @@ class Application:
             # Build embeddings index
             if self.documents:
                 # Cache data
-                self.data = [x[1] for x in self.documents]
+                self.data = list(self.documents)
 
                 with st.spinner("Building embedding index...."):
                     self.embeddings.index(self.documents)
@@ -326,8 +389,24 @@ class Application:
             )
 
             if query:
-                df = pd.DataFrame([{"content": self.data[uid], "score": score} for uid, score in self.embeddings.search(query, limit)])
+                df = pd.DataFrame([{"content": self.find(uid), "score": score} for uid, score in self.embeddings.search(query, limit)])
                 st.table(df)
+
+    def parse(self, data):
+        """
+        Parse input data, splits on new lines depending on type of tasks and format of input.
+
+        Args:
+            data: input data
+
+        Returns:
+            parsed data
+        """
+
+        if re.match(r"^(http|https|file):\/\/", data) or (self.workflow and isinstance(self.workflow.tasks[0], ServiceTask)):
+            return [x for x in data.split("\n") if x]
+
+        return [data]
 
     def run(self):
         """
@@ -338,7 +417,8 @@ class Application:
         st.sidebar.markdown("# Workflow builder  \n*Build and apply workflows to data*  ")
 
         # Get selected components
-        selected = st.sidebar.multiselect("Select components", ["embeddings", "segment", "summary", "textract", "transcribe", "translate"])
+        components = ["embeddings", "segment", "service", "summary", "tabular", "textract", "transcribe", "translate"]
+        selected = st.sidebar.multiselect("Select components", components)
 
         # Get selected options
         components = [self.options(component) for component in selected]
@@ -367,7 +447,7 @@ class Application:
             data = st.text_area("Input", height=10)
 
         # Parse text items
-        data = [x for x in data.split("\n") if x] if re.match(r"^(http|https|file):\/\/", data) else [data]
+        data = self.parse(data)
 
         # Process current action
         self.process(data)
