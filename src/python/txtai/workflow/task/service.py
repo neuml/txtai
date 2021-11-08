@@ -63,7 +63,7 @@ class ServiceTask(Task):
                     params[key] = data
 
         # Run request
-        if self.method == "get":
+        if self.method and self.method.lower() == "get":
             response = requests.get(self.url, params=params)
         else:
             response = requests.post(self.url, json=params)
