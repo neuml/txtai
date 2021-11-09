@@ -131,7 +131,7 @@ class Application:
         if component == "embeddings":
             st.sidebar.markdown("**Embeddings Index**  \n*Index workflow output*")
             options["index"] = st.sidebar.text_input("Embeddings storage path")
-            options["path"] = st.sidebar.text_area("Embeddings model path", value="sentence-transformers/nli-mpnet-base-v2")
+            options["path"] = st.sidebar.text_input("Embeddings model path", value="sentence-transformers/nli-mpnet-base-v2")
             options["upsert"] = st.sidebar.checkbox("Upsert")
 
         elif component == "summary":
@@ -279,7 +279,7 @@ class Application:
 
             elif wtype == "translate":
                 data["translation"] = {}
-                tasks.append({"action": "translation", "args": list(**component.values())})
+                tasks.append({"action": "translation", "args": list(component.values())})
 
             elif wtype == "embeddings":
                 index = component.pop("index")
@@ -447,7 +447,7 @@ class Application:
             data = st.text_area("Input", height=10)
 
         # Parse text items
-        data = self.parse(data)
+        data = self.parse(data) if data else data
 
         # Process current action
         self.process(data)
