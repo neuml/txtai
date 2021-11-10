@@ -441,7 +441,7 @@ class Application:
                 with st.spinner("Running workflow '%s' via API service, click stop to terminate" % workflow):
                     self.api(config)
 
-            col3.download_button("Export", config, file_name="workflow.yml", mime="text/yaml", help="Export the API workflow as YAML")
+            col3.download_button("Export", config, file_name="workflow.yml", help="Export the API workflow as YAML")
 
         with st.expander("Data", expanded=not self.data):
             data = st.text_area("Input", height=10)
