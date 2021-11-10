@@ -64,12 +64,12 @@ class Server(uvicorn.Server):
 
 class Application:
     """
-    Streamlit application.
+    Main application.
     """
 
     def __init__(self):
         """
-        Creates a new Streamlit application.
+        Creates a new application.
         """
 
         # Component options

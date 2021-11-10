@@ -1,11 +1,8 @@
 """
 Application that queries Wikipedia API and summarizes the top result.
 
-Install Streamlit
+Requires streamlit to be installed.
   pip install streamlit
-
-Run application
-  streamlit run wiki.py
 """
 
 import os
