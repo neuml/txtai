@@ -48,3 +48,4 @@ nav:
         - Translation: pipelines/translation.md
     - Workflows: workflows.md
     - API: api.md
+    - Further Reading: articles.md
