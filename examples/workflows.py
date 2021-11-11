@@ -11,6 +11,7 @@ import re
 import tempfile
 import threading
 import time
+import uuid
 
 import uvicorn
 import yaml
@@ -85,6 +86,9 @@ class Application:
         self.embeddings = None
         self.documents = None
         self.data = None
+
+        # Workflow run id
+        self.runid = None
 
     def load(self, components):
         """
@@ -540,7 +544,13 @@ class Application:
                 # Clear workflow
                 self.documents, self.pipelines, self.workflow = None, None, None
 
-        if self.embeddings and self.data:
+            # Generate workflow run id
+            self.runid = str(uuid.uuid1())
+            st.session_state["runid"] = self.runid
+
+        if self.runid != self.state("runid"):
+            st.error("Workflow data changed in another session. Please re-build and re-run workflow.")
+        elif self.embeddings and self.data:
             default = self.appsetting(workflow, "query")
             default = default if default else ""
 
