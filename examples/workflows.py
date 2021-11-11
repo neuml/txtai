@@ -636,11 +636,12 @@ class Application:
             st.session_state["data"] = data
             st.session_state["workflow"] = workflow
 
-        # Parse text items
-        data = self.parse(data) if data else data
+        if selected:
+            # Parse text items
+            data = self.parse(data) if data else data
 
-        # Process current action
-        self.process(data, workflow)
+            # Process current action
+            self.process(data, workflow)
 
 
 @st.cache(allow_output_mutation=True)
