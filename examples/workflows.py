@@ -86,19 +86,168 @@ class Application:
         self.documents = None
         self.data = None
 
-    def number(self, label):
+    def load(self, components):
         """
-        Extracts a number from a text input field.
+        Load an existing workflow file.
 
         Args:
-            label: label to use for text input field
+            components: list of components to load
 
         Returns:
-            numeric input
+            (names of components loaded, workflow config)
         """
 
-        value = st.sidebar.text_input(label)
+        workflow = st.file_uploader("Load workflow", type=["yml"])
+        if workflow:
+            workflow = yaml.safe_load(workflow)
+
+            st.markdown("---")
+
+            # Get tasks for first workflow
+            tasks = list(workflow["workflow"].values())[0]["tasks"]
+            selected = []
+
+            for task in tasks:
+                name = task.get("action", task.get("task"))
+                if name in components:
+                    selected.append(name)
+                elif name in ["index", "upsert"]:
+                    selected.append("embeddings")
+
+            return (selected, workflow)
+
+        return (None, None)
+
+    def state(self, key):
+        """
+        Lookup a session state variable.
+
+        Args:
+            key: variable key
+
+        Returns:
+            variable value
+        """
+
+        if key in st.session_state:
+            return st.session_state[key]
+
+        return None
+
+    def appsetting(self, workflow, name):
+        """
+        Looks up an application configuration setting.
+
+        Args:
+            workflow: workflow configuration
+            name: setting name
+
+        Returns:
+            app setting value
+        """
+
+        if workflow:
+            config = workflow.get("app")
+            if config:
+                return config.get(name)
+
+        return None
+
+    def setting(self, config, name, default=None):
+        """
+        Looks up a component configuration setting.
+
+        Args:
+            config: component configuration
+            name: setting name
+            default: default setting value
+
+        Returns:
+            setting value
+        """
+
+        return config.get(name, default) if config else default
+
+    def text(self, label, config, name, default=None):
+        """
+        Create a new text input field.
+
+        Args:
+            label: field label
+            config: component configuration
+            name: setting name
+            default: default setting value
+
+        Returns:
+            text input field value
+        """
+
+        default = self.setting(config, name, default)
+        if not default:
+            default = ""
+        elif isinstance(default, list):
+            default = ",".join(default)
+        elif isinstance(default, dict):
+            default = ",".join(default.keys())
+
+        return st.text_input(label, value=default)
+
+    def number(self, label, config, name, default=None):
+        """
+        Creates a new numeric input field.
+
+        Args:
+            label: field label
+            config: component configuration
+            name: setting name
+            default: default setting value
+
+        Returns:
+            numeric value
+        """
+
+        value = self.text(label, config, name, default)
         return int(value) if value else None
+
+    def boolean(self, label, config, name, default=False):
+        """
+        Creates a new checkbox field.
+
+        Args:
+            label: field label
+            config: component configuration
+            name: setting name
+            default: default setting value
+
+        Returns:
+            boolean value
+        """
+
+        default = self.setting(config, name, default)
+        return st.checkbox(label, value=default)
+
+    def select(self, label, config, name, options, default=0):
+        """
+        Creates a new select box field.
+
+        Args:
+            label: field label
+            config: component configuration
+            name: setting name
+            options: list of dropdown options
+            default: default setting value
+
+        Returns:
+            boolean value
+        """
+
+        index = self.setting(config, name)
+        index = [x for x, option in enumerate(options) if option == default]
+
+        # Derive default index
+        default = index[0] if index else default
+
+        return st.selectbox(label, options, index=default)
 
     def split(self, text):
         """
@@ -113,70 +262,86 @@ class Application:
 
         return [x.strip() for x in text.split(",")]
 
-    def options(self, component):
+    def options(self, component, workflow):
         """
         Extracts component settings into a component configuration dict.
 
         Args:
             component: component type
+            workflow: existing workflow, can be None
 
         Returns:
             dict with component settings
         """
 
+        # pylint: disable=R0912, R0915
         options = {"type": component}
 
-        st.sidebar.markdown("---")
+        st.markdown("---")
+
+        # Lookup component configuration
+        #   - Runtime components have config defined within tasks
+        #   - Pipeline components have config defined at workflow root
+        config = None
+        if workflow:
+            if component in ["service", "translation"]:
+                # Service config is found in tasks section
+                tasks = list(workflow["workflow"].values())[0]["tasks"]
+                config = [task for task in tasks if task.get("task") == component or task.get("action") == component][0]
+            else:
+                config = workflow.get(component)
 
         if component == "embeddings":
-            st.sidebar.markdown("**Embeddings Index**  \n*Index workflow output*")
-            options["index"] = st.sidebar.text_input("Embeddings storage path")
-            options["path"] = st.sidebar.text_input("Embeddings model path", value="sentence-transformers/nli-mpnet-base-v2")
-            options["upsert"] = st.sidebar.checkbox("Upsert")
+            st.markdown("**Embeddings Index**  \n*Index workflow output*")
+            options["index"] = self.text("Embeddings storage path", config, "index")
+            options["path"] = self.text("Embeddings model path", config, "path", "sentence-transformers/nli-mpnet-base-v2")
+            options["upsert"] = self.boolean("Upsert", config, "upsert")
 
-        elif component == "summary":
-            st.sidebar.markdown("**Summary**  \n*Abstractive text summarization*")
-            options["path"] = st.sidebar.text_input("Model", value="sshleifer/distilbart-cnn-12-6")
-            options["minlength"] = self.number("Min length")
-            options["maxlength"] = self.number("Max length")
-
-        elif component in ("segment", "textract"):
-            if component == "segment":
-                st.sidebar.markdown("**Segment**  \n*Split text into semantic units*")
+        elif component in ("segmentation", "textractor"):
+            if component == "segmentation":
+                st.markdown("**Segment**  \n*Split text into semantic units*")
             else:
-                st.sidebar.markdown("**Textractor**  \n*Extract text from documents*")
+                st.markdown("**Textract**  \n*Extract text from documents*")
 
-            options["sentences"] = st.sidebar.checkbox("Split sentences")
-            options["lines"] = st.sidebar.checkbox("Split lines")
-            options["paragraphs"] = st.sidebar.checkbox("Split paragraphs")
-            options["join"] = st.sidebar.checkbox("Join tokenized")
-            options["minlength"] = self.number("Min section length")
+            options["sentences"] = self.boolean("Split sentences", config, "sentences")
+            options["lines"] = self.boolean("Split lines", config, "lines")
+            options["paragraphs"] = self.boolean("Split paragraphs", config, "paragraphs")
+            options["join"] = self.boolean("Join tokenized", config, "join")
+            options["minlength"] = self.number("Min section length", config, "minlength")
 
         elif component == "service":
-            options["url"] = st.sidebar.text_input("URL")
-            options["method"] = st.sidebar.selectbox("Method", ["get", "post"], index=0)
-            options["params"] = st.sidebar.text_input("URL parameters")
-            options["batch"] = st.sidebar.checkbox("Run as batch", value=True)
-            options["extract"] = st.sidebar.text_input("Subsection(s) to extract")
+            st.markdown("**Service**  \n*Extract data from an API*")
+            options["url"] = self.text("URL", config, "url")
+            options["method"] = self.select("Method", config, "method", ["get", "post"], 0)
+            options["params"] = self.text("URL parameters", config, "params")
+            options["batch"] = self.boolean("Run as batch", config, "batch", True)
+            options["extract"] = self.text("Subsection(s) to extract", config, "extract")
 
             if options["params"]:
                 options["params"] = {key: None for key in self.split(options["params"])}
             if options["extract"]:
                 options["extract"] = self.split(options["extract"])
 
+        elif component == "summary":
+            st.markdown("**Summary**  \n*Abstractive text summarization*")
+            options["path"] = self.text("Model", config, "path", "sshleifer/distilbart-cnn-12-6")
+            options["minlength"] = self.number("Min length", config, "minlength")
+            options["maxlength"] = self.number("Max length", config, "maxlength")
+
         elif component == "tabular":
-            options["idcolumn"] = st.sidebar.text_input("Id columns")
-            options["textcolumns"] = st.sidebar.text_input("Text columns")
+            st.markdown("**Tabular**  \n*Split tabular data into rows and columns*")
+            options["idcolumn"] = self.text("Id columns", config, "idcolumn")
+            options["textcolumns"] = self.text("Text columns", config, "textcolumns")
             if options["textcolumns"]:
                 options["textcolumns"] = self.split(options["textcolumns"])
 
-        elif component == "transcribe":
-            st.sidebar.markdown("**Transcribe**  \n*Transcribe audio to text*")
-            options["path"] = st.sidebar.text_input("Model", value="facebook/wav2vec2-base-960h")
+        elif component == "transcription":
+            st.markdown("**Transcribe**  \n*Transcribe audio to text*")
+            options["path"] = self.text("Model", config, "path", "facebook/wav2vec2-base-960h")
 
-        elif component == "translate":
-            st.sidebar.markdown("**Translate**  \n*Machine translation*")
-            options["target"] = st.sidebar.text_input("Target language code", value="en")
+        elif component == "translation":
+            st.markdown("**Translate**  \n*Machine translation*")
+            options["target"] = self.text("Target language code", config, "args", "en")
 
         return options
 
@@ -203,12 +368,12 @@ class Application:
                 self.documents = Documents()
                 tasks.append(Task(self.documents.add, unpack=False))
 
-            elif wtype == "segment":
-                self.pipelines[wtype] = Segmentation(**self.components["segment"])
-                tasks.append(Task(self.pipelines["segment"]))
+            elif wtype == "segmentation":
+                self.pipelines[wtype] = Segmentation(**self.components[wtype])
+                tasks.append(Task(self.pipelines[wtype]))
 
             elif wtype == "service":
-                tasks.append(ServiceTask(**self.components["service"]))
+                tasks.append(ServiceTask(**self.components[wtype]))
 
             elif wtype == "summary":
                 self.pipelines[wtype] = Summary(component.pop("path"))
@@ -216,19 +381,19 @@ class Application:
 
             elif wtype == "tabular":
                 self.pipelines[wtype] = Tabular(**self.components["tabular"])
-                tasks.append(Task(self.pipelines["tabular"]))
+                tasks.append(Task(self.pipelines[wtype]))
 
-            elif wtype == "textract":
+            elif wtype == "textractor":
                 self.pipelines[wtype] = Textractor(**self.components["textract"])
-                tasks.append(UrlTask(self.pipelines["textract"]))
+                tasks.append(UrlTask(self.pipelines[wtype]))
 
-            elif wtype == "transcribe":
+            elif wtype == "transcription":
                 self.pipelines[wtype] = Transcription(component.pop("path"))
-                tasks.append(UrlTask(self.pipelines["transcribe"], r".\.wav$"))
+                tasks.append(UrlTask(self.pipelines[wtype], r".\.wav$"))
 
-            elif wtype == "translate":
+            elif wtype == "translation":
                 self.pipelines[wtype] = Translation()
-                tasks.append(Task(lambda x: self.pipelines["translate"](x, **self.components["translate"])))
+                tasks.append(Task(lambda x: self.pipelines["translation"](x, **self.components["translation"])))
 
         self.workflow = Workflow(tasks)
 
@@ -240,11 +405,11 @@ class Application:
             components: list of components to export to YAML
 
         Returns:
-            YAML string
+            (workflow name, YAML string)
         """
 
         # pylint: disable=W0108
-        data = {}
+        data = {"app": {"data": self.state("data"), "query": self.state("query")}}
         tasks = []
         name = None
 
@@ -252,40 +417,11 @@ class Application:
             component = dict(component)
             name = wtype = component.pop("type")
 
-            if wtype == "summary":
-                data["summary"] = {"path": component.pop("path")}
-                tasks.append({"action": "summary"})
-
-            elif wtype == "segment":
-                data["segmentation"] = component
-                tasks.append({"action": "segmentation"})
-
-            elif wtype == "service":
-                config = dict(**component)
-                config["task"] = "service"
-                tasks.append(config)
-
-            elif wtype == "tabular":
-                data["tabular"] = component
-                tasks.append({"action": "tabular"})
-
-            elif wtype == "textract":
-                data["textractor"] = component
-                tasks.append({"action": "textractor", "task": "url"})
-
-            elif wtype == "transcribe":
-                data["transcription"] = {"path": component.pop("path")}
-                tasks.append({"action": "transcription", "task": "url"})
-
-            elif wtype == "translate":
-                data["translation"] = {}
-                tasks.append({"action": "translation", "args": list(component.values())})
-
-            elif wtype == "embeddings":
+            if wtype == "embeddings":
                 index = component.pop("index")
                 upsert = component.pop("upsert")
 
-                data["embeddings"] = component
+                data[wtype] = component
                 data["writable"] = True
 
                 if index:
@@ -293,6 +429,35 @@ class Application:
 
                 name = "index"
                 tasks.append({"action": "upsert" if upsert else "index"})
+
+            elif wtype == "segmentation":
+                data[wtype] = component
+                tasks.append({"action": wtype})
+
+            elif wtype == "service":
+                config = dict(**component)
+                config["task"] = wtype
+                tasks.append(config)
+
+            elif wtype == "summary":
+                data[wtype] = {"path": component.pop("path")}
+                tasks.append({"action": wtype})
+
+            elif wtype == "tabular":
+                data[wtype] = component
+                tasks.append({"action": wtype})
+
+            elif wtype == "textractor":
+                data[wtype] = component
+                tasks.append({"action": wtype, "task": "url"})
+
+            elif wtype == "transcription":
+                data[wtype] = {"path": component.pop("path")}
+                tasks.append({"action": wtype, "task": "url"})
+
+            elif wtype == "translation":
+                data[wtype] = {}
+                tasks.append({"action": wtype, "args": list(component.values())})
 
         # Add in workflow
         data["workflow"] = {name: {"tasks": tasks}}
@@ -304,15 +469,15 @@ class Application:
         Starts an internal uvicorn server to host an API service for the current workflow.
 
         Args:
-            config: workflow configuration
+            config: workflow configuration as YAML string
         """
 
-        # Generate temporary file name
-        yml = os.path.join(tempfile.gettempdir(), "workflow.yml")
-        with open(yml, "w") as f:
+        # Generate workflow file
+        workflow = os.path.join(tempfile.gettempdir(), "workflow.yml")
+        with open(workflow, "w") as f:
             f.write(config)
 
-        os.environ["CONFIG"] = yml
+        os.environ["CONFIG"] = workflow
         txtai.api.application.start()
         server = Server(txtai.api.application.app)
         with server.service():
@@ -338,12 +503,13 @@ class Application:
 
         return [text for uid, text, _ in self.data if uid == key][0]
 
-    def process(self, data):
+    def process(self, data, workflow):
         """
         Processes the current application action.
 
         Args:
             data: input data
+            workflow: workflow configuration
         """
 
         if data and self.workflow:
@@ -369,9 +535,15 @@ class Application:
                 self.documents, self.pipelines, self.workflow = None, None, None
 
         if self.embeddings and self.data:
+            default = self.appsetting(workflow, "query")
+            default = default if default else ""
+
             # Set query and limit
-            query = st.text_input("Query")
+            query = st.text_input("Query", value=default)
             limit = min(5, len(self.data))
+
+            # Save query state
+            st.session_state["query"] = query
 
             st.markdown(
                 """
@@ -413,44 +585,56 @@ class Application:
         Runs Streamlit application.
         """
 
-        st.sidebar.image("https://github.com/neuml/txtai/raw/master/logo.png", width=256)
-        st.sidebar.markdown("# Workflow builder  \n*Build and apply workflows to data*  ")
-
-        # Get selected components
-        components = ["embeddings", "segment", "service", "summary", "tabular", "textract", "transcribe", "translate"]
-        selected = st.sidebar.multiselect("Select components", components)
-
-        # Get selected options
-        components = [self.options(component) for component in selected]
-        st.sidebar.markdown("---")
-
         with st.sidebar:
+            st.image("https://github.com/neuml/txtai/raw/master/logo.png", width=256)
+            st.markdown("# Workflow builder  \n*Build and apply workflows to data*  ")
+            st.markdown("---")
+
+            # Component configuration
+            labels = {"segmentation": "segment", "textractor": "textract", "transcription": "transcribe", "translation": "translate"}
+            components = ["embeddings", "segmentation", "service", "summary", "tabular", "textractor", "transcription", "translation"]
+
+            selected, workflow = self.load(components)
+            selected = st.multiselect("Select components", components, default=selected, format_func=lambda text: labels.get(text, text))
+
+            # Get selected options
+            components = [self.options(component, workflow) for component in selected]
+            st.markdown("---")
+
+            # Export buttons
             col1, col2, col3 = st.columns(3)
 
-            # Build or re-build workflow when build button clicked
+            # Build or re-build workflow when build button clicked or new workflow loaded
             build = col1.button("Build", help="Build the workflow and run within this application")
-            if build:
+            if build or (workflow and workflow != self.state("workflow")):
                 with st.spinner("Building workflow...."):
                     self.build(components)
 
             # Generate API configuration
-            workflow, config = self.yaml(components)
+            name, config = self.yaml(components)
 
             api = col2.button("API", help="Start an API instance within this application")
             if api:
-                with st.spinner("Running workflow '%s' via API service, click stop to terminate" % workflow):
+                with st.spinner("Running workflow '%s' via API service, click stop to terminate" % name):
                     self.api(config)
 
             col3.download_button("Export", config, file_name="workflow.yml", help="Export the API workflow as YAML")
 
         with st.expander("Data", expanded=not self.data):
-            data = st.text_area("Input", height=10)
+            default = self.appsetting(workflow, "data")
+            default = default if default else ""
+
+            data = st.text_area("Input", height=10, value=default)
+
+            # Save data and workflow state
+            st.session_state["data"] = data
+            st.session_state["workflow"] = workflow
 
         # Parse text items
         data = self.parse(data) if data else data
 
         # Process current action
-        self.process(data)
+        self.process(data, workflow)
 
 
 @st.cache(allow_output_mutation=True)
