@@ -287,7 +287,9 @@ class Application:
             if component in ["service", "translation"]:
                 # Service config is found in tasks section
                 tasks = list(workflow["workflow"].values())[0]["tasks"]
-                config = [task for task in tasks if task.get("task") == component or task.get("action") == component][0]
+                tasks = [task for task in tasks if task.get("task") == component or task.get("action") == component]
+                if tasks:
+                    config = tasks[0]
             else:
                 config = workflow.get(component)
 
@@ -501,7 +503,11 @@ class Application:
             text for matching uid
         """
 
-        return [text for uid, text, _ in self.data if uid == key][0]
+        text = [text for uid, text, _ in self.data if uid == key][0]
+        if key and key.lower().startswith("http"):
+            return "<a href='%s' rel='noopener noreferrer' target='blank'>%s</a>" % (key, text)
+
+        return text
 
     def process(self, data, workflow):
         """
@@ -561,8 +567,8 @@ class Application:
             )
 
             if query:
-                df = pd.DataFrame([{"content": self.find(uid), "score": score} for uid, score in self.embeddings.search(query, limit)])
-                st.table(df)
+                df = pd.DataFrame([{"content": self.find(uid), "score": "%.2f" % score} for uid, score in self.embeddings.search(query, limit)])
+                st.write(df.to_html(escape=False), unsafe_allow_html=True)
 
     def parse(self, data):
         """
