@@ -386,11 +386,11 @@ class Application:
                 tasks.append(Task(lambda x: self.pipelines["summary"](x, **self.components["summary"])))
 
             elif wtype == "tabular":
-                self.pipelines[wtype] = Tabular(**self.components["tabular"])
+                self.pipelines[wtype] = Tabular(**self.components[wtype])
                 tasks.append(Task(self.pipelines[wtype]))
 
             elif wtype == "textractor":
-                self.pipelines[wtype] = Textractor(**self.components["textract"])
+                self.pipelines[wtype] = Textractor(**self.components[wtype])
                 tasks.append(UrlTask(self.pipelines[wtype]))
 
             elif wtype == "transcription":
