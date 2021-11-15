@@ -13,7 +13,7 @@ extras = {}
 extras["dev"] = ["black", "coverage", "pre-commit", "pylint"]
 
 extras["api"] = [
-    "aiohttp>=3.7.4",
+    "aiohttp>=3.8.1",
     "fastapi>=0.61.1",
     "PyYAML>=5.3",
     "uvicorn>=0.12.1",
@@ -22,6 +22,7 @@ extras["api"] = [
 extras["model"] = ["onnxruntime>=1.8.1"]
 
 extras["pipeline"] = [
+    "beautifulsoup4>=4.9.3",
     "fasttext>=0.9.2",
     "nltk>=3.5",
     "onnx>=1.10.1",
@@ -42,7 +43,7 @@ extras["similarity"] = [
     "sentence-transformers>=2.0.0",
 ]
 
-extras["workflow"] = ["apache-libcloud>=3.3.1", "pillow>=7.2.0", "requests>=2.24.0", "xmltodict>=0.12.0"]
+extras["workflow"] = ["apache-libcloud>=3.3.1", "pillow>=7.2.0", "requests>=2.26.0", "xmltodict>=0.12.0"]
 
 extras["all"] = extras["api"] + extras["model"] + extras["pipeline"] + extras["similarity"] + extras["workflow"]
 

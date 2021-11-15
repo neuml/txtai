@@ -15,6 +15,23 @@ class TestTextractor(unittest.TestCase):
     Textractor tests
     """
 
+    def testBeautifulSoup(self):
+        """
+        Tests text extraction using Beautiful Soup
+        """
+
+        textractor = Textractor(tika=False)
+        text = textractor(Utils.PATH + "/tabular.csv")
+        self.assertEqual(len(text), 125)
+
+    def testCheckJava(self):
+        """
+        Tests the checkjava method
+        """
+
+        textractor = Textractor()
+        self.assertFalse(textractor.checkjava("1112444abc"))
+
     def testParagraphs(self):
         """
         Tests extraction to paragraphs
