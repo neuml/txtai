@@ -2,8 +2,14 @@
 ServiceTask module
 """
 
-import requests
-import xmltodict
+# Conditional import
+try:
+    import requests
+    import xmltodict
+
+    XML_TO_DICT = True
+except ImportError:
+    XML_TO_DICT = False
 
 from .base import Task
 
@@ -14,6 +20,9 @@ class ServiceTask(Task):
     """
 
     def __init__(self, action=None, select=None, unpack=True, url=None, method=None, params=None, batch=True, extract=None):
+        if not XML_TO_DICT:
+            raise ImportError('ServiceTask is not available - install "workflow" extra to enable')
+
         super().__init__(action, select, unpack)
 
         # Save URL, method and parameter defaults

@@ -10,8 +10,7 @@ from txtai.ann import ANNFactory
 from txtai.models import OnnxModel
 from txtai.pipeline import HFOnnx, MLOnnx, Segmentation, Tabular, Textractor, Transcription, Translation
 from txtai.vectors import VectorsFactory
-from txtai.workflow.task.image import ImageTask
-from txtai.workflow.task.storage import StorageTask
+from txtai.workflow import ImageTask, ServiceTask, StorageTask
 
 
 class TestOptional(unittest.TestCase):
@@ -42,6 +41,7 @@ class TestOptional(unittest.TestCase):
         txtai.vectors.transformers.SENTENCE_TRANSFORMERS = not txtai.vectors.transformers.SENTENCE_TRANSFORMERS
 
         txtai.workflow.task.image.PIL = not txtai.workflow.task.image.PIL
+        txtai.workflow.task.service.XML_TO_DICT = not txtai.workflow.task.service.XML_TO_DICT
         txtai.workflow.task.storage.LIBCLOUD = not txtai.workflow.task.storage.LIBCLOUD
 
     @classmethod
@@ -125,6 +125,9 @@ class TestOptional(unittest.TestCase):
 
         with self.assertRaises(ImportError):
             ImageTask()
+
+        with self.assertRaises(ImportError):
+            ServiceTask()
 
         with self.assertRaises(ImportError):
             StorageTask()
