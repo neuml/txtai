@@ -29,13 +29,13 @@ class TestOptional(unittest.TestCase):
 
         txtai.models.onnx.ONNX_RUNTIME = not txtai.models.onnx.ONNX_RUNTIME
 
-        txtai.pipeline.hfonnx.ONNX_RUNTIME = not txtai.pipeline.hfonnx.ONNX_RUNTIME
-        txtai.pipeline.mlonnx.ONNX_MLTOOLS = not txtai.pipeline.mlonnx.ONNX_MLTOOLS
-        txtai.pipeline.segmentation.NLTK = not txtai.pipeline.segmentation.NLTK
-        txtai.pipeline.tabular.PANDAS = not txtai.pipeline.tabular.PANDAS
-        txtai.pipeline.textractor.TIKA = not txtai.pipeline.textractor.TIKA
-        txtai.pipeline.transcription.SOUNDFILE = not txtai.pipeline.transcription.SOUNDFILE
-        txtai.pipeline.translation.FASTTEXT = not txtai.pipeline.translation.FASTTEXT
+        txtai.pipeline.audio.transcription.SOUNDFILE = not txtai.pipeline.audio.transcription.SOUNDFILE
+        txtai.pipeline.segment.segmentation.NLTK = not txtai.pipeline.segment.segmentation.NLTK
+        txtai.pipeline.segment.tabular.PANDAS = not txtai.pipeline.segment.tabular.PANDAS
+        txtai.pipeline.segment.textractor.TIKA = not txtai.pipeline.segment.textractor.TIKA
+        txtai.pipeline.text.translation.FASTTEXT = not txtai.pipeline.text.translation.FASTTEXT
+        txtai.pipeline.train.hfonnx.ONNX_RUNTIME = not txtai.pipeline.train.hfonnx.ONNX_RUNTIME
+        txtai.pipeline.train.mlonnx.ONNX_MLTOOLS = not txtai.pipeline.train.mlonnx.ONNX_MLTOOLS
 
         txtai.vectors.factory.WORDS = not txtai.vectors.factory.WORDS
         txtai.vectors.transformers.SENTENCE_TRANSFORMERS = not txtai.vectors.transformers.SENTENCE_TRANSFORMERS
