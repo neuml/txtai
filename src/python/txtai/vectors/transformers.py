@@ -16,7 +16,7 @@ except ImportError:
 
 from .base import Vectors
 from ..models import MeanPooling, Models, Pooling
-from ..pipeline.tokenizer import Tokenizer
+from ..pipeline import Tokenizer
 
 
 class TransformersVectors(Vectors):

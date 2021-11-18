@@ -21,7 +21,7 @@ except ImportError:
     WORDS = False
 
 from .base import Vectors
-from ..pipeline.tokenizer import Tokenizer
+from ..pipeline import Tokenizer
 
 # Multiprocessing helper methods
 # pylint: disable=W0603

@@ -14,7 +14,7 @@ from huggingface_hub.hf_api import HfApi
 from transformers import M2M100ForConditionalGeneration, M2M100Tokenizer, MarianMTModel, MarianTokenizer
 from transformers.file_utils import cached_path
 
-from .hfmodel import HFModel
+from ..hfmodel import HFModel
 
 
 class Translation(HFModel):

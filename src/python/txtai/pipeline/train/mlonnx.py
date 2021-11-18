@@ -2,7 +2,7 @@
 Machine learning model to ONNX export module
 """
 
-from .base import Pipeline
+from ..base import Pipeline
 
 try:
     from onnxmltools import convert_sklearn

@@ -2,7 +2,7 @@
 Labels module
 """
 
-from .hfpipeline import HFPipeline
+from ..hfpipeline import HFPipeline
 
 
 class Labels(HFPipeline):

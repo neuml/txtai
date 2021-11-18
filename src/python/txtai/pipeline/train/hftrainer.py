@@ -9,9 +9,9 @@ from transformers import Trainer, set_seed
 
 from transformers import TrainingArguments as HFTrainingArguments
 
-from ..data import Labels, Questions
-from ..models import Models
-from .tensors import Tensors
+from ...data import Labels, Questions
+from ...models import Models
+from ..tensors import Tensors
 
 
 class HFTrainer(Tensors):

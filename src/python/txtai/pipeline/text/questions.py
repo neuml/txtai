@@ -2,7 +2,7 @@
 Questions module
 """
 
-from .hfpipeline import HFPipeline
+from ..hfpipeline import HFPipeline
 
 
 class Questions(HFPipeline):

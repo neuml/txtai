@@ -2,10 +2,11 @@
 Extractor module
 """
 
-from .base import Pipeline
+from ..base import Pipeline
+from ..segment import Tokenizer
+
 from .questions import Questions
 from .similarity import Similarity
-from .tokenizer import Tokenizer
 
 
 class Extractor(Pipeline):

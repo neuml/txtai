@@ -12,7 +12,7 @@ try:
 except ImportError:
     PANDAS = False
 
-from .base import Pipeline
+from ..base import Pipeline
 
 
 class Tabular(Pipeline):

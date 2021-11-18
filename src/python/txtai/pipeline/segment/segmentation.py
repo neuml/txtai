@@ -12,7 +12,7 @@ try:
 except ImportError:
     NLTK = False
 
-from .base import Pipeline
+from ..base import Pipeline
 
 
 class Segmentation(Pipeline):

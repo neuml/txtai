@@ -7,7 +7,7 @@ import pickle
 
 from collections import Counter
 
-from ..pipeline.tokenizer import Tokenizer
+from ..pipeline import Tokenizer
 
 
 class Scoring:

@@ -20,8 +20,8 @@ from torch.onnx import export
 
 from transformers import AutoModel, AutoModelForQuestionAnswering, AutoModelForSequenceClassification, AutoTokenizer
 
-from ..models import MeanPooling
-from .tensors import Tensors
+from ...models import MeanPooling
+from ..tensors import Tensors
 
 
 class HFOnnx(Tensors):

@@ -5,7 +5,7 @@ Tokenizer module
 import re
 import string
 
-from .base import Pipeline
+from ..base import Pipeline
 
 
 class Tokenizer(Pipeline):

@@ -4,7 +4,7 @@ Summary module
 
 import re
 
-from .hfpipeline import HFPipeline
+from ..hfpipeline import HFPipeline
 
 
 class Summary(HFPipeline):
