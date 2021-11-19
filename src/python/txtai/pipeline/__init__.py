@@ -7,6 +7,7 @@ from .base import Pipeline
 from .factory import PipelineFactory
 from .hfmodel import HFModel
 from .hfpipeline import HFPipeline
+from .image import *
 from .segment import *
 from .text import *
 from .tensors import Tensors
