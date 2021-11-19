@@ -22,12 +22,20 @@ writable: true
 embeddings:
     path: sentence-transformers/nli-mpnet-base-v2
 
+# Labels
+labels:
+    path: prajjwal1/bert-medium-mnli
+
 # Text segmentation
 segmentation:
     sentences: true
 
 # Workflow definitions
 workflow:
+    labels:
+        tasks:
+            - action: labels
+              args: [[positive, negative]]
     segment:
         tasks:
             - action: segmentation
@@ -182,6 +190,9 @@ class TestWorkflow(unittest.TestCase):
         """
 
         text = "This is a test sentence. And another sentence to split."
+        results = self.client.post("workflow", json={"name": "labels", "elements": [text]}).json()
+        self.assertEqual(len(results), 2)
+
         results = self.client.post("workflow", json={"name": "segment", "elements": [text]}).json()
         self.assertEqual(len(results), 2)
 

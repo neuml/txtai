@@ -6,7 +6,7 @@ import unittest
 
 from txtai.embeddings import Documents, Embeddings
 from txtai.pipeline import Summary, Translation, Textractor
-from txtai.workflow import Workflow, Task, FileTask, ImageTask, StorageTask, WorkflowTask
+from txtai.workflow import Workflow, Task, FileTask, ImageTask, RetrieveTask, StorageTask, WorkflowTask
 
 # pylint: disable = C0411
 from utils import Utils
@@ -77,11 +77,21 @@ class TestWorkflow(unittest.TestCase):
         Tests an image task
         """
 
-        workflow = Workflow([ImageTask()], 1)
+        workflow = Workflow([ImageTask()])
 
-        results = list(workflow(["file://" + Utils.PATH + "/books.jpg"]))
+        results = list(workflow([Utils.PATH + "/books.jpg"]))
 
         self.assertEqual(results[0].size, (1024, 682))
+
+    def testRetrieveWorkflow(self):
+        """
+        Tests a retrieve task
+        """
+
+        workflow = Workflow([RetrieveTask()])
+
+        results = list(workflow(["file://" + Utils.PATH + "/books.jpg"]))
+        self.assertTrue(results[0].endswith("books.jpg"))
 
     def testStorageWorkflow(self):
         """
