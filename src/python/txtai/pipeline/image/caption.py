@@ -11,7 +11,7 @@ from ..hfmodel import HFModel
 
 class Caption(HFModel):
     """
-    Transcribes audio files to text.
+    Constructs captions for images.
     """
 
     def __init__(self, path="ydshieh/vit-gpt2-coco-en", quantize=False, gpu=True, batch=64):

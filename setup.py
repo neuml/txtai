@@ -32,6 +32,7 @@ extras["pipeline"] = [
     "sentencepiece>=0.1.91",
     "soundfile>=0.10.3.post1",
     "tika>=1.24",
+    "timm>=0.4.12",
 ]
 
 extras["similarity"] = [
