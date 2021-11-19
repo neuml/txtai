@@ -16,7 +16,7 @@ class Objects(HFPipeline):
         self.classification = classification
         self.threshold = threshold
 
-    def __call__(self, images):
+    def __call__(self, images, workers=0):
         """
         Applies object detection/image classification models to images. Returns a list of (label, score).
 
@@ -26,6 +26,7 @@ class Objects(HFPipeline):
 
         Args:
             images: image|list
+            workers: number of parallel workers to use for processing data, defaults to none
 
         Returns:
             list of (label, score)
@@ -35,7 +36,11 @@ class Objects(HFPipeline):
         values = [images] if not isinstance(images, list) else images
 
         # Run pipeline
-        results = self.pipeline(values) if self.classification else self.pipeline(values, threshold=self.threshold)
+        results = (
+            self.pipeline(values, num_workers=workers)
+            if self.classification
+            else self.pipeline(values, threshold=self.threshold, num_workers=workers)
+        )
 
         # Build list of (id, score)
         scores = []
