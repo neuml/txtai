@@ -38,6 +38,9 @@ class Textractor(Segmentation):
     def text(self, text):
         # Use Tika if available
         if self.tika:
+            # Format file urls as local file paths
+            text = text.replace("file://", "")
+
             # text is a path to a file
             parsed = parser.from_file(text)
             return parsed["content"]
