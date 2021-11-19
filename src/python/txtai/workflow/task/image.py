@@ -27,7 +27,7 @@ class ImageTask(FileTask):
         super().__init__(action, select, unpack)
 
     def accept(self, element):
-        # Only accept file URLs
+        # Only accept image files
         return super().accept(element) and re.search(r"\.(gif|bmp|jpg|jpeg|png|webp)$", element.lower())
 
     def prepare(self, element):

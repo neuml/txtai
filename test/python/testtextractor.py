@@ -32,6 +32,19 @@ class TestTextractor(unittest.TestCase):
         textractor = Textractor()
         self.assertFalse(textractor.checkjava("1112444abc"))
 
+    def testLines(self):
+        """
+        Tests extraction to lines
+        """
+
+        textractor = Textractor(lines=True)
+
+        # Extract text as lines
+        lines = textractor(Utils.PATH + "/article.pdf")
+
+        # Check number of lines is as expected
+        self.assertEqual(len(lines), 35)
+
     def testParagraphs(self):
         """
         Tests extraction to paragraphs
