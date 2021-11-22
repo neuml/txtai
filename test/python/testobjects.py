@@ -30,3 +30,11 @@ class TestObjects(unittest.TestCase):
 
         objects = Objects()
         self.assertEqual(objects(Utils.PATH + "/books.jpg")[0][0], "book")
+
+    def testFlatten(self):
+        """
+        Test object detection using an object detection model, flatten to return only objects
+        """
+
+        objects = Objects()
+        self.assertEqual(objects(Utils.PATH + "/books.jpg", flatten=True)[0], "book")
