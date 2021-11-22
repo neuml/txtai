@@ -16,7 +16,7 @@ class Labels(HFPipeline):
         # Set if labels are dynamic (zero shot) or fixed (standard text classification)
         self.dynamic = dynamic
 
-    def __call__(self, text, labels=None, multilabel=False, workers=0):
+    def __call__(self, text, labels=None, multilabel=False, flatten=None, workers=0):
         """
         Applies a text classifier to text. Returns a list of (id, score) sorted by highest score,
         where id is the index in labels. For zero shot classification, a list of labels is required.
@@ -30,10 +30,11 @@ class Labels(HFPipeline):
             text: text|list
             labels: list of labels
             multilabel: labels are independent if True, scores are normalized to sum to 1 per text item if False, raw scores returned if None
+            flatten: flatten output to a list of labels if present. Accepts a boolean or float value to only keep scores greater than that number.
             workers: number of parallel workers to use for processing data, defaults to None
 
         Returns:
-            list of (id, score)
+            list of (id, score) or list of labels depending on flatten parameter
         """
 
         if self.dynamic:
@@ -50,18 +51,9 @@ class Labels(HFPipeline):
         if not isinstance(results, list):
             results = [results]
 
-        # Build list of (id, score)
-        scores = []
-        for result in results:
-            if self.dynamic:
-                scores.append([(labels.index(label), result["scores"][x]) for x, label in enumerate(result["labels"])])
-            else:
-                # Filter results using labels, if provided
-                result = self.limit(result, labels)
-
-                scores.append(sorted(enumerate(result), key=lambda x: x[1], reverse=True))
-
-        return scores[0] if isinstance(text, str) else scores
+        # Build list of outputs and return
+        outputs = self.outputs(results, labels, flatten)
+        return outputs[0] if isinstance(text, str) else outputs
 
     def labels(self):
         """
@@ -72,6 +64,41 @@ class Labels(HFPipeline):
         """
 
         return list(self.pipeline.model.config.id2label.values())
+
+    def outputs(self, results, labels, flatten):
+        """
+        Processes pipeline results and builds outputs.
+
+        Args:
+            results: pipeline results
+            labels: list of labels
+            flatten: flatten output to a list of labels if present. Accepts a boolean or float value to only keep scores greater than that number.
+
+        Returns:
+            list of outputs
+        """
+
+        outputs = []
+        threshold = 0.0 if isinstance(flatten, bool) else flatten
+
+        for result in results:
+            if self.dynamic:
+                if flatten:
+                    result = [label for x, label in enumerate(result["labels"]) if result["scores"][x] >= threshold]
+                    outputs.append(result[:1] if isinstance(flatten, bool) else result)
+                else:
+                    outputs.append([(labels.index(label), result["scores"][x]) for x, label in enumerate(result["labels"])])
+            else:
+                if flatten:
+                    result = sorted(result, key=lambda x: x["score"], reverse=True)
+                    result = [x["label"] for x in result if x["score"] >= threshold and (not labels or x["label"] in labels)]
+                    outputs.append(result[:1] if isinstance(flatten, bool) else result)
+                else:
+                    # Filter results using labels, if provided
+                    result = self.limit(result, labels)
+                    outputs.append(sorted(enumerate(result), key=lambda x: x[1], reverse=True))
+
+        return outputs
 
     def limit(self, result, labels):
         """

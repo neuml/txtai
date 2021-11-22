@@ -37,6 +37,13 @@ class TestLabels(unittest.TestCase):
 
         self.assertEqual(self.labels("This is the best sentence ever", ["positive", "negative"])[0][0], 0)
 
+    def testLabelFlatten(self):
+        """
+        Test labels with single text input, flattened to top text labels
+        """
+
+        self.assertEqual(self.labels("This is the best sentence ever", ["positive", "negative"], flatten=True)[0], "positive")
+
     def testLabelBatch(self):
         """
         Test labels with multiple text inputs
@@ -44,6 +51,14 @@ class TestLabels(unittest.TestCase):
 
         results = [l[0][0] for l in self.labels(["This is the best sentence ever", "This is terrible"], ["positive", "negative"])]
         self.assertEqual(results, [0, 1])
+
+    def testLabelBatchFlatten(self):
+        """
+        Test labels with multiple text inputs, flattened to top text labels
+        """
+
+        results = [l[0] for l in self.labels(["This is the best sentence ever", "This is terrible"], ["positive", "negative"], flatten=True)]
+        self.assertEqual(results, ["positive", "negative"])
 
     def testLabelFixed(self):
         """
@@ -58,6 +73,17 @@ class TestLabels(unittest.TestCase):
         # Verify results
         self.assertEqual(labels("This is the best sentence ever")[0][0], index)
         self.assertEqual(labels("This is the best sentence ever", multilabel=True)[0][0], index)
+
+    def testLabelFixedFlatten(self):
+        """
+        Test labels with a fixed label text classification model, flattened to top text labels
+        """
+
+        labels = Labels(dynamic=False)
+
+        # Verify results
+        self.assertEqual(labels("This is the best sentence ever", flatten=True)[0], "POSITIVE")
+        self.assertEqual(labels("This is the best sentence ever", multilabel=True, flatten=True)[0], "POSITIVE")
 
     def testSimilarity(self):
         """
