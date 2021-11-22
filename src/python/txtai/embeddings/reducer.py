@@ -27,6 +27,9 @@ class Reducer:
             components: number of model components
         """
 
+        if not REDUCER:
+            raise ImportError('Dimensionality reduction is not available - install "similarity" extra to enable')
+
         self.model = self.build(embeddings, components) if embeddings is not None and components else None
 
     def __call__(self, embeddings):

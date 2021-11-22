@@ -2,47 +2,18 @@
 Optional module tests
 """
 
+import sys
 import unittest
 
-import txtai.ann.factory
-
-from txtai.ann import ANNFactory
-from txtai.models import OnnxModel
-from txtai.pipeline import HFOnnx, MLOnnx, Segmentation, Tabular, Textractor, Transcription, Translation
-from txtai.vectors import VectorsFactory
-from txtai.workflow import ImageTask, ServiceTask, StorageTask
+# pylint: disable=C0415,W0611
+import transformers
+from transformers import Trainer, set_seed, ViTFeatureExtractor
 
 
 class TestOptional(unittest.TestCase):
     """
-    Optional tests
+    Optional tests. Simulates optional dependencies not being installed.
     """
-
-    @staticmethod
-    def toggle():
-        """
-        Toggles parameters used to determine the presence of optional libraries
-        """
-
-        txtai.ann.factory.ANNOY = not txtai.ann.factory.ANNOY
-        txtai.ann.factory.HNSWLIB = not txtai.ann.factory.HNSWLIB
-
-        txtai.models.onnx.ONNX_RUNTIME = not txtai.models.onnx.ONNX_RUNTIME
-
-        txtai.pipeline.audio.transcription.SOUNDFILE = not txtai.pipeline.audio.transcription.SOUNDFILE
-        txtai.pipeline.segment.segmentation.NLTK = not txtai.pipeline.segment.segmentation.NLTK
-        txtai.pipeline.segment.tabular.PANDAS = not txtai.pipeline.segment.tabular.PANDAS
-        txtai.pipeline.segment.textractor.TIKA = not txtai.pipeline.segment.textractor.TIKA
-        txtai.pipeline.text.translation.FASTTEXT = not txtai.pipeline.text.translation.FASTTEXT
-        txtai.pipeline.train.hfonnx.ONNX_RUNTIME = not txtai.pipeline.train.hfonnx.ONNX_RUNTIME
-        txtai.pipeline.train.mlonnx.ONNX_MLTOOLS = not txtai.pipeline.train.mlonnx.ONNX_MLTOOLS
-
-        txtai.vectors.factory.WORDS = not txtai.vectors.factory.WORDS
-        txtai.vectors.transformers.SENTENCE_TRANSFORMERS = not txtai.vectors.transformers.SENTENCE_TRANSFORMERS
-
-        txtai.workflow.task.image.PIL = not txtai.workflow.task.image.PIL
-        txtai.workflow.task.service.XML_TO_DICT = not txtai.workflow.task.service.XML_TO_DICT
-        txtai.workflow.task.storage.LIBCLOUD = not txtai.workflow.task.storage.LIBCLOUD
 
     @classmethod
     def setUpClass(cls):
@@ -50,22 +21,58 @@ class TestOptional(unittest.TestCase):
         Simulate optional packages not being installed
         """
 
-        # Toggle parameters
-        TestOptional.toggle()
+        modules = [
+            "annoy",
+            "fasttext",
+            "hnswlib",
+            "nltk",
+            "libcloud.storage.providers",
+            "onnxmltools",
+            "onnxruntime",
+            "pandas",
+            "PIL",
+            "sklearn.decomposition",
+            "sentence_transformers",
+            "soundfile",
+            "tika",
+            "xmltodict",
+        ]
+
+        # Get handle to all currently loaded txtai modules
+        modules = modules + [key for key in sys.modules if key.startswith("txtai")]
+        cls.modules = {module: None for module in modules}
+
+        # Replace loaded modules with stubs. Save modules for later reloading
+        for module in cls.modules:
+            if module in sys.modules:
+                cls.modules[module] = sys.modules[module]
+
+            # Remove txtai modules. Set optional dependencies to None to prevent reloading.
+            if "txtai" in module:
+                if module in sys.modules:
+                    del sys.modules[module]
+            else:
+                sys.modules[module] = None
 
     @classmethod
     def tearDownClass(cls):
         """
-        Reset global parameters
+        Resets modules environment back to initial state
         """
 
-        # Toggle parameters back
-        TestOptional.toggle()
+        # Reset replaced modules in setup
+        for key, value in cls.modules.items():
+            if value:
+                sys.modules[key] = value
+            else:
+                del sys.modules[key]
 
     def testAnn(self):
         """
         Test missing ann dependencies
         """
+
+        from txtai.ann import ANNFactory
 
         with self.assertRaises(ImportError):
             ANNFactory.create({"backend": "annoy"})
@@ -73,10 +80,16 @@ class TestOptional(unittest.TestCase):
         with self.assertRaises(ImportError):
             ANNFactory.create({"backend": "hnsw"})
 
-    def testModel(self):
+    def testModels(self):
         """
         Test missing model dependencies
         """
+
+        from txtai.embeddings import Reducer
+        from txtai.models import OnnxModel
+
+        with self.assertRaises(ImportError):
+            Reducer()
 
         with self.assertRaises(ImportError):
             OnnxModel(None)
@@ -85,6 +98,8 @@ class TestOptional(unittest.TestCase):
         """
         Test missing pipeline dependencies
         """
+
+        from txtai.pipeline import HFOnnx, MLOnnx, Segmentation, Tabular, Textractor, Transcription, Translation
 
         with self.assertRaises(ImportError):
             HFOnnx()("google/bert_uncased_L-2_H-128_A-2", quantize=True)
@@ -112,6 +127,8 @@ class TestOptional(unittest.TestCase):
         Test missing vectors dependencies
         """
 
+        from txtai.vectors import VectorsFactory
+
         with self.assertRaises(ImportError):
             VectorsFactory.create({"method": "words"}, None)
 
@@ -122,6 +139,8 @@ class TestOptional(unittest.TestCase):
         """
         Test missing workflow dependencies
         """
+
+        from txtai.workflow import ImageTask, ServiceTask, StorageTask
 
         with self.assertRaises(ImportError):
             ImageTask()
