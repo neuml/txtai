@@ -61,8 +61,7 @@ class TestWorkflow(unittest.TestCase):
 
         # Execute workflow, discard results as they are streamed
         workflow = Workflow(tasks)
-        for _ in workflow(data):
-            pass
+        data = list(workflow(data))
 
         # Build the embeddings index
         embeddings.index(documents)
@@ -73,6 +72,7 @@ class TestWorkflow(unittest.TestCase):
         # Run search and validate result
         index, _ = embeddings.search("search text", 1)[0]
         self.assertEqual(index, 0)
+        self.assertEqual(data[0][1], "txtai builds an AI-powered index over sections")
 
     def testExtractWorkflow(self):
         """
