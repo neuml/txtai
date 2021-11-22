@@ -2,6 +2,8 @@
 Workflow module tests
 """
 
+import os
+import tempfile
 import unittest
 
 from txtai.embeddings import Documents, Embeddings
@@ -72,6 +74,22 @@ class TestWorkflow(unittest.TestCase):
         index, _ = embeddings.search("search text", 1)[0]
         self.assertEqual(index, 0)
 
+    def testExtractWorkflow(self):
+        """
+        Tests column extraction tasks
+        """
+
+        workflow = Workflow([Task(lambda x: x, unpack=False, column=0)], batch=1)
+
+        results = list(workflow([(0, 1)]))
+        self.assertEqual(results[0], 0)
+
+        results = list(workflow([(0, (1, 2), None)]))
+        self.assertEqual(results[0], (0, 1, None))
+
+        results = list(workflow([1]))
+        self.assertEqual(results[0], 1)
+
     def testImageWorkflow(self):
         """
         Tests an image task
@@ -83,13 +101,47 @@ class TestWorkflow(unittest.TestCase):
 
         self.assertEqual(results[0].size, (1024, 682))
 
+    def testMergeWorkflow(self):
+        """
+        Tests merge tasks
+        """
+
+        task = Task([lambda x: [pow(y, 2) for y in x], lambda x: [pow(y, 3) for y in x]], merge="hstack")
+
+        # Test hstack (column-wise) merge
+        workflow = Workflow([task])
+        results = list(workflow([2]))
+        self.assertEqual(results, [(4, 8)])
+
+        # Test vstack (row-wise) merge
+        task.merge = "vstack"
+        workflow = Workflow([task])
+        results = list(workflow([2]))
+        self.assertEqual(results, [4, 8])
+
+        # Test concat (values joined into single string) merge
+        task.merge = "concat"
+        workflow = Workflow([task])
+        results = list(workflow([2]))
+        self.assertEqual(results, ["4. 8"])
+
+        # Test generated (id, data, tag) tuples are properly returned
+        workflow = Workflow([Task(lambda x: [(0, y, None) for y in x])])
+        results = list(workflow([(1, "text", "tags")]))
+        self.assertEqual(results[0], (0, "text", None))
+
     def testRetrieveWorkflow(self):
         """
         Tests a retrieve task
         """
 
+        # Test retrieve with generated temporary directory
         workflow = Workflow([RetrieveTask()])
+        results = list(workflow(["file://" + Utils.PATH + "/books.jpg"]))
+        self.assertTrue(results[0].endswith("books.jpg"))
 
+        # Test retrieve with specified temporary directory
+        workflow = Workflow([RetrieveTask(directory=os.path.join(tempfile.gettempdir(), "retrieve"))])
         results = list(workflow(["file://" + Utils.PATH + "/books.jpg"]))
         self.assertTrue(results[0].endswith("books.jpg"))
 

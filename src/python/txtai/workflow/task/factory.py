@@ -2,6 +2,8 @@
 Task factory module
 """
 
+import functools
+
 
 class TaskFactory:
     """
@@ -50,7 +52,25 @@ class TaskFactory:
         if "args" in config:
             args = config.pop("args")
             action = config["action"]
-            config["action"] = lambda x: action(x, *args)
+            if action:
+                if isinstance(action, list):
+                    config["action"] = [Partial(a, *args[i]) if args[i] else Partial(a) for i, a in enumerate(action)]
+                else:
+                    config["action"] = lambda x: action(x, *args)
 
         # Get Task instance
         return TaskFactory.get(task)(**config)
+
+
+class Partial(functools.partial):
+    """
+    Modifies functools.partial to prepend arguments vs append.
+    """
+
+    def __call__(self, *args, **kwargs):
+        # Update keyword arguments
+        kw = self.keywords.copy()
+        kw.update(kwargs)
+
+        # Execute function with new arguments prepended to default arguments
+        return self.func(*(args + self.args), **kw)

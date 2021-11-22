@@ -25,39 +25,37 @@ class StorageTask(Task):
     PREFIX = r"(\w+):\/\/.*"
     PATH = r"\w+:\/\/(.*)"
 
-    def __init__(self, action=None, select=None, unpack=True, ids=True):
+    def __init__(self, action=None, select=None, unpack=True):
         if not LIBCLOUD:
             raise ImportError('StorageTask is not available - install "workflow" extra to enable')
 
         super().__init__(action, select, unpack)
 
-        # If true, elements returned will be tagged with ids and converted into (id, data, tag) tuples
-        self.ids = ids
-
     def accept(self, element):
         # Only accept file URLs
-        return super().accept(element) and re.match(StorageTask.PREFIX, element.lower())
+        return re.match(StorageTask.PREFIX, element.lower())
+
+    def faccept(self, element):
+        """
+        Determines if this task can handle the input data format.
+
+        Args:
+            element: input file url
+
+        Returns:
+            True if url is accepted, False otherwise
+            True if this task can process this data element, False otherwise
+        """
+
+        return super().accept(element)
 
     def execute(self, elements):
-        # List contents of each bucket
-        buckets = [self.list(element) for element in elements]
+        # Create aggregated directory listing for all elements
+        outputs = []
+        for element in elements:
+            outputs.append(super().execute([url for url in self.list(element) if self.faccept(url)]))
 
-        elements = []
-        for bucket in buckets:
-            # Execute actions
-            content = super().execute(bucket)
-
-            # Combine with content ids if necessary
-            if self.ids:
-                values = []
-                for x, url in enumerate(bucket):
-                    values.append((url, content[x], None))
-            else:
-                values = content
-
-            elements.append(values)
-
-        return elements
+        return outputs
 
     def list(self, element):
         """

@@ -15,8 +15,8 @@ class RetrieveTask(UrlTask):
     Task that retrieves urls (local or remote) to a local directory.
     """
 
-    def __init__(self, action=None, select=None, unpack=True, directory=None):
-        super().__init__(action, select, unpack)
+    def __init__(self, action=None, select=None, unpack=True, column=None, merge="hstack", initialize=None, finalize=None, directory=None):
+        super().__init__(action, select, unpack, column, merge, initialize, finalize)
 
         # Create default temporary directory if not specified
         if not directory:

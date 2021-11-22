@@ -19,6 +19,14 @@ class Documents:
 
         self.documents = None
         self.batch = 0
+        self.size = 0
+
+    def __len__(self):
+        """
+        Returns total number of queued documents.
+        """
+
+        return self.size
 
     def __iter__(self):
         """
@@ -55,6 +63,7 @@ class Documents:
         # Add batch
         pickle.dump(documents, self.documents)
         self.batch += 1
+        self.size += len(documents)
 
         return documents
 
@@ -69,3 +78,4 @@ class Documents:
         # Reset document parameters
         self.documents = None
         self.batch = 0
+        self.size = 0

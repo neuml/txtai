@@ -53,7 +53,7 @@ class API:
         self.pipelines = {}
 
         # Default pipelines
-        pipelines = ["extractor", "labels", "segmentation", "similarity", "summary", "tabular", "textractor", "transcription", "translation"]
+        pipelines = ["extractor", "labels", "nop", "segmentation", "similarity", "summary", "tabular", "textractor", "transcription", "translation"]
 
         # Add custom pipelines
         for key in self.config:
@@ -81,22 +81,69 @@ class API:
         # Workflow definitions
         self.workflows = {}
 
-        # Post workflow actions
-        self.actions = {}
-
         # Create workflows
         if "workflow" in self.config:
             for workflow, config in self.config["workflow"].items():
+                # Resolve callable functions
                 for task in config["tasks"]:
-                    # Resolve pipeline action
-                    if "action" in task:
-                        action = task["action"]
-                        task["action"] = self.pipelines.get(action)
-
-                        if action in ["index", "upsert"]:
-                            self.actions[workflow] = action
+                    self.resolve(task)
 
                 self.workflows[workflow] = WorkflowFactory.create(config)
+
+    def resolve(self, task):
+        """
+        Resolves callable functions for a task.
+
+        Args:
+            task: input task config
+        """
+
+        if "action" in task:
+            action = task["action"]
+            values = [action] if not isinstance(action, list) else action
+
+            actions = []
+            for a in values:
+                if a in ["index", "upsert"]:
+                    # Add queue action to buffer documents to index
+                    actions.append(self.add)
+
+                    # Override and disable unpacking for indexing actions
+                    task["unpack"] = False
+
+                    # Add finalize to trigger indexing
+                    task["finalize"] = self.upsert if a == "upsert" else self.index
+                else:
+                    # Resolve action to callable function
+                    actions.append(self.function(a))
+
+            # Save resolved action(s)
+            task["action"] = actions[0] if not isinstance(action, list) else actions
+
+        # Resolve initializer
+        if "initialize" in task and isinstance(task["initialize"], str):
+            task["initialize"] = self.function(task["initialize"])
+
+        # Resolve finalizer
+        if "finalize" in task and isinstance(task["finalize"], str):
+            task["finalize"] = self.function(task["finalize"])
+
+    def function(self, function):
+        """
+        Get a handle to a callable function
+        """
+
+        if function in self.pipelines:
+            return self.pipelines[function]
+
+        # pylint: disable=W0702
+        try:
+            # Attempt to resolve action as a callable function
+            return PipelineFactory.create({}, function)
+        except:
+            pass
+
+        return None
 
     def limit(self, limit):
         """
@@ -167,6 +214,9 @@ class API:
 
         Args:
             documents: list of {id: value, text: value}
+
+        Returns:
+            unmodified input documents
         """
 
         if self.cluster:
@@ -177,8 +227,28 @@ class API:
             if not self.documents:
                 self.documents = Documents()
 
+            batch = []
+            index = self.count() + len(self.documents)
+            for document in documents:
+                if isinstance(document, dict):
+                    # Copy value from dict to a new tuple
+                    document = (document["id"], document["text"], None)
+                elif isinstance(document, str):
+                    # Add uid via autosequence
+                    document = (index, document, None)
+                    index += 1
+                elif isinstance(document, tuple) and len(document) < 3:
+                    # Copy partial tuple
+                    document = (document[0], document[1], None)
+
+                # Add document tuple (id, text, element)
+                batch.append(document)
+
             # Add batch
-            self.documents.add([(document["id"], document["text"], None) for document in documents])
+            self.documents.add(batch)
+
+        # Return unmodified input documents
+        return documents
 
     def index(self):
         """
@@ -404,29 +474,4 @@ class API:
         elements = [tuple(element) if isinstance(element, list) else element for element in elements]
 
         # Execute workflow
-        elements = self.workflows[name](elements)
-
-        # Run post workflow action, if any
-        if name in self.actions:
-            documents = []
-            action = self.actions[name]
-            index = self.count() if self.count() and action != "index" else 0
-
-            # Consume all elements
-            elements = list(elements)
-
-            for element in elements:
-                if isinstance(element, (tuple, list)):
-                    element = {"id": element[0], "text": element[1]}
-                else:
-                    element = {"id": index, "text": element}
-
-                documents.append(element)
-                index += 1
-
-            # pylint: disable=W0106
-            # Add documents and run index operation
-            self.add(documents)
-            self.index() if self.actions[name] == "index" else self.upsert()
-
-        return elements
+        return self.workflows[name](elements)

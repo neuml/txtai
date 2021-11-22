@@ -25,12 +25,16 @@ class Workflow:
         Executes a workflow for input elements.
 
         Args:
-            elements: list of data elements
+            elements: iterable data elements
 
         Returns:
             transformed data elements
         """
 
+        # Run task initializers
+        self.initialize()
+
+        # Process elements in batches.
         batch = []
         for x in elements:
             batch.append(x)
@@ -39,8 +43,22 @@ class Workflow:
                 yield from self.process(batch)
                 batch = []
 
+        # Final batch
         if batch:
             yield from self.process(batch)
+
+        # Run task finalizers
+        self.finalize()
+
+    def initialize(self):
+        """
+        Runs task initializer methods (if any) before processing data.
+        """
+
+        # Run task initializers
+        for task in self.tasks:
+            if task.initialize:
+                task.initialize()
 
     def process(self, elements):
         """
@@ -58,7 +76,7 @@ class Workflow:
             indexed = list(enumerate(elements))
 
             # Filter data down to data this task handles
-            data = [(x, self.unpack(element) if task.unpack else element) for x, element in indexed if task.accept(self.unpack(element))]
+            data = [(x, task.upack(element)) for x, element in indexed if task.accept(task.upack(element, True))]
 
             # Get list of filtered process ids
             ids = [x for x, _ in data]
@@ -75,10 +93,10 @@ class Workflow:
 
                     if isinstance(result, list):
                         # One-many transformations
-                        elements.extend([self.pack(element, r) if task.unpack else r for r in result])
+                        elements.extend([task.pack(element, r) for r in result])
                     else:
                         # One-one transformations
-                        elements.append(self.pack(element, result) if task.unpack else result)
+                        elements.append(task.pack(element, result))
                 else:
                     # Pass unprocessed elements through
                     elements.append(element)
@@ -86,44 +104,12 @@ class Workflow:
         # Remove process index and yield results
         yield from elements
 
-    def unpack(self, element):
+    def finalize(self):
         """
-        Unpacks data for processing.
-
-        Args:
-            element: input data element
-
-        Returns:
-            data
+        Runs task finalizer methods (if any) after all data processed.
         """
 
-        # Extract data from (id, data, tag) formatted elements
-        if isinstance(element, tuple):
-            return element[1]
-
-        return element
-
-    def pack(self, element, data):
-        """
-        Packs data for delivery to the next workflow task.
-
-        Args:
-            element: transformed data element
-            data: item to pack element into
-
-        Returns:
-            packed data
-        """
-
-        # Package data into (id, data, tag) formatted elements
-        if isinstance(element, tuple):
-            # If new data is a (id, data, tag) tuple use that
-            if isinstance(data, tuple):
-                return data
-
-            # Create a copy of tuple, update data element and return
-            element = list(element)
-            element[1] = data
-            return tuple(element)
-
-        return data
+        # Run task finalizers
+        for task in self.tasks:
+            if task.finalize:
+                task.finalize()

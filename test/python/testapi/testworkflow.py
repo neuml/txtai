@@ -26,6 +26,8 @@ embeddings:
 labels:
     path: prajjwal1/bert-medium-mnli
 
+nop:
+
 # Text segmentation
 segmentation:
     sentences: true
@@ -35,7 +37,19 @@ workflow:
     labels:
         tasks:
             - action: labels
+              initialize: testnotfound
               args: [[positive, negative]]
+    multiaction:
+        tasks:
+            - action:
+                - labels
+                - nop
+              initialize: testapi.testworkflow.TestInitFinal
+              finalize: testapi.testworkflow.TestInitFinal
+              merge: concat
+              args:
+                - [[positive, negative], false, True]
+                - null
     segment:
         tasks:
             - action: segmentation
@@ -184,17 +198,37 @@ class TestWorkflow(unittest.TestCase):
 
         self.assertEqual(len(results), 1)
 
-    def testWorkflow(self):
+    def testWorkflowLabels(self):
         """
-        Test workflow via API.
+        Test workflow with labels via API.
+        """
+
+        text = "This is the best"
+
+        results = self.client.post("workflow", json={"name": "labels", "elements": [text]}).json()
+        self.assertEqual(results[0][0], 0)
+
+        results = self.client.post("workflow", json={"name": "multiaction", "elements": [text]}).json()
+        self.assertEqual(results[0], "['positive']. This is the best")
+
+    def testWorkflowSegment(self):
+        """
+        Test workflow with segmentation via API.
         """
 
         text = "This is a test sentence. And another sentence to split."
-        results = self.client.post("workflow", json={"name": "labels", "elements": [text]}).json()
-        self.assertEqual(len(results), 2)
 
         results = self.client.post("workflow", json={"name": "segment", "elements": [text]}).json()
         self.assertEqual(len(results), 2)
 
         results = self.client.post("workflow", json={"name": "segment", "elements": [[0, text]]}).json()
         self.assertEqual(len(results), 2)
+
+
+class TestInitFinal:
+    """
+    Class to test task initialize and finalize calls.
+    """
+
+    def __call__(self):
+        pass

@@ -19,11 +19,26 @@ class ServiceTask(Task):
     Task to runs requests against remote service urls.
     """
 
-    def __init__(self, action=None, select=None, unpack=True, url=None, method=None, params=None, batch=True, extract=None):
+    # pylint: disable=R0913
+    def __init__(
+        self,
+        action=None,
+        select=None,
+        unpack=True,
+        column=None,
+        merge="hstack",
+        initialize=None,
+        finalize=None,
+        url=None,
+        method=None,
+        params=None,
+        batch=True,
+        extract=None,
+    ):
         if not XML_TO_DICT:
             raise ImportError('ServiceTask is not available - install "workflow" extra to enable')
 
-        super().__init__(action, select, unpack)
+        super().__init__(action, select, unpack, column, merge, initialize, finalize)
 
         # Save URL, method and parameter defaults
         self.url = url
