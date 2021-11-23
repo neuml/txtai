@@ -199,10 +199,13 @@ class Task:
         """
         Merges outputs row-wise. Returns a list of lists which will be interpreted by workflows as a one-many transformation.
 
-        # Row-wise merge example (2 actions)
-        #   Inputs: [a, b, c]
-        #   Outputs => [[a1, b1, c1], [a2, b2, c2]]
-        #   Row Merge => [[a1, a2], [b1, b2], [c1, c2]] = [a1, a2, b1, b2, c1, c2]
+        Row-wise merge example (2 actions)
+
+          Inputs: [a, b, c]
+
+          Outputs => [[a1, b1, c1], [a2, b2, c2]]
+
+          Row Merge => [[a1, a2], [b1, b2], [c1, c2]] = [a1, a2, b1, b2, c1, c2]
 
         Args:
             outputs: task outputs
@@ -217,10 +220,13 @@ class Task:
         """
         Merges outputs column-wise. Returns a list of tuples which will be interpreted by workflows as a one-one transformation.
 
-        # Column-wise merge example (2 actions)
-        #   Inputs: [a, b, c]
-        #   Outputs => [[a1, b1, c1], [a2, b2, c2]]
-        #   Column Merge => [(a1, a2), (b1, b2), (c1, c2)]
+        Column-wise merge example (2 actions)
+
+          Inputs: [a, b, c]
+
+          Outputs => [[a1, b1, c1], [a2, b2, c2]]
+
+          Column Merge => [(a1, a2), (b1, b2), (c1, c2)]
 
         Args:
             outputs: task outputs
@@ -235,10 +241,13 @@ class Task:
         """
         Merges outputs column-wise and concats values together into a string. Returns a list of strings.
 
-        # Concat merge example (2 actions)
-        #   Inputs: [a, b, c]
-        #   Outputs => [[a1, b1, c1], [a2, b2, c2]]
-        #   Concat Merge => [(a1, a2), (b1, b2), (c1, c2)] => ["a1. a2", "b1. b2", "c1. c2"]
+        Concat merge example (2 actions)
+
+          Inputs: [a, b, c]
+
+          Outputs => [[a1, b1, c1], [a2, b2, c2]]
+
+          Concat Merge => [(a1, a2), (b1, b2), (c1, c2)] => ["a1. a2", "b1. b2", "c1. c2"]
 
         Args:
             outputs: task outputs

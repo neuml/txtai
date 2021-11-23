@@ -3,7 +3,7 @@ Extractor module
 """
 
 from ..base import Pipeline
-from ..segment import Tokenizer
+from ..data import Tokenizer
 
 from .questions import Questions
 from .similarity import Similarity
