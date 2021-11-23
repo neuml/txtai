@@ -35,17 +35,35 @@ nav:
     - Embeddings: embeddings.md
     - Pipelines:
         - Overview: pipelines/overview.md
-        - Extractor: pipelines/extractor.md
-        - Labels: pipelines/labels.md
-        - ONNX: pipelines/onnx.md
-        - Segmentation: pipelines/segmentation.md
-        - Similarity: pipelines/similarity.md
-        - Summary: pipelines/summary.md
-        - Tabular: pipelines/tabular.md
-        - Textractor: pipelines/textractor.md
-        - Trainer: pipelines/trainer.md
-        - Transcription: pipelines/transcription.md
-        - Translation: pipelines/translation.md
-    - Workflows: workflows.md
+        - Audio:
+            - Transcription: pipelines/audio/transcription.md
+        - Data:
+            - Segmentation: pipelines/data/segmentation.md
+            - Tabular: pipelines/data/tabular.md
+            - Textractor: pipelines/data/textractor.md
+        - Image:
+            - Caption: pipelines/image/caption.md
+            - Objects: pipelines/image/objects.md
+        - Text:
+            - Extractor: pipelines/text/extractor.md
+            - Labels: pipelines/text/labels.md
+            - Similarity: pipelines/text/similarity.md
+            - Summary: pipelines/text/summary.md
+            - Translation: pipelines/text/translation.md
+        - Train:
+            - HF ONNX: pipelines/train/hfonnx.md
+            - ML ONNX: pipelines/train/mlonnx.md
+            - Trainer: pipelines/train/trainer.md
+    - Workflows:
+        - Overview: workflows/overview.md
+        - Task: workflows/task.md
+        - File: workflows/file.md
+        - Image: workflows/image.md
+        - Retrieve: workflows/retrieve.md
+        - Service: workflows/service.md
+        - Storage: workflows/storage.md
+        - Url: workflows/url.md
+        - Workflow: workflows/workflow.md
+
     - API: api.md
     - Further Reading: articles.md

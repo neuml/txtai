@@ -5,17 +5,22 @@ process various types of data. Pipelines can wrap machine learning models as wel
 
 The following pipeline types are currently supported.
 
-- Hugging Face Transformers pipelines
-    - [Extractive QA](../extractor)
-    - [Labeling](../labels)
-    - [Similarity](../similarity)
-    - [Summary](../summary)
-- Hugging Face Transformers models
-    - [ONNX](../onnx)
-    - [Trainer](../trainer)
-    - [Transcription](../transcription)
-    - [Translation](../translation)
-- Data processing
-    - [Segmentation](../segmentation)
-    - [Tabular](../tabular)
-    - [Text extraction](../textractor)
+- Audio
+    - [Transcription](../audio/transcription)
+- Data Processing
+    - [Segmentation](../data/segmentation)
+    - [Tabular](../data/tabular)
+    - [Text extraction](../data/textractor)
+- Image
+    - [Caption](../image/caption)
+    - [Objects](../image/objects)
+- Text
+    - [Extractive QA](../text/extractor)
+    - [Labeling](../text/labels)
+    - [Similarity](../text/similarity)
+    - [Summary](../text/summary)
+    - [Translation](../text/translation)
+- Training
+    - [HF ONNX](../train/hfonnx)
+    - [ML ONNX](../train/mlonnx)
+    - [Trainer](../train/trainer)
