@@ -1,4 +1,4 @@
-# Tasks
+# Task
 
 Workflows execute tasks. Tasks are callable objects with a number of parameters to control the processing of data at a given step. 
 

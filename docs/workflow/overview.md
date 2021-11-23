@@ -1,4 +1,4 @@
-# Workflows
+# Workflow
 
 Workflows are a simple yet powerful construct that takes a callable and returns elements. Workflows operate well with pipelines but can work with any callable object. Workflows are streaming by nature and work on data in batches, allowing large volumes of data to be processed efficiently.
 

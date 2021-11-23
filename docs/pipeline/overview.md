@@ -1,4 +1,4 @@
-# Pipelines
+# Pipeline
 
 txtai provides a generic pipeline processing framework with the only interface requirement being a `__call__` method. Pipelines are flexible and can
 process various types of data. Pipelines can wrap machine learning models as well as other processes.
