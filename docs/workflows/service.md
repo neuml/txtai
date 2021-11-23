@@ -2,4 +2,9 @@
 
 Task that runs content against a http service.
 
+```python
+workflow = Workflow([ServiceTask(url="https://service.url/action)])
+workflow(["parameter"])
+```
+
 ::: txtai.workflow.ServiceTask.__init__
