@@ -24,7 +24,9 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
 
       - name: Install dependencies - MacOS
-        run: brew install libomp
+        run: |
+          brew install libomp
+          pip install annoy==1.16.3
         if: matrix.os == 'macos-latest'
 
       - name: Install dependencies - Windows
