@@ -4,8 +4,6 @@ FastAPI application module
 
 import os
 
-import yaml
-
 from fastapi import FastAPI
 
 from .base import API
@@ -42,9 +40,7 @@ def start():
     global INSTANCE
 
     # Load YAML settings
-    with open(os.getenv("CONFIG"), "r", encoding="utf-8") as f:
-        # Read configuration
-        config = yaml.safe_load(f)
+    config = API.read(os.getenv("CONFIG"))
 
     # Instantiate API instance
     api = os.getenv("API_CLASS")

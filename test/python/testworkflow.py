@@ -9,6 +9,7 @@ import unittest
 import numpy as np
 import torch
 
+from txtai.api import API
 from txtai.embeddings import Documents, Embeddings
 from txtai.pipeline import Summary, Translation, Textractor
 from txtai.workflow import Workflow, Task, FileTask, ImageTask, RetrieveTask, StorageTask, WorkflowTask
@@ -234,3 +235,45 @@ class TestWorkflow(unittest.TestCase):
         task.merge = None
         results = np.array([x.numpy() for x in workflow(torch.tensor([2, 4, 6]))])
         self.assertTrue(np.array_equal(np.array(results), np.array([[4, 16, 36], [8, 64, 216]])))
+
+    def testYamlWorkflow(self):
+        """
+        Tests reading a YAML workflow in Python.
+        """
+
+        # Read from string
+        config = """
+        # Text segmentation
+        segmentation:
+            sentences: true
+
+        # Workflow definitions
+        workflow:
+            segment:
+                tasks:
+                    - action: segmentation
+        """
+
+        app = API(config)
+        self.assertEqual(
+            list(app.workflow("segment", ["This is a test sentence. And another sentence to split."])),
+            ["This is a test sentence.", "And another sentence to split."],
+        )
+
+        # Read from file
+        path = os.path.join(tempfile.gettempdir(), "workflow.yml")
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(config)
+
+        app = API(path)
+        self.assertEqual(
+            list(app.workflow("segment", ["This is a test sentence. And another sentence to split."])),
+            ["This is a test sentence.", "And another sentence to split."],
+        )
+
+        # Read from YAML object
+        app = API(API.read(config))
+        self.assertEqual(
+            list(app.workflow("segment", ["This is a test sentence. And another sentence to split."])),
+            ["This is a test sentence.", "And another sentence to split."],
+        )

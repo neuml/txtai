@@ -2,7 +2,11 @@
 API module
 """
 
+import os
+
 from threading import Lock
+
+import yaml
 
 from .cluster import Cluster
 
@@ -10,11 +14,36 @@ from ..embeddings import Documents, Embeddings
 from ..pipeline import PipelineFactory
 from ..workflow import WorkflowFactory
 
-
+# pylint: disable=R0904
 class API:
     """
     Base API template. Downstream applications can extend this base template to add/modify functionality.
     """
+
+    @staticmethod
+    def read(data):
+        """
+        Reads a YAML configuration file.
+
+        Args:
+            data: input data
+
+        Returns:
+            yaml
+        """
+
+        if isinstance(data, str):
+            if os.path.exists(data):
+                # Read yaml from file
+                with open(data, "r", encoding="utf-8") as f:
+                    # Read configuration
+                    return yaml.safe_load(f)
+            else:
+                # Read yaml from string
+                return yaml.safe_load(data)
+
+        # Return unmodified
+        return data
 
     def __init__(self, config):
         """
@@ -26,6 +55,10 @@ class API:
 
         # Initialize member variables
         self.config, self.documents, self.embeddings, self.cluster = config, None, None, None
+
+        # Read configuration from file
+        if isinstance(self.config, str):
+            self.config = API.read(self.config)
 
         # Write lock
         self.lock = Lock()
@@ -177,7 +210,7 @@ class API:
         # Return between 1 and 250 results, defaults to 10
         return max(1, min(250, int(limit) if limit else 10))
 
-    def search(self, query, request):
+    def search(self, query, request=None):
         """
         Finds documents in the embeddings model most similar to the input query. Returns
         a list of {id: value, score: value} sorted by highest score, where id is the
