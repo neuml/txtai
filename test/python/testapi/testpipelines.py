@@ -18,9 +18,15 @@ from utils import Utils
 
 # Configuration for pipelines
 PIPELINES = """
-# Labels settings
+# Image captions
+caption:
+
+# Label settings
 labels:
     path: prajjwal1/bert-medium-mnli
+
+# Image objects
+objects:
 
 # Text segmentation
 segmentation:
@@ -47,6 +53,7 @@ translation:
 """
 
 
+# pylint: disable=R0904
 class TestPipelines(unittest.TestCase):
     """
     API tests for pipelines
@@ -95,6 +102,25 @@ class TestPipelines(unittest.TestCase):
             "that enables Natural Language Understanding (NLU) based search in any application."
         )
 
+    def testCaption(self):
+        """
+        Test caption via API
+        """
+
+        caption = self.client.get(f"caption?file={Utils.PATH}/books.jpg").json()
+
+        self.assertEqual(caption, "a book shelf filled with many books")
+
+    def testCaptionBatch(self):
+        """
+        Test batch caption via API
+        """
+
+        path = Utils.PATH + "/books.jpg"
+
+        captions = self.client.post("batchcaption", json=[path, path]).json()
+        self.assertEqual(captions, ["a book shelf filled with many books"] * 2)
+
     def testEmpty(self):
         """
         Test empty API configuration
@@ -125,6 +151,25 @@ class TestPipelines(unittest.TestCase):
 
         results = [l[0]["id"] for l in labels]
         self.assertEqual(results, [0, 1])
+
+    def testObjects(self):
+        """
+        Test objects via API
+        """
+
+        objects = self.client.get(f"objects?file={Utils.PATH}/books.jpg").json()
+
+        self.assertEqual(objects[0][0], "book")
+
+    def testObjectsBatch(self):
+        """
+        Test batch objects via API
+        """
+
+        path = Utils.PATH + "/books.jpg"
+
+        objects = self.client.post("batchobjects", json=[path, path]).json()
+        self.assertEqual([o[0][0] for o in objects], ["book"] * 2)
 
     def testSegment(self):
         """
@@ -180,15 +225,15 @@ class TestPipelines(unittest.TestCase):
         Test batch summary via API
         """
 
-        summaries = self.client.post("batchsummary", json={"texts": [self.text, self.text], "maxlength": 10}).json()
-        self.assertEqual(len(summaries), 2)
+        summaries = self.client.post("batchsummary", json={"texts": [self.text, self.text], "minlength": 15, "maxlength": 15}).json()
+        self.assertEqual(summaries, ["txtai is an AI-powered search engine that"] * 2)
 
     def testTabular(self):
         """
         Test tabular via API
         """
 
-        results = self.client.get(f"tabular?file={Utils.PATH}" + "/tabular.csv").json()
+        results = self.client.get(f"tabular?file={Utils.PATH}/tabular.csv").json()
 
         # Check length of results is as expected
         self.assertEqual(len(results), 6)
@@ -200,15 +245,15 @@ class TestPipelines(unittest.TestCase):
 
         path = Utils.PATH + "/tabular.csv"
 
-        texts = self.client.post("batchtabular", json=[path, path]).json()
-        self.assertEqual(len(texts), 2)
+        results = self.client.post("batchtabular", json=[path, path]).json()
+        self.assertEqual((len(results[0]), len(results[1])), (6, 6))
 
     def testTextractor(self):
         """
         Test textractor via API
         """
 
-        text = self.client.get(f"textract?file={Utils.PATH}" + "/article.pdf").json()
+        text = self.client.get(f"textract?file={Utils.PATH}/article.pdf").json()
 
         # Check length of text is as expected
         self.assertEqual(len(text), 2301)
@@ -221,14 +266,14 @@ class TestPipelines(unittest.TestCase):
         path = Utils.PATH + "/article.pdf"
 
         texts = self.client.post("batchtextract", json=[path, path]).json()
-        self.assertEqual(len(texts), 2)
+        self.assertEqual((len(texts[0]), len(texts[1])), (2301, 2301))
 
     def testTranscribe(self):
         """
         Test transcribe via API
         """
 
-        text = self.client.get(f"transcribe?file={Utils.PATH}" + "/Make_huge_profits.wav").json()
+        text = self.client.get(f"transcribe?file={Utils.PATH}/Make_huge_profits.wav").json()
 
         # Check length of text is as expected
         self.assertEqual(text, "Make huge profits without working make up to one hundred thousand dollars a day")
@@ -241,7 +286,7 @@ class TestPipelines(unittest.TestCase):
         path = Utils.PATH + "/Make_huge_profits.wav"
 
         texts = self.client.post("batchtranscribe", json=[path, path]).json()
-        self.assertEqual(len(texts), 2)
+        self.assertEqual(texts, ["Make huge profits without working make up to one hundred thousand dollars a day"] * 2)
 
     def testTranslate(self):
         """
@@ -258,4 +303,4 @@ class TestPipelines(unittest.TestCase):
 
         text = "This is a test translation into Spanish"
         translations = self.client.post("batchtranslate", json={"texts": [text, text], "target": "es"}).json()
-        self.assertEqual(len(translations), 2)
+        self.assertEqual(translations, ["Esta es una traducción de prueba al español"] * 2)

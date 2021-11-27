@@ -29,6 +29,7 @@ extras["pipeline"] = [
     "onnxmltools>=1.9.1",
     "onnxruntime>=1.8.1",
     "pandas>=1.1.0",
+    "pillow>=7.2.0",
     "sentencepiece>=0.1.91",
     "soundfile>=0.10.3.post1",
     "tika>=1.24",

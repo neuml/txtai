@@ -21,7 +21,6 @@ class ImageTask(FileTask):
     """
 
     def __init__(self, action=None, select=None, unpack=True, column=None, merge="hstack", initialize=None, finalize=None):
-
         if not PIL:
             raise ImportError('ImageTask is not available - install "workflow" extra to enable')
 

@@ -2,6 +2,14 @@
 Caption module
 """
 
+# Conditional import
+try:
+    from PIL import Image
+
+    PIL = True
+except ImportError:
+    PIL = False
+
 import torch
 
 from transformers import AutoTokenizer, VisionEncoderDecoderModel, ViTFeatureExtractor
@@ -25,6 +33,9 @@ class Caption(HFModel):
             gpu: True/False if GPU should be enabled, also supports a GPU device id
             batch: batch size used to incrementally process content
         """
+
+        if not PIL:
+            raise ImportError('Captions pipeline is not available - install "pipeline" extra to enable')
 
         # Call parent constructor
         super().__init__(path, quantize, gpu, batch)
@@ -53,6 +64,9 @@ class Caption(HFModel):
 
         # Convert single element to list
         values = [images] if not isinstance(images, list) else images
+
+        # Open images if file strings
+        values = [Image.open(image) if isinstance(image, str) else image for image in values]
 
         # Feature extraction
         pixels = self.extractor(images=values, return_tensors="pt").pixel_values
