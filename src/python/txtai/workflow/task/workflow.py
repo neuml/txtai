@@ -10,5 +10,5 @@ class WorkflowTask(Task):
     Task that executes a separate Workflow
     """
 
-    def __call__(self, elements):
-        return list(super().__call__(elements))
+    def process(self, action, inputs):
+        return list(super().process(action, inputs))

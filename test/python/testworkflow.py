@@ -6,6 +6,9 @@ import os
 import tempfile
 import unittest
 
+import numpy as np
+import torch
+
 from txtai.embeddings import Documents, Embeddings
 from txtai.pipeline import Summary, Translation, Textractor
 from txtai.workflow import Workflow, Task, FileTask, ImageTask, RetrieveTask, StorageTask, WorkflowTask
@@ -32,6 +35,17 @@ class TestWorkflow(unittest.TestCase):
         results = list(workflow(["The sky is blue", "Forest through the trees"]))
 
         self.assertEqual(len(results), 2)
+
+    def testChainWorkflow(self):
+        """
+        Tests a chain of workflows
+        """
+
+        workflow1 = Workflow([Task(lambda x: [y * 2 for y in x])])
+        workflow2 = Workflow([Task(lambda x: [y - 1 for y in x])], batch=4)
+
+        results = list(workflow2(workflow1([1, 2, 4, 8, 16, 32])))
+        self.assertEqual(results, [1, 3, 7, 15, 31, 63])
 
     def testComplexWorkflow(self):
         """
@@ -110,25 +124,50 @@ class TestWorkflow(unittest.TestCase):
 
         # Test hstack (column-wise) merge
         workflow = Workflow([task])
-        results = list(workflow([2]))
-        self.assertEqual(results, [(4, 8)])
+        results = list(workflow([2, 4]))
+        self.assertEqual(results, [(4, 8), (16, 64)])
 
         # Test vstack (row-wise) merge
         task.merge = "vstack"
-        workflow = Workflow([task])
-        results = list(workflow([2]))
-        self.assertEqual(results, [4, 8])
+        results = list(workflow([2, 4]))
+        self.assertEqual(results, [4, 8, 16, 64])
 
         # Test concat (values joined into single string) merge
         task.merge = "concat"
-        workflow = Workflow([task])
-        results = list(workflow([2]))
-        self.assertEqual(results, ["4. 8"])
+        results = list(workflow([2, 4]))
+        self.assertEqual(results, ["4. 8", "16. 64"])
+
+        # Test no merge
+        task.merge = None
+        results = list(workflow([2, 4, 6]))
+        self.assertEqual(results, [[4, 16, 36], [8, 64, 216]])
 
         # Test generated (id, data, tag) tuples are properly returned
         workflow = Workflow([Task(lambda x: [(0, y, None) for y in x])])
         results = list(workflow([(1, "text", "tags")]))
         self.assertEqual(results[0], (0, "text", None))
+
+    def testNumpyWorkflow(self):
+        """
+        Tests a numpy workflow
+        """
+
+        task = Task([lambda x: np.power(x, 2), lambda x: np.power(x, 3)], merge="hstack")
+
+        # Test hstack (column-wise) merge
+        workflow = Workflow([task])
+        results = list(workflow(np.array([2, 4])))
+        self.assertTrue(np.array_equal(np.array(results), np.array([[4, 8], [16, 64]])))
+
+        # Test vstack (row-wise) merge
+        task.merge = "vstack"
+        results = list(workflow(np.array([2, 4])))
+        self.assertEqual(results, [4, 8, 16, 64])
+
+        # Test no merge
+        task.merge = None
+        results = list(workflow(np.array([2, 4, 6])))
+        self.assertTrue(np.array_equal(np.array(results), np.array([[4, 16, 36], [8, 64, 216]])))
 
     def testRetrieveWorkflow(self):
         """
@@ -152,6 +191,46 @@ class TestWorkflow(unittest.TestCase):
 
         workflow = Workflow([StorageTask()])
 
-        results = list(workflow(["local://" + Utils.PATH]))
+        results = list(workflow(["local://" + Utils.PATH, "test string"]))
 
-        self.assertEqual(len(results), 18)
+        self.assertEqual(len(results), 19)
+
+    def testTensorTransformWorkflow(self):
+        """
+        Tests a tensor workflow with list transformations
+        """
+
+        # Test one-one list transformation
+        task = Task(lambda x: x.tolist())
+        workflow = Workflow([task])
+        results = list(workflow(np.array([2])))
+        self.assertEqual(results, [2])
+
+        # Test one-many list transformation
+        task = Task(lambda x: [x.tolist() * 2])
+        workflow = Workflow([task])
+        results = list(workflow(np.array([2])))
+        self.assertEqual(results, [2, 2])
+
+    def testTorchWorkflow(self):
+        """
+        Tests a torch workflow
+        """
+
+        # pylint: disable=E1101,E1102
+        task = Task([lambda x: torch.pow(x, 2), lambda x: torch.pow(x, 3)], merge="hstack")
+
+        # Test hstack (column-wise) merge
+        workflow = Workflow([task])
+        results = np.array([x.numpy() for x in workflow(torch.tensor([2, 4]))])
+        self.assertTrue(np.array_equal(results, np.array([[4, 8], [16, 64]])))
+
+        # Test vstack (row-wise) merge
+        task.merge = "vstack"
+        results = list(workflow(torch.tensor([2, 4])))
+        self.assertEqual(results, [4, 8, 16, 64])
+
+        # Test no merge
+        task.merge = None
+        results = np.array([x.numpy() for x in workflow(torch.tensor([2, 4, 6]))])
+        self.assertTrue(np.array_equal(np.array(results), np.array([[4, 16, 36], [8, 64, 216]])))

@@ -4,6 +4,9 @@ Task module
 
 import re
 
+import numpy as np
+import torch
+
 
 class Task:
     """
@@ -20,7 +23,7 @@ class Task:
             select: filter(s) used to select data to process
             unpack: if data elements should be unpacked or unwrapped from (id, data, tag) tuples
             column: column index to select if element is a tuple, defaults to all
-            merge: merge mode for joining multi-action outputs
+            merge: merge mode for joining multi-action outputs, defaults to hstack
             initialize: action to execute before processing
             finalize: action to execute after processing
         """
@@ -44,17 +47,109 @@ class Task:
         Executes action for a list of data elements.
 
         Args:
-            elements: list of data elements
+            elements: iterable data elements
 
         Returns:
             transformed data elements
         """
 
-        # Run data preparation routines
-        elements = [self.prepare(element) for element in elements]
+        if isinstance(elements, list):
+            return self.filteredrun(elements)
 
-        # Run data elements through task execution
-        return self.execute(elements)
+        return self.run(elements)
+
+    def filteredrun(self, elements):
+        """
+        Executes a filtered run, which will tag all inputs with a process id, filter elements down to elements the
+        task can handle and execute on that subset. Items not selected for processing will be returned unmodified.
+
+        Args:
+            elements: iterable data elements
+
+        Returns:
+            transformed data elements
+        """
+
+        # Build list of elements with unique process ids
+        indexed = list(enumerate(elements))
+
+        # Filter data down to data this task handles
+        data = [(x, self.upack(element)) for x, element in indexed if self.accept(self.upack(element, True))]
+
+        # Get list of filtered process ids
+        ids = [x for x, _ in data]
+
+        # Prepare elements and execute task action(s)
+        results = self.execute([self.prepare(element) for _, element in data])
+
+        # Pack results back into elements
+        if self.merge:
+            elements = self.filteredpack(results, indexed, ids)
+        else:
+            elements = [self.filteredpack(r, indexed, ids) for r in results]
+
+        return elements
+
+    def filteredpack(self, results, indexed, ids):
+        """
+        Processes and packs results back into original input elements.
+
+        Args:
+            results: task results
+            indexed: original elements indexed by process id
+            ids: process ids accepted by this task
+
+        Returns:
+            packed elements
+        """
+
+        # Update with transformed elements. Handle one to many transformations.
+        elements = []
+        for x, element in indexed:
+            if x in ids:
+                # Get result for process id
+                result = results[ids.index(x)]
+
+                if isinstance(result, OneToMany):
+                    # One to many transformations
+                    elements.extend([self.pack(element, r) for r in result])
+                else:
+                    # One to one transformations
+                    elements.append(self.pack(element, result))
+            else:
+                # Pass unprocessed elements through
+                elements.append(element)
+
+        return elements
+
+    def run(self, elements):
+        """
+        Executes a task run for elements. A standard run processes all elements.
+
+        Args:
+            elements: iterable data elements
+
+        Returns:
+            transformed data elements
+        """
+
+        # Execute task actions
+        results = self.execute(elements)
+
+        # Handle one to many transformations
+        if isinstance(results, list):
+            elements = []
+            for result in results:
+                if isinstance(result, OneToMany):
+                    # One to many transformations
+                    elements.extend(result)
+                else:
+                    # One to one transformations
+                    elements.append(result)
+
+            return elements
+
+        return results
 
     def accept(self, element):
         """
@@ -67,7 +162,7 @@ class Task:
             True if this task can process this data element, False otherwise
         """
 
-        return (isinstance(element, str) and re.search(self.select, element.lower())) if element and self.select else True
+        return (isinstance(element, str) and re.search(self.select, element.lower())) if element is not None and self.select else True
 
     def upack(self, element, force=False):
         """
@@ -145,7 +240,7 @@ class Task:
                 inputs = [self.extract(e, index) for e in elements] if index is not None else elements
 
                 # Run action and add outputs
-                outputs.append(action(inputs))
+                outputs.append(self.process(action, inputs))
 
             # Run post process operations
             return self.postprocess(outputs)
@@ -172,6 +267,27 @@ class Task:
 
         return element
 
+    def process(self, action, inputs):
+        """
+        Executes action using inputs as arguments.
+
+        Args:
+            action: callable object
+            inputs: action inputs
+
+        Returns:
+            action outputs
+        """
+
+        # Execute action and get outputs
+        outputs = action(inputs)
+
+        # Wrap one to many transformations if necessary
+        if isinstance(outputs, list):
+            outputs = [OneToMany(output) if isinstance(output, list) else output for output in outputs]
+
+        return outputs
+
     def postprocess(self, outputs):
         """
         Runs post process routines after a task action.
@@ -187,6 +303,10 @@ class Task:
         if len(self.action) == 1:
             return outputs[0]
 
+        # Return unmodified outputs when merge set to None
+        if not self.merge:
+            return outputs
+
         if self.merge == "vstack":
             return self.vstack(outputs)
         if self.merge == "concat":
@@ -197,7 +317,7 @@ class Task:
 
     def vstack(self, outputs):
         """
-        Merges outputs row-wise. Returns a list of lists which will be interpreted by workflows as a one-many transformation.
+        Merges outputs row-wise. Returns a list of lists which will be interpreted as a one to many transformation.
 
         Row-wise merge example (2 actions)
 
@@ -211,14 +331,24 @@ class Task:
             outputs: task outputs
 
         Returns:
-            list of aggregated/zipped outputs as lists (row-wise)
+            list of aggregated/zipped outputs as one to many transforms (row-wise)
         """
 
-        return [list(x) for x in zip(*outputs)]
+        # If all outputs are numpy arrays, use native method
+        if all([isinstance(output, np.ndarray) for output in outputs]):
+            return np.concatenate(np.stack(outputs, axis=1))
+
+        # If all outputs are torch tensors, use native method
+        # pylint: disable=E1101
+        if all([torch.is_tensor(output) for output in outputs]):
+            return torch.cat(tuple(torch.stack(outputs, axis=1)))
+
+        # Wrap as one to many transforms
+        return [OneToMany(x) for x in zip(*outputs)]
 
     def hstack(self, outputs):
         """
-        Merges outputs column-wise. Returns a list of tuples which will be interpreted by workflows as a one-one transformation.
+        Merges outputs column-wise. Returns a list of tuples which will be interpreted as a one to one transformation.
 
         Column-wise merge example (2 actions)
 
@@ -234,6 +364,15 @@ class Task:
         Returns:
             list of aggregated/zipped outputs as tuples (column-wise)
         """
+
+        # If all outputs are numpy arrays, use native method
+        if all([isinstance(output, np.ndarray) for output in outputs]):
+            return np.stack(outputs, axis=1)
+
+        # If all outputs are torch tensors, use native method
+        # pylint: disable=E1101
+        if all([torch.is_tensor(output) for output in outputs]):
+            return torch.stack(outputs, axis=1)
 
         return list(zip(*outputs))
 
@@ -257,3 +396,25 @@ class Task:
         """
 
         return [". ".join([str(y) for y in x if y]) for x in self.hstack(outputs)]
+
+
+class OneToMany:
+    """
+    Encapsulates list output for a one to many transformation.
+    """
+
+    def __init__(self, values):
+        """
+        Creates a new OneToMany transformation.
+
+        Args:
+            values: list of outputs
+        """
+
+        self.values = values
+
+    def __iter__(self):
+        return self.values.__iter__()
+
+    def __str__(self):
+        return self.values.__str__()

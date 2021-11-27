@@ -177,6 +177,7 @@ class TestWorkflow(unittest.TestCase):
         results = self.client.post("workflow", json={"name": "get", "elements": [text]}).json()
 
         self.assertEqual(len(results), 1)
+        self.assertEqual(len(results[0]), 1)
 
     def testServicePost(self):
         """
@@ -186,7 +187,8 @@ class TestWorkflow(unittest.TestCase):
         text = "This is a test sentence. And another sentence to split."
         results = self.client.post("workflow", json={"name": "post", "elements": [text]}).json()
 
-        self.assertEqual(len(results), 2)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(len(results[0]), 2)
 
     def testServiceXml(self):
         """
@@ -197,6 +199,7 @@ class TestWorkflow(unittest.TestCase):
         results = self.client.post("workflow", json={"name": "xml", "elements": [text]}).json()
 
         self.assertEqual(len(results), 1)
+        self.assertEqual(len(results[0]), 1)
 
     def testWorkflowLabels(self):
         """

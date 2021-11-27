@@ -31,31 +31,31 @@ class StorageTask(Task):
 
         super().__init__(action, select, unpack)
 
-    def accept(self, element):
-        # Only accept file URLs
-        return re.match(StorageTask.PREFIX, element.lower())
-
-    def faccept(self, element):
-        """
-        Determines if this task can handle the input data format.
-
-        Args:
-            element: input file url
-
-        Returns:
-            True if url is accepted, False otherwise
-            True if this task can process this data element, False otherwise
-        """
-
-        return super().accept(element)
-
-    def execute(self, elements):
+    def __call__(self, elements):
         # Create aggregated directory listing for all elements
         outputs = []
         for element in elements:
-            outputs.append(super().execute([url for url in self.list(element) if self.faccept(url)]))
+            if self.matches(element):
+                # Get directory listing and run actions
+                outputs.extend(super().__call__(self.list(element)))
+            else:
+                outputs.append(element)
 
         return outputs
+
+    def matches(self, element):
+        """
+        Determines if this element is a storage element.
+
+        Args:
+            element: input storage element
+
+        Returns:
+            True if this is a storage element
+        """
+
+        # Only accept file URLs
+        return re.match(StorageTask.PREFIX, self.upack(element, True).lower())
 
     def list(self, element):
         """

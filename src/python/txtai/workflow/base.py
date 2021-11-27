@@ -34,17 +34,8 @@ class Workflow:
         # Run task initializers
         self.initialize()
 
-        # Process elements in batches.
-        batch = []
-        for x in elements:
-            batch.append(x)
-
-            if len(batch) == self.batch:
-                yield from self.process(batch)
-                batch = []
-
-        # Final batch
-        if batch:
+        # Process elements in batches
+        for batch in self.chunk(elements):
             yield from self.process(batch)
 
         # Run task finalizers
@@ -60,48 +51,53 @@ class Workflow:
             if task.initialize:
                 task.initialize()
 
+    def chunk(self, elements):
+        """
+        Splits elements into batches. This method efficiently processes both fixed size inputs and
+        dynamically generated inputs.
+
+        Args:
+            elements: iterable data elements
+
+        Returns:
+            evenly sized batches with the last batch having the remaining elements
+        """
+
+        # Build batches by slicing elements, more efficient for fixed sized inputs
+        if hasattr(elements, "__len__") and hasattr(elements, "__getitem__"):
+            for x in range(0, len(elements), self.batch):
+                yield elements[x : x + self.batch]
+
+        # Build batches by iterating over elements when inputs are dynamically generated (i.e. generators)
+        else:
+            batch = []
+            for x in elements:
+                batch.append(x)
+
+                if len(batch) == self.batch:
+                    yield batch
+                    batch = []
+
+            # Final batch
+            if batch:
+                yield batch
+
     def process(self, elements):
         """
         Processes a batch of data elements.
 
         Args:
-            elements: list of data elements
+            elements: iterable data elements
 
         Returns:
             transformed data elements
         """
 
+        # Run elements through each task
         for task in self.tasks:
-            # Build list of elements with unique process ids
-            indexed = list(enumerate(elements))
+            elements = task(elements)
 
-            # Filter data down to data this task handles
-            data = [(x, task.upack(element)) for x, element in indexed if task.accept(task.upack(element, True))]
-
-            # Get list of filtered process ids
-            ids = [x for x, _ in data]
-
-            # Execute task action
-            results = task([element for _, element in data])
-
-            # Update with transformed elements. Handle one to many transformations.
-            elements = []
-            for x, element in indexed:
-                if x in ids:
-                    # Get result for process id
-                    result = results[ids.index(x)]
-
-                    if isinstance(result, list):
-                        # One-many transformations
-                        elements.extend([task.pack(element, r) for r in result])
-                    else:
-                        # One-one transformations
-                        elements.append(task.pack(element, result))
-                else:
-                    # Pass unprocessed elements through
-                    elements.append(element)
-
-        # Remove process index and yield results
+        # Yield results processed by all tasks
         yield from elements
 
     def finalize(self):
