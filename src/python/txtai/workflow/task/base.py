@@ -335,12 +335,12 @@ class Task:
         """
 
         # If all outputs are numpy arrays, use native method
-        if all([isinstance(output, np.ndarray) for output in outputs]):
+        if all(isinstance(output, np.ndarray) for output in outputs):
             return np.concatenate(np.stack(outputs, axis=1))
 
         # If all outputs are torch tensors, use native method
         # pylint: disable=E1101
-        if all([torch.is_tensor(output) for output in outputs]):
+        if all(torch.is_tensor(output) for output in outputs):
             return torch.cat(tuple(torch.stack(outputs, axis=1)))
 
         # Wrap as one to many transforms
@@ -366,12 +366,12 @@ class Task:
         """
 
         # If all outputs are numpy arrays, use native method
-        if all([isinstance(output, np.ndarray) for output in outputs]):
+        if all(isinstance(output, np.ndarray) for output in outputs):
             return np.stack(outputs, axis=1)
 
         # If all outputs are torch tensors, use native method
         # pylint: disable=E1101
-        if all([torch.is_tensor(output) for output in outputs]):
+        if all(torch.is_tensor(output) for output in outputs):
             return torch.stack(outputs, axis=1)
 
         return list(zip(*outputs))

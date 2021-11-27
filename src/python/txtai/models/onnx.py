@@ -66,7 +66,7 @@ class OnnxModel(PreTrainedModel):
 
         # pylint: disable=E1101
         # Detect if logits is an output and return classifier output in that case
-        if any([x.name for x in self.model.get_outputs() if x.name == "logits"]):
+        if any(x.name for x in self.model.get_outputs() if x.name == "logits"):
             return SequenceClassifierOutput(logits=torch.from_numpy(np.array(results[0])))
 
         return torch.from_numpy(np.array(results))

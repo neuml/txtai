@@ -480,7 +480,7 @@ class Application:
 
         # Generate workflow file
         workflow = os.path.join(tempfile.gettempdir(), "workflow.yml")
-        with open(workflow, "w") as f:
+        with open(workflow, "w", encoding="utf-8") as f:
             f.write(config)
 
         os.environ["CONFIG"] = workflow
@@ -509,7 +509,7 @@ class Application:
 
         text = [text for uid, text, _ in self.data if uid == key][0]
         if key and key.lower().startswith("http"):
-            return "<a href='%s' rel='noopener noreferrer' target='blank'>%s</a>" % (key, text)
+            return f"<a href='{key}' rel='noopener noreferrer' target='blank'>{text}</a>"
 
         return text
 
@@ -577,7 +577,7 @@ class Application:
             )
 
             if query:
-                df = pd.DataFrame([{"content": self.find(uid), "score": "%.2f" % score} for uid, score in self.embeddings.search(query, limit)])
+                df = pd.DataFrame([{"content": self.find(uid), "score": f"{score:.2}"} for uid, score in self.embeddings.search(query, limit)])
                 st.write(df.to_html(escape=False), unsafe_allow_html=True)
 
     def parse(self, data):
@@ -631,7 +631,7 @@ class Application:
 
             api = col2.button("API", help="Start an API instance within this application")
             if api:
-                with st.spinner("Running workflow '%s' via API service, click stop to terminate" % name):
+                with st.spinner(f"Running workflow '{name}' via API service, click stop to terminate"):
                     self.api(config)
 
             col3.download_button("Export", config, file_name="workflow.yml", help="Export the API workflow as YAML")

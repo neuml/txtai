@@ -86,7 +86,7 @@ class Models:
             device reference
         """
 
-        return "cpu" if deviceid < 0 else "cuda:{}".format(deviceid)
+        return "cpu" if deviceid < 0 else f"cuda:{deviceid}"
 
     @staticmethod
     def load(path, config=None, task="default"):

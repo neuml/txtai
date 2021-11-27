@@ -57,6 +57,7 @@ class Documents:
         """
 
         # Create documents file if not already open
+        # pylint: disable=R1732
         if not self.documents:
             self.documents = tempfile.NamedTemporaryFile(mode="wb", suffix=".docs", delete=False)
 

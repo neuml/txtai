@@ -82,7 +82,7 @@ class TestExtension(unittest.TestCase):
 
         config = os.path.join(tempfile.gettempdir(), "testapi.yml")
 
-        with open(config, "w") as output:
+        with open(config, "w", encoding="utf-8") as output:
             output.write(PIPELINES)
 
         client = TestClient(application.app)

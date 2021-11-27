@@ -57,7 +57,7 @@ class TestEmbeddings(unittest.TestCase):
         config = os.path.join(tempfile.gettempdir(), "testapi.yml")
         index = os.path.join(tempfile.gettempdir(), "testapi")
 
-        with open(config, "w") as output:
+        with open(config, "w", encoding="utf-8") as output:
             output.write((INDEX if full else READONLY) % (index))
 
         client = TestClient(app)

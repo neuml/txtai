@@ -46,7 +46,7 @@ class Textractor(Segmentation):
             return parsed["content"]
 
         # Fallback to Beautiful Soup
-        text = "file://%s" % text if os.path.exists(text) else text
+        text = f"file://{text}" if os.path.exists(text) else text
         with contextlib.closing(urlopen(text)) as connection:
             text = connection.read()
 
@@ -68,7 +68,7 @@ class Textractor(Segmentation):
         if not path:
             path = os.getenv("TIKA_JAVA", "java")
 
-        # pylint: disable=W0702
+        # pylint: disable=R1732,W0702,W1514
         # Check if java binary is available on path
         try:
             _ = Popen(path, stdout=open(os.devnull, "w"), stderr=open(os.devnull, "w"))

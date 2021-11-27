@@ -54,8 +54,6 @@ def transform(document):
         (id, embedding)
     """
 
-    global VECTORS
-
     return (document[0], VECTORS.transform(document))
 
 
@@ -191,12 +189,12 @@ class WordVectors(Vectors):
         model = fasttext.train_unsupervised(data, dim=size, minCount=mincount)
 
         # Output file path
-        print("Building %d dimension model" % size)
+        print(f"Building {size} dimension model")
 
         # Output vectors in vec/txt format
-        with open(path + ".txt", "w") as output:
+        with open(path + ".txt", "w", encoding="utf-8") as output:
             words = model.get_words()
-            output.write("%d %d\n" % (len(words), model.get_dimension()))
+            output.write(f"{len(words)} {model.get_dimension()}\n")
 
             for word in words:
                 # Skip end of line token

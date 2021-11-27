@@ -83,7 +83,7 @@ class Reducer:
         """
 
         # Dimensionality reduction
-        with open("%s/lsa" % path, "rb") as handle:
+        with open(f"{path}/lsa", "rb") as handle:
             self.model = pickle.load(handle)
 
     def save(self, path):
@@ -94,5 +94,5 @@ class Reducer:
             path: directory path to save model
         """
 
-        with open("%s/lsa" % path, "wb") as handle:
+        with open(f"{path}/lsa", "wb") as handle:
             pickle.dump(self.model, handle, protocol=pickle.HIGHEST_PROTOCOL)

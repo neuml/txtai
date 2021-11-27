@@ -130,7 +130,7 @@ class Scoring:
             path: directory path to load model
         """
 
-        with open("%s/scoring" % path, "rb") as handle:
+        with open(f"{path}/scoring", "rb") as handle:
             self.__dict__.update(pickle.load(handle))
 
     def save(self, path):
@@ -141,7 +141,7 @@ class Scoring:
             path: directory path to save model
         """
 
-        with open("%s/scoring" % path, "wb") as handle:
+        with open(f"{path}/scoring", "wb") as handle:
             pickle.dump(self.__dict__, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     def computeIDF(self, freq):

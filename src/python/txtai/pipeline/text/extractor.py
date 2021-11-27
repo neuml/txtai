@@ -133,8 +133,8 @@ class Extractor(Pipeline):
                 #   - all prohibited tokens are not present or there are not prohibited tokens
                 #   - score is above minimum score required
                 #   - number of tokens is above minimum number of tokens required
-                if (not must or all([token.lower() in text.lower() for token in must])) and (
-                    not mnot or all([token.lower() not in text.lower() for token in mnot])
+                if (not must or all(token.lower() in text.lower() for token in must)) and (
+                    not mnot or all(token.lower() not in text.lower() for token in mnot)
                 ):
                     if score >= self.minscore and len(tokenlist[x]) >= self.mintokens:
                         matches.append(segments[x] + (score,))

@@ -21,6 +21,7 @@ class RetrieveTask(UrlTask):
         # Create default temporary directory if not specified
         if not directory:
             # Save tempdir to prevent content from being deleted until this task is out of scope
+            # pylint: disable=R1732
             self.tempdir = tempfile.TemporaryDirectory()
             directory = self.tempdir.name
 

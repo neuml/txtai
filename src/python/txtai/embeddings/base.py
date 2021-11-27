@@ -303,7 +303,7 @@ class Embeddings:
         """
 
         # Index configuration
-        with open("%s/config" % path, "rb") as handle:
+        with open(f"{path}/config", "rb") as handle:
             self.config = pickle.load(handle)
 
             # Build full path to embedding vectors file
@@ -312,11 +312,11 @@ class Embeddings:
 
         # Sentence embeddings index
         self.embeddings = ANNFactory.create(self.config)
-        self.embeddings.load("%s/embeddings" % path)
+        self.embeddings.load(f"{path}/embeddings")
 
         # Dimensionality reduction
         if self.config.get("pca"):
-            with open("%s/lsa" % path, "rb") as handle:
+            with open(f"{path}/lsa", "rb") as handle:
                 self.reducer = Reducer()
                 self.reducer.load(path)
 
@@ -339,7 +339,7 @@ class Embeddings:
             true if index exists, false otherwise
         """
 
-        return os.path.exists("%s/config" % path) and os.path.exists("%s/embeddings" % path)
+        return os.path.exists(f"{path}/config") and os.path.exists(f"{path}/embeddings")
 
     def save(self, path):
         """
@@ -360,11 +360,11 @@ class Embeddings:
                 self.config["path"] = os.path.basename(self.config["path"])
 
             # Write index configuration
-            with open("%s/config" % path, "wb") as handle:
+            with open(f"{path}/config", "wb") as handle:
                 pickle.dump(self.config, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
             # Write sentence embeddings index
-            self.embeddings.save("%s/embeddings" % path)
+            self.embeddings.save(f"{path}/embeddings")
 
             # Save dimensionality reduction
             if self.reducer:

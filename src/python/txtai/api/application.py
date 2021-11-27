@@ -29,8 +29,6 @@ def get():
         API instance
     """
 
-    # pylint: disable=W0603
-    global INSTANCE
     return INSTANCE
 
 
@@ -44,7 +42,7 @@ def start():
     global INSTANCE
 
     # Load YAML settings
-    with open(os.getenv("CONFIG"), "r") as f:
+    with open(os.getenv("CONFIG"), "r", encoding="utf-8") as f:
         # Read configuration
         config = yaml.safe_load(f)
 

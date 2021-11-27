@@ -52,10 +52,10 @@ class Application:
             index: yields rows for embeddings indexing if True, otherwise yields database rows
         """
 
-        with open(os.path.join(self.path, "filtered.txt")) as infile:
+        with open(os.path.join(self.path, "filtered.txt"), encoding="utf-8") as infile:
             for x, row in enumerate(infile):
                 if x % 1000 == 0:
-                    print("Processed %d rows" % x, end="\r")
+                    print(f"Processed {x} rows", end="\r")
 
                 row = row.split("\t")
                 uid, data = row[1], json.loads(row[4])
@@ -68,7 +68,7 @@ class Application:
                     if index:
                         yield (uid, data["title"] + ". " + description, None)
                     else:
-                        cover = "%d" % data["covers"][0] if "covers" in data and data["covers"] else None
+                        cover = f"{data['covers'][0]}" if "covers" in data and data["covers"] else None
                         yield (uid, data["title"], description, cover)
 
     def database(self):
@@ -155,14 +155,14 @@ class Application:
                 if result:
                     # Build cover image
                     cover = (
-                        "<img src='http://covers.openlibrary.org/b/id/%s-M.jpg'/>" % result[2]
+                        f"<img src='http://covers.openlibrary.org/b/id/{result[2]}-M.jpg'/>"
                         if result[2]
                         else "<img src='http://openlibrary.org/images/icons/avatar_book-lg.png'/>"
                     )
 
                     # Append book link
-                    cover = "<a target='_blank' href='https://openlibrary.org/%s'>%s</a>" % (uid, cover)
-                    title = "<a target='_blank' href='https://openlibrary.org/%s'>%s</a>" % (uid, result[0])
+                    cover = f"<a target='_blank' href='https://openlibrary.org/{uid}'>{cover}</a>"
+                    title = f"<a target='_blank' href='https://openlibrary.org/{uid}'>{result[0]}</a>"
 
                     results.append({"Cover": cover, "Title": title, "Description": result[1]})
 

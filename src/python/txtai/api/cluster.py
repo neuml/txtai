@@ -45,9 +45,9 @@ class Cluster:
         """
 
         # Build URL
-        action = "search?query=%s" % query
+        action = f"search?query={query}"
         if limit:
-            action += "&limit=%d" % limit
+            action += f"&limit={limit}"
 
         # Run query and flatten results into single results list
         results = []
@@ -174,7 +174,7 @@ class Cluster:
         """
 
         # Get urls
-        urls = ["%s/%s" % (shard, action) for shard in self.shards]
+        urls = [f"{shard}/{action}" for shard in self.shards]
         close = False
 
         # Use existing loop if available, otherwise create one

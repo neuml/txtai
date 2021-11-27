@@ -61,7 +61,7 @@ class TestPipelines(unittest.TestCase):
 
         config = os.path.join(tempfile.gettempdir(), "testapi.yml")
 
-        with open(config, "w") as output:
+        with open(config, "w", encoding="utf-8") as output:
             output.write(PIPELINES)
 
         client = TestClient(app)
@@ -172,7 +172,7 @@ class TestPipelines(unittest.TestCase):
         Test summary via API
         """
 
-        summary = self.client.get("summary?text=%s&minlength=15&maxlength=15" % urllib.parse.quote(self.text)).json()
+        summary = self.client.get(f"summary?text={urllib.parse.quote(self.text)}&minlength=15&maxlength=15").json()
         self.assertEqual(summary, "txtai is an AI-powered search engine that")
 
     def testSummaryBatch(self):
@@ -188,7 +188,7 @@ class TestPipelines(unittest.TestCase):
         Test tabular via API
         """
 
-        results = self.client.get("tabular?file=%s" % Utils.PATH + "/tabular.csv").json()
+        results = self.client.get(f"tabular?file={Utils.PATH}" + "/tabular.csv").json()
 
         # Check length of results is as expected
         self.assertEqual(len(results), 6)
@@ -208,7 +208,7 @@ class TestPipelines(unittest.TestCase):
         Test textractor via API
         """
 
-        text = self.client.get("textract?file=%s" % Utils.PATH + "/article.pdf").json()
+        text = self.client.get(f"textract?file={Utils.PATH}" + "/article.pdf").json()
 
         # Check length of text is as expected
         self.assertEqual(len(text), 2301)
@@ -228,7 +228,7 @@ class TestPipelines(unittest.TestCase):
         Test transcribe via API
         """
 
-        text = self.client.get("transcribe?file=%s" % Utils.PATH + "/Make_huge_profits.wav").json()
+        text = self.client.get(f"transcribe?file={Utils.PATH}" + "/Make_huge_profits.wav").json()
 
         # Check length of text is as expected
         self.assertEqual(text, "Make huge profits without working make up to one hundred thousand dollars a day")
@@ -248,7 +248,7 @@ class TestPipelines(unittest.TestCase):
         Test translate via API
         """
 
-        translation = self.client.get("translate?text=%s&target=es" % urllib.parse.quote("This is a test translation into Spanish")).json()
+        translation = self.client.get(f"translate?text={urllib.parse.quote('This is a test translation into Spanish')}&target=es").json()
         self.assertEqual(translation, "Esta es una traducción de prueba al español")
 
     def testTranslateBatch(self):
