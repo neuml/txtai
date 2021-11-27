@@ -2,6 +2,8 @@
 API module
 """
 
+from threading import Lock
+
 from .cluster import Cluster
 
 from ..embeddings import Documents, Embeddings
@@ -24,6 +26,9 @@ class API:
 
         # Initialize member variables
         self.config, self.documents, self.embeddings, self.cluster = config, None, None, None
+
+        # Write lock
+        self.lock = Lock()
 
         # Local embeddings index
         if self.config.get("path") and Embeddings().exists(self.config["path"]):
@@ -222,30 +227,31 @@ class API:
         if self.cluster:
             self.cluster.add(documents)
         elif self.embeddings and self.config.get("writable"):
-            # Only add batch if index is marked writable
-            # Create documents file if not already open
-            if not self.documents:
-                self.documents = Documents()
+            with self.lock:
+                # Only add batch if index is marked writable
+                # Create documents file if not already open
+                if not self.documents:
+                    self.documents = Documents()
 
-            batch = []
-            index = self.count() + len(self.documents)
-            for document in documents:
-                if isinstance(document, dict):
-                    # Copy value from dict to a new tuple
-                    document = (document["id"], document["text"], None)
-                elif isinstance(document, str):
-                    # Add uid via autosequence
-                    document = (index, document, None)
-                    index += 1
-                elif isinstance(document, tuple) and len(document) < 3:
-                    # Copy partial tuple
-                    document = (document[0], document[1], None)
+                batch = []
+                index = self.count() + len(self.documents)
+                for document in documents:
+                    if isinstance(document, dict):
+                        # Copy value from dict to a new tuple
+                        document = (document["id"], document["text"], None)
+                    elif isinstance(document, str):
+                        # Add uid via autosequence
+                        document = (index, document, None)
+                        index += 1
+                    elif isinstance(document, tuple) and len(document) < 3:
+                        # Copy partial tuple
+                        document = (document[0], document[1], None)
 
-                # Add document tuple (id, text, element)
-                batch.append(document)
+                    # Add document tuple (id, text, element)
+                    batch.append(document)
 
-            # Add batch
-            self.documents.add(batch)
+                # Add batch
+                self.documents.add(batch)
 
         # Return unmodified input documents
         return documents
@@ -258,20 +264,21 @@ class API:
         if self.cluster:
             self.cluster.index()
         elif self.embeddings and self.config.get("writable") and self.documents:
-            # Build scoring index if scoring method provided
-            if self.config.get("scoring"):
-                self.embeddings.score(self.documents)
+            with self.lock:
+                # Build scoring index if scoring method provided
+                if self.config.get("scoring"):
+                    self.embeddings.score(self.documents)
 
-            # Build embeddings index
-            self.embeddings.index(self.documents)
+                # Build embeddings index
+                self.embeddings.index(self.documents)
 
-            # Save index if path available, otherwise this is an memory-only index
-            if self.config.get("path"):
-                self.embeddings.save(self.config["path"])
+                # Save index if path available, otherwise this is an memory-only index
+                if self.config.get("path"):
+                    self.embeddings.save(self.config["path"])
 
-            # Reset document stream
-            self.documents.close()
-            self.documents = None
+                # Reset document stream
+                self.documents.close()
+                self.documents = None
 
     def upsert(self):
         """
@@ -281,16 +288,17 @@ class API:
         if self.cluster:
             self.cluster.upsert()
         elif self.embeddings and self.config.get("writable") and self.documents:
-            # Run upsert
-            self.embeddings.upsert(self.documents)
+            with self.lock:
+                # Run upsert
+                self.embeddings.upsert(self.documents)
 
-            # Save index if path available, otherwise this is an memory-only index
-            if self.config.get("path"):
-                self.embeddings.save(self.config["path"])
+                # Save index if path available, otherwise this is an memory-only index
+                if self.config.get("path"):
+                    self.embeddings.save(self.config["path"])
 
-            # Reset document stream
-            self.documents.close()
-            self.documents = None
+                # Reset document stream
+                self.documents.close()
+                self.documents = None
 
     def delete(self, ids):
         """
@@ -306,7 +314,8 @@ class API:
         if self.cluster:
             return self.cluster.delete(ids)
         if self.embeddings and self.config.get("writable"):
-            return self.embeddings.delete(ids)
+            with self.lock:
+                return self.embeddings.delete(ids)
 
         return None
 
