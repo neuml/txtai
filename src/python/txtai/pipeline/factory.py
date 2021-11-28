@@ -3,9 +3,9 @@ Pipeline factory module
 """
 
 import inspect
+import sys
 
 from .base import Pipeline
-from .. import pipeline
 
 
 class PipelineFactory:
@@ -64,6 +64,9 @@ class PipelineFactory:
         """
 
         pipelines = {}
+
+        # Get handle to pipeline module
+        pipeline = sys.modules[".".join(__name__.split(".")[:-1])]
 
         # Get list of callable pipelines
         for x in inspect.getmembers(pipeline, inspect.isclass):

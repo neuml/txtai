@@ -4,14 +4,12 @@ FastAPI application module
 
 import inspect
 import os
+import sys
 
-from fastapi import FastAPI
+from fastapi import APIRouter, FastAPI
 
 from .base import API
 from .factory import Factory
-from .routers import embeddings, similarity
-
-from . import routers
 
 # API instance
 app = FastAPI()
@@ -36,13 +34,16 @@ def apirouters():
     Lists available APIRouters.
 
     Returns:
-        list of (router name, router)
+        {router name: router}
     """
 
-    available = []
-    for name, rclass in inspect.getmembers(routers, inspect.ismodule):
-        if hasattr(rclass, "router"):
-            available.append((name.lower(), rclass.router))
+    # Get handle to api module
+    api = sys.modules[".".join(__name__.split(".")[:-1])]
+
+    available = {}
+    for name, rclass in inspect.getmembers(api, inspect.ismodule):
+        if hasattr(rclass, "router") and isinstance(rclass.router, APIRouter):
+            available[name.lower()] = rclass.router
 
     return available
 
@@ -63,18 +64,21 @@ def start():
     api = os.getenv("API_CLASS")
     INSTANCE = Factory.create(config, api) if api else API(config)
 
+    # Get all known routers
+    routers = apirouters()
+
     # Conditionally add routes based on configuration
-    for name, router in apirouters():
+    for name, router in routers.items():
         if name in config:
             app.include_router(router)
 
     # Special case for embeddings clusters
     if "cluster" in config and "embeddings" not in config:
-        app.include_router(embeddings.router)
+        app.include_router(routers["embeddings"])
 
     # Special case to add similarity instance for embeddings
     if "embeddings" in config and "similarity" not in config:
-        app.include_router(similarity.router)
+        app.include_router(routers["similarity"])
 
     # Execute extensions if present
     extensions = os.getenv("EXTENSIONS")

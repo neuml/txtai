@@ -38,7 +38,7 @@ class HFModel(Tensors):
 
     def prepare(self, model):
         """
-        Prepares a model for processing. Applies dynamice quantization if necessary.
+        Prepares a model for processing. Applies dynamic quantization if necessary.
 
         Args:
             model: input model
