@@ -2,6 +2,11 @@
 Pipeline factory module
 """
 
+import inspect
+
+from .base import Pipeline
+from .. import pipeline
+
 
 class PipelineFactory:
     """
@@ -9,23 +14,23 @@ class PipelineFactory:
     """
 
     @staticmethod
-    def get(pipeline):
+    def get(pclass):
         """
         Gets a new instance of pipeline class.
 
         Args:
-            pipeline: Pipeline instance class
+            pclass: Pipeline instance class
 
         Returns:
             Pipeline class
         """
 
         # Local pipeline if no package
-        if "." not in pipeline:
-            # Get parent package
-            pipeline = ".".join(__name__.split(".")[:-1]) + "." + pipeline.capitalize()
+        if "." not in pclass:
+            return PipelineFactory.list()[pclass]
 
-        parts = pipeline.split(".")
+        # Attempt to load custom pipeline
+        parts = pclass.split(".")
         module = ".".join(parts[:-1])
         m = __import__(module)
         for comp in parts[1:]:
@@ -34,17 +39,36 @@ class PipelineFactory:
         return m
 
     @staticmethod
-    def create(config, pipeline):
+    def create(config, pclass):
         """
         Creates a new Pipeline instance.
 
         Args:
             config: Pipeline configuration
-            pipeline: Pipeline instance class
+            pclass: Pipeline instance class
 
         Returns:
             Pipeline
         """
 
         # Get Pipeline instance
-        return PipelineFactory.get(pipeline)(**config)
+        return PipelineFactory.get(pclass)(**config)
+
+    @staticmethod
+    def list():
+        """
+        Lists callable pipelines.
+
+        Returns:
+            {short name: pipeline class}
+        """
+
+        pipelines = {}
+
+        # Get list of callable pipelines
+        for x in inspect.getmembers(pipeline, inspect.isclass):
+            if issubclass(x[1], Pipeline) and [y for y, _ in inspect.getmembers(x[1], inspect.isfunction) if y == "__call__"]:
+                # short name: pipeline class
+                pipelines[x[0].lower()] = x[1]
+
+        return pipelines

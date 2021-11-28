@@ -2,15 +2,16 @@
 FastAPI application module
 """
 
+import inspect
 import os
 
 from fastapi import FastAPI
 
 from .base import API
 from .factory import Factory
+from .routers import embeddings, similarity
 
-# pylint: disable=R0401,W0401
-from .routers import *
+from . import routers
 
 # API instance
 app = FastAPI()
@@ -30,6 +31,22 @@ def get():
     return INSTANCE
 
 
+def apirouters():
+    """
+    Lists available APIRouters.
+
+    Returns:
+        list of (router name, router)
+    """
+
+    available = []
+    for name, rclass in inspect.getmembers(routers, inspect.ismodule):
+        if hasattr(rclass, "router"):
+            available.append((name.lower(), rclass.router))
+
+    return available
+
+
 @app.on_event("startup")
 def start():
     """
@@ -46,25 +63,8 @@ def start():
     api = os.getenv("API_CLASS")
     INSTANCE = Factory.create(config, api) if api else API(config)
 
-    # Router definitions
-    routers = [
-        ("caption", caption.router),
-        ("embeddings", embeddings.router),
-        ("extractor", extractor.router),
-        ("labels", labels.router),
-        ("objects", objects.router),
-        ("segmentation", segmentation.router),
-        ("similarity", similarity.router),
-        ("summary", summary.router),
-        ("tabular", tabular.router),
-        ("textractor", textractor.router),
-        ("transcription", transcription.router),
-        ("translation", translation.router),
-        ("workflow", workflow.router),
-    ]
-
     # Conditionally add routes based on configuration
-    for name, router in routers:
+    for name, router in apirouters():
         if name in config:
             app.include_router(router)
 

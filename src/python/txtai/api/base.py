@@ -54,11 +54,7 @@ class API:
         """
 
         # Initialize member variables
-        self.config, self.documents, self.embeddings, self.cluster = config, None, None, None
-
-        # Read configuration from file
-        if isinstance(self.config, str):
-            self.config = API.read(self.config)
+        self.config, self.documents, self.embeddings, self.cluster = API.read(config), None, None, None
 
         # Write lock
         self.lock = Lock()
@@ -91,20 +87,7 @@ class API:
         self.pipelines = {}
 
         # Default pipelines
-        pipelines = [
-            "caption",
-            "extractor",
-            "labels",
-            "nop",
-            "objects",
-            "segmentation",
-            "similarity",
-            "summary",
-            "tabular",
-            "textractor",
-            "transcription",
-            "translation",
-        ]
+        pipelines = list(PipelineFactory.list().keys())
 
         # Add custom pipelines
         for key in self.config:
