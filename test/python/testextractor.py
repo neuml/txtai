@@ -60,6 +60,13 @@ class TestExtractor(unittest.TestCase):
         answers = self.extractor([(question, question, question, False)], self.data)
         self.assertEqual("Flyers", answers[0][1])
 
+    def testEmptyQuery(self):
+        """
+        Tests an empty extractor queries list.
+        """
+
+        self.assertEqual(self.extractor.query(None, None), [])
+
     def testNoAnswer(self):
         """
         Test qa extraction with no answer
@@ -67,6 +74,10 @@ class TestExtractor(unittest.TestCase):
 
         question = ""
 
+        answers = self.extractor([(question, question, question, False)], self.data)
+        self.assertIsNone(answers[0][1])
+
+        question = "abcdef"
         answers = self.extractor([(question, question, question, False)], self.data)
         self.assertIsNone(answers[0][1])
 

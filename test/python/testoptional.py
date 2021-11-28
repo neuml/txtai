@@ -23,6 +23,7 @@ class TestOptional(unittest.TestCase):
 
         modules = [
             "annoy",
+            "fastapi",
             "fasttext",
             "hnswlib",
             "nltk",
@@ -79,6 +80,14 @@ class TestOptional(unittest.TestCase):
 
         with self.assertRaises(ImportError):
             ANNFactory.create({"backend": "hnsw"})
+
+    def testApi(self):
+        """
+        Test missing api dependencies
+        """
+
+        with self.assertRaises(ImportError):
+            import txtai.api
 
     def testModels(self):
         """

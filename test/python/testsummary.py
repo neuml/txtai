@@ -36,6 +36,13 @@ class TestSummary(unittest.TestCase):
 
         self.assertEqual(self.summary(self.text, minlength=15, maxlength=15), "txtai is an AI-powered search engine that")
 
+    def testSummaryShort(self):
+        """
+        Test that summarization is skipped
+        """
+
+        self.assertEqual(self.summary("Text", maxlength=15), "Text")
+
     def testSummaryBatch(self):
         """
         Test batch summarization of text

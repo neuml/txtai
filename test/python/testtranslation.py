@@ -13,6 +13,19 @@ class TestTranslation(unittest.TestCase):
     Translation tests
     """
 
+    def testLongTranslation(self):
+        """
+        Tests a translation longer than max tokenization length.
+        """
+
+        translate = Translation()
+
+        text = "This is a test translation to Spanish. " * 100
+        translation = translate(text, "es")
+
+        # Validate translation text
+        self.assertIsNotNone(translation)
+
     @unittest.skipIf(os.name == "nt", "M2M100 skipped on Windows")
     def testM2M100Translation(self):
         """
@@ -43,18 +56,21 @@ class TestTranslation(unittest.TestCase):
         translation = translate(translation, "en")
         self.assertEqual(translation, text)
 
-    def testLongTranslation(self):
+    def testNoLang(self):
         """
-        Tests a translation longer than max tokenization length.
+        Test no matching language id.
         """
 
         translate = Translation()
+        self.assertIsNone(translate.langid([], "zz"))
 
-        text = "This is a test translation to Spanish. " * 100
-        translation = translate(text, "es")
+    def testNoModel(self):
+        """
+        Tests no known available model found.
+        """
 
-        # Validate translation text
-        self.assertIsNotNone(translation)
+        translate = Translation()
+        self.assertEqual(translate.modelpath("zz", "en"), "Helsinki-NLP/opus-mt-mul-en")
 
     def testNoTranslation(self):
         """
