@@ -98,6 +98,14 @@ class TestExtension(unittest.TestCase):
 
         cls.client = TestExtension.start()
 
+    def testEmpty(self):
+        """
+        Tests an empty extension.
+        """
+
+        extension = Extension()
+        self.assertIsNone(extension(None))
+
     def testExtension(self):
         """
         Tests a pipeline extension.

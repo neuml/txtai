@@ -10,6 +10,7 @@ import torch
 
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
+from txtai.data import Data
 from txtai.pipeline import HFTrainer, Labels, Questions
 
 
@@ -130,6 +131,13 @@ class TestTrainer(unittest.TestCase):
 
         labels = Labels((model, tokenizer), dynamic=False)
         self.assertEqual(labels("cat")[0][0], 1)
+
+    def testEmpty(self):
+        """
+        Tests an empty training data object.
+        """
+
+        self.assertIsNone(Data(None, None, None).process(None))
 
     def testQA(self):
         """

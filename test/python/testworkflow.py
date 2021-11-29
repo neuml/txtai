@@ -11,7 +11,7 @@ import torch
 
 from txtai.api import API
 from txtai.embeddings import Documents, Embeddings
-from txtai.pipeline import Summary, Translation, Textractor
+from txtai.pipeline import Nop, Segmentation, Summary, Translation, Textractor
 from txtai.workflow import Workflow, Task, FileTask, ImageTask, RetrieveTask, StorageTask, WorkflowTask
 
 # pylint: disable = C0411
@@ -89,6 +89,25 @@ class TestWorkflow(unittest.TestCase):
         self.assertEqual(index, 0)
         self.assertEqual(data[0][1], "txtai builds an AI-powered index over sections")
 
+    def testConcurrentWorkflow(self):
+        """
+        Tests running concurrent task actions
+        """
+
+        nop = Nop()
+
+        workflow = Workflow([Task([nop, nop], concurrency="thread")])
+        results = list(workflow([2, 4]))
+        self.assertEqual(results, [(2, 2), (4, 4)])
+
+        workflow = Workflow([Task([nop, nop], concurrency="process")])
+        results = list(workflow([2, 4]))
+        self.assertEqual(results, [(2, 2), (4, 4)])
+
+        workflow = Workflow([Task([nop, nop], concurrency="unknown")])
+        results = list(workflow([2, 4]))
+        self.assertEqual(results, [(2, 2), (4, 4)])
+
     def testExtractWorkflow(self):
         """
         Tests column extraction tasks
@@ -115,6 +134,14 @@ class TestWorkflow(unittest.TestCase):
         results = list(workflow([Utils.PATH + "/books.jpg"]))
 
         self.assertEqual(results[0].size, (1024, 682))
+
+    def testInvalidWorkflow(self):
+        """
+        Tests task with invalid parameters
+        """
+
+        with self.assertRaises(TypeError):
+            Task(invalid=True)
 
     def testMergeWorkflow(self):
         """
@@ -147,6 +174,31 @@ class TestWorkflow(unittest.TestCase):
         workflow = Workflow([Task(lambda x: [(0, y, None) for y in x])])
         results = list(workflow([(1, "text", "tags")]))
         self.assertEqual(results[0], (0, "text", None))
+
+    def testMergeUnbalancedWorkflow(self):
+        """
+        Test merge tasks with unbalanced outputs (i.e. one action produce more output than another for same input).
+        """
+
+        nop = Nop()
+        segment1 = Segmentation(sentences=True)
+
+        task = Task([nop, segment1])
+
+        # Test hstack
+        workflow = Workflow([task])
+        results = list(workflow(["This is a test sentence. And another sentence to split."]))
+        self.assertEqual(
+            results, [("This is a test sentence. And another sentence to split.", ["This is a test sentence.", "And another sentence to split."])]
+        )
+
+        # Test vstack
+        task.merge = "vstack"
+        workflow = Workflow([task])
+        results = list(workflow(["This is a test sentence. And another sentence to split."]))
+        self.assertEqual(
+            results, ["This is a test sentence. And another sentence to split.", "This is a test sentence.", "And another sentence to split."]
+        )
 
     def testNumpyWorkflow(self):
         """
@@ -243,6 +295,12 @@ class TestWorkflow(unittest.TestCase):
 
         # Read from string
         config = """
+        # Embeddings index
+        writable: true
+        scoring: bm25
+        embeddings:
+            path: google/bert_uncased_L-2_H-128_A-2
+
         # Text segmentation
         segmentation:
             sentences: true
@@ -252,6 +310,7 @@ class TestWorkflow(unittest.TestCase):
             segment:
                 tasks:
                     - action: segmentation
+                    - action: index
         """
 
         app = API(config)

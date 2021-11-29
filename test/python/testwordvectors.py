@@ -53,7 +53,7 @@ class TestWordVectors(unittest.TestCase):
         # Generate data
         documents = [(x, "This is a test", None) for x in range(1000)]
 
-        model = VectorsFactory.create({"path": self.path}, None)
+        model = VectorsFactory.create({"path": self.path, "parallel": True}, None)
 
         ids, dimension, stream = model.index(documents)
 
