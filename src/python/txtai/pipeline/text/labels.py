@@ -31,7 +31,7 @@ class Labels(HFPipeline):
             labels: list of labels
             multilabel: labels are independent if True, scores are normalized to sum to 1 per text item if False, raw scores returned if None
             flatten: flatten output to a list of labels if present. Accepts a boolean or float value to only keep scores greater than that number.
-            workers: number of parallel workers to use for processing data, defaults to None
+            workers: number of concurrent workers to use for processing data, defaults to None
 
         Returns:
             list of (id, score) or list of labels depending on flatten parameter

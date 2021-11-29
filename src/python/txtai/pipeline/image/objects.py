@@ -38,7 +38,7 @@ class Objects(HFPipeline):
         Args:
             images: image|list
             flatten: flatten output to a list of objects
-            workers: number of parallel workers to use for processing data, defaults to none
+            workers: number of concurrent workers to use for processing data, defaults to None
 
         Returns:
             list of (label, score)

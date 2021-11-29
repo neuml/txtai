@@ -20,7 +20,7 @@ class Questions(HFPipeline):
         Args:
             questions: list of questions
             contexts: list of contexts to pull answers from
-            workers: number of parallel workers to use for processing data, defaults to none
+            workers: number of concurrent workers to use for processing data, defaults to None
 
         Returns:
             list of answers

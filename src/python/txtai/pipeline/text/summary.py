@@ -26,7 +26,7 @@ class Summary(HFPipeline):
             text: text|list
             minlength: minimum length for summary
             maxlength: maximum length for summary
-            workers: number of parallel workers to use for processing data, defaults to none
+            workers: number of concurrent workers to use for processing data, defaults to None
 
         Returns:
             summary text
