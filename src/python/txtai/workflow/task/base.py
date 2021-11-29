@@ -13,7 +13,9 @@ class Task:
     Base class for all workflow tasks.
     """
 
-    def __init__(self, action=None, select=None, unpack=True, column=None, merge="hstack", initialize=None, finalize=None):
+    def __init__(
+        self, action=None, select=None, unpack=True, column=None, merge="hstack", initialize=None, finalize=None, concurrency=None, **kwargs
+    ):
         """
         Creates a new task. A task defines two methods, type of data it accepts and the action to execute
         for each data element. Action is a callable function or list of callable functions.
@@ -26,6 +28,9 @@ class Task:
             merge: merge mode for joining multi-action outputs, defaults to hstack
             initialize: action to execute before processing
             finalize: action to execute after processing
+            concurrency: sets concurrency method when execute instance available
+                         valid values: "thread" for thread-based concurrency, "process" for process-based concurrency
+            kwargs: additional keyword arguments
         """
 
         # Standardize into list of actions
@@ -41,30 +46,41 @@ class Task:
         self.merge = merge
         self.initialize = initialize
         self.finalize = finalize
+        self.concurrency = concurrency
 
-    def __call__(self, elements):
+        # Check for custom registration. Adds additional instance members and validates required dependencies available.
+        if hasattr(self, "register"):
+            self.register(**kwargs)
+        elif kwargs:
+            # Raise error if additional keyword arguments passed in without register method
+            kwargs = ", ".join(f"'{kw}'" for kw in kwargs)
+            raise TypeError(f"__init__() got unexpected keyword arguments: {kwargs}")
+
+    def __call__(self, elements, executor=None):
         """
         Executes action for a list of data elements.
 
         Args:
             elements: iterable data elements
+            executor: execute instance, enables concurrent task actions
 
         Returns:
             transformed data elements
         """
 
         if isinstance(elements, list):
-            return self.filteredrun(elements)
+            return self.filteredrun(elements, executor)
 
-        return self.run(elements)
+        return self.run(elements, executor)
 
-    def filteredrun(self, elements):
+    def filteredrun(self, elements, executor):
         """
         Executes a filtered run, which will tag all inputs with a process id, filter elements down to elements the
         task can handle and execute on that subset. Items not selected for processing will be returned unmodified.
 
         Args:
             elements: iterable data elements
+            executor: execute instance, enables concurrent task actions
 
         Returns:
             transformed data elements
@@ -80,7 +96,7 @@ class Task:
         ids = [x for x, _ in data]
 
         # Prepare elements and execute task action(s)
-        results = self.execute([self.prepare(element) for _, element in data])
+        results = self.execute([self.prepare(element) for _, element in data], executor)
 
         # Pack results back into elements
         if self.merge:
@@ -122,19 +138,20 @@ class Task:
 
         return elements
 
-    def run(self, elements):
+    def run(self, elements, executor):
         """
         Executes a task run for elements. A standard run processes all elements.
 
         Args:
             elements: iterable data elements
+            executor: execute instance, enables concurrent task actions
 
         Returns:
             transformed data elements
         """
 
         # Execute task actions
-        results = self.execute(elements)
+        results = self.execute(elements, executor)
 
         # Handle one to many transformations
         if isinstance(results, list):
@@ -220,12 +237,13 @@ class Task:
 
         return element
 
-    def execute(self, elements):
+    def execute(self, elements, executor):
         """
         Executes action(s) on elements.
 
         Args:
             elements: list of data elements
+            executor: execute instance, enables concurrent task actions
 
         Returns:
             transformed data elements
@@ -239,8 +257,12 @@ class Task:
                 index = self.column[x] if isinstance(self.column, dict) else self.column
                 inputs = [self.extract(e, index) for e in elements] if index is not None else elements
 
-                # Run action and add outputs
-                outputs.append(self.process(action, inputs))
+                # Queue arguments for executor, process immediately if no executor available
+                outputs.append((action, inputs) if executor else self.process(action, inputs))
+
+            # Run with executor if available
+            if executor:
+                outputs = executor.run(self.concurrency, self.process, outputs)
 
             # Run post process operations
             return self.postprocess(outputs)
@@ -280,13 +302,7 @@ class Task:
         """
 
         # Execute action and get outputs
-        outputs = action(inputs)
-
-        # Wrap one to many transformations if necessary
-        if isinstance(outputs, list):
-            outputs = [OneToMany(output) if isinstance(output, list) else output for output in outputs]
-
-        return outputs
+        return action(inputs)
 
     def postprocess(self, outputs):
         """
@@ -301,7 +317,7 @@ class Task:
 
         # Unpack single action tasks
         if len(self.action) == 1:
-            return outputs[0]
+            return self.single(outputs[0])
 
         # Return unmodified outputs when merge set to None
         if not self.merge:
@@ -314,6 +330,23 @@ class Task:
 
         # Default mode is hstack
         return self.hstack(outputs)
+
+    def single(self, outputs):
+        """
+        Post processes and returns single action outputs.
+
+        Args:
+            outputs: outputs from a single task
+
+        Returns:
+            post processed outputs
+        """
+
+        if isinstance(outputs, list):
+            # Wrap one to many transformations
+            outputs = [OneToMany(output) if isinstance(output, list) else output for output in outputs]
+
+        return outputs
 
     def vstack(self, outputs):
         """
@@ -343,8 +376,19 @@ class Task:
         if all(torch.is_tensor(output) for output in outputs):
             return torch.cat(tuple(torch.stack(outputs, axis=1)))
 
-        # Wrap as one to many transforms
-        return [OneToMany(x) for x in zip(*outputs)]
+        # Flatten into lists of outputs per input row. Wrap as one to many transformation.
+        merge = []
+        for x in zip(*outputs):
+            combine = []
+            for y in x:
+                if isinstance(y, list):
+                    combine.extend(y)
+                else:
+                    combine.append(y)
+
+            merge.append(OneToMany(combine))
+
+        return merge
 
     def hstack(self, outputs):
         """
@@ -415,6 +459,3 @@ class OneToMany:
 
     def __iter__(self):
         return self.values.__iter__()
-
-    def __str__(self):
-        return self.values.__str__()

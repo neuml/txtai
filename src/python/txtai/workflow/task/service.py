@@ -19,27 +19,22 @@ class ServiceTask(Task):
     Task to runs requests against remote service urls.
     """
 
-    # pylint: disable=R0913
-    def __init__(
-        self,
-        action=None,
-        select=None,
-        unpack=True,
-        column=None,
-        merge="hstack",
-        initialize=None,
-        finalize=None,
-        url=None,
-        method=None,
-        params=None,
-        batch=True,
-        extract=None,
-    ):
+    def register(self, url=None, method=None, params=None, batch=True, extract=None):
+        """
+        Adds service parameters to task. Checks if required dependencies are installed.
+
+        Args:
+            url: url to connect to
+            method: http method, GET or POST
+            params: default query parameters
+            batch: If True, all elements are passed in a single batch request, otherwise a service call is executed per element
+            extract: list of sections to extract from response
+        """
+
         if not XML_TO_DICT:
             raise ImportError('ServiceTask is not available - install "workflow" extra to enable')
 
-        super().__init__(action, select, unpack, column, merge, initialize, finalize)
-
+        # pylint: disable=W0201
         # Save URL, method and parameter defaults
         self.url = url
         self.method = method
@@ -53,13 +48,13 @@ class ServiceTask(Task):
         if self.extract:
             self.extract = [self.extract] if isinstance(self.extract, str) else self.extract
 
-    def execute(self, elements):
+    def execute(self, elements, executor=None):
         if self.batch:
             elements = self.request(elements)
         else:
             elements = [self.request(element) for element in elements]
 
-        return super().execute(elements)
+        return super().execute(elements, executor)
 
     def request(self, data):
         """

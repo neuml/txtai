@@ -15,9 +15,15 @@ class RetrieveTask(UrlTask):
     Task that retrieves urls (local or remote) to a local directory.
     """
 
-    def __init__(self, action=None, select=None, unpack=True, column=None, merge="hstack", initialize=None, finalize=None, directory=None):
-        super().__init__(action, select, unpack, column, merge, initialize, finalize)
+    def register(self, directory=None):
+        """
+        Adds retrieve parameters to task.
 
+        Args:
+            directory: local directory used to store retrieved files
+        """
+
+        # pylint: disable=W0201
         # Create default temporary directory if not specified
         if not directory:
             # Save tempdir to prevent content from being deleted until this task is out of scope
@@ -32,9 +38,6 @@ class RetrieveTask(UrlTask):
         self.directory = directory
 
     def prepare(self, element):
-        # Run super() method to format element
-        element = super().prepare(element)
-
         # Extract file name
         _, name = os.path.split(element)
 

@@ -25,19 +25,21 @@ class StorageTask(Task):
     PREFIX = r"(\w+):\/\/.*"
     PATH = r"\w+:\/\/(.*)"
 
-    def __init__(self, action=None, select=None, unpack=True):
+    def register(self):
+        """
+        Checks if required dependencies are installed.
+        """
+
         if not LIBCLOUD:
             raise ImportError('StorageTask is not available - install "workflow" extra to enable')
 
-        super().__init__(action, select, unpack)
-
-    def __call__(self, elements):
+    def __call__(self, elements, executor=None):
         # Create aggregated directory listing for all elements
         outputs = []
         for element in elements:
             if self.matches(element):
                 # Get directory listing and run actions
-                outputs.extend(super().__call__(self.list(element)))
+                outputs.extend(super().__call__(self.list(element), executor))
             else:
                 outputs.append(element)
 
