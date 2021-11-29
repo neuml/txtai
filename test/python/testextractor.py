@@ -2,7 +2,7 @@
 Extractor module tests
 """
 
-import platform
+# import platform
 import unittest
 
 from txtai.embeddings import Embeddings
@@ -81,7 +81,7 @@ class TestExtractor(unittest.TestCase):
         answers = self.extractor([(question, question, question, False)], self.data)
         self.assertIsNone(answers[0][1])
 
-    @unittest.skipIf(platform.system() == "Darwin", "Quantized models not supported on macOS")
+    # @unittest.skipIf(platform.system() == "Darwin", "Quantized models not supported on macOS")
     def testQuantize(self):
         """
         Test qa extraction backed by a quantized model
