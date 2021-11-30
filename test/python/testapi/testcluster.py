@@ -75,7 +75,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.wfile.flush()
 
 
-# @unittest.skipIf(os.name == "nt", "TestCluster skipped on Windows")
+@unittest.skipIf(os.name == "nt", "TestCluster skipped on Windows")
 class TestCluster(unittest.TestCase):
     """
     API tests for embeddings clusters
