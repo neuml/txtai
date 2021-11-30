@@ -8,3 +8,4 @@ workflow(["https://file.to.download", "/local/file/to/copy"])
 ```
 
 ::: txtai.workflow.RetrieveTask.__init__
+::: txtai.workflow.RetrieveTask.register

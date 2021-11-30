@@ -8,3 +8,4 @@ workflow(["parameter"])
 ```
 
 ::: txtai.workflow.ServiceTask.__init__
+::: txtai.workflow.ServiceTask.register

@@ -30,6 +30,18 @@ list(workflow(["Very long text here"]))
 
 ::: txtai.workflow.Task.__init__
 
+## Multi-action task concurrency
+
+The default processing mode is to run actions sequentially. Multiprocessing support is already built in at a number of levels. Any of the GPU models will maximize GPU utilization for example and even in CPU mode, concurrency is utilized. But there are still use cases for task action concurrency. For example, if the system has multiple GPUs, the task runs external sequential code, or the task has a large number of I/O tasks.
+
+In addition to sequential processing, multi-action tasks can run either multithreaded or with multiple processes. The advantages of each approach are discussed below.
+
+- *multithreading* - no overhead of creating separate processes or pickling data. But Python can only execute a single thread due the GIL, so this approach won't help with CPU bound actions. This method works well with I/O bound actions and GPU actions.
+
+- *multiprocessing* - separate subprocesses are created and data is exchanged via pickling. This method can fully utilize all CPU cores since each process runs independently. This method works well with CPU bound actions.
+
+More information on multiprocessing can be found in the [Python documentation](https://docs.python.org/3/library/multiprocessing.html).
+
 ## Multi-action task merges
 
 Multi-action tasks will generate parallel outputs for the input data. The task output can be merged together in a couple different ways.
