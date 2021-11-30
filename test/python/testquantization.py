@@ -2,7 +2,7 @@
 Quantization module tests
 """
 
-# import platform
+import platform
 import unittest
 
 from transformers import AutoModel
@@ -15,7 +15,7 @@ class TestQuantization(unittest.TestCase):
     Quantization tests
     """
 
-    # @unittest.skipIf(platform.system() == "Darwin", "Quantized models not supported on macOS")
+    @unittest.skipIf(platform.system() == "Darwin", "Quantized models not supported on macOS")
     def testModel(self):
         """
         Tests quantizing a model through HFModel.
@@ -25,7 +25,7 @@ class TestQuantization(unittest.TestCase):
         model = model.prepare(AutoModel.from_pretrained("google/bert_uncased_L-2_H-128_A-2"))
         self.assertIsNotNone(model)
 
-    # @unittest.skipIf(platform.system() == "Darwin", "Quantized models not supported on macOS")
+    @unittest.skipIf(platform.system() == "Darwin", "Quantized models not supported on macOS")
     def testPipeline(self):
         """
         Tests quantizing a model through HFPipeline.
