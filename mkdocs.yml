@@ -3,6 +3,7 @@
 #
 
 site_name: txtai
+site_description: "txtai: Build AI-powered semantic search applications"
 repo_name: neuml/txtai
 repo_url: https://github.com/neuml/txtai
 copyright: © NeuML LLC, Apache-2.0 License
