@@ -52,11 +52,8 @@ for _ in workflow(data):
 Workflows can be defined using Python as described here but they can also be created as YAML configuration and run as shown below.
 
 ```python
-with open("workflow.yml") as config:
-  workflow = yaml.safe_load(config)
-
 # Create and run the workflow
-app = API(workflow)
+app = API("workflow.yml")
 data = list(app.workflow("workflow", ["input text"]))
 ```
 
