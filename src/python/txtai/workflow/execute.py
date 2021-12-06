@@ -90,8 +90,10 @@ class Execute:
 
         if self.thread:
             self.thread.close()
+            self.thread.join()
             self.thread = None
 
         if self.process:
             self.process.close()
+            self.process.join()
             self.process = None
