@@ -78,7 +78,7 @@ class SQL:
             True if this is a valid SQL query, False otherwise
         """
 
-        query = query.lower()
+        query = query.lower().strip(";")
         return query.startswith("select ") and (" from txtai " in query or query.endswith(" from txtai"))
 
     def tokenize(self, query):
@@ -92,8 +92,14 @@ class SQL:
             (tokenized query, token positions)
         """
 
-        # Build a simple SQL lexer - punctuation chars are parsed as standalone tokens which helps identify operators
-        tokens = list(shlex(StringIO(query), punctuation_chars="=!<>+-*/%"))
+        # Build a simple SQL lexer
+        #   - Punctuation chars are parsed as standalone tokens which helps identify operators
+        #   - Add additional wordchars to prevent splitting on those values
+        #   - Disable comments
+        tokens = shlex(StringIO(query), punctuation_chars="=!<>+-*/%")
+        tokens.wordchars += ":@#"
+        tokens.commenters = ""
+        tokens = list(tokens)
 
         # Identify sql clause token positions
         positions = {}

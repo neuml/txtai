@@ -89,9 +89,9 @@ class TestSQL(unittest.TestCase):
         Test basic select clauses
         """
 
-        self.assertSql("select", "select id, uid, tags from txtai", "s.id, s.uid, s.tags")
-        self.assertSql("select", "select id, uid, flag from txtai", 's.id, s.uid, json_extract(data, "$.flag") as "flag"')
-        self.assertSql("select", "select id, uid, a.b.c from txtai", 's.id, s.uid, json_extract(data, "$.a.b.c") as "a.b.c"')
+        self.assertSql("select", "select id, indexid, tags from txtai", "s.id, s.indexid, s.tags")
+        self.assertSql("select", "select id, indexid, flag from txtai", 's.id, s.indexid, json_extract(data, "$.flag") as "flag"')
+        self.assertSql("select", "select id, indexid, a.b.c from txtai", 's.id, s.indexid, json_extract(data, "$.a.b.c") as "a.b.c"')
         self.assertSql("select", "select 'id', [id], (id) from txtai", "'id', [s.id], (s.id)")
         self.assertSql("select", "select * from txtai", "*")
 
@@ -122,6 +122,7 @@ class TestSQL(unittest.TestCase):
         self.assertSql("where", prefix + "WHERE a NOT LIKE 'abc'", "json_extract(data, \"$.a\") NOT LIKE 'abc'")
         self.assertSql("where", prefix + "WHERE a IN (1, 2, 3, b)", 'json_extract(data, "$.a") IN (1, 2, 3, json_extract(data, "$.b"))')
         self.assertSql("where", prefix + "WHERE a is not null", 'json_extract(data, "$.a") is not null')
+        self.assertSql("where", prefix + "WHERE score >= 0.15", "score >= 0.15")
 
     def testWhereCompound(self):
         """
@@ -140,7 +141,7 @@ class TestSQL(unittest.TestCase):
             prefix + "where a > f(d(b, c, 1),1)",
             'json_extract(data, "$.a") > f(d(json_extract(data, "$.b"), json_extract(data, "$.c"), 1), 1)',
         )
-        self.assertSql("where", prefix + "where (id = 1 AND id = 2) OR uid = 3", "(s.id = 1 AND s.id = 2) OR s.uid = 3")
+        self.assertSql("where", prefix + "where (id = 1 AND id = 2) OR indexid = 3", "(s.id = 1 AND s.id = 2) OR s.indexid = 3")
         self.assertSql("where", prefix + "where f(id) = b(id)", "f(s.id) = b(s.id)")
         self.assertSql("where", prefix + "WHERE f(id)", "f(s.id)")
 

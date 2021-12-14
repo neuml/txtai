@@ -20,14 +20,15 @@ from .search import Search
 class Embeddings:
     """
     Embeddings is the engine that delivers semantic search. Text is transformed into embeddings vectors where similar concepts
-    will produce similar vectors. Indices both large and small are built with these vectors. The indices are used find results
+    will produce similar vectors. Indexes both large and small are built with these vectors. The indexes are used find results
     that have the same meaning, not necessarily the same keywords.
     """
 
     # pylint: disable = W0231
     def __init__(self, config=None):
         """
-        Creates a new Embeddings model.
+        Creates a new Embeddings model. Embeddings instances are thread-safe for read operations but writes must be
+        synchronized.
 
         Args:
             config: embeddings configuration
@@ -99,7 +100,7 @@ class Embeddings:
             # Add documents to database
             self.database.insert(documents)
         else:
-            # Save ids for indices with no database
+            # Save indexids-ids mapping for indexes with no database
             self.config["ids"] = ids
 
     def upsert(self, documents):
@@ -136,7 +137,7 @@ class Embeddings:
             # Add documents to database
             self.database.insert(documents, offset)
         else:
-            # Save ids for indices with no database
+            # Save indexids-ids mapping for indexes with no database
             self.config["ids"] = self.config["ids"] + ids
 
     def delete(self, ids):
@@ -157,7 +158,7 @@ class Embeddings:
         deletes = []
 
         if self.database:
-            # Retrieve id-uid mappings from database
+            # Retrieve indexid-id mappings from database
             ids = self.database.ids(ids)
 
             # Parse out indices and ids to delete
@@ -167,17 +168,17 @@ class Embeddings:
             # Delete ids from database
             self.database.delete(deletes)
         else:
-            # Lookup ids from config for indices with no database
-            cids = self.config["ids"]
+            # Lookup indexids from config for indexes with no database
+            indexids = self.config["ids"]
 
             # Find existing ids
             for uid in ids:
-                indices.extend([index for index, value in enumerate(cids) if uid == value])
+                indices.extend([index for index, value in enumerate(indexids) if uid == value])
 
             # Clear config ids
             for index in indices:
-                deletes.append(cids[index])
-                cids[index] = None
+                deletes.append(indexids[index])
+                indexids[index] = None
 
         # Delete indices from ann embeddings
         if indices:
@@ -244,7 +245,7 @@ class Embeddings:
             limit: maximum results
 
         Returns:
-            list of (id, score) for ann seach, list of dict for an ann+database search
+            list of (id, score) for ann search, list of dict for an ann+database search
         """
 
         return self.batchsearch([query], limit)[0]
@@ -300,7 +301,7 @@ class Embeddings:
         # Dot product on normalized vectors is equal to cosine similarity
         scores = np.dot(queries, texts.T).tolist()
 
-        # Add index id and sort desc based on score
+        # Add index and sort desc based on score
         return [sorted(enumerate(score), key=lambda x: x[1], reverse=True) for score in scores]
 
     def load(self, path):
@@ -349,7 +350,7 @@ class Embeddings:
             path: input directory path
 
         Returns:
-            true if index exists, false otherwise
+            True if index exists, False otherwise
         """
 
         return os.path.exists(f"{path}/config") and os.path.exists(f"{path}/embeddings")
@@ -413,7 +414,7 @@ class Embeddings:
         """
 
         # Transform documents to embeddings vectors
-        ids, dimensions, stream = self.model.index(self.hastext(documents))
+        ids, dimensions, stream = self.model.index(self.gettext(documents))
 
         # Load streamed embeddings back to memory
         embeddings = np.empty((len(ids), dimensions), dtype=np.float32)
@@ -440,7 +441,7 @@ class Embeddings:
         else:
             embeddings /= np.linalg.norm(embeddings)
 
-    def hastext(self, documents):
+    def gettext(self, documents):
         """
         Selects documents that have text to vectorize for similarity indexing.
 

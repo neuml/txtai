@@ -66,7 +66,7 @@ class Search:
         # Require scores to be greater than 0
         results = [[(i, score) for i, score in r if score > 0] for r in results]
 
-        # Map internal ids to uids if "ids" available
+        # Map indexids to ids if "ids" available
         if "ids" in self.config:
             lookup = self.config["ids"]
             return [[(lookup[i], score) for i, score in r] for r in results]

@@ -18,8 +18,8 @@ class SQLite(Database):
     # Temporary table for working with id batches
     CREATE_BATCH = """
         CREATE TEMP TABLE IF NOT EXISTS batch (
-            id INTEGER,
-            uid TEXT,
+            indexid INTEGER,
+            id TEXT,
             batch INTEGER
         )
     """
@@ -30,7 +30,7 @@ class SQLite(Database):
     # Temporary table for joining similarity scores
     CREATE_SCORES = """
         CREATE TEMP TABLE IF NOT EXISTS scores (
-            id INTEGER,
+            indexid INTEGER,
             score REAL
         )
     """
@@ -41,7 +41,7 @@ class SQLite(Database):
     # Documents - stores full content
     CREATE_DOCUMENTS = """
         CREATE TABLE IF NOT EXISTS documents (
-            uid TEXT PRIMARY KEY,
+            id TEXT PRIMARY KEY,
             data JSON,
             tags TEXT,
             entry DATETIME
@@ -49,29 +49,29 @@ class SQLite(Database):
     """
 
     INSERT_DOCUMENT = "INSERT INTO documents VALUES (?, ?, ?, ?)"
-    DELETE_DOCUMENTS = "DELETE FROM documents WHERE uid IN (SELECT uid FROM batch)"
+    DELETE_DOCUMENTS = "DELETE FROM documents WHERE id IN (SELECT id FROM batch)"
 
     # Sections - stores section text
     CREATE_SECTIONS = """
         CREATE TABLE IF NOT EXISTS sections (
-            id INTEGER PRIMARY KEY,
-            uid TEXT,
+            indexid INTEGER PRIMARY KEY,
+            id TEXT,
             text TEXT,
             tags TEXT,
             entry DATETIME
         )
     """
 
-    CREATE_SECTIONS_INDEX = "CREATE INDEX section_uid ON sections(uid)"
+    CREATE_SECTIONS_INDEX = "CREATE INDEX section_id ON sections(id)"
     INSERT_SECTION = "INSERT INTO sections VALUES (?, ?, ?, ?, ?)"
-    DELETE_SECTIONS = "DELETE FROM sections WHERE uid IN (SELECT uid FROM batch)"
+    DELETE_SECTIONS = "DELETE FROM sections WHERE id IN (SELECT id FROM batch)"
 
     # Queries
-    SELECT_IDS = "SELECT id, uid FROM sections WHERE uid in (SELECT uid FROM batch)"
+    SELECT_IDS = "SELECT indexid, id FROM sections WHERE id in (SELECT id FROM batch)"
 
     # Partial sql clauses
-    TABLE_CLAUSE = "SELECT %s FROM sections s LEFT JOIN documents d ON s.uid = d.uid LEFT JOIN scores sc on s.id=sc.id"
-    IDS_CLAUSE = "s.id in (SELECT id from batch WHERE batch=%s)"
+    TABLE_CLAUSE = "SELECT %s FROM sections s LEFT JOIN documents d ON s.id = d.id LEFT JOIN scores sc on s.indexid=sc.indexid"
+    IDS_CLAUSE = "s.indexid in (SELECT indexid from batch WHERE batch=%s)"
 
     def __init__(self, config):
         """
@@ -89,8 +89,8 @@ class SQLite(Database):
         self.path = None
 
     def load(self, path):
-        # Load an existing database
-        self.connection = sqlite3.connect(path)
+        # Load an existing database. Thread locking must be handled externally.
+        self.connection = sqlite3.connect(path, check_same_thread=False)
         self.cursor = self.connection.cursor()
         self.path = path
 
@@ -119,10 +119,10 @@ class SQLite(Database):
                 self.cursor.execute(SQLite.INSERT_SECTION, [index, uid, document, tags, entry])
                 index += 1
 
-    def delete(self, uids):
+    def delete(self, ids):
         if self.connection:
             # Batch ids
-            self.batch(uids=uids)
+            self.batch(ids=ids)
 
             # Delete all documents and sections by id
             self.cursor.execute(SQLite.DELETE_DOCUMENTS)
@@ -138,8 +138,8 @@ class SQLite(Database):
             if os.path.exists(path):
                 os.remove(path)
 
-            # Create database
-            connection = sqlite3.connect(path)
+            # Create database. Thread locking must be handled externally.
+            connection = sqlite3.connect(path, check_same_thread=False)
 
             # Copy from existing database to new database
             self.connection.backup(connection)
@@ -150,9 +150,9 @@ class SQLite(Database):
             self.cursor = self.connection.cursor()
             self.path = path
 
-    def ids(self, uids):
-        # Batch uids and run query
-        self.batch(uids=uids)
+    def ids(self, ids):
+        # Batch ids and run query
+        self.batch(ids=ids)
         self.cursor.execute(SQLite.SELECT_IDS)
 
         # Format and return results
@@ -201,7 +201,7 @@ class SQLite(Database):
 
     def resolve(self, name, alias=False, compound=False):
         # Standard column names
-        sections = ["id", "uid", "tags", "entry"]
+        sections = ["indexid", "id", "tags", "entry"]
         noprefix = ["data", "score", "text"]
 
         # Alias JSON column expressions
@@ -226,7 +226,7 @@ class SQLite(Database):
 
     def embed(self, similarity, batch):
         # Load similarity results id batch
-        self.batch(ids=[i for i, _ in similarity[batch]], batch=batch)
+        self.batch(indexids=[i for i, _ in similarity[batch]], batch=batch)
 
         # Average and load all similarity scores with first batch
         if not batch:
@@ -241,8 +241,8 @@ class SQLite(Database):
         """
 
         if not self.connection:
-            # Create temporary database
-            self.connection = sqlite3.connect("")
+            # Create temporary database. Thread locking must be handled externally.
+            self.connection = sqlite3.connect("", check_same_thread=False)
             self.cursor = self.connection.cursor()
 
             # Create initial schema and indices
@@ -250,13 +250,13 @@ class SQLite(Database):
             self.cursor.execute(SQLite.CREATE_SECTIONS)
             self.cursor.execute(SQLite.CREATE_SECTIONS_INDEX)
 
-    def batch(self, ids=None, uids=None, batch=None):
+    def batch(self, indexids=None, ids=None, batch=None):
         """
         Loads ids to a temporary batch table for efficient query processing.
 
         Args:
+            indexids: list of indexids
             ids: list of ids
-            uids: list of uids
             batch: batch index, used when statement has multiple subselects
         """
 
@@ -267,17 +267,17 @@ class SQLite(Database):
         if not batch:
             self.cursor.execute(SQLite.DELETE_BATCH)
 
+        if indexids:
+            self.cursor.executemany(SQLite.INSERT_BATCH, [(i, None, batch) for i in indexids])
         if ids:
-            self.cursor.executemany(SQLite.INSERT_BATCH, [(i, None, batch) for i in ids])
-        else:
-            self.cursor.executemany(SQLite.INSERT_BATCH, [(None, str(uid), batch) for uid in uids])
+            self.cursor.executemany(SQLite.INSERT_BATCH, [(None, str(uid), batch) for uid in ids])
 
     def scores(self, similarity):
         """
         Loads a batch of similarity scores to a temporary table for efficient query processing.
 
         Args:
-            similarity: similarity results as [(id, score)]
+            similarity: similarity results as [(indexid, score)]
         """
 
         # Create or Replace temporary scores table

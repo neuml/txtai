@@ -47,17 +47,17 @@ class Database:
 
         Args:
             documents: list of documents to save
-            index: index id offset, used for internal ids
+            index: indexid offset, used for internal ids
         """
 
         raise NotImplementedError
 
-    def delete(self, uids):
+    def delete(self, ids):
         """
         Deletes documents from database.
 
         Args:
-            uids: uids to delete
+            ids: ids to delete
         """
 
         raise NotImplementedError
@@ -69,16 +69,16 @@ class Database:
 
         raise NotImplementedError
 
-    def ids(self, uids):
+    def ids(self, ids):
         """
-        Retrieves the internal ids for a list of uids. Multiple ids may be present for a uid in cases
+        Retrieves the internal indexids for a list of ids. Multiple indexids may be present for an id in cases
         where text is segmented.
 
         Args:
-            uids: list of document uids
+            ids: list of document ids
 
         Returns:
-            list of (id, uid)
+            list of (indexid, id)
         """
 
         raise NotImplementedError
@@ -101,7 +101,7 @@ class Database:
 
         Args:
             query: input query
-            similarity: similarity results as [(id, score)]
+            similarity: similarity results as [(indexid, score)]
             limit: maximum number of results to return
 
         Returns:
@@ -163,7 +163,7 @@ class Database:
         Embeds similarity query results into a database query.
 
         Args:
-            similarity: similarity results as [(id, score)]
+            similarity: similarity results as [(indexid, score)]
             batch: batch id
         """
 

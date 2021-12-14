@@ -37,7 +37,7 @@ class Expression:
 
         Args:
             tokens: input expression
-            alias: If True, column aliases should be generated
+            alias: if True, column aliases should be generated
             similar: list of similar queries, if present new similar queries are appended to this list
 
         Returns:
@@ -56,7 +56,7 @@ class Expression:
 
         Args:
             tokens: input expression
-            alias: If True, column aliases should be generated
+            alias: if True, column aliases should be generated
             similar: list of similar queries, if present new similar queries are appended to this list
 
         Returns:
@@ -199,7 +199,7 @@ class Expression:
         Args:
             tokens: input tokens
             x: current token position
-            alias: If True, column aliases should be generated
+            alias: if True, column aliases should be generated
         """
 
         # Alias name
@@ -221,7 +221,7 @@ class Expression:
             iterator: tokens iterator
             tokens: input tokens
             x: current token position
-            alias: If True, column aliases should be generated
+            alias: if True, column aliases should be generated
         """
 
         # Alias name
@@ -314,7 +314,7 @@ class Expression:
             True if this token is a literal, False otherwise
         """
 
-        return token and (token.startswith(("'", '"', ",", "(", ")", "[", "]", "*")) or token.isnumeric())
+        return token and (token.startswith(("'", '"', ",", "(", ")", "[", "]", "*")) or token.replace(".", "", 1).isdigit())
 
     def wrapspace(self, text, token):
         """
@@ -340,7 +340,7 @@ class Expression:
         if token in [","]:
             return f"{token} "
 
-        # No whitespace if any of the following is true
+        # No whitespace if any of the following is True
         if not text or text.endswith((" ", "(", "[")) or token in ["(", "[", ")", "]"]:
             return token
 
