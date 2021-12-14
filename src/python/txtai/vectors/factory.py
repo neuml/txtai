@@ -56,6 +56,6 @@ class VectorsFactory:
 
         # Infer method from path, if blank
         if not method and path:
-            method = "words" if WordVectors.isDatabase(path) else "transformers"
+            method = "words" if WordVectors.isdatabase(path) else "transformers"
 
         return method

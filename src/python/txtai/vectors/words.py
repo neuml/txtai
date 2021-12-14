@@ -48,7 +48,7 @@ def transform(document):
     Multiprocessing helper method. Transforms document into an embeddings vector.
 
     Args:
-        document: (id, text|tokens, tags)
+        document: (id, dict|text|tokens, tags)
 
     Returns:
         (id, embedding)
@@ -152,7 +152,7 @@ class WordVectors(Vectors):
         return self.model.query(tokens)
 
     @staticmethod
-    def isDatabase(path):
+    def isdatabase(path):
         """
         Checks if this is a SQLite database file which is the file format used for word vectors databases.
 
