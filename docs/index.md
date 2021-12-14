@@ -57,4 +57,4 @@ Applications range from similarity search to complex NLP-driven data extractions
 | [neuspo](https://neuspo.com) | Fact-driven, real-time sports event and news site |
 | [codequestion](https://github.com/neuml/codequestion) | Ask coding questions directly from the terminal |
 
-txtai is built with Python 3.6+, [Hugging Face Transformers](https://github.com/huggingface/transformers), [Sentence Transformers](https://github.com/UKPLab/sentence-transformers) and [FastAPI](https://github.com/tiangolo/fastapi)
+txtai is built with Python 3.7+, [Hugging Face Transformers](https://github.com/huggingface/transformers), [Sentence Transformers](https://github.com/UKPLab/sentence-transformers) and [FastAPI](https://github.com/tiangolo/fastapi)

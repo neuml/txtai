@@ -4,7 +4,7 @@ The easiest way to install is via pip and PyPI
 
     pip install txtai
 
-Python 3.6+ is supported. Using a Python [virtual environment](https://docs.python.org/3/library/venv.html) is recommended.
+Python 3.7+ is supported. Using a Python [virtual environment](https://docs.python.org/3/library/venv.html) is recommended.
 
 ## Install from source
 

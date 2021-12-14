@@ -10,7 +10,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
         with:
-          python-version: 3.6
+          python-version: 3.7
       - run: pip install mkdocs-material mkdocstrings git+https://github.com/neuml/txtai#egg=txtai[all]
       - run: mkdocs gh-deploy --force
  

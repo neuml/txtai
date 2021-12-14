@@ -55,7 +55,7 @@ txtai 특징 요약:
 | [neuspo](https://neuspo.com) | 사실 기반의 실시간 스포츠 이벤트 및 뉴스 사이트 |
 | [codequestion](https://github.com/neuml/codequestion) | 터미널에서 직접 코딩에 관한 질문을 합니다. |
 
-txtai는 Python 3.6+, [Hugging Face Transformers](https://github.com/huggingface/transformers), [Sentence Transformers](https://github.com/UKPLab/sentence-transformers) 그리고 [FastAPI](https://github.com/tiangolo/fastapi) 로 만들어졌습니다.
+txtai는 Python 3.7+, [Hugging Face Transformers](https://github.com/huggingface/transformers), [Sentence Transformers](https://github.com/UKPLab/sentence-transformers) 그리고 [FastAPI](https://github.com/tiangolo/fastapi) 로 만들어졌습니다.
 
 ## 왜 txtai인가요?
 
@@ -74,7 +74,7 @@ txtai는 Python 3.6+, [Hugging Face Transformers](https://github.com/huggingface
 
     pip install txtai
 
-Python 3.6+ 이 지원됩니다.. 파이썬 [가상 환경](https://docs.python.org/3/library/venv.html) 을 사용하는 걸 추천드립니다.
+Python 3.7+ 이 지원됩니다.. 파이썬 [가상 환경](https://docs.python.org/3/library/venv.html) 을 사용하는 걸 추천드립니다.
 
 [소스 설치](https://neuml.github.io/txtai/install/#install-from-source),
 [환경별 필수 구성 요소](https://neuml.github.io/txtai/install/#environment-specific-prerequisites) 및

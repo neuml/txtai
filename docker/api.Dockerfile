@@ -11,17 +11,17 @@ EXPOSE 8000
 
 # Install required packages
 RUN apt-get update && \
-    apt-get -y --no-install-recommends install libgomp1 libsndfile1 gcc g++ python3.6 python3-dev python3-pip && \
+    apt-get -y --no-install-recommends install libgomp1 libsndfile1 gcc g++ python3.7 python3.7-dev python3-pip && \
     rm -rf /var/lib/apt/lists
 
 # Install txtai project and dependencies
-RUN ln -s /usr/bin/python3.6 /usr/bin/python && \
+RUN ln -s /usr/bin/python3.7 /usr/bin/python && \
     python -m pip install --no-cache-dir -U pip wheel setuptools && \
     python -m pip install --no-cache-dir txtai[api,pipeline] && \
     python -c "import nltk; nltk.download('punkt')"
 
 # Cleanup build packages
-RUN apt-get -y purge gcc g++ python3-dev && apt-get -y autoremove
+RUN apt-get -y purge gcc g++ python3.7-dev && apt-get -y autoremove
 
 # Generate YAML file
 RUN echo "path: /txtai" > index.yml && \
