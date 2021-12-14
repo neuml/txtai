@@ -27,8 +27,8 @@ class Tabular(Pipeline):
         Args:
             idcolumn: column name to use for row id
             textcolumns: list of columns to combine as a text field
-            content: if True, a dict per row is generated contained all fields. If content is a list, a subset of fields
-                     is included in the generated content records.
+            content: if True, a dict per row is generated with all fields. If content is a list, a subset of fields
+                     is included in the generated rows.
         """
 
         if not PANDAS:

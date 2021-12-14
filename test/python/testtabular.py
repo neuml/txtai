@@ -23,6 +23,33 @@ class TestTabular(unittest.TestCase):
 
         cls.tabular = Tabular("id", ["text"])
 
+    def testContent(self):
+        """
+        Tests parsing additional content
+        """
+
+        tabular = Tabular("id", ["text"], True)
+
+        row = {"id": 0, "text": "This is a test", "flag": 1}
+
+        # When content is enabled, both (uid, text, tags) and (uid, data, tags) rows will be generated
+        rows = tabular([row])
+        uid, data, _ = rows[1]
+
+        # Data should contain the entire input row
+        self.assertEqual(uid, 0)
+        self.assertEqual(data, row)
+
+        # Only select flag field
+        tabular.content = ["flag"]
+        rows = tabular([row])
+        uid, data, _ = rows[1]
+
+        # Data should only contain a single field, flag
+        self.assertEqual(uid, 0)
+        self.assertTrue(list(data.keys()) == ["flag"])
+        self.assertEqual(data["flag"], 1)
+
     def testCSV(self):
         """
         Tests parsing a CSV file
