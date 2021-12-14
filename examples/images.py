@@ -47,7 +47,7 @@ class Application:
 
         # Update model to support multilingual queries
         embeddings.config["path"] = "sentence-transformers/clip-ViT-B-32-multilingual-v1"
-        embeddings.model = embeddings.loadVectors()
+        embeddings.model = embeddings.loadvectors()
 
         return embeddings
 
