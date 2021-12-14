@@ -20,7 +20,7 @@ class BM25(Scoring):
         self.k1 = k1
         self.b = b
 
-    def computeIDF(self, freq):
+    def computeidf(self, freq):
         # Calculate BM25 IDF score
         return math.log(1 + (self.total - freq + 0.5) / (freq + 0.5))
 

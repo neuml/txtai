@@ -42,7 +42,7 @@ class Scoring:
         Indexes a collection of documents using a scoring method.
 
         Args:
-            documents: list of (id, text|tokens, tags)
+            documents: list of (id, dict|text|tokens, tags)
         """
 
         # Calculate word frequency, total tokens and total documents
@@ -75,7 +75,7 @@ class Scoring:
 
         # Compute IDF scores
         for word, freq in self.docfreq.items():
-            self.idf[word] = self.computeIDF(freq)
+            self.idf[word] = self.computeidf(freq)
 
         # Average IDF score per token
         self.avgidf = sum(self.idf.values()) / len(self.idf)
@@ -130,7 +130,7 @@ class Scoring:
             path: directory path to load model
         """
 
-        with open(f"{path}/scoring", "rb") as handle:
+        with open(path, "rb") as handle:
             self.__dict__.update(pickle.load(handle))
 
     def save(self, path):
@@ -141,10 +141,10 @@ class Scoring:
             path: directory path to save model
         """
 
-        with open(f"{path}/scoring", "wb") as handle:
+        with open(path, "wb") as handle:
             pickle.dump(self.__dict__, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-    def computeIDF(self, freq):
+    def computeidf(self, freq):
         """
         Computes an idf score for word frequency.
 
