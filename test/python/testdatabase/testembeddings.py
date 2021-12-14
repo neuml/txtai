@@ -8,7 +8,6 @@ import unittest
 
 from txtai.embeddings import Embeddings
 from txtai.database import Database, SQLException
-from txtai.vectors import WordVectors
 
 
 class TestEmbeddings(unittest.TestCase):
@@ -72,6 +71,19 @@ class TestEmbeddings(unittest.TestCase):
 
         # Create an index for the list of text
         self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        # Search for best match
+        result = self.embeddings.search("feel good story", 1)[0]
+
+        self.assertEqual(result["text"], self.data[4])
+
+    def testIndexTokens(self):
+        """
+        Test index with tokens
+        """
+
+        # Create an index for the list of text
+        self.embeddings.index([(uid, text.split(), None) for uid, text in enumerate(self.data)])
 
         # Search for best match
         result = self.embeddings.search("feel good story", 1)[0]
@@ -173,49 +185,3 @@ class TestEmbeddings(unittest.TestCase):
         result = self.embeddings.search("feel good story", 1)[0]
 
         self.assertEqual(result["text"], data[0][1])
-
-    def testWords(self):
-        """
-        Test embeddings backed by word vectors
-        """
-
-        # Initialize model path
-        path = os.path.join(tempfile.gettempdir(), "model")
-        os.makedirs(path, exist_ok=True)
-
-        # Build tokens file
-        with tempfile.NamedTemporaryFile(mode="w", delete=False) as output:
-            tokens = output.name
-            for x in self.data:
-                output.write(x + "\n")
-
-        # Word vectors path
-        vectors = os.path.join(path, "test-10d")
-
-        # Build word vectors, if they don't already exist
-        WordVectors.build(tokens, 10, 1, vectors)
-
-        # Create dataset
-        data = [(x, row.split(), None) for x, row in enumerate(self.data)]
-
-        # Create embeddings model, backed by word vectors
-        embeddings = Embeddings(
-            {"path": vectors + ".magnitude", "storevectors": True, "scoring": "bm25", "pca": 3, "quantize": True, "content": True}
-        )
-
-        # Call scoring and index methods
-        embeddings.score(data)
-        embeddings.index(data)
-
-        # Test search
-        self.assertIsNotNone(embeddings.search("win", 1))
-
-        # Generate temp file path
-        index = os.path.join(tempfile.gettempdir(), "wembeddings")
-
-        # Test save/load
-        embeddings.save(index)
-        embeddings.load(index)
-
-        # Test search
-        self.assertIsNotNone(embeddings.search("win", 1))

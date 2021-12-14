@@ -141,7 +141,7 @@ class TestEmbeddings(unittest.TestCase):
         WordVectors.build(tokens, 10, 1, vectors)
 
         # Create dataset
-        data = [(x, row, None) for x, row in enumerate(self.data)]
+        data = [(x, row.split(), None) for x, row in enumerate(self.data)]
 
         # Create embeddings model, backed by word vectors
         embeddings = Embeddings({"path": vectors + ".magnitude", "storevectors": True, "scoring": "bm25", "pca": 3, "quantize": True})
