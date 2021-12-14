@@ -106,8 +106,8 @@ class TestScoring(unittest.TestCase):
         index = os.path.join(tempfile.gettempdir(), "scoring")
         os.makedirs(index, exist_ok=True)
 
-        model.save(index)
-        model.load(index)
+        model.save(f"{index}/scoring")
+        model.load(f"{index}/scoring")
 
         return model
 
