@@ -1,5 +1,5 @@
 """
-ANN (Approximate Nearest Neighbors) module
+ANN (Approximate Nearest Neighbor) module
 """
 
 
@@ -11,6 +11,9 @@ class ANN:
     def __init__(self, config):
         """
         Creates a new ANN model.
+
+        Args:
+            config: index configuration parameters
         """
 
         # ANN index
