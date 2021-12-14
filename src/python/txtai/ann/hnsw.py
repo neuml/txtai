@@ -83,7 +83,8 @@ class HNSW(ANN):
             # Convert distances to similarity scores
             scores = [1 - d for d in distance]
 
-            results.append(list(zip(ids[x], scores)))
+            # Build (id, score) tuples, convert np.int64 to python int
+            results.append(list(zip(ids[x].tolist(), scores)))
 
         return results
 
