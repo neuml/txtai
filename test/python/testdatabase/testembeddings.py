@@ -127,8 +127,12 @@ class TestEmbeddings(unittest.TestCase):
 
         # Test similar
         result = self.embeddings.search(
-            "select * from txtai where similar('feel good story') group by text having count(*) > 0 order by score desc", 5
+            "select * from txtai where similar('feel good story') group by text having count(*) > 0 order by score desc", 1
         )[0]
+        self.assertEqual(result["text"], self.data[4])
+
+        # Test similar with limits
+        result = self.embeddings.search("select * from txtai where similar('feel good story', 1) limit 1")[0]
         self.assertEqual(result["text"], self.data[4])
 
         # Test where
@@ -192,7 +196,7 @@ class TestEmbeddings(unittest.TestCase):
         WordVectors.build(tokens, 10, 1, vectors)
 
         # Create dataset
-        data = [(x, row, None) for x, row in enumerate(self.data)]
+        data = [(x, row.split(), None) for x, row in enumerate(self.data)]
 
         # Create embeddings model, backed by word vectors
         embeddings = Embeddings(

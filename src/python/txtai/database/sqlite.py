@@ -4,6 +4,7 @@ SQLite module
 
 import datetime
 import json
+import os
 import sqlite3
 
 from .base import Database
@@ -133,6 +134,10 @@ class SQLite(Database):
 
         # If this is a temporary database, copy over to database at path
         if not self.path:
+            # Delete existing file, if necessary
+            if os.path.exists(path):
+                os.remove(path)
+
             # Create database
             connection = sqlite3.connect(path)
 
