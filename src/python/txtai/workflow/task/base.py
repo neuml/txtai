@@ -187,7 +187,7 @@ class Task:
 
         Args:
             element: input data element
-            force: if true data is unpacked even if task has unpack set to False
+            force: if True, data is unpacked even if task has unpack set to False
 
         Returns:
             data

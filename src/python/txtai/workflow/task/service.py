@@ -27,7 +27,7 @@ class ServiceTask(Task):
             url: url to connect to
             method: http method, GET or POST
             params: default query parameters
-            batch: If True, all elements are passed in a single batch request, otherwise a service call is executed per element
+            batch: if True, all elements are passed in a single batch request, otherwise a service call is executed per element
             extract: list of sections to extract from response
         """
 
@@ -40,7 +40,7 @@ class ServiceTask(Task):
         self.method = method
         self.params = params
 
-        # If true, all elements are passed in a single batch request, otherwise a service call is executed per element
+        # If True, all elements are passed in a single batch request, otherwise a service call is executed per element
         self.batch = batch
 
         # Save sections to extract. Supports both a single string and a hierarchical list of sections.
