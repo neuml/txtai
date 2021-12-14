@@ -20,13 +20,15 @@ class Tabular(Pipeline):
     Splits tabular data into rows and columns.
     """
 
-    def __init__(self, idcolumn=None, textcolumns=None):
+    def __init__(self, idcolumn=None, textcolumns=None, content=False):
         """
         Creates a new Tabular pipeline.
 
         Args:
             idcolumn: column name to use for row id
             textcolumns: list of columns to combine as a text field
+            content: if True, a dict per row is generated contained all fields. If content is a list, a subset of fields
+                     is included in the generated content records.
         """
 
         if not PANDAS:
@@ -34,6 +36,7 @@ class Tabular(Pipeline):
 
         self.idcolumn = idcolumn
         self.textcolumns = textcolumns
+        self.content = content
 
     def __call__(self, data):
         """
@@ -104,5 +107,12 @@ class Tabular(Pipeline):
             text = ". ".join([str(row[column]) for column in columns])
 
             rows.append((uid, text, None))
+
+            # Also add row for content
+            if isinstance(self.content, list):
+                row = {column: value for column, value in row.to_dict().items() if column in self.content}
+                rows.append((uid, row, None))
+            elif self.content:
+                rows.append((uid, row.to_dict(), None))
 
         return rows
