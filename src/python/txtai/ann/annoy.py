@@ -30,7 +30,7 @@ class Annoy(ANN):
         # Create index
         self.model = AnnoyIndex(self.config["dimensions"], self.config["metric"])
 
-        # Add items
+        # Add items - position in embeddings is used as the id
         for x in range(embeddings.shape[0]):
             self.model.add_item(x, embeddings[x])
 

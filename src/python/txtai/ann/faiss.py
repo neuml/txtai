@@ -34,6 +34,8 @@ class Faiss(ANN):
 
         # Train model
         self.model.train(embeddings)
+
+        # Add embeddings - position in embeddings is used as the id
         self.model.add_with_ids(embeddings, np.arange(embeddings.shape[0], dtype=np.int64))
 
         # Update id offset
@@ -42,7 +44,7 @@ class Faiss(ANN):
     def append(self, embeddings):
         new = embeddings.shape[0]
 
-        # Append new ids
+        # Append new ids - position in embeddings + existing offset is used as the id
         self.model.add_with_ids(embeddings, np.arange(self.config["offset"], self.config["offset"] + new, dtype=np.int64))
 
         # Update id offset

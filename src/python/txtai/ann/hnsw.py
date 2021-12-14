@@ -39,7 +39,7 @@ class HNSW(ANN):
         self.model = Index(dim=self.config["dimensions"], space=self.config["metric"])
         self.model.init_index(max_elements=embeddings.shape[0], ef_construction=efconstruction, M=m, random_seed=seed)
 
-        # Add items
+        # Add items - position in embeddings is used as the id
         self.model.add_items(embeddings, np.arange(embeddings.shape[0]))
 
         # Update id offset and set delete counter
@@ -52,7 +52,7 @@ class HNSW(ANN):
         # Resize index
         self.model.resize_index(self.config["offset"] + new)
 
-        # Append new ids
+        # Append new ids - position in embeddings + existing offset is used as the id
         self.model.add_items(embeddings, np.arange(self.config["offset"], self.config["offset"] + new))
 
         # Update id offset
