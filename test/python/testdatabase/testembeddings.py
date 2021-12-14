@@ -1,5 +1,5 @@
 """
-Embeddings module tests
+Embeddings+database module tests
 """
 
 import os
@@ -7,12 +7,13 @@ import tempfile
 import unittest
 
 from txtai.embeddings import Embeddings
+from txtai.database import Database, SQLException
 from txtai.vectors import WordVectors
 
 
 class TestEmbeddings(unittest.TestCase):
     """
-    Embeddings tests
+    Embeddings with a database tests
     """
 
     @classmethod
@@ -31,7 +32,21 @@ class TestEmbeddings(unittest.TestCase):
         ]
 
         # Create embeddings model, backed by sentence-transformers & transformers
-        cls.embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2"})
+        cls.embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2", "content": True})
+
+    def testData(self):
+        """
+        Test content storage and retrieval
+        """
+
+        data = self.data + [{"date": "2021-01-01", "text": "Baby panda", "flag": 1}]
+
+        # Create an index for the list of text
+        self.embeddings.index([(uid, text, None) for uid, text in enumerate(data)])
+
+        # Search for best match
+        result = self.embeddings.search("feel good story", 1)[0]
+        self.assertEqual(result["text"], data[-1]["text"])
 
     def testDelete(self):
         """
@@ -45,10 +60,10 @@ class TestEmbeddings(unittest.TestCase):
         self.embeddings.delete([4])
 
         # Search for best match
-        uid = self.embeddings.search("feel good story", 1)[0][0]
+        result = self.embeddings.search("feel good story", 1)[0]
 
         self.assertEqual(self.embeddings.count(), 5)
-        self.assertEqual(uid, 5)
+        self.assertEqual(result["text"], self.data[5])
 
     def testIndex(self):
         """
@@ -59,9 +74,25 @@ class TestEmbeddings(unittest.TestCase):
         self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
 
         # Search for best match
-        uid = self.embeddings.search("feel good story", 1)[0][0]
+        result = self.embeddings.search("feel good story", 1)[0]
 
-        self.assertEqual(uid, 4)
+        self.assertEqual(result["text"], self.data[4])
+
+    def testNotImplemented(self):
+        """
+        Tests exceptions for non-implemented methods
+        """
+
+        database = Database({})
+
+        self.assertRaises(NotImplementedError, database.load, None)
+        self.assertRaises(NotImplementedError, database.insert, None)
+        self.assertRaises(NotImplementedError, database.delete, None)
+        self.assertRaises(NotImplementedError, database.save, None)
+        self.assertRaises(NotImplementedError, database.ids, None)
+        self.assertRaises(NotImplementedError, database.resolve, None, None)
+        self.assertRaises(NotImplementedError, database.embed, None, None)
+        self.assertRaises(NotImplementedError, database.query, None, None)
 
     def testSave(self):
         """
@@ -78,23 +109,43 @@ class TestEmbeddings(unittest.TestCase):
         self.embeddings.load(index)
 
         # Search for best match
-        uid = self.embeddings.search("feel good story", 1)[0][0]
+        result = self.embeddings.search("feel good story", 1)[0]
 
-        self.assertEqual(uid, 4)
+        self.assertEqual(result["text"], self.data[4])
 
         # Test offsets still work after save/load
         self.embeddings.upsert([(0, "Test insert", None)])
         self.assertEqual(self.embeddings.count(), len(self.data))
 
-    def testSimilarity(self):
+    def testSQL(self):
         """
-        Test similarity
+        Test running a SQL query
         """
 
-        # Get best matching id
-        uid = self.embeddings.similarity("feel good story", self.data)[0][0]
+        # Create an index for the list of text
+        self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
 
-        self.assertEqual(uid, 4)
+        # Test similar
+        result = self.embeddings.search(
+            "select * from txtai where similar('feel good story') group by text having count(*) > 0 order by score desc", 5
+        )[0]
+        self.assertEqual(result["text"], self.data[4])
+
+        # Test where
+        result = self.embeddings.search("select * from txtai where text like '%iceberg%'", 1)[0]
+        self.assertEqual(result["text"], self.data[1])
+
+        # Test count
+        result = self.embeddings.search("select count(*) from txtai")[0]
+        self.assertEqual(list(result.values())[0], len(self.data))
+
+        # Test columns
+        result = self.embeddings.search("select id, text, data, entry from txtai")[0]
+        self.assertEqual(sorted(result.keys()), ["data", "entry", "id", "text"])
+
+        # Test SQL parse error
+        with self.assertRaises(SQLException):
+            self.embeddings.search("select * from txtai where bad,query")
 
     def testUpsert(self):
         """
@@ -115,9 +166,9 @@ class TestEmbeddings(unittest.TestCase):
         self.embeddings.upsert([data[0]])
 
         # Search for best match
-        uid = self.embeddings.search("feel good story", 1)[0][0]
+        result = self.embeddings.search("feel good story", 1)[0]
 
-        self.assertEqual(uid, 0)
+        self.assertEqual(result["text"], data[0][1])
 
     def testWords(self):
         """
@@ -144,7 +195,9 @@ class TestEmbeddings(unittest.TestCase):
         data = [(x, row, None) for x, row in enumerate(self.data)]
 
         # Create embeddings model, backed by word vectors
-        embeddings = Embeddings({"path": vectors + ".magnitude", "storevectors": True, "scoring": "bm25", "pca": 3, "quantize": True})
+        embeddings = Embeddings(
+            {"path": vectors + ".magnitude", "storevectors": True, "scoring": "bm25", "pca": 3, "quantize": True, "content": True}
+        )
 
         # Call scoring and index methods
         embeddings.score(data)

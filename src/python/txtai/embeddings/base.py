@@ -9,20 +9,19 @@ import shutil
 import numpy as np
 
 from ..ann import ANNFactory
+from ..database import DatabaseFactory
 from ..scoring import ScoringFactory
 from ..vectors import VectorsFactory
 
 from .reducer import Reducer
+from .search import Search
 
 
 class Embeddings:
     """
-    Model that builds sentence embeddings from a list of tokens.
-
-    Optional scoring method can be created to weigh tokens when creating embeddings. Averaging used if no scoring method provided.
-
-    The model also applies principal component analysis using a LSA model. This reduces the noise of common but less
-    relevant terms.
+    Embeddings is the engine that delivers semantic search. Text is transformed into embeddings vectors where similar concepts
+    will produce similar vectors. Indices both large and small are built with these vectors. The indices are used find results
+    that have the same meaning, not necessarily the same keywords.
     """
 
     # pylint: disable = W0231
@@ -37,8 +36,8 @@ class Embeddings:
         # Configuration
         self.config = config
 
-        # Embeddings model
-        self.embeddings = None
+        # Approximate nearest neighbor index
+        self.ann = None
 
         if self.config and self.config.get("method") != "transformers":
             # Dimensionality reduction model
@@ -49,15 +48,18 @@ class Embeddings:
         else:
             self.reducer, self.scoring = None, None
 
-        # Sentence vectors model
-        self.model = self.loadVectors() if self.config else None
+        # Sentence vectors model - transforms text to embeddings vectors
+        self.model = self.loadvectors() if self.config else None
+
+        # Document database
+        self.database = None
 
     def score(self, documents):
         """
         Builds a scoring index.
 
         Args:
-            documents: list of (id, text|tokens, tags)
+            documents: list of (id, dict|text|tokens, tags)
         """
 
         if self.scoring:
@@ -69,7 +71,7 @@ class Embeddings:
         Builds an embeddings index. This method overwrites an existing index.
 
         Args:
-            documents: list of (id, text|tokens, tags)
+            documents: list of (id, dict|text|tokens, tags)
         """
 
         # Transform documents to embeddings vectors
@@ -83,28 +85,35 @@ class Embeddings:
         # Normalize embeddings
         self.normalize(embeddings)
 
-        # Save embeddings metadata
-        self.config["ids"] = ids
+        # Save index dimensions
         self.config["dimensions"] = dimensions
 
-        # Create embeddings index
-        self.embeddings = ANNFactory.create(self.config)
+        # Create approximate nearest neighbor index
+        self.ann = ANNFactory.create(self.config)
 
         # Build the index
-        self.embeddings.index(embeddings)
+        self.ann.index(embeddings)
+
+        self.database = DatabaseFactory.create(self.config)
+        if self.database:
+            # Add documents to database
+            self.database.insert(documents)
+        else:
+            # Save ids for indices with no database
+            self.config["ids"] = ids
 
     def upsert(self, documents):
         """
-        Runs an embeddings index upsert operation. If the index exists, new
-        data is appended to the index, existing data is updated. If the index
-        doesn't exist, this method runs a standard index operation.
+        Runs an embeddings upsert operation. If the index exists, new data is
+        appended to the index, existing data is updated. If the index doesn't exist,
+        this method runs a standard index operation.
 
         Args:
-            documents: list of (id, text|tokens, tags)
+            documents: list of (id, dict|text|tokens, tags)
         """
 
         # Run standard insert if index doesn't exist
-        if not self.embeddings:
+        if not self.ann:
             self.index(documents)
             return
 
@@ -117,11 +126,18 @@ class Embeddings:
         # Delete existing elements
         self.delete(ids)
 
-        # Append elements the index
-        self.embeddings.append(embeddings)
+        # Get offset before it changes
+        offset = self.config.get("offset", 0)
 
-        # Save embeddings metadata
-        self.config["ids"] = self.config["ids"] + ids
+        # Append elements the index
+        self.ann.append(embeddings)
+
+        if self.database:
+            # Add documents to database
+            self.database.insert(documents, offset)
+        else:
+            # Save ids for indices with no database
+            self.config["ids"] = self.config["ids"] + ids
 
     def delete(self, ids):
         """
@@ -131,7 +147,7 @@ class Embeddings:
             ids: list of ids to delete
 
         Returns:
-            ids deleted
+            list of ids deleted
         """
 
         # List of internal indices for each candidate id to delete
@@ -140,22 +156,33 @@ class Embeddings:
         # List of deleted ids
         deletes = []
 
-        # Get handle to config ids
-        cids = self.config["ids"]
+        if self.database:
+            # Retrieve id-uid mappings from database
+            ids = self.database.ids(ids)
 
-        # Find existing ids
-        for uid in ids:
-            indices.extend([index for index, value in enumerate(cids) if uid == value])
+            # Parse out indices and ids to delete
+            indices = [i for i, _ in ids]
+            deletes = list(set(uid for _, uid in ids))
 
-        # Delete any found from config ids and embeddings
-        if indices:
+            # Delete ids from database
+            self.database.delete(deletes)
+        else:
+            # Lookup ids from config for indices with no database
+            cids = self.config["ids"]
+
+            # Find existing ids
+            for uid in ids:
+                indices.extend([index for index, value in enumerate(cids) if uid == value])
+
             # Clear config ids
             for index in indices:
                 deletes.append(cids[index])
                 cids[index] = None
 
+        # Delete indices from ann embeddings
+        if indices:
             # Delete ids from index
-            self.embeddings.delete(indices)
+            self.ann.delete(indices)
 
         return deletes
 
@@ -201,53 +228,42 @@ class Embeddings:
         Total number of elements in this embeddings index.
 
         Returns:
-            number of elements in embeddings index
+            number of elements in this embeddings index
         """
 
-        return self.embeddings.count() if self.embeddings else 0
+        return self.ann.count() if self.ann else 0
 
     def search(self, query, limit=3):
         """
-        Finds documents in the embeddings model most similar to the input query. Returns
-        a list of (id, score) sorted by highest score, where id is the document id in
-        the embeddings model.
+        Finds documents most similar to the input queries. This method will run either an approximate
+        nearest neighbor (ann) search or an approximate nearest neighbor + database search depending
+        on if a database is available.
 
         Args:
             query: query text|tokens
             limit: maximum results
 
         Returns:
-            list of (id, score)
+            list of (id, score) for ann seach, list of dict for an ann+database search
         """
 
         return self.batchsearch([query], limit)[0]
 
     def batchsearch(self, queries, limit=3):
         """
-        Finds documents in the embeddings model most similar to the input queries. Returns
-        a list of (id, score) sorted by highest score per query, where id is the document id
-        in the embeddings model.
+        Finds documents most similar to the input queries. This method will run either an approximate
+        nearest neighbor (ann) search or an approximate nearest neighbor + database search depending
+        on if a database is available.
 
         Args:
             queries: queries text|tokens
             limit: maximum results
 
         Returns:
-            list of (id, score) per query
+            list of (id, score) per query for ann search, list of dict per query for an ann+database search
         """
 
-        # Convert queries to embedding vectors
-        embeddings = np.array([self.transform((None, query, None)) for query in queries])
-
-        # Search embeddings index
-        results = self.embeddings.search(embeddings, limit)
-
-        # Map ids if id mapping available
-        lookup = self.config.get("ids")
-        if lookup:
-            results = [[(lookup[i], score) for i, score in r] for r in results]
-
-        return results
+        return Search(self)(queries, limit)
 
     def similarity(self, query, texts):
         """
@@ -289,14 +305,7 @@ class Embeddings:
 
     def load(self, path):
         """
-        Loads a pre-trained model.
-
-        Models have the following files:
-            config - configuration
-            embeddings - sentence embeddings index
-            lsa - LSA model, used to remove the principal component(s)
-            scoring - scoring model used to weigh word vectors
-            vectors - vectors model
+        Loads an existing index from path.
 
         Args:
             path: input directory path
@@ -310,23 +319,27 @@ class Embeddings:
             if self.config.get("storevectors"):
                 self.config["path"] = os.path.join(path, self.config["path"])
 
-        # Sentence embeddings index
-        self.embeddings = ANNFactory.create(self.config)
-        self.embeddings.load(f"{path}/embeddings")
+        # Approximate nearest neighbor index - stores embeddings vectors
+        self.ann = ANNFactory.create(self.config)
+        self.ann.load(f"{path}/embeddings")
 
-        # Dimensionality reduction
+        # Dimensionality reduction model (word vectors only)
         if self.config.get("pca"):
-            with open(f"{path}/lsa", "rb") as handle:
-                self.reducer = Reducer()
-                self.reducer.load(path)
+            self.reducer = Reducer()
+            self.reducer.load(f"{path}/lsa")
 
-        # Embedding scoring
+        # Embedding scoring model (word vectors only)
         if self.config.get("scoring"):
             self.scoring = ScoringFactory.create(self.config["scoring"])
-            self.scoring.load(path)
+            self.scoring.load(f"{path}/scoring")
 
-        # Sentence vectors model - transforms text into sentence embeddings
-        self.model = self.loadVectors()
+        # Sentence vectors model - transforms text to embeddings vectors
+        self.model = self.loadvectors()
+
+        # Document database - stores document content
+        self.database = DatabaseFactory.create(self.config)
+        if self.database:
+            self.database.load(f"{path}/documents")
 
     def exists(self, path):
         """
@@ -353,7 +366,7 @@ class Embeddings:
             # Create output directory, if necessary
             os.makedirs(path, exist_ok=True)
 
-            # Copy vectors file
+            # Copy sentence vectors model
             if self.config.get("storevectors"):
                 shutil.copyfile(self.config["path"], os.path.join(path, os.path.basename(self.config["path"])))
 
@@ -363,18 +376,22 @@ class Embeddings:
             with open(f"{path}/config", "wb") as handle:
                 pickle.dump(self.config, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-            # Write sentence embeddings index
-            self.embeddings.save(f"{path}/embeddings")
+            # Save approximate nearest neighbor index
+            self.ann.save(f"{path}/embeddings")
 
-            # Save dimensionality reduction
+            # Save dimensionality reduction model (word vectors only)
             if self.reducer:
-                self.reducer.save(path)
+                self.reducer.save(f"{path}/lsa")
 
-            # Save embedding scoring
+            # Save embedding scoring model (word vectors only)
             if self.scoring:
-                self.scoring.save(path)
+                self.scoring.save(f"{path}/scoring")
 
-    def loadVectors(self):
+            # Save document database
+            if self.database:
+                self.database.save(f"{path}/documents")
+
+    def loadvectors(self):
         """
         Loads a vector model set in config.
 
@@ -389,14 +406,14 @@ class Embeddings:
         Transforms documents into embeddings vectors.
 
         Args:
-            documents: list of (id, text|tokens, tags)
+            documents: list of (id, dict|text|tokens, tags)
 
         Returns:
-            tuple of document ids, dimensions and embeddings
+            (document ids, dimensions, embeddings)
         """
 
         # Transform documents to embeddings vectors
-        ids, dimensions, stream = self.model.index(documents)
+        ids, dimensions, stream = self.model.index(self.hastext(documents))
 
         # Load streamed embeddings back to memory
         embeddings = np.empty((len(ids), dimensions), dtype=np.float32)
@@ -422,3 +439,25 @@ class Embeddings:
             embeddings /= np.linalg.norm(embeddings, axis=1)[:, np.newaxis]
         else:
             embeddings /= np.linalg.norm(embeddings)
+
+    def hastext(self, documents):
+        """
+        Selects documents that have text to vectorize for similarity indexing.
+
+        Must be one of the following:
+            - text
+            - list of text tokens
+            - dict with the field "text"
+
+        Args:
+            documents: list of (id, dict|text|tokens, tags)
+
+        Returns:
+            filtered documents
+        """
+
+        for document in documents:
+            if isinstance(document[1], (str, list)):
+                yield document
+            elif isinstance(document[1], dict) and "text" in document[1]:
+                yield (document[0], document[1]["text"], document[2])
