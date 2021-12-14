@@ -3,6 +3,7 @@ Cluster module
 """
 
 import asyncio
+import urllib.parse
 import zlib
 
 import aiohttp
@@ -45,7 +46,7 @@ class Cluster:
         """
 
         # Build URL
-        action = f"search?query={query}"
+        action = f"search?query={urllib.parse.quote_plus(query)}"
         if limit:
             action += f"&limit={limit}"
 
@@ -54,8 +55,12 @@ class Cluster:
         for result in self.execute("get", action):
             results.extend(result)
 
-        # Sort and limit results
-        return sorted(results, key=lambda x: x["score"], reverse=True)[: (limit if limit else 10)]
+        # Sort results - there will be no score when there is no associated similarity query
+        if results and "score" in results[0]:
+            results = sorted(results, key=lambda x: x["score"], reverse=True)
+
+        # Limit results
+        return results[: (limit if limit else 10)]
 
     def batchsearch(self, queries, limit=None):
         """

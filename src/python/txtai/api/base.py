@@ -56,7 +56,7 @@ class API:
         # Initialize member variables
         self.config, self.documents, self.embeddings, self.cluster = API.read(config), None, None, None
 
-        # Write lock
+        # Write lock - allows only a single thread to update embeddings
         self.lock = Lock()
 
         # Local embeddings index
@@ -214,7 +214,8 @@ class API:
         if self.cluster:
             return self.cluster.search(query, limit)
         if self.embeddings:
-            return [{"id": uid, "score": float(score)} for uid, score in self.embeddings.search(query, limit)]
+            # Unpack (id, score) tuple, if necessary. Otherwise, results are dictionaries.
+            return [{"id": r[0], "score": float(r[1])} if isinstance(r, tuple) else r for r in self.embeddings.search(query, limit)]
 
         return None
 
@@ -235,8 +236,13 @@ class API:
         if self.cluster:
             return self.cluster.batchsearch(queries, self.limit(limit))
         if self.embeddings:
-            results = self.embeddings.batchsearch(queries, self.limit(limit))
-            return [[{"id": uid, "score": float(score)} for uid, score in result] for result in results]
+            search = self.embeddings.batchsearch(queries, self.limit(limit))
+
+            results = []
+            for result in search:
+                # Unpack (id, score) tuple, if necessary. Otherwise, results are dictionaries.
+                results.append([{"id": r[0], "score": float(r[1])} if isinstance(r, tuple) else r for r in result])
+            return results
 
         return None
 
@@ -266,10 +272,10 @@ class API:
                 index = self.count() + len(self.documents)
                 for document in documents:
                     if isinstance(document, dict):
-                        # Copy value from dict to a new tuple
-                        document = (document["id"], document["text"], None)
+                        # Pass dictionary, the embeddings instance handles parsing out the "text" field
+                        document = (document["id"], document, None)
                     elif isinstance(document, str):
-                        # Add uid via autosequence
+                        # Add id via autosequence
                         document = (index, document, None)
                         index += 1
                     elif isinstance(document, tuple) and len(document) < 3:
