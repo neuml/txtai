@@ -160,7 +160,7 @@ class SQLite(Database):
 
     def query(self, query, limit):
         # Extract query components
-        select = query.get("select", "*")
+        select = query.get("select", self.defaults())
         where = query.get("where")
         groupby, having = query.get("groupby"), query.get("having")
         orderby, qlimit = query.get("orderby"), query.get("limit")
@@ -196,7 +196,17 @@ class SQLite(Database):
         columns = [c[0] for c in self.cursor.description]
 
         # Map results and return
-        results = [{column: row[x] for x, column in enumerate(columns)} for row in self.cursor]
+        results = []
+        for row in self.cursor:
+            result = {}
+
+            # Copy columns to result. In cases with duplicate column names, find one with a value
+            for x, column in enumerate(columns):
+                if column not in result or result[column] is None:
+                    result[column] = row[x]
+
+            results.append(result)
+
         return results
 
     def resolve(self, name, alias=False, compound=False):
@@ -234,6 +244,16 @@ class SQLite(Database):
 
         # Return ids clause placeholder
         return SQLite.IDS_CLAUSE % batch
+
+    def defaults(self):
+        """
+        Returns a list of default columns when there is no select clause.
+
+        Returns:
+            list of default columns
+        """
+
+        return "s.id, text, score"
 
     def initialize(self):
         """

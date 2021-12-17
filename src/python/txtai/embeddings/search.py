@@ -101,7 +101,7 @@ class Search:
                     equeries.append((x, params[0]))
 
                     # Second argument is similarity candidate window
-                    if len(params) > 1 and params[1].isnumeric():
+                    if len(params) > 1 and params[1].isdigit():
                         # Get largest window value across all queries
                         window = int(params[1]) if int(params[1]) > window else window
 
@@ -137,7 +137,7 @@ class Search:
         for query in queries:
             # Parse out qlimit
             l = query.get("limit")
-            if l and l.isnumeric():
+            if l and l.isdigit():
                 l = int(l)
 
             qlimit = l if l and l > qlimit else qlimit
