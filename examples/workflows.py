@@ -302,6 +302,7 @@ class Application:
             options["index"] = self.text("Embeddings storage path", config, "index")
             options["path"] = self.text("Embeddings model path", config, "path", "sentence-transformers/nli-mpnet-base-v2")
             options["upsert"] = self.boolean("Upsert", config, "upsert")
+            options["content"] = self.boolean("Content", config, "content")
 
         elif component in ("segmentation", "textractor"):
             if component == "segmentation":
@@ -338,8 +339,15 @@ class Application:
             st.markdown("**Tabular**  \n*Split tabular data into rows and columns*")
             options["idcolumn"] = self.text("Id columns", config, "idcolumn")
             options["textcolumns"] = self.text("Text columns", config, "textcolumns")
+            options["content"] = self.text("Content", config, "content")
+
             if options["textcolumns"]:
                 options["textcolumns"] = self.split(options["textcolumns"])
+
+            if options["content"]:
+                options["content"] = self.split(options["content"])
+                if len(options["content"]) == 1 and options["content"][0] == "1":
+                    options["content"] = options["content"][0]
 
         elif component == "transcription":
             st.markdown("**Transcribe**  \n*Transcribe audio to text*")
@@ -496,22 +504,65 @@ class Application:
                     uid += 1
                 stop.empty()
 
+    def content(self, uid, text):
+        """
+        Builds a content reference for uid and text.
+
+        Args:
+            uid: record id
+            text: record text
+
+        Returns:
+            content
+        """
+
+        if uid and uid.lower().startswith("http"):
+            return f"<a href='{uid}' rel='noopener noreferrer' target='blank'>{text}</a>"
+
+        return text
+
     def find(self, key):
         """
         Lookup record from cached data by uid key.
 
         Args:
-            key: uid to search for
+            key: id to search for
 
         Returns:
-            text for matching uid
+            text for matching id
         """
 
+        # Lookup text by id
         text = [text for uid, text, _ in self.data if uid == key][0]
-        if key and key.lower().startswith("http"):
-            return f"<a href='{key}' rel='noopener noreferrer' target='blank'>{text}</a>"
+        return self.content(key, text)
 
-        return text
+    def search(self, query, limit):
+        """
+        Runs an embeddings search for query and returns results as a DataFrame.
+
+        Args:
+            query: query to run
+            limit: max results
+
+        Returns:
+            search results as DataFrame
+        """
+
+        results = []
+        for result in self.embeddings.search(query, limit):
+            # Tuples are returned when an index doesn't have stored content
+            if isinstance(result, tuple):
+                uid, score = result
+                results.append({"text": self.find(uid), "score": f"{score:.2}"})
+            else:
+                if "id" in result and "text" in result:
+                    result["text"] = self.content(result.pop("id"), result["text"])
+                if "score" in result and result["score"]:
+                    result["score"] = f'{result["score"]:.2}'
+
+                results.append(result)
+
+        return pd.DataFrame(results)
 
     def process(self, data, workflow):
         """
@@ -577,7 +628,8 @@ class Application:
             )
 
             if query:
-                df = pd.DataFrame([{"content": self.find(uid), "score": f"{score:.2}"} for uid, score in self.embeddings.search(query, limit)])
+                # Execute search and write results as table
+                df = self.search(query, limit)
                 st.write(df.to_html(escape=False), unsafe_allow_html=True)
 
     def parse(self, data):
