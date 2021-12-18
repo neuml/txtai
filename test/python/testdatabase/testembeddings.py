@@ -123,14 +123,14 @@ class TestEmbeddings(unittest.TestCase):
         self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
 
         # Generate temp file path
-        index = os.path.join(tempfile.gettempdir(), "embeddings")
+        index = os.path.join(tempfile.gettempdir(), "embeddings.insert")
         self.embeddings.save(index)
 
         # Modify index
         self.embeddings.upsert([(0, "Looking out into the dreadful abyss", None)])
 
         # Save to a different location
-        indexupdate = os.path.join(tempfile.gettempdir(), "embeddings-update")
+        indexupdate = os.path.join(tempfile.gettempdir(), "embeddings.update")
         self.embeddings.save(indexupdate)
 
         # Save to same location
