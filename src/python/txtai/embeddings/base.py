@@ -56,7 +56,7 @@ class Embeddings:
         # Document database
         self.database = None
 
-        # Archiver
+        # Index archive
         self.archive = None
 
     def score(self, documents):
@@ -106,6 +106,9 @@ class Embeddings:
         else:
             # Save indexids-ids mapping for indexes with no database
             self.config["ids"] = ids
+
+        # Reset archive since this is a new index
+        self.archive = None
 
     def upsert(self, documents):
         """
@@ -419,7 +422,7 @@ class Embeddings:
             (working directory, current path) if this is an archive, original path otherwise
         """
 
-        # Create archiver instance, if necessary
+        # Create archive instance, if necessary
         self.archive = self.archive if self.archive else Archive()
 
         # Check if path if an archive file
