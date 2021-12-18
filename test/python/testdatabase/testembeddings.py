@@ -6,8 +6,6 @@ import os
 import tempfile
 import unittest
 
-from pathlib import Path
-
 from txtai.embeddings import Embeddings
 from txtai.database import Database, SQLException
 
@@ -58,6 +56,25 @@ class TestEmbeddings(unittest.TestCase):
             # Test offsets still work after save/load
             self.embeddings.upsert([(0, "Looking out into the dreadful abyss", None)])
             self.assertEqual(self.embeddings.count(), len(self.data))
+
+    def testClose(self):
+        """
+        Tests embeddings close
+        """
+
+        # Create index twice to test open/close and ensure resources are freed
+        for _ in range(2):
+            embeddings = Embeddings({"path": "google/bert_uncased_L-2_H-128_A-2", "content": True})
+
+            # Add record to index
+            embeddings.index([(0, "Close test", None)])
+
+            # Save index
+            index = os.path.join(tempfile.gettempdir(), "embeddings.close")
+            embeddings.save(index)
+
+            # Close index
+            embeddings.close()
 
     def testData(self):
         """
@@ -133,10 +150,6 @@ class TestEmbeddings(unittest.TestCase):
 
         # Save to a different location
         indexupdate = os.path.join(tempfile.gettempdir(), "embeddings.update")
-
-        # Create existing file to test file save conflicts
-        Path.touch(os.path.join(indexupdate, "documents"))
-
         self.embeddings.save(indexupdate)
 
         # Save to same location
@@ -165,6 +178,7 @@ class TestEmbeddings(unittest.TestCase):
         self.assertRaises(NotImplementedError, database.insert, None)
         self.assertRaises(NotImplementedError, database.delete, None)
         self.assertRaises(NotImplementedError, database.save, None)
+        self.assertRaises(NotImplementedError, database.close)
         self.assertRaises(NotImplementedError, database.ids, None)
         self.assertRaises(NotImplementedError, database.resolve, None, None)
         self.assertRaises(NotImplementedError, database.embed, None, None)

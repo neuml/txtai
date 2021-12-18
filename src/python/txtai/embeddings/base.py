@@ -17,7 +17,7 @@ from .archive import Archive
 from .reducer import Reducer
 from .search import Search
 
-
+# pylint: disable=R0904
 class Embeddings:
     """
     Embeddings is the engine that delivers semantic search. Text is transformed into embeddings vectors where similar concepts
@@ -99,7 +99,8 @@ class Embeddings:
         # Build the index
         self.ann.index(embeddings)
 
-        self.database = DatabaseFactory.create(self.config)
+        # Create document database
+        self.database = self.createdatabase()
         if self.database:
             # Add documents to database
             self.database.insert(documents)
@@ -350,7 +351,7 @@ class Embeddings:
         self.model = self.loadvectors()
 
         # Document database - stores document content
-        self.database = DatabaseFactory.create(self.config)
+        self.database = self.createdatabase()
         if self.database:
             self.database.load(f"{path}/documents")
 
@@ -411,26 +412,17 @@ class Embeddings:
             if apath:
                 self.archive.save(apath)
 
-    def checkarchive(self, path):
+    def close(self):
         """
-        Checks if path is an archive file.
-
-        Args:
-            path: path to check
-
-        Returns:
-            (working directory, current path) if this is an archive, original path otherwise
+        Closes this embeddings index and frees all resources.
         """
 
-        # Create archive instance, if necessary
-        self.archive = self.archive if self.archive else Archive()
+        self.config, self.ann, self.reducer, self.scoring, self.model, self.archive = None, None, None, None, None, None
 
-        # Check if path if an archive file
-        if self.archive.isarchive(path):
-            # Return temporary archive working directory and original path
-            return self.archive.path(), path
-
-        return path, None
+        # Close database connection if open
+        if self.database:
+            self.database.close()
+            self.database = None
 
     def loadvectors(self):
         """
@@ -467,20 +459,6 @@ class Embeddings:
 
         return (ids, dimensions, embeddings)
 
-    def normalize(self, embeddings):
-        """
-        Normalizes embeddings using L2 normalization. Operation applied directly on array.
-
-        Args:
-            embeddings: input embeddings matrix
-        """
-
-        # Calculation is different for matrices vs vectors
-        if len(embeddings.shape) > 1:
-            embeddings /= np.linalg.norm(embeddings, axis=1)[:, np.newaxis]
-        else:
-            embeddings /= np.linalg.norm(embeddings)
-
     def gettext(self, documents):
         """
         Selects documents that have text to vectorize for similarity indexing.
@@ -502,3 +480,53 @@ class Embeddings:
                 yield document
             elif isinstance(document[1], dict) and "text" in document[1]:
                 yield (document[0], document[1]["text"], document[2])
+
+    def checkarchive(self, path):
+        """
+        Checks if path is an archive file.
+
+        Args:
+            path: path to check
+
+        Returns:
+            (working directory, current path) if this is an archive, original path otherwise
+        """
+
+        # Create archive instance, if necessary
+        self.archive = self.archive if self.archive else Archive()
+
+        # Check if path is an archive file
+        if self.archive.isarchive(path):
+            # Return temporary archive working directory and original path
+            return self.archive.path(), path
+
+        return path, None
+
+    def createdatabase(self):
+        """
+        Creates a database from config. This method will also close any existing database connection.
+
+        Returns:
+            new database, if enabled in config
+        """
+
+        # Free existing database resources
+        if self.database:
+            self.database.close()
+
+        # Create database from config and return
+        return DatabaseFactory.create(self.config)
+
+    def normalize(self, embeddings):
+        """
+        Normalizes embeddings using L2 normalization. Operation applied directly on array.
+
+        Args:
+            embeddings: input embeddings matrix
+        """
+
+        # Calculation is different for matrices vs vectors
+        if len(embeddings.shape) > 1:
+            embeddings /= np.linalg.norm(embeddings, axis=1)[:, np.newaxis]
+        else:
+            embeddings /= np.linalg.norm(embeddings)

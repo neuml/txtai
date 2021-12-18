@@ -164,7 +164,7 @@ class HFOnnx(Tensors):
 
 class MeanPoolingOnnx(MeanPooling):
     """
-    Extends MeanPooling class to explicitly name inputs to model, which is required
+    Extends MeanPooling class to name inputs to model, which is required
     to export to ONNX.
     """
 

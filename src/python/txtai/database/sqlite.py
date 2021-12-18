@@ -153,6 +153,11 @@ class SQLite(Database):
         else:
             self.copy(path).close()
 
+    def close(self):
+        # Close connection
+        if self.connection:
+            self.connection.close()
+
     def ids(self, ids):
         # Batch ids and run query
         self.batch(ids=ids)

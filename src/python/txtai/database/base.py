@@ -72,6 +72,13 @@ class Database:
 
         raise NotImplementedError
 
+    def close(self):
+        """
+        Closes the database.
+        """
+
+        raise NotImplementedError
+
     def ids(self, ids):
         """
         Retrieves the internal indexids for a list of ids. Multiple indexids may be present for an id in cases
