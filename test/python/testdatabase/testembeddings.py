@@ -62,9 +62,11 @@ class TestEmbeddings(unittest.TestCase):
         Tests embeddings close
         """
 
+        embeddings = None
+
         # Create index twice to test open/close and ensure resources are freed
         for _ in range(2):
-            embeddings = Embeddings({"path": "google/bert_uncased_L-2_H-128_A-2", "content": True})
+            embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2", "content": True})
 
             # Add record to index
             embeddings.index([(0, "Close test", None)])
@@ -75,6 +77,10 @@ class TestEmbeddings(unittest.TestCase):
 
             # Close index
             embeddings.close()
+
+        # Test embeddings is empty
+        self.assertIsNone(embeddings.ann)
+        self.assertIsNone(embeddings.database)
 
     def testData(self):
         """
