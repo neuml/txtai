@@ -148,6 +148,11 @@ class TestEmbeddings(unittest.TestCase):
         result = self.embeddings.search("feel good story", 1)[0]
         self.assertEqual(result["text"], self.data[4])
 
+        # Save back to different location
+        self.embeddings.save(indexupdate)
+        result = self.embeddings.search("feel good story", 1)[0]
+        self.assertEqual(result["text"], self.data[4])
+
     def testNotImplemented(self):
         """
         Tests exceptions for non-implemented methods
