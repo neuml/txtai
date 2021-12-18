@@ -122,7 +122,7 @@ class TestEmbeddings(unittest.TestCase):
         # Create an index for the list of text
         self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
 
-        # Generate temp file path
+        # Save original index
         index = os.path.join(tempfile.gettempdir(), "embeddings.insert")
         self.embeddings.save(index)
 
@@ -148,8 +148,8 @@ class TestEmbeddings(unittest.TestCase):
         result = self.embeddings.search("feel good story", 1)[0]
         self.assertEqual(result["text"], self.data[4])
 
-        # Save back to different location
-        self.embeddings.save(indexupdate)
+        # Save back to same location
+        self.embeddings.save(index)
         result = self.embeddings.search("feel good story", 1)[0]
         self.assertEqual(result["text"], self.data[4])
 
