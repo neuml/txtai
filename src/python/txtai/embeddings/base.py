@@ -13,6 +13,7 @@ from ..database import DatabaseFactory
 from ..scoring import ScoringFactory
 from ..vectors import VectorsFactory
 
+from .archive import Archive
 from .reducer import Reducer
 from .search import Search
 
@@ -27,7 +28,7 @@ class Embeddings:
     # pylint: disable = W0231
     def __init__(self, config=None):
         """
-        Creates a new Embeddings model. Embeddings instances are thread-safe for read operations but writes must be
+        Creates a new embeddings index. Embeddings indexes are thread-safe for read operations but writes must be
         synchronized.
 
         Args:
@@ -54,6 +55,9 @@ class Embeddings:
 
         # Document database
         self.database = None
+
+        # Archiver
+        self.archive = None
 
     def score(self, documents):
         """
@@ -309,8 +313,13 @@ class Embeddings:
         Loads an existing index from path.
 
         Args:
-            path: input directory path
+            path: input path
         """
+
+        # Check if this is an archive file and extract
+        path, apath = self.checkarchive(path)
+        if apath:
+            self.archive.load(apath)
 
         # Index configuration
         with open(f"{path}/config", "rb") as handle:
@@ -347,7 +356,7 @@ class Embeddings:
         Checks if an index exists at path.
 
         Args:
-            path: input directory path
+            path: input path
 
         Returns:
             True if index exists, False otherwise
@@ -357,13 +366,16 @@ class Embeddings:
 
     def save(self, path):
         """
-        Saves a model.
+        Saves an index.
 
         Args:
-            path: output directory path
+            path: output path
         """
 
         if self.config:
+            # Check if this is an archive file
+            path, apath = self.checkarchive(path)
+
             # Create output directory, if necessary
             os.makedirs(path, exist_ok=True)
 
@@ -391,6 +403,31 @@ class Embeddings:
             # Save document database
             if self.database:
                 self.database.save(f"{path}/documents")
+
+            # If this is an archive, save it
+            if apath:
+                self.archive.save(apath)
+
+    def checkarchive(self, path):
+        """
+        Checks if path is an archive file.
+
+        Args:
+            path: path to check
+
+        Returns:
+            (working directory, current path) if this is an archive, original path otherwise
+        """
+
+        # Create archiver instance, if necessary
+        self.archive = self.archive if self.archive else Archive()
+
+        # Check if path if an archive file
+        if self.archive.isarchive(path):
+            # Return temporary archive working directory and original path
+            return self.archive.path(), path
+
+        return path, None
 
     def loadvectors(self):
         """

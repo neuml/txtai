@@ -65,6 +65,9 @@ class Database:
     def save(self, path):
         """
         Saves a database at path.
+
+        Args:
+            path: path to write database
         """
 
         raise NotImplementedError

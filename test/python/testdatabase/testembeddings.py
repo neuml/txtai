@@ -33,6 +33,30 @@ class TestEmbeddings(unittest.TestCase):
         # Create embeddings model, backed by sentence-transformers & transformers
         cls.embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2", "content": True})
 
+    def testArchive(self):
+        """
+        Tests embeddings index archiving
+        """
+
+        for extension in ["tar.bz2", "tar.gz", "tar.xz", "zip"]:
+            # Create an index for the list of text
+            self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+            # Generate temp file path
+            index = os.path.join(tempfile.gettempdir(), f"embeddings.{extension}")
+
+            self.embeddings.save(index)
+            self.embeddings.load(index)
+
+            # Search for best match
+            result = self.embeddings.search("feel good story", 1)[0]
+
+            self.assertEqual(result["text"], self.data[4])
+
+            # Test offsets still work after save/load
+            self.embeddings.upsert([(0, "Looking out into the dreadful abyss", None)])
+            self.assertEqual(self.embeddings.count(), len(self.data))
+
     def testData(self):
         """
         Test content storage and retrieval
@@ -90,6 +114,40 @@ class TestEmbeddings(unittest.TestCase):
 
         self.assertEqual(result["text"], self.data[4])
 
+    def testMultiSave(self):
+        """
+        Tests multiple successive saves
+        """
+
+        # Create an index for the list of text
+        self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        # Generate temp file path
+        index = os.path.join(tempfile.gettempdir(), "embeddings")
+        self.embeddings.save(index)
+
+        # Modify index
+        self.embeddings.upsert([(0, "Looking out into the dreadful abyss", None)])
+
+        # Save to a different location
+        indexupdate = os.path.join(tempfile.gettempdir(), "embeddings-update")
+        self.embeddings.save(indexupdate)
+
+        # Save to same location
+        self.embeddings.save(index)
+
+        # Test all indexes match
+        result = self.embeddings.search("feel good story", 1)[0]
+        self.assertEqual(result["text"], self.data[4])
+
+        self.embeddings.load(index)
+        result = self.embeddings.search("feel good story", 1)[0]
+        self.assertEqual(result["text"], self.data[4])
+
+        self.embeddings.load(indexupdate)
+        result = self.embeddings.search("feel good story", 1)[0]
+        self.assertEqual(result["text"], self.data[4])
+
     def testNotImplemented(self):
         """
         Tests exceptions for non-implemented methods
@@ -126,7 +184,7 @@ class TestEmbeddings(unittest.TestCase):
         self.assertEqual(result["text"], self.data[4])
 
         # Test offsets still work after save/load
-        self.embeddings.upsert([(0, "Test insert", None)])
+        self.embeddings.upsert([(0, "Looking out into the dreadful abyss", None)])
         self.assertEqual(self.embeddings.count(), len(self.data))
 
     def testSQL(self):

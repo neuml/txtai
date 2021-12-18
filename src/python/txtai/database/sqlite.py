@@ -129,26 +129,29 @@ class SQLite(Database):
             self.cursor.execute(SQLite.DELETE_SECTIONS)
 
     def save(self, path):
-        # Save the changes
-        self.connection.commit()
-
-        # If this is a temporary database, copy over to database at path
+        # Temporary database
         if not self.path:
-            # Delete existing file, if necessary
-            if os.path.exists(path):
-                os.remove(path)
+            # Save temporary database
+            self.connection.commit()
 
-            # Create database. Thread locking must be handled externally.
-            connection = sqlite3.connect(path, check_same_thread=False)
+            # Copy data from current to new
+            connection = self.copy(path)
 
-            # Copy from existing database to new database
-            self.connection.backup(connection)
+            # Close temporary database
             self.connection.close()
 
-            # Point connection to new database
+            # Point connection to new connection
             self.connection = connection
             self.cursor = self.connection.cursor()
             self.path = path
+
+        # Paths are equal, commit changes
+        elif self.path == path:
+            self.connection.commit()
+
+        # New path is different from current path, copy data and continue using current connection
+        else:
+            self.copy(path).close()
 
     def ids(self, ids):
         # Batch ids and run query
@@ -157,6 +160,42 @@ class SQLite(Database):
 
         # Format and return results
         return self.cursor.fetchall()
+
+    def resolve(self, name, alias=False, compound=False):
+        # Standard column names
+        sections = ["indexid", "id", "tags", "entry"]
+        noprefix = ["data", "score", "text"]
+
+        # Alias JSON column expressions
+        if alias:
+            # Only apply aliases to non-standard columns or compound expressions
+            if name not in sections + noprefix or compound:
+                return f' as "{name}"'
+
+            # No alias
+            return None
+
+        # Standard columns - need prefixes
+        if name.lower() in sections:
+            return f"s.{name}"
+
+        # Standard columns - no prefixes
+        if name.lower() in noprefix:
+            return name
+
+        # Other columns come from documents.data JSON
+        return f'json_extract(data, "$.{name}")'
+
+    def embed(self, similarity, batch):
+        # Load similarity results id batch
+        self.batch(indexids=[i for i, _ in similarity[batch]], batch=batch)
+
+        # Average and load all similarity scores with first batch
+        if not batch:
+            self.scores(similarity)
+
+        # Return ids clause placeholder
+        return SQLite.IDS_CLAUSE % batch
 
     def query(self, query, limit):
         # Extract query components
@@ -209,52 +248,6 @@ class SQLite(Database):
 
         return results
 
-    def resolve(self, name, alias=False, compound=False):
-        # Standard column names
-        sections = ["indexid", "id", "tags", "entry"]
-        noprefix = ["data", "score", "text"]
-
-        # Alias JSON column expressions
-        if alias:
-            # Only apply aliases to non-standard columns or compound expressions
-            if name not in sections + noprefix or compound:
-                return f' as "{name}"'
-
-            # No alias
-            return None
-
-        # Standard columns - need prefixes
-        if name.lower() in sections:
-            return f"s.{name}"
-
-        # Standard columns - no prefixes
-        if name.lower() in noprefix:
-            return name
-
-        # Other columns come from documents.data JSON
-        return f'json_extract(data, "$.{name}")'
-
-    def embed(self, similarity, batch):
-        # Load similarity results id batch
-        self.batch(indexids=[i for i, _ in similarity[batch]], batch=batch)
-
-        # Average and load all similarity scores with first batch
-        if not batch:
-            self.scores(similarity)
-
-        # Return ids clause placeholder
-        return SQLite.IDS_CLAUSE % batch
-
-    def defaults(self):
-        """
-        Returns a list of default columns when there is no select clause.
-
-        Returns:
-            list of default columns
-        """
-
-        return "s.id, text, score"
-
     def initialize(self):
         """
         Creates connection and initial database schema if no connection exists.
@@ -269,6 +262,46 @@ class SQLite(Database):
             self.cursor.execute(SQLite.CREATE_DOCUMENTS)
             self.cursor.execute(SQLite.CREATE_SECTIONS)
             self.cursor.execute(SQLite.CREATE_SECTIONS_INDEX)
+
+    def copy(self, path):
+        """
+        Copies the current database into path. This method will use the backup API if the current connection has no uncommitted changes.
+        Otherwise, iterdump is used, as the backup call will hang for an uncommitted connection.
+
+        Args:
+            path: path to write database
+
+        Returns:
+            new connection with data copied over
+        """
+
+        # Delete existing file, if necessary
+        if os.path.exists(path):
+            os.remove(path)
+
+        # Create database. Thread locking must be handled externally.
+        connection = sqlite3.connect(path, check_same_thread=False)
+
+        if self.connection.in_transaction:
+            # The backup call will hang if there are uncommitted changes, need to copy over
+            # with iterdump (which is much slower)
+            for sql in self.connection.iterdump():
+                connection.execute(sql)
+        else:
+            # Database is up to date, can do a more efficient copy with SQLite C API
+            self.connection.backup(connection)
+
+        return connection
+
+    def defaults(self):
+        """
+        Returns a list of default columns when there is no select clause.
+
+        Returns:
+            list of default columns
+        """
+
+        return "s.id, text, score"
 
     def batch(self, indexids=None, ids=None, batch=None):
         """
