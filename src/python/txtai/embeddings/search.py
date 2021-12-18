@@ -92,7 +92,7 @@ class Search:
         limit = max(limit, self.limit(queries))
 
         # Extract embeddings queries as single batch across all queries
-        equeries, search, window = [], [], 0
+        equeries, search, candidates = [], [], 0
         for x, query in enumerate(queries):
             if "similar" in query:
                 # Get handle to similar queries
@@ -100,14 +100,14 @@ class Search:
                     # Store the query index and similar text argument (first argument)
                     equeries.append((x, params[0]))
 
-                    # Second argument is similarity candidate window
+                    # Second argument is similar candidate limit
                     if len(params) > 1 and params[1].isdigit():
-                        # Get largest window value across all queries
-                        window = int(params[1]) if int(params[1]) > window else window
+                        # Get largest candidate limit across all queries
+                        candidates = int(params[1]) if int(params[1]) > candidates else candidates
 
         # Bulk approximate nearest neighbor search
         if equeries:
-            search = self.search([query for _, query in equeries], limit * 10 if not window else window)
+            search = self.search([query for _, query in equeries], limit * 10 if not candidates else candidates)
 
         # Combine approximate nearest neighbor search results with database search results
         results = []
