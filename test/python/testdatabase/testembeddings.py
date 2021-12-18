@@ -6,6 +6,8 @@ import os
 import tempfile
 import unittest
 
+from pathlib import Path
+
 from txtai.embeddings import Embeddings
 from txtai.database import Database, SQLException
 
@@ -131,6 +133,10 @@ class TestEmbeddings(unittest.TestCase):
 
         # Save to a different location
         indexupdate = os.path.join(tempfile.gettempdir(), "embeddings.update")
+
+        # Create existing file to test file save conflicts
+        Path.touch(os.path.join(indexupdate, "documents"))
+
         self.embeddings.save(indexupdate)
 
         # Save to same location
@@ -145,11 +151,6 @@ class TestEmbeddings(unittest.TestCase):
         self.assertEqual(result["text"], self.data[4])
 
         self.embeddings.load(indexupdate)
-        result = self.embeddings.search("feel good story", 1)[0]
-        self.assertEqual(result["text"], self.data[4])
-
-        # Save back to same location
-        self.embeddings.save(index)
         result = self.embeddings.search("feel good story", 1)[0]
         self.assertEqual(result["text"], self.data[4])
 
