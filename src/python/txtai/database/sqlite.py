@@ -53,7 +53,7 @@ class SQLite(Database):
 
     # Sections - stores section text
     CREATE_SECTIONS = """
-        CREATE TABLE IF NOT EXISTS sections (
+        CREATE TABLE IF NOT EXISTS %s (
             indexid INTEGER PRIMARY KEY,
             id TEXT,
             text TEXT,
@@ -65,6 +65,13 @@ class SQLite(Database):
     CREATE_SECTIONS_INDEX = "CREATE INDEX section_id ON sections(id)"
     INSERT_SECTION = "INSERT INTO sections VALUES (?, ?, ?, ?, ?)"
     DELETE_SECTIONS = "DELETE FROM sections WHERE id IN (SELECT id FROM batch)"
+    COPY_SECTIONS = (
+        "INSERT INTO %s SELECT indexid-1, id, text, tags, entry FROM (SELECT row_number() OVER (ORDER BY indexid) AS indexid, "
+        + "s.id, %s AS text, s.tags, s.entry FROM sections s LEFT JOIN documents d on s.id = d.id)"
+    )
+    STREAM_SECTIONS = "SELECT id, text, tags FROM %s ORDER BY indexid"
+    DROP_SECTIONS = "DROP TABLE sections"
+    RENAME_SECTIONS = "ALTER TABLE %s RENAME TO sections"
 
     # Queries
     SELECT_IDS = "SELECT indexid, id FROM sections WHERE id in (SELECT id FROM batch)"
@@ -127,6 +134,31 @@ class SQLite(Database):
             # Delete all documents and sections by id
             self.cursor.execute(SQLite.DELETE_DOCUMENTS)
             self.cursor.execute(SQLite.DELETE_SECTIONS)
+
+    def reindex(self, columns=None):
+        if self.connection:
+            # Working table name
+            name = "rebuild"
+
+            # Resolve and build column strings if provided
+            select = "text"
+            if columns:
+                select = "|| ' ' ||".join([self.resolve(c) for c in columns])
+
+            # Create new table to hold reordered sections
+            self.cursor.execute(SQLite.CREATE_SECTIONS % name)
+
+            # Copy data over
+            self.cursor.execute(SQLite.COPY_SECTIONS % (name, select))
+
+            # Stream new results
+            self.cursor.execute(SQLite.STREAM_SECTIONS % name)
+            yield from self.cursor
+
+            # Swap as new table
+            self.cursor.execute(SQLite.DROP_SECTIONS)
+            self.cursor.execute(SQLite.RENAME_SECTIONS % name)
+            self.cursor.execute(SQLite.CREATE_SECTIONS_INDEX)
 
     def save(self, path):
         # Temporary database
@@ -259,13 +291,15 @@ class SQLite(Database):
         """
 
         if not self.connection:
+            name = "sections"
+
             # Create temporary database. Thread locking must be handled externally.
             self.connection = sqlite3.connect("", check_same_thread=False)
             self.cursor = self.connection.cursor()
 
             # Create initial schema and indices
             self.cursor.execute(SQLite.CREATE_DOCUMENTS)
-            self.cursor.execute(SQLite.CREATE_SECTIONS)
+            self.cursor.execute(SQLite.CREATE_SECTIONS % name)
             self.cursor.execute(SQLite.CREATE_SECTIONS_INDEX)
 
     def copy(self, path):

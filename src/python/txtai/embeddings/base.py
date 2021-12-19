@@ -35,23 +35,17 @@ class Embeddings:
             config: embeddings configuration
         """
 
-        # Configuration
-        self.config = config
+        # Index configuration
+        self.config = None
+
+        # Dimensionality reduction and scoring models - word vectors only
+        self.reducer, self.scoring = None, None
+
+        # Embeddings vector model - transforms text into similarity vectors
+        self.model = None
 
         # Approximate nearest neighbor index
         self.ann = None
-
-        if self.config and self.config.get("method") != "transformers":
-            # Dimensionality reduction model
-            self.reducer = None
-
-            # Embedding scoring method - weighs each word in a sentence
-            self.scoring = ScoringFactory.create(self.config["scoring"]) if self.config and self.config.get("scoring") else None
-        else:
-            self.reducer, self.scoring = None, None
-
-        # Sentence vectors model - transforms text to embeddings vectors
-        self.model = self.loadvectors() if self.config else None
 
         # Document database
         self.database = None
@@ -59,24 +53,28 @@ class Embeddings:
         # Index archive
         self.archive = None
 
+        # Set initial configuration
+        self.configure(config)
+
     def score(self, documents):
         """
-        Builds a scoring index.
+        Builds a scoring index. Only used by word vectors models.
 
         Args:
             documents: list of (id, dict|text|tokens, tags)
         """
 
+        # Build scoring index over documents
         if self.scoring:
-            # Build scoring index over documents
             self.scoring.index(documents)
 
-    def index(self, documents):
+    def index(self, documents, reindex=False):
         """
         Builds an embeddings index. This method overwrites an existing index.
 
         Args:
             documents: list of (id, dict|text|tokens, tags)
+            reindex: if this is a reindex operation in which case database creation is skipped, defaults to False
         """
 
         # Transform documents to embeddings vectors
@@ -99,17 +97,19 @@ class Embeddings:
         # Build the index
         self.ann.index(embeddings)
 
-        # Create document database
-        self.database = self.createdatabase()
-        if self.database:
-            # Add documents to database
-            self.database.insert(documents)
-        else:
-            # Save indexids-ids mapping for indexes with no database
-            self.config["ids"] = ids
+        # Keep existing database and archive instances if this is part of a reindex
+        if not reindex:
+            # Create document database
+            self.database = self.createdatabase()
+            if self.database:
+                # Add documents to database
+                self.database.insert(documents)
+            else:
+                # Save indexids-ids mapping for indexes with no database
+                self.config["ids"] = ids
 
-        # Reset archive since this is a new index
-        self.archive = None
+            # Reset archive since this is a new index
+            self.archive = None
 
     def upsert(self, documents):
         """
@@ -171,7 +171,7 @@ class Embeddings:
 
             # Parse out indices and ids to delete
             indices = [i for i, _ in ids]
-            deletes = list(set(uid for _, uid in ids))
+            deletes = sorted(set(uid for _, uid in ids))
 
             # Delete ids from database
             self.database.delete(deletes)
@@ -194,6 +194,26 @@ class Embeddings:
             self.ann.delete(indices)
 
         return deletes
+
+    def reindex(self, config, columns=None):
+        """
+        Recreates the approximate nearest neighbor (ann) index using config. This method only works if document
+        content storage is enabled.
+
+        Args:
+            config: new config
+            columns: optional list of document columns used to rebuild text
+        """
+
+        if self.database:
+            # Keep content parameter to ensure database is preserved
+            config["content"] = self.config["content"]
+
+            # Reset configuration
+            self.configure(config)
+
+            # Reindex
+            self.index(self.database.reindex(columns), True)
 
     def transform(self, document):
         """
@@ -337,12 +357,12 @@ class Embeddings:
         self.ann = ANNFactory.create(self.config)
         self.ann.load(f"{path}/embeddings")
 
-        # Dimensionality reduction model (word vectors only)
+        # Dimensionality reduction model - word vectors only
         if self.config.get("pca"):
             self.reducer = Reducer()
             self.reducer.load(f"{path}/lsa")
 
-        # Embedding scoring model (word vectors only)
+        # Embedding scoring model - word vectors only
         if self.config.get("scoring"):
             self.scoring = ScoringFactory.create(self.config["scoring"])
             self.scoring.load(f"{path}/scoring")
@@ -417,12 +437,35 @@ class Embeddings:
         Closes this embeddings index and frees all resources.
         """
 
-        self.config, self.ann, self.reducer, self.scoring, self.model, self.archive = None, None, None, None, None, None
+        self.config, self.reducer, self.scoring, self.model, self.ann, self.archive = None, None, None, None, None, None
 
         # Close database connection if open
         if self.database:
             self.database.close()
             self.database = None
+
+    def configure(self, config):
+        """
+        Sets the configuration for this embeddings index and loads config-driven models.
+
+        Args:
+            config: embeddings configuration
+        """
+
+        # Configuration
+        self.config = config
+
+        if self.config and self.config.get("method") != "transformers":
+            # Dimensionality reduction model
+            self.reducer = None
+
+            # Embedding scoring method - weighs each word in a sentence
+            self.scoring = ScoringFactory.create(self.config["scoring"]) if self.config and self.config.get("scoring") else None
+        else:
+            self.reducer, self.scoring = None, None
+
+        # Sentence vectors model - transforms text to embeddings vectors
+        self.model = self.loadvectors() if self.config else None
 
     def loadvectors(self):
         """

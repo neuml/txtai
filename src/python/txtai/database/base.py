@@ -62,6 +62,17 @@ class Database:
 
         raise NotImplementedError
 
+    def reindex(self, columns=None):
+        """
+        Reindexes internal database content and streams results back. This method must renumber indexids
+        sequentially as deletes could have caused indexid gaps.
+
+        Args:
+            columns: optional list of document columns used to rebuild text
+        """
+
+        raise NotImplementedError
+
     def save(self, path):
         """
         Saves a database at path.

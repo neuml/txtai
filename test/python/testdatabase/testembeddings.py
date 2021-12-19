@@ -183,12 +183,32 @@ class TestEmbeddings(unittest.TestCase):
         self.assertRaises(NotImplementedError, database.load, None)
         self.assertRaises(NotImplementedError, database.insert, None)
         self.assertRaises(NotImplementedError, database.delete, None)
+        self.assertRaises(NotImplementedError, database.reindex, None)
         self.assertRaises(NotImplementedError, database.save, None)
         self.assertRaises(NotImplementedError, database.close)
         self.assertRaises(NotImplementedError, database.ids, None)
         self.assertRaises(NotImplementedError, database.resolve, None, None)
         self.assertRaises(NotImplementedError, database.embed, None, None)
         self.assertRaises(NotImplementedError, database.query, None, None)
+
+    def testReindex(self):
+        """
+        Test reindex
+        """
+
+        # Create an index for the list of text
+        self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        # Delete records to test indexids still match
+        self.embeddings.delete(([0, 1]))
+
+        # Reindex
+        self.embeddings.reindex({"path": "sentence-transformers/nli-mpnet-base-v2"}, ["text"])
+
+        # Search for best match
+        result = self.embeddings.search("feel good story", 1)[0]
+
+        self.assertEqual(result["text"], self.data[4])
 
     def testSave(self):
         """
