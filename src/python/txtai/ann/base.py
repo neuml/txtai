@@ -2,6 +2,11 @@
 ANN (Approximate Nearest Neighbor) module
 """
 
+import datetime
+import platform
+
+from .. import __version__
+
 
 class ANN:
     """
@@ -108,3 +113,23 @@ class ANN:
         # Get setting value, set default value if not found
         setting = backend.get(name) if backend else None
         return setting if setting else default
+
+    def metadata(self, settings):
+        """
+        Adds index build metadata.
+
+        Args:
+            settings: index build settings
+        """
+
+        # ISO 8601 timestamp
+        create = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+        # Set build metadata
+        self.config["build"] = {
+            "create": create,
+            "python": platform.python_version(),
+            "settings": settings,
+            "system": f"{platform.system()} ({platform.machine()})",
+            "txtai": __version__,
+        }
