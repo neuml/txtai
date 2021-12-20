@@ -1,5 +1,5 @@
 # Embeddings
-An Embeddings instance is the engine that provides similarity search. Embeddings can be used to run ad-hoc similarity comparisions or build/search large indices.
+Embeddings is the engine that delivers semantic search. Text is transformed into embeddings vectors where similar concepts will produce similar vectors. Indexes both large and small are built with these vectors. The indexes are used find results that have the same meaning, not necessarily the same keywords.
 
 Embeddings parameters are set through the constructor. Examples below.
 
@@ -29,7 +29,7 @@ Sentence embeddings method to use. Options listed below.
 #### transformers
 
 Builds sentence embeddings using a transformers model. While this can be any transformers model, it works best with
-[models trained](https://huggingface.co/models?search=sentence-transformers) to build sentence embeddings.
+[models trained](https://huggingface.co/models?pipeline_tag=sentence-similarity) to build sentence embeddings.
 
 #### sentence-transformers
 
@@ -53,7 +53,7 @@ Required field that sets the path for a vectors model. When using a transformers
 
 ### backend
 ```yaml
-backend: faiss|annoy|hnsw
+backend: faiss|hnsw|annoy
 ```
 
 Approximate Nearest Neighbor (ANN) index backend for storing generated sentence embeddings. Defaults to Faiss. Additional backends require the
@@ -64,20 +64,16 @@ Backend-specific settings are set with a corresponding configuration object havi
 ### faiss
 ```yaml
 faiss:
-    components: Comma separated list of components - defaults to None
-    nprobe: search probe setting (int) - defaults to 6
+    components: Comma separated list of components - defaults to "Flat" for small indices and "IVFx,Flat" for larger indexes where x = 4 * sqrt(embeddings count)
+    nprobe: search probe setting (int) - defaults to x/16 (as defined above) for larger indexes
 ```
 
-See Faiss documentation on the [index factory](https://github.com/facebookresearch/faiss/wiki/The-index-factory) and [search](https://github.com/facebookresearch/faiss/wiki/Faster-search) for more information on these parameters.
+See the following Faiss documentation links for more information.
 
-### annoy
-```yaml
-annoy:
-    ntrees: number of trees (int) - defaults to 10
-    searchk: search_k search setting (int) - defaults to -1
-```
-
-See [Annoy documentation](https://github.com/spotify/annoy#full-python-api) for more information on these parameters.
+- [Guidelines for choosing an index](https://github.com/facebookresearch/faiss/wiki/Guidelines-to-choose-an-index)
+- [Index configuration summary](https://github.com/facebookresearch/faiss/wiki/Faiss-indexes)
+- [Index Factory](https://github.com/facebookresearch/faiss/wiki/The-index-factory)
+- [Search Tuning](https://github.com/facebookresearch/faiss/wiki/Faster-search)
 
 ### hnsw
 ```yaml
@@ -89,6 +85,15 @@ hnsw:
 ```
 
 See [Hnswlib documentation](https://github.com/nmslib/hnswlib/blob/master/ALGO_PARAMS.md) for more information on these parameters.
+
+### annoy
+```yaml
+annoy:
+    ntrees: number of trees (int) - defaults to 10
+    searchk: search_k search setting (int) - defaults to -1
+```
+
+See [Annoy documentation](https://github.com/spotify/annoy#full-python-api) for more information on these parameters. Note that annoy indexes can not be modified after creation, upserts/deletes and other modifications are not supported.
 
 ### quantize
 ```yaml

@@ -35,7 +35,11 @@ class Annoy(ANN):
             self.model.add_item(x, embeddings[x])
 
         # Build index
-        self.model.build(self.setting("ntrees", 10))
+        ntrees = self.setting("ntrees", 10)
+        self.model.build(ntrees)
+
+        # Add index build metadata
+        self.metadata({"ntrees": ntrees})
 
     def search(self, queries, limit):
         # Lookup search k setting

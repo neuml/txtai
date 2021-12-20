@@ -42,9 +42,10 @@ class HNSW(ANN):
         # Add items - position in embeddings is used as the id
         self.model.add_items(embeddings, np.arange(embeddings.shape[0]))
 
-        # Update id offset and set delete counter
+        # Add id offset, delete counter and index build metadata
         self.config["offset"] = embeddings.shape[0]
         self.config["deletes"] = 0
+        self.metadata({"efconstruction": efconstruction, "m": m, "seed": seed})
 
     def append(self, embeddings):
         new = embeddings.shape[0]
