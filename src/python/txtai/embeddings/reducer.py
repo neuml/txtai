@@ -95,4 +95,4 @@ class Reducer:
         """
 
         with open(path, "wb") as handle:
-            pickle.dump(self.model, handle, protocol=pickle.HIGHEST_PROTOCOL)
+            pickle.dump(self.model, handle, protocol=4)

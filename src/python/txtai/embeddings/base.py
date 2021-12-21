@@ -411,7 +411,7 @@ class Embeddings:
 
             # Write index configuration
             with open(f"{path}/config", "wb") as handle:
-                pickle.dump(self.config, handle, protocol=pickle.HIGHEST_PROTOCOL)
+                pickle.dump(self.config, handle, protocol=4)
 
             # Save approximate nearest neighbor index
             self.ann.save(f"{path}/embeddings")

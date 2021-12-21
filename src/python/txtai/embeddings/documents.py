@@ -62,7 +62,7 @@ class Documents:
             self.documents = tempfile.NamedTemporaryFile(mode="wb", suffix=".docs", delete=False)
 
         # Add batch
-        pickle.dump(documents, self.documents)
+        pickle.dump(documents, self.documents, protocol=4)
         self.batch += 1
         self.size += len(documents)
 

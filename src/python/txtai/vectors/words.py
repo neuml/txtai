@@ -116,7 +116,7 @@ class WordVectors(Vectors):
                         dimensions = embedding.shape[0]
 
                     ids.append(uid)
-                    pickle.dump(embedding, output)
+                    pickle.dump(embedding, output, protocol=4)
 
         return (ids, dimensions, stream)
 

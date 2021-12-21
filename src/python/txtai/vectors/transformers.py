@@ -97,7 +97,7 @@ class TransformersVectors(Vectors):
                 # Set number of dimensions for embeddings
                 dimensions = embedding.shape[0]
 
-            pickle.dump(embedding, output)
+            pickle.dump(embedding, output, protocol=4)
 
         return (ids, dimensions)
 

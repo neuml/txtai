@@ -142,7 +142,7 @@ class Scoring:
         """
 
         with open(path, "wb") as handle:
-            pickle.dump(self.__dict__, handle, protocol=pickle.HIGHEST_PROTOCOL)
+            pickle.dump(self.__dict__, handle, protocol=4)
 
     def computeidf(self, freq):
         """
