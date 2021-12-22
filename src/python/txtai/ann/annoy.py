@@ -12,6 +12,7 @@ except ImportError:
 
 from .base import ANN
 
+
 # pylint: disable=W0223
 class Annoy(ANN):
     """

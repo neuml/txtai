@@ -4,6 +4,7 @@ Database module
 
 import logging
 
+from .encoder import EncoderFactory
 from .sql import Expression, SQL, SQLException
 
 # Logging configuration
@@ -30,6 +31,10 @@ class Database:
 
         # SQL parser
         self.sql = SQL(self)
+
+        # Load objects encoder
+        encoder = self.config.get("objects")
+        self.encoder = EncoderFactory.create(encoder) if encoder else None
 
     def load(self, path):
         """
@@ -68,7 +73,7 @@ class Database:
         sequentially as deletes could have caused indexid gaps.
 
         Args:
-            columns: optional list of document columns used to rebuild text
+            columns: optional list of document columns used to rebuild data
         """
 
         raise NotImplementedError
@@ -93,7 +98,7 @@ class Database:
     def ids(self, ids):
         """
         Retrieves the internal indexids for a list of ids. Multiple indexids may be present for an id in cases
-        where text is segmented.
+        where data is segmented.
 
         Args:
             ids: list of document ids

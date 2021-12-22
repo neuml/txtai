@@ -48,7 +48,7 @@ def transform(document):
     Multiprocessing helper method. Transforms document into an embeddings vector.
 
     Args:
-        document: (id, dict|text|tokens, tags)
+        document: (id, data, tags)
 
     Returns:
         (id, embedding)

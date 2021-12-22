@@ -42,7 +42,7 @@ class Vectors:
         number of dimensions and temporary file with embeddings.
 
         Args:
-            documents: list of (id, text|tokens, tags)
+            documents: list of (id, data, tags)
 
         Returns:
             (ids, dimensions, stream)
@@ -55,7 +55,7 @@ class Vectors:
         Transforms document into an embeddings vector.
 
         Args:
-            document: (id, text|tokens, tags)
+            document: (id, data, tags)
 
         Returns:
             embeddings vector

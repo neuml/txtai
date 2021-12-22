@@ -70,8 +70,8 @@ class TransformersVectors(Vectors):
         return (ids, dimensions, stream)
 
     def transform(self, document):
-        # Convert input document to text and build embeddings
-        return self.model.encode([self.text(document[1])])[0]
+        # Prepare input document for transformers model and build embeddings
+        return self.model.encode([self.prepare(document[1])])[0]
 
     def batch(self, documents, output):
         """
@@ -85,9 +85,9 @@ class TransformersVectors(Vectors):
             (ids, dimensions) list of ids and number of dimensions in embeddings
         """
 
-        # Extract ids and convert input documents to text
+        # Extract ids and prepare input documents for transformers model
         ids = [uid for uid, _, _ in documents]
-        documents = [self.text(text) for _, text, _ in documents]
+        documents = [self.prepare(data) for _, data, _ in documents]
         dimensions = None
 
         # Build embeddings
@@ -101,21 +101,24 @@ class TransformersVectors(Vectors):
 
         return (ids, dimensions)
 
-    def text(self, text):
+    def prepare(self, data):
         """
-        Converts input into text that can be processed by transformer models. This method supports
-        optional string tokenization and joins tokenized input into text.
+        Prepares input data for transformers model. This method supports optional string tokenization and
+        joins tokenized input into text.
 
         Args:
-            text: text|tokens
+            data: input data
+
+        Returns:
+            data formatted for transformers model
         """
 
         # Optional string tokenization
-        if self.tokenize and isinstance(text, str):
-            text = Tokenizer.tokenize(text)
+        if self.tokenize and isinstance(data, str):
+            data = Tokenizer.tokenize(data)
 
-        # Transformer models require string input
-        if isinstance(text, list):
-            text = " ".join(text)
+        # Convert token list to string
+        if isinstance(data, list):
+            data = " ".join(data)
 
-        return text
+        return data

@@ -49,6 +49,22 @@ Serve txtai via a web API.
 pip install txtai[api]
 ```
 
+### Database
+
+Additional content storage options
+
+```
+pip install txtai[database]
+```
+
+### Model
+
+Additional non-standard models
+
+```
+pip install txtai[model]
+```
+
 ### Pipeline
 
 All pipelines - default install comes with most common pipelines.

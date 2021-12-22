@@ -2,6 +2,7 @@
 Embeddings module
 """
 
+import json
 import pickle
 import os
 import shutil
@@ -17,10 +18,11 @@ from .archive import Archive
 from .reducer import Reducer
 from .search import Search
 
+
 # pylint: disable=R0904
 class Embeddings:
     """
-    Embeddings is the engine that delivers semantic search. Text is transformed into embeddings vectors where similar concepts
+    Embeddings is the engine that delivers semantic search. Data is transformed into embeddings vectors where similar concepts
     will produce similar vectors. Indexes both large and small are built with these vectors. The indexes are used find results
     that have the same meaning, not necessarily the same keywords.
     """
@@ -41,7 +43,7 @@ class Embeddings:
         # Dimensionality reduction and scoring models - word vectors only
         self.reducer, self.scoring = None, None
 
-        # Embeddings vector model - transforms text into similarity vectors
+        # Embeddings vector model - transforms data into similarity vectors
         self.model = None
 
         # Approximate nearest neighbor index
@@ -61,7 +63,7 @@ class Embeddings:
         Builds a scoring index. Only used by word vectors models.
 
         Args:
-            documents: list of (id, dict|text|tokens, tags)
+            documents: list of (id, data, tags)
         """
 
         # Build scoring index over documents
@@ -73,7 +75,7 @@ class Embeddings:
         Builds an embeddings index. This method overwrites an existing index.
 
         Args:
-            documents: list of (id, dict|text|tokens, tags)
+            documents: list of (id, data, tags)
             reindex: if this is a reindex operation in which case database creation is skipped, defaults to False
         """
 
@@ -118,7 +120,7 @@ class Embeddings:
         this method runs a standard index operation.
 
         Args:
-            documents: list of (id, dict|text|tokens, tags)
+            documents: list of (id, data, tags)
         """
 
         # Run standard insert if index doesn't exist
@@ -202,12 +204,14 @@ class Embeddings:
 
         Args:
             config: new config
-            columns: optional list of document columns used to rebuild text
+            columns: optional list of document columns used to rebuild data
         """
 
         if self.database:
-            # Keep content parameter to ensure database is preserved
+            # Keep content and objects parameters to ensure database is preserved
             config["content"] = self.config["content"]
+            if "objects" in self.config:
+                config["objects"] = self.config["objects"]
 
             # Reset configuration
             self.configure(config)
@@ -217,10 +221,10 @@ class Embeddings:
 
     def transform(self, document):
         """
-        Transforms document into an embeddings vector. Document text will be tokenized if not pre-tokenized.
+        Transforms document into an embeddings vector.
 
         Args:
-            document: (id, text|tokens, tags)
+            document: (id, data, tags)
 
         Returns:
             embeddings vector
@@ -241,10 +245,10 @@ class Embeddings:
 
     def batchtransform(self, documents):
         """
-        Transforms documents into embeddings vectors. Document text will be tokenized if not pre-tokenized.
+        Transforms documents into embeddings vectors.
 
         Args:
-            documents: list of (id, text|tokens, tags)
+            documents: list of (id, data, tags)
 
         Returns:
             embeddings vectors
@@ -269,7 +273,7 @@ class Embeddings:
         on if a database is available.
 
         Args:
-            query: query text|tokens
+            query: input query
             limit: maximum results
 
         Returns:
@@ -285,7 +289,7 @@ class Embeddings:
         on if a database is available.
 
         Args:
-            queries: queries text|tokens
+            queries: input queries
             limit: maximum results
 
         Returns:
@@ -294,29 +298,29 @@ class Embeddings:
 
         return Search(self)(queries, limit)
 
-    def similarity(self, query, texts):
+    def similarity(self, query, data):
         """
-        Computes the similarity between query and list of text. Returns a list of
-        (id, score) sorted by highest score, where id is the index in texts.
+        Computes the similarity between query and list of data. Returns a list of
+        (id, score) sorted by highest score, where id is the index in data.
 
         Args:
-            query: query text|tokens
-            texts: list of text|tokens
+            query: input query
+            data: list of data
 
         Returns:
             list of (id, score)
         """
 
-        return self.batchsimilarity([query], texts)[0]
+        return self.batchsimilarity([query], data)[0]
 
-    def batchsimilarity(self, queries, texts):
+    def batchsimilarity(self, queries, data):
         """
-        Computes the similarity between list of queries and list of text. Returns a list
-        of (id, score) sorted by highest score per query, where id is the index in texts.
+        Computes the similarity between list of queries and list of data. Returns a list
+        of (id, score) sorted by highest score per query, where id is the index in data.
 
         Args:
-            queries: queries text|tokens
-            texts: list of text|tokens
+            queries: input queries
+            data: list of data
 
         Returns:
             list of (id, score) per query
@@ -324,10 +328,10 @@ class Embeddings:
 
         # Convert queries to embedding vectors
         queries = np.array([self.transform((None, query, None)) for query in queries])
-        texts = np.array([self.transform((None, text, None)) for text in texts])
+        data = np.array([self.transform((None, row, None)) for row in data])
 
         # Dot product on normalized vectors is equal to cosine similarity
-        scores = np.dot(queries, texts.T).tolist()
+        scores = np.dot(queries, data.T).tolist()
 
         # Add index and sort desc based on score
         return [sorted(enumerate(score), key=lambda x: x[1], reverse=True) for score in scores]
@@ -367,7 +371,7 @@ class Embeddings:
             self.scoring = ScoringFactory.create(self.config["scoring"])
             self.scoring.load(f"{path}/scoring")
 
-        # Sentence vectors model - transforms text to embeddings vectors
+        # Sentence vectors model - transforms data to embeddings vectors
         self.model = self.loadvectors()
 
         # Document database - stores document content
@@ -444,6 +448,13 @@ class Embeddings:
             self.database.close()
             self.database = None
 
+    def info(self):
+        """
+        Prints the current embeddings index configuration.
+        """
+
+        print(json.dumps(self.config, sort_keys=True, indent=2))
+
     def configure(self, config):
         """
         Sets the configuration for this embeddings index and loads config-driven models.
@@ -464,7 +475,7 @@ class Embeddings:
         else:
             self.reducer, self.scoring = None, None
 
-        # Sentence vectors model - transforms text to embeddings vectors
+        # Sentence vectors model - transforms data to embeddings vectors
         self.model = self.loadvectors() if self.config else None
 
     def loadvectors(self):
@@ -482,14 +493,14 @@ class Embeddings:
         Transforms documents into embeddings vectors.
 
         Args:
-            documents: list of (id, dict|text|tokens, tags)
+            documents: list of (id, data, tags)
 
         Returns:
             (document ids, dimensions, embeddings)
         """
 
         # Transform documents to embeddings vectors
-        ids, dimensions, stream = self.model.index(self.gettext(documents))
+        ids, dimensions, stream = self.model.index(self.getinputs(documents))
 
         # Load streamed embeddings back to memory
         embeddings = np.empty((len(ids), dimensions), dtype=np.float32)
@@ -502,27 +513,31 @@ class Embeddings:
 
         return (ids, dimensions, embeddings)
 
-    def gettext(self, documents):
+    def getinputs(self, documents):
         """
-        Selects documents that have text to vectorize for similarity indexing.
+        Prepares documents for vector models.
 
         Must be one of the following:
-            - text
-            - list of text tokens
-            - dict with the field "text"
+            - dict with the field "text" or "object"
+            - not a dict
+
+        Otherwise, the document is not passed to the vector models.
 
         Args:
-            documents: list of (id, dict|text|tokens, tags)
+            documents: list of (id, data, tags)
 
         Returns:
             filtered documents
         """
 
         for document in documents:
-            if isinstance(document[1], (str, list)):
+            if isinstance(document[1], dict):
+                if "text" in document[1]:
+                    yield (document[0], document[1]["text"], document[2])
+                elif "object" in document[1]:
+                    yield (document[0], document[1]["object"], document[2])
+            else:
                 yield document
-            elif isinstance(document[1], dict) and "text" in document[1]:
-                yield (document[0], document[1]["text"], document[2])
 
     def checkarchive(self, path):
         """

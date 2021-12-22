@@ -1,5 +1,5 @@
 # Embeddings
-Embeddings is the engine that delivers semantic search. Text is transformed into embeddings vectors where similar concepts will produce similar vectors. Indexes both large and small are built with these vectors. The indexes are used find results that have the same meaning, not necessarily the same keywords.
+Embeddings is the engine that delivers semantic search. Data is transformed into embeddings vectors where similar concepts will produce similar vectors. Indexes both large and small are built with these vectors. The indexes are used find results that have the same meaning, not necessarily the same keywords.
 
 Embeddings parameters are set through the constructor. Examples below.
 

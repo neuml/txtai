@@ -97,7 +97,7 @@ class Search:
             if "similar" in query:
                 # Get handle to similar queries
                 for params in query["similar"]:
-                    # Store the query index and similar text argument (first argument)
+                    # Store the query index and similar query argument (first argument)
                     equeries.append((x, params[0]))
 
                     # Second argument is similar candidate limit

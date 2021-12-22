@@ -51,6 +51,19 @@ class SQLite(Database):
     INSERT_DOCUMENT = "INSERT INTO documents VALUES (?, ?, ?, ?)"
     DELETE_DOCUMENTS = "DELETE FROM documents WHERE id IN (SELECT id FROM batch)"
 
+    # Objects - stores binary content
+    CREATE_OBJECTS = """
+        CREATE TABLE IF NOT EXISTS objects (
+            id TEXT PRIMARY KEY,
+            object BLOB,
+            tags TEXT,
+            entry DATETIME
+        )
+    """
+
+    INSERT_OBJECT = "INSERT INTO objects VALUES (?, ?, ?, ?)"
+    DELETE_OBJECTS = "DELETE FROM objects WHERE id IN (SELECT id FROM batch)"
+
     # Sections - stores section text
     CREATE_SECTIONS = """
         CREATE TABLE IF NOT EXISTS %s (
@@ -67,9 +80,9 @@ class SQLite(Database):
     DELETE_SECTIONS = "DELETE FROM sections WHERE id IN (SELECT id FROM batch)"
     COPY_SECTIONS = (
         "INSERT INTO %s SELECT indexid-1, id, text, tags, entry FROM (SELECT row_number() OVER (ORDER BY indexid) AS indexid, "
-        + "s.id, %s AS text, s.tags, s.entry FROM sections s LEFT JOIN documents d on s.id = d.id)"
+        + "s.id, %s AS text, s.tags, s.entry FROM sections s LEFT JOIN documents d ON s.id = d.id)"
     )
-    STREAM_SECTIONS = "SELECT id, text, tags FROM %s ORDER BY indexid"
+    STREAM_SECTIONS = "SELECT s.id, s.text, object, s.tags FROM %s s LEFT JOIN objects o ON s.id = o.id ORDER BY indexid"
     DROP_SECTIONS = "DROP TABLE sections"
     RENAME_SECTIONS = "ALTER TABLE %s RENAME TO sections"
 
@@ -77,7 +90,12 @@ class SQLite(Database):
     SELECT_IDS = "SELECT indexid, id FROM sections WHERE id in (SELECT id FROM batch)"
 
     # Partial sql clauses
-    TABLE_CLAUSE = "SELECT %s FROM sections s LEFT JOIN documents d ON s.id = d.id LEFT JOIN scores sc on s.indexid=sc.indexid"
+    TABLE_CLAUSE = (
+        "SELECT %s FROM sections s "
+        + "LEFT JOIN documents d ON s.id = d.id "
+        + "LEFT JOIN objects o ON s.id = o.id "
+        + "LEFT JOIN scores sc ON s.indexid = sc.indexid"
+    )
     IDS_CLAUSE = "s.indexid in (SELECT indexid from batch WHERE batch=%s)"
 
     def __init__(self, config):
@@ -111,19 +129,22 @@ class SQLite(Database):
         # Insert documents
         for uid, document, tags in documents:
             if isinstance(document, dict):
-                # Insert document as JSON
-                self.cursor.execute(SQLite.INSERT_DOCUMENT, [uid, json.dumps(document), tags, entry])
-
-                # Extract text, if any
-                document = document.get("text")
-
-            if isinstance(document, list):
-                # Join tokens to text
-                document = " ".join(document)
+                # Insert document and use return value for sections table
+                document = self.insertdocument(uid, document, tags, entry)
 
             if document:
+                if isinstance(document, list):
+                    # Join tokens to text
+                    document = " ".join(document)
+                elif not isinstance(document, str):
+                    # If object support is enabled, save object
+                    self.insertobject(uid, document, tags, entry)
+
+                    # Clear section text for objects, even when objects aren't inserted
+                    document = None
+
                 # Save text section
-                self.cursor.execute(SQLite.INSERT_SECTION, [index, uid, document, tags, entry])
+                self.insertsection(index, uid, document, tags, entry)
                 index += 1
 
     def delete(self, ids):
@@ -131,8 +152,9 @@ class SQLite(Database):
             # Batch ids
             self.batch(ids=ids)
 
-            # Delete all documents and sections by id
+            # Delete all documents, objects and sections by id
             self.cursor.execute(SQLite.DELETE_DOCUMENTS)
+            self.cursor.execute(SQLite.DELETE_OBJECTS)
             self.cursor.execute(SQLite.DELETE_SECTIONS)
 
     def reindex(self, columns=None):
@@ -153,7 +175,11 @@ class SQLite(Database):
 
             # Stream new results
             self.cursor.execute(SQLite.STREAM_SECTIONS % name)
-            yield from self.cursor
+            for uid, text, obj, tags in self.cursor:
+                if not text and self.encoder and obj:
+                    yield (uid, self.encoder.decode(obj), tags)
+                else:
+                    yield (uid, text, tags)
 
             # Swap as new table
             self.cursor.execute(SQLite.DROP_SECTIONS)
@@ -201,7 +227,7 @@ class SQLite(Database):
     def resolve(self, name, alias=False, compound=False):
         # Standard column names
         sections = ["indexid", "id", "tags", "entry"]
-        noprefix = ["data", "score", "text"]
+        noprefix = ["data", "object", "score", "text"]
 
         # Alias JSON column expressions
         if alias:
@@ -279,7 +305,11 @@ class SQLite(Database):
             # Copy columns to result. In cases with duplicate column names, find one with a value
             for x, column in enumerate(columns):
                 if column not in result or result[column] is None:
-                    result[column] = row[x]
+                    # Decode object
+                    if self.encoder and column == "object":
+                        result[column] = self.encoder.decode(row[x])
+                    else:
+                        result[column] = row[x]
 
             results.append(result)
 
@@ -299,8 +329,72 @@ class SQLite(Database):
 
             # Create initial schema and indices
             self.cursor.execute(SQLite.CREATE_DOCUMENTS)
+            self.cursor.execute(SQLite.CREATE_OBJECTS)
             self.cursor.execute(SQLite.CREATE_SECTIONS % name)
             self.cursor.execute(SQLite.CREATE_SECTIONS_INDEX)
+
+    def insertdocument(self, uid, document, tags, entry):
+        """
+        Inserts a document.
+
+        Args:
+            uid: unique id
+            document: input document
+            tags: document tags
+            entry: generated entry date
+
+        Returns:
+            section value
+        """
+
+        # Make a copy of document before changing
+        document = document.copy()
+
+        # Get and remove object field from document
+        obj = document.pop("object") if "object" in document else None
+
+        # Insert document as JSON
+        self.cursor.execute(SQLite.INSERT_DOCUMENT, [uid, json.dumps(document), tags, entry])
+
+        # Get value of text field
+        text = document.get("text")
+
+        # If both text and object are set, insert object as it won't otherwise be used
+        if text and obj:
+            self.insertobject(uid, obj, tags, entry)
+
+        # Return value to use for section - use text if available otherwise use object
+        return text if text else obj
+
+    def insertobject(self, uid, obj, tags, entry):
+        """
+        Inserts an object.
+
+        Args:
+            uid: unique id
+            obj: input object
+            tags: object tags
+            entry: generated entry date
+        """
+
+        # If object support is enabled, save object
+        if self.encoder:
+            self.cursor.execute(SQLite.INSERT_OBJECT, [uid, self.encoder.encode(obj), tags, entry])
+
+    def insertsection(self, index, uid, text, tags, entry):
+        """
+        Inserts a section.
+
+        Args:
+            index: index id
+            uid: unique id
+            text: section text
+            tags: section tags
+            entry: generated entry date
+        """
+
+        # Save text section
+        self.cursor.execute(SQLite.INSERT_SECTION, [index, uid, text, tags, entry])
 
     def copy(self, path):
         """
