@@ -58,7 +58,7 @@ class TestOptional(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         """
-        Resets modules environment back to initial state
+        Resets modules environment back to initial state.
         """
 
         # Reset replaced modules in setup
@@ -68,19 +68,6 @@ class TestOptional(unittest.TestCase):
             else:
                 del sys.modules[key]
 
-    def testAnn(self):
-        """
-        Test missing ann dependencies
-        """
-
-        from txtai.ann import ANNFactory
-
-        with self.assertRaises(ImportError):
-            ANNFactory.create({"backend": "annoy"})
-
-        with self.assertRaises(ImportError):
-            ANNFactory.create({"backend": "hnsw"})
-
     def testApi(self):
         """
         Test missing api dependencies
@@ -89,7 +76,17 @@ class TestOptional(unittest.TestCase):
         with self.assertRaises(ImportError):
             import txtai.api
 
-    def testModels(self):
+    def testDatabase(self):
+        """
+        Test missing database dependencies
+        """
+
+        from txtai.database import ImageEncoder
+
+        with self.assertRaises(ImportError):
+            ImageEncoder()
+
+    def testModel(self):
         """
         Test missing model dependencies
         """
@@ -137,12 +134,19 @@ class TestOptional(unittest.TestCase):
         with self.assertRaises(ImportError):
             Translation().detect(["test"])
 
-    def testVectors(self):
+    def testSimilarity(self):
         """
-        Test missing vectors dependencies
+        Test missing similarity dependencies
         """
 
+        from txtai.ann import ANNFactory
         from txtai.vectors import VectorsFactory
+
+        with self.assertRaises(ImportError):
+            ANNFactory.create({"backend": "annoy"})
+
+        with self.assertRaises(ImportError):
+            ANNFactory.create({"backend": "hnsw"})
 
         with self.assertRaises(ImportError):
             VectorsFactory.create({"method": "words"}, None)

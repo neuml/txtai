@@ -12,7 +12,7 @@ from txtai.pipeline import HFModel, HFPipeline
 
 class TestQuantization(unittest.TestCase):
     """
-    Quantization tests
+    Quantization tests.
     """
 
     @unittest.skipIf(platform.system() == "Darwin", "Quantized models not supported on macOS")

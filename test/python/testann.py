@@ -13,7 +13,7 @@ from txtai.ann import ANNFactory, ANN
 
 class TestANN(unittest.TestCase):
     """
-    ANN tests
+    ANN tests.
     """
 
     def testAnnoy(self):
@@ -124,7 +124,7 @@ class TestANN(unittest.TestCase):
 
     def append(self, name, params=None, length=500):
         """
-        Appends new data to index
+        Appends new data to index.
 
         Args:
             name: backend name

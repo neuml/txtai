@@ -12,7 +12,7 @@ from utils import Utils
 
 class TestTranscription(unittest.TestCase):
     """
-    Transcription tests
+    Transcription tests.
     """
 
     def testTranscription(self):

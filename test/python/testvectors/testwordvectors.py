@@ -11,7 +11,7 @@ from txtai.vectors import WordVectors, VectorsFactory
 
 class TestWordVectors(unittest.TestCase):
     """
-    Vectors tests
+    Vectors tests.
     """
 
     @classmethod

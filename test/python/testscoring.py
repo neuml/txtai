@@ -11,7 +11,7 @@ from txtai.scoring import ScoringFactory
 
 class TestScoring(unittest.TestCase):
     """
-    Scoring tests
+    Scoring tests.
     """
 
     @classmethod

@@ -12,7 +12,7 @@ from utils import Utils
 
 class TestTextractor(unittest.TestCase):
     """
-    Textractor tests
+    Textractor tests.
     """
 
     def testBeautifulSoup(self):

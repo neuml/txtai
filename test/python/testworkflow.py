@@ -20,7 +20,7 @@ from utils import Utils
 
 class TestWorkflow(unittest.TestCase):
     """
-    Workflow tests
+    Workflow tests.
     """
 
     def testBaseWorkflow(self):

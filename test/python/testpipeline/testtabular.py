@@ -12,7 +12,7 @@ from utils import Utils
 
 class TestTabular(unittest.TestCase):
     """
-    Tabular tests
+    Tabular tests.
     """
 
     @classmethod

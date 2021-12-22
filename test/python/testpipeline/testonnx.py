@@ -16,13 +16,13 @@ from txtai.pipeline import HFOnnx, HFTrainer, Labels, MLOnnx, Questions
 
 class TestOnnx(unittest.TestCase):
     """
-    ONNX tests
+    ONNX tests.
     """
 
     @classmethod
     def setUpClass(cls):
         """
-        Create default datasets
+        Create default datasets.
         """
 
         cls.data = [{"text": "Dogs", "label": 0}, {"text": "dog", "label": 0}, {"text": "Cats", "label": 1}, {"text": "cat", "label": 1}] * 100

@@ -26,7 +26,7 @@ cluster:
 
 class RequestHandler(BaseHTTPRequestHandler):
     """
-    Test HTTP handler
+    Test HTTP handler.
     """
 
     def do_GET(self):

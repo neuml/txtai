@@ -9,7 +9,7 @@ from txtai.vectors import Vectors
 
 class TestVectors(unittest.TestCase):
     """
-    Vectors tests
+    Vectors tests.
     """
 
     def testNotImplemented(self):

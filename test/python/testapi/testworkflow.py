@@ -81,7 +81,7 @@ workflow:
 
 class RequestHandler(BaseHTTPRequestHandler):
     """
-    Test HTTP handler
+    Test HTTP handler.
     """
 
     def do_GET(self):
@@ -126,7 +126,7 @@ class RequestHandler(BaseHTTPRequestHandler):
 
 class TestWorkflow(unittest.TestCase):
     """
-    API tests for workflows
+    API tests for workflows.
     """
 
     @staticmethod
@@ -170,7 +170,7 @@ class TestWorkflow(unittest.TestCase):
 
     def testServiceGet(self):
         """
-        Test workflow with ServiceTask GET via API.
+        Test workflow with ServiceTask GET via API
         """
 
         text = "This is a test sentence. And another sentence to split."
@@ -181,7 +181,7 @@ class TestWorkflow(unittest.TestCase):
 
     def testServicePost(self):
         """
-        Test workflow with ServiceTask POST via API.
+        Test workflow with ServiceTask POST via API
         """
 
         text = "This is a test sentence. And another sentence to split."
@@ -192,7 +192,7 @@ class TestWorkflow(unittest.TestCase):
 
     def testServiceXml(self):
         """
-        Test workflow with ServiceTask GET via API and XML response.
+        Test workflow with ServiceTask GET via API and XML response
         """
 
         text = "This is a test sentence. And another sentence to split."
@@ -203,7 +203,7 @@ class TestWorkflow(unittest.TestCase):
 
     def testWorkflowLabels(self):
         """
-        Test workflow with labels via API.
+        Test workflow with labels via API
         """
 
         text = "This is the best"
@@ -216,7 +216,7 @@ class TestWorkflow(unittest.TestCase):
 
     def testWorkflowSegment(self):
         """
-        Test workflow with segmentation via API.
+        Test workflow with segmentation via API
         """
 
         text = "This is a test sentence. And another sentence to split."

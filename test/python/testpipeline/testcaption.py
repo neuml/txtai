@@ -14,7 +14,7 @@ from utils import Utils
 
 class TestCaption(unittest.TestCase):
     """
-    Caption tests
+    Caption tests.
     """
 
     def testCaption(self):

@@ -10,12 +10,12 @@ from txtai.pipeline import Translation
 
 class TestTranslation(unittest.TestCase):
     """
-    Translation tests
+    Translation tests.
     """
 
     def testLongTranslation(self):
         """
-        Tests a translation longer than max tokenization length.
+        Tests a translation longer than max tokenization length
         """
 
         translate = Translation()
@@ -58,7 +58,7 @@ class TestTranslation(unittest.TestCase):
 
     def testNoLang(self):
         """
-        Test no matching language id.
+        Test no matching language id
         """
 
         translate = Translation()
@@ -66,7 +66,7 @@ class TestTranslation(unittest.TestCase):
 
     def testNoModel(self):
         """
-        Tests no known available model found.
+        Tests no known available model found
         """
 
         translate = Translation()

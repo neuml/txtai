@@ -12,7 +12,7 @@ from txtai.vectors import WordVectors
 
 class TestEmbeddings(unittest.TestCase):
     """
-    Embeddings tests
+    Embeddings tests.
     """
 
     @classmethod

@@ -11,7 +11,7 @@ from txtai.pipeline import Extractor, Similarity
 
 class TestExtractor(unittest.TestCase):
     """
-    Extractor tests
+    Extractor tests.
     """
 
     @classmethod
@@ -62,7 +62,7 @@ class TestExtractor(unittest.TestCase):
 
     def testEmptyQuery(self):
         """
-        Tests an empty extractor queries list.
+        Tests an empty extractor queries list
         """
 
         self.assertEqual(self.extractor.query(None, None), [])

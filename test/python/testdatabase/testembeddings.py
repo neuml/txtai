@@ -2,6 +2,8 @@
 Embeddings+database module tests
 """
 
+import contextlib
+import io
 import os
 import tempfile
 import unittest
@@ -12,7 +14,7 @@ from txtai.database import Database, SQLException
 
 class TestEmbeddings(unittest.TestCase):
     """
-    Embeddings with a database tests
+    Embeddings with a database tests.
     """
 
     @classmethod
@@ -138,6 +140,20 @@ class TestEmbeddings(unittest.TestCase):
         result = self.embeddings.search("feel good story", 1)[0]
 
         self.assertEqual(result["text"], self.data[4])
+
+    def testInfo(self):
+        """
+        Test info
+        """
+
+        # Create an index for the list of text
+        self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            self.embeddings.info()
+
+        self.assertTrue("txtai" in output.getvalue())
 
     def testMultiSave(self):
         """

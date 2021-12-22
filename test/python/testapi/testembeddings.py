@@ -41,7 +41,7 @@ writable: False
 
 class TestEmbeddings(unittest.TestCase):
     """
-    API tests for embeddings indices
+    API tests for embeddings indices.
     """
 
     @staticmethod

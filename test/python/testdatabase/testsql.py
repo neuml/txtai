@@ -169,7 +169,7 @@ class TestSQL(unittest.TestCase):
 
     def assertSql(self, clause, query, expected):
         """
-        Helper method to assert a query clause is as expected
+        Helper method to assert a query clause is as expected.
 
         Args:
             clause: clause to select

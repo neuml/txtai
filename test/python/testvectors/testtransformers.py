@@ -51,12 +51,12 @@ class TestTransformersVectors(unittest.TestCase):
         """
 
         self.model.tokenize = True
-        self.assertEqual(self.model.text("Y 123 This is a test!"), "test")
-        self.assertEqual(self.model.text(["This", "is", "a", "test"]), "This is a test")
+        self.assertEqual(self.model.prepare("Y 123 This is a test!"), "test")
+        self.assertEqual(self.model.prepare(["This", "is", "a", "test"]), "This is a test")
 
         self.model.tokenize = False
-        self.assertEqual(self.model.text("Y 123 This is a test!"), "Y 123 This is a test!")
-        self.assertEqual(self.model.text(["This", "is", "a", "test"]), "This is a test")
+        self.assertEqual(self.model.prepare("Y 123 This is a test!"), "Y 123 This is a test!")
+        self.assertEqual(self.model.prepare(["This", "is", "a", "test"]), "This is a test")
 
     def testTransform(self):
         """

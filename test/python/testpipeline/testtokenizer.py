@@ -9,7 +9,7 @@ from txtai.pipeline import Tokenizer
 
 class TestTokenizer(unittest.TestCase):
     """
-    Tokenizer tests
+    Tokenizer tests.
     """
 
     def testTokenize(self):

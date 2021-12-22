@@ -16,13 +16,13 @@ from txtai.pipeline import HFTrainer, Labels, Questions
 
 class TestTrainer(unittest.TestCase):
     """
-    Trainer tests
+    Trainer tests.
     """
 
     @classmethod
     def setUpClass(cls):
         """
-        Create default datasets
+        Create default datasets.
         """
 
         cls.data = [{"text": "Dogs", "label": 0}, {"text": "dog", "label": 0}, {"text": "Cats", "label": 1}, {"text": "cat", "label": 1}] * 100
@@ -134,14 +134,14 @@ class TestTrainer(unittest.TestCase):
 
     def testEmpty(self):
         """
-        Tests an empty training data object.
+        Tests an empty training data object
         """
 
         self.assertIsNone(Data(None, None, None).process(None))
 
     def testQA(self):
         """
-        Tests training a QA model.
+        Tests training a QA model
         """
 
         # Training data
@@ -163,7 +163,7 @@ class TestTrainer(unittest.TestCase):
 
     def testRegression(self):
         """
-        Tests training a model with a regression (continuous) output.
+        Tests training a model with a regression (continuous) output
         """
 
         data = []

@@ -9,7 +9,7 @@ from txtai.pipeline import Labels, Similarity
 
 class TestLabels(unittest.TestCase):
     """
-    Labels tests
+    Labels tests.
     """
 
     @classmethod

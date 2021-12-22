@@ -22,7 +22,7 @@ testapi.testextension.SamplePipeline:
 
 class SampleRouter:
     """
-    Sample API router
+    Sample API router.
     """
 
     router = APIRouter()
@@ -45,7 +45,7 @@ class SampleRouter:
 
 class SampleExtension(Extension):
     """
-    Sample API extension
+    Sample API extension.
     """
 
     def __call__(self, app):
@@ -54,7 +54,7 @@ class SampleExtension(Extension):
 
 class SamplePipeline(Pipeline):
     """
-    Sample pipeline
+    Sample pipeline.
     """
 
     def __call__(self, text):
@@ -63,7 +63,7 @@ class SamplePipeline(Pipeline):
 
 class TestExtension(unittest.TestCase):
     """
-    API tests for extensions
+    API tests for extensions.
     """
 
     @staticmethod
@@ -100,7 +100,7 @@ class TestExtension(unittest.TestCase):
 
     def testEmpty(self):
         """
-        Tests an empty extension.
+        Tests an empty extension
         """
 
         extension = Extension()
@@ -108,7 +108,7 @@ class TestExtension(unittest.TestCase):
 
     def testExtension(self):
         """
-        Tests a pipeline extension.
+        Tests a pipeline extension
         """
 
         text = self.client.get("sample?text=Test%20String").json()

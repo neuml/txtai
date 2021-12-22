@@ -12,7 +12,7 @@ from utils import Utils
 
 class TestObjects(unittest.TestCase):
     """
-    Object detection tests
+    Object detection tests.
     """
 
     def testClassification(self):

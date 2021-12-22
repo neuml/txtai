@@ -56,7 +56,7 @@ translation:
 # pylint: disable=R0904
 class TestPipelines(unittest.TestCase):
     """
-    API tests for pipelines
+    API tests for pipelines.
     """
 
     @staticmethod
