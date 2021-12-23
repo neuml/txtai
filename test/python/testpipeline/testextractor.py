@@ -41,6 +41,15 @@ class TestExtractor(unittest.TestCase):
         # Create extractor instance
         cls.extractor = Extractor(cls.embeddings, "distilbert-base-cased-distilled-squad")
 
+    @classmethod
+    def tearDownClass(cls):
+        """
+        Cleanup data.
+        """
+
+        if cls.embeddings:
+            cls.embeddings.close()
+
     def testAnswer(self):
         """
         Test qa extraction with an answer

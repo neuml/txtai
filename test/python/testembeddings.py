@@ -33,6 +33,15 @@ class TestEmbeddings(unittest.TestCase):
         # Create embeddings model, backed by sentence-transformers & transformers
         cls.embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2"})
 
+    @classmethod
+    def tearDownClass(cls):
+        """
+        Cleanup data.
+        """
+
+        if cls.embeddings:
+            cls.embeddings.close()
+
     def testDelete(self):
         """
         Test delete

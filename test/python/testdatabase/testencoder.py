@@ -37,6 +37,15 @@ class TestEncoder(unittest.TestCase):
             {"method": "sentence-transformers", "path": "sentence-transformers/clip-ViT-B-32", "content": True, "objects": "image"}
         )
 
+    @classmethod
+    def tearDownClass(cls):
+        """
+        Cleanup data.
+        """
+
+        if cls.embeddings:
+            cls.embeddings.close()
+
     def testDefault(self):
         """
         Tests an index with default encoder
