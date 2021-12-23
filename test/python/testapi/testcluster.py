@@ -6,6 +6,7 @@ import json
 import os
 import tempfile
 import unittest
+import urllib.parse
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from threading import Thread
@@ -35,7 +36,15 @@ class RequestHandler(BaseHTTPRequestHandler):
         """
 
         if self.path == "/count":
-            response = 5
+            response = 26
+        elif self.path.startswith("/search?query=select"):
+            if "group" in self.path:
+                response = [{"count(*)": 12, "text": "This is a test"}, {"count(*)": 14, "text": "And another test"}]
+            else:
+                if self.server.server_port == 8002:
+                    response = [{"count(*)": 12, "min(indexid)": 0, "max(indexid)": 11, "avg(indexid)": 6.3}]
+                else:
+                    response = [{"count(*)": 16, "min(indexid)": 2, "max(indexid)": 14, "avg(indexid)": 6.7}]
         elif self.path.startswith("/search"):
             response = [{"id": 4, "score": 0.40}]
         else:
@@ -136,7 +145,7 @@ class TestCluster(unittest.TestCase):
         Test cluster count
         """
 
-        self.assertEqual(self.client.get("count").json(), 10)
+        self.assertEqual(self.client.get("count").json(), 52)
 
     def testDelete(self):
         """
@@ -157,7 +166,8 @@ class TestCluster(unittest.TestCase):
         Test cluster search
         """
 
-        uid = self.client.get("search?query=feel%20good%20story&limit=1").json()[0]["id"]
+        query = urllib.parse.quote("feel good story")
+        uid = self.client.get(f"search?query={query}&limit=1").json()[0]["id"]
         self.assertEqual(uid, 4)
 
     def testSearchBatch(self):
@@ -170,6 +180,31 @@ class TestCluster(unittest.TestCase):
         uids = [result[0]["id"] for result in results]
         self.assertEqual(uids, [4, 1])
 
+    def testSQL(self):
+        """
+        Test cluster SQL statement
+        """
+
+        query = urllib.parse.quote("select count(*), min(indexid), max(indexid), avg(indexid) from txtai where text=[This is a test]")
+        self.assertEqual(
+            self.client.get(f"search?query={query}").json(), [{"count(*)": 28, "min(indexid)": 0, "max(indexid)": 14, "avg(indexid)": 6.5}]
+        )
+
+        query = urllib.parse.quote("select count(*), text from txtai group by text order by count(*) desc")
+        self.assertEqual(
+            self.client.get(f"search?query={query}").json(),
+            [{"count(*)": 28, "text": "And another test"}, {"count(*)": 24, "text": "This is a test"}],
+        )
+
+        query = urllib.parse.quote("select count(*), text from txtai group by text order by count(*) asc")
+        self.assertEqual(
+            self.client.get(f"search?query={query}").json(),
+            [{"count(*)": 24, "text": "This is a test"}, {"count(*)": 28, "text": "And another test"}],
+        )
+
+        query = urllib.parse.quote("select count(*) from txtai group by id order by count(*)")
+        self.assertEqual(self.client.get(f"search?query={query}").json(), [{"count(*)": 52}])
+
     def testUpsert(self):
         """
         Test cluster upsert
@@ -180,6 +215,7 @@ class TestCluster(unittest.TestCase):
         self.client.get("upsert")
 
         # Search for best match
-        uid = self.client.get("search?query=feel%20good%20story&limit=1").json()[0]["id"]
+        query = "feel good story"
+        uid = self.client.get(f"search?query={query}&limit=1").json()[0]["id"]
 
         self.assertEqual(uid, 4)

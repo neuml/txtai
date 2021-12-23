@@ -20,15 +20,17 @@ class Expression:
     # Default list of sort order operators
     SORT_ORDER = ["asc", "desc"]
 
-    def __init__(self, resolver):
+    def __init__(self, resolver, tolist):
         """
         Creates a new expression parser.
 
         Args:
             resolver: function to call to resolve query column names with database column names
+            tolist: outputs expression lists if True, text if False
         """
 
         self.resolver = resolver
+        self.tolist = tolist
 
     def __call__(self, tokens, alias=False, similar=None):
         """
@@ -48,7 +50,7 @@ class Expression:
         tokens = self.resolve(list(tokens), alias, similar)
 
         # Re-write query and return
-        return self.build(tokens)
+        return self.buildlist(tokens) if self.tolist is True else self.buildtext(tokens)
 
     def resolve(self, tokens, alias, similar):
         """
@@ -88,7 +90,7 @@ class Expression:
         # Remove replaced tokens
         return [token for token in tokens if token]
 
-    def build(self, tokens):
+    def buildtext(self, tokens):
         """
         Builds a new expression from tokens. This method applies a set of rules to generate whitespace between tokens.
 
@@ -107,6 +109,42 @@ class Expression:
 
         # Remove any leading/trailing whitespace and return
         return text.strip()
+
+    def buildlist(self, tokens):
+        """
+        Builds a new expression from tokens. This method returns a list of expression components. These components can be joined together
+        on commas to form a text expression.
+
+        Args:
+            tokens: input expression
+
+        Returns:
+            expression list
+        """
+
+        parts, current, parens, brackets = [], [], 0, 0
+
+        for token in tokens:
+            if token == "," and not parens and not brackets:
+                parts.append("".join(current))
+                current = []
+            else:
+                if token == "(":
+                    parens += 1
+                elif token == ")":
+                    parens -= 1
+                elif token == "[":
+                    brackets += 1
+                elif token == "]":
+                    brackets -= 1
+                elif self.issortorder(token):
+                    token = f" {token}"
+                current.append(token)
+
+        if current:
+            parts.append("".join(current))
+
+        return parts
 
     def issimilar(self, tokens, x, similar):
         """

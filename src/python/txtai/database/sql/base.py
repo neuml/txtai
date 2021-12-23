@@ -16,16 +16,17 @@ class SQL:
     # List of clauses to parse
     CLAUSES = ["select", "from", "where", "group", "having", "order", "limit"]
 
-    def __init__(self, database):
+    def __init__(self, database=None, tolist=False):
         """
         Creates a new SQL query parser.
 
         Args:
-            database: database instance that provides resolver callback
+            database: database instance that provides resolver callback, if any
+            tolist: outputs expression lists if True, expression text otherwise, defaults to False
         """
 
         # Expression parser
-        self.expression = Expression(database.resolve)
+        self.expression = Expression(database.resolve if database else self.defaultresolve, tolist)
 
     def __call__(self, query):
         """
@@ -66,6 +67,22 @@ class SQL:
 
         # Return clauses, default to full query if this is not a SQL query
         return clauses if clauses else {"similar": [[query]]}
+
+    # pylint: disable=W0613
+    def defaultresolve(self, name, alias=False, compound=False):
+        """
+        Default resolve function. Performs no processing, only returns name.
+
+        Args:
+            name: query column name
+            alias: True if an alias clause should be added, defaults to False
+            compound: True if this column is part of a compound expression, defaults to False
+
+        Returns:
+            name if alias is False, otherwise empty string
+        """
+
+        return name if not alias else ""
 
     def issql(self, query):
         """

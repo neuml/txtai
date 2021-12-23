@@ -8,6 +8,8 @@ import zlib
 
 import aiohttp
 
+from ..database.sql import Aggregate
+
 
 class Cluster:
     """
@@ -30,6 +32,9 @@ class Cluster:
         self.shards = None
         if "shards" in self.config:
             self.shards = self.config["shards"]
+
+        # Query aggregator
+        self.aggregate = Aggregate()
 
     def search(self, query, limit=None):
         """
@@ -55,9 +60,8 @@ class Cluster:
         for result in self.execute("get", action):
             results.extend(result)
 
-        # Sort results - there will be no score when there is no associated similarity query
-        if results and "score" in results[0]:
-            results = sorted(results, key=lambda x: x["score"], reverse=True)
+        # Combine aggregate functions and sort
+        results = self.aggregate(query, results)
 
         # Limit results
         return results[: (limit if limit else 10)]
@@ -86,13 +90,13 @@ class Cluster:
 
         # Combine results per query
         results = []
-        for x in range(len(queries)):
+        for x, query in enumerate(queries):
             result = []
             for section in batch:
                 result.extend(section[x])
 
-            # Sort and limit results
-            results.append(sorted(result, key=lambda x: x["score"], reverse=True)[: (limit if limit else 10)])
+            # Aggregate, sort and limit results
+            results.append(self.aggregate(query, result)[: (limit if limit else 10)])
 
         return results
 
@@ -209,7 +213,7 @@ class Cluster:
             json results if any
         """
 
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(raise_for_status=True) as session:
             tasks = []
 
             for x, url in enumerate(urls):

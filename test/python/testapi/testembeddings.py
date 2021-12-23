@@ -5,6 +5,7 @@ Embeddings API module tests
 import os
 import tempfile
 import unittest
+import urllib.parse
 
 from unittest.mock import patch
 
@@ -103,7 +104,8 @@ class TestEmbeddings(unittest.TestCase):
         self.assertEqual(ids, [4])
 
         # Search for best match
-        uid = self.client.get("search?query=feel%20good%20story&limit=1").json()[0]["id"]
+        query = urllib.parse.quote("feel good story")
+        uid = self.client.get(f"search?query={query}&limit=1").json()[0]["id"]
 
         self.assertEqual(self.client.get("count").json(), 5)
         self.assertEqual(uid, 5)
@@ -173,7 +175,8 @@ class TestEmbeddings(unittest.TestCase):
         Test search via API
         """
 
-        uid = self.client.get("search?query=feel%20good%20story&limit=1").json()[0]["id"]
+        query = urllib.parse.quote("feel good story")
+        uid = self.client.get(f"search?query={query}&limit=1").json()[0]["id"]
         self.assertEqual(uid, 4)
 
     def testSearchBatch(self):
@@ -232,7 +235,8 @@ class TestEmbeddings(unittest.TestCase):
         self.client.get("upsert")
 
         # Search for best match
-        uid = self.client.get("search?query=feel%20good%20story&limit=1").json()[0]["id"]
+        query = urllib.parse.quote("feel good story")
+        uid = self.client.get(f"search?query={query}&limit=1").json()[0]["id"]
 
         self.assertEqual(uid, 0)
 
@@ -249,7 +253,8 @@ class TestEmbeddings(unittest.TestCase):
         self.client = TestEmbeddings.start(False)
 
         # Test search
-        uid = self.client.get("search?query=feel%20good%20story&limit=1").json()[0]["id"]
+        query = urllib.parse.quote("feel good story")
+        uid = self.client.get(f"search?query={query}&limit=1").json()[0]["id"]
         self.assertEqual(uid, 4)
 
         # Test similarity
