@@ -3,7 +3,11 @@ Tests encoding/decoding database objects
 """
 
 import glob
+import os
 import unittest
+import tempfile
+
+from io import BytesIO
 
 from PIL import Image
 
@@ -99,3 +103,35 @@ class TestEncoder(unittest.TestCase):
 
         self.assertTrue(result["id"].endswith("stars.jpg"))
         self.assertTrue(isinstance(result["object"], Image.Image))
+
+    def testReindexFunction(self):
+        """
+        Tests reindex with objects and a function
+        """
+
+        try:
+            # Streaming function that loads images on the fly
+            def prepare(documents):
+                for uid, data, tags in documents:
+                    yield (uid, Image.open(data), tags)
+
+            # Create an index for the list of images
+            self.embeddings.index(self.data)
+
+            # Set default encoder and use function to load images
+            self.embeddings.config["objects"] = True
+
+            # Save and load index to force default encoder
+            index = os.path.join(tempfile.gettempdir(), "objects")
+            self.embeddings.save(index)
+            self.embeddings.load(index)
+
+            # Reindex images
+            self.embeddings.reindex({"method": "sentence-transformers", "path": "sentence-transformers/clip-ViT-B-32"}, function=prepare)
+
+            result = self.embeddings.search("select id, object from txtai where similar('universe') limit 1")[0]
+
+            self.assertTrue(result["id"].endswith("stars.jpg"))
+            self.assertTrue(isinstance(result["object"], BytesIO))
+        finally:
+            self.embeddings.config["objects"] = "image"

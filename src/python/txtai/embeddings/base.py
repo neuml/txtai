@@ -197,7 +197,7 @@ class Embeddings:
 
         return deletes
 
-    def reindex(self, config, columns=None):
+    def reindex(self, config, columns=None, function=None):
         """
         Recreates the approximate nearest neighbor (ann) index using config. This method only works if document
         content storage is enabled.
@@ -205,6 +205,7 @@ class Embeddings:
         Args:
             config: new config
             columns: optional list of document columns used to rebuild data
+            function: optional function to prepare content for indexing
         """
 
         if self.database:
@@ -217,7 +218,10 @@ class Embeddings:
             self.configure(config)
 
             # Reindex
-            self.index(self.database.reindex(columns), True)
+            if function:
+                self.index(function(self.database.reindex(columns)), True)
+            else:
+                self.index(self.database.reindex(columns), True)
 
     def transform(self, document):
         """
