@@ -2,23 +2,13 @@
 Expression module
 """
 
+from .token import Token
+
 
 class Expression:
     """
     Parses expression statements and runs a set of substitution/formatting rules.
     """
-
-    # Similar token replacement
-    SIMILAR_TOKEN = "__SIMILAR__"
-
-    # Default list of comparison operators
-    OPERATORS = ["=", "!=", "<>", ">", ">=", "<", "<=", "+", "-", "*", "/", "%", "not", "between", "like", "is", "null"]
-
-    # Default list of logic separators
-    LOGIC_SEPARATORS = ["and", "or"]
-
-    # Default list of sort order operators
-    SORT_ORDER = ["asc", "desc"]
 
     def __init__(self, resolver, tolist):
         """
@@ -32,60 +22,84 @@ class Expression:
         self.resolver = resolver
         self.tolist = tolist
 
-    def __call__(self, tokens, alias=False, similar=None):
+    def __call__(self, tokens, alias=False, aliases=None, similar=None):
         """
-        Parses a list of tokens, replaces query column names with database column names and
-        adds similar query placeholders. Returns rewritten clause.
+        Parses and formats a list of tokens as follows:
+            - Replaces query column names with database column names
+            - Adds similar query placeholders and extracts similar function parameters
+            - Rewrites expression and returns
 
         Args:
             tokens: input expression
-            alias: if True, column aliases should be generated
+            alias: if True, column aliases should be generated and added to aliases dict
+            aliases: dict of generated aliases, if present these tokens should NOT be resolved
             similar: list of similar queries, if present new similar queries are appended to this list
 
         Returns:
-            rewritten clause as a string
+            rewritten clause
         """
 
-        # Resolve column name tokens
-        tokens = self.resolve(list(tokens), alias, similar)
+        # Processes token expressions and applies a set of transformation rules
+        transformed = self.process(list(tokens), alias, aliases, similar)
 
-        # Re-write query and return
-        return self.buildlist(tokens) if self.tolist is True else self.buildtext(tokens)
+        # Re-write alias expression and return
+        if alias and not self.tolist:
+            return self.buildalias(transformed, tokens, aliases)
 
-    def resolve(self, tokens, alias, similar):
+        # Re-write input expression and return
+        return self.buildlist(transformed) if self.tolist is True else self.buildtext(transformed)
+
+    def process(self, tokens, alias, aliases, similar):
         """
-        Resolves query column names with database column names.
+        Replaces query column names with database column names, adds similar query placeholders and
+        extracts similar function parameters.
 
         Args:
             tokens: input expression
-            alias: if True, column aliases should be generated
+            alias: if True, column aliases should be generated and added to aliases dict
+            aliases: dict of generated aliases, if present these tokens should NOT be resolved
             similar: list of similar queries, if present new similar queries are appended to this list
 
         Returns:
-            resolved tokens
+            transformed tokens
         """
 
-        iterator = enumerate(tokens)
+        # Create clause index and token iterator
+        index, iterator = 0, enumerate(tokens)
         for x, token in iterator:
+            # Check if separator, increment clause index
+            if Token.isseparator(token):
+                index += 1
+
+            # Check if token is a square bracket
+            elif Token.isbracket(token):
+                # Resolve bracket expression
+                self.bracket(iterator, tokens, x)
+
             # Check if token is a similar function
-            if self.issimilar(tokens, x, similar):
+            elif Token.issimilar(tokens, x, similar):
                 # Resolve similar expression
                 self.similar(iterator, tokens, x, similar)
 
             # Check if token is a function
-            elif self.isfunction(tokens, x):
+            elif Token.isfunction(tokens, x):
                 # Resolve function expression
-                self.function(iterator, tokens, token)
+                self.function(iterator, tokens, token, aliases)
 
-            # Check for attribute column not part of a compound expression
-            elif self.iscolumn(token) and not self.isoperator(self.get(tokens, x + 1)):
+            # Check for alias expression
+            elif Token.isalias(tokens, x, alias):
+                # Process alias expression
+                self.alias(iterator, tokens, x, aliases, index)
+
+            # Check for attribute expression
+            elif Token.isattribute(tokens, x):
                 # Resolve attribute expression
-                self.attribute(tokens, x, alias)
+                self.attribute(tokens, x, aliases)
 
-            # Check for compound expressions. Need to resolve left and/or right hand side
-            elif self.isoperator(token) and (self.iscolumn(self.get(tokens, x - 1)) or self.iscolumn(self.get(tokens, x + 1))):
+            # Check for compound expression
+            elif Token.iscompound(tokens, x):
                 # Resolve compound expression
-                self.compound(iterator, tokens, x, alias)
+                self.compound(iterator, tokens, x, aliases)
 
         # Remove replaced tokens
         return [token for token in tokens if token]
@@ -105,7 +119,7 @@ class Expression:
         text = ""
         for token in tokens:
             # Write token with whitespace rules applied
-            text += self.wrapspace(text, token)
+            text += Token.wrapspace(text, token)
 
         # Remove any leading/trailing whitespace and return
         return text.strip()
@@ -125,10 +139,12 @@ class Expression:
         parts, current, parens, brackets = [], [], 0, 0
 
         for token in tokens:
+            # Create new part
             if token == "," and not parens and not brackets:
-                parts.append("".join(current))
+                parts.append(self.buildtext(current))
                 current = []
             else:
+                # Accumulate tokens
                 if token == "(":
                     parens += 1
                 elif token == ")":
@@ -137,29 +153,89 @@ class Expression:
                     brackets += 1
                 elif token == "]":
                     brackets -= 1
-                elif self.issortorder(token):
+                elif Token.issortorder(token):
                     token = f" {token}"
                 current.append(token)
 
+        # Add last part
         if current:
-            parts.append("".join(current))
+            parts.append(self.buildtext(current))
 
         return parts
 
-    def issimilar(self, tokens, x, similar):
+    def buildalias(self, transformed, tokens, aliases):
         """
-        Checks if tokens[x] is a similar() function.
+        Builds new alias text expression from transformed and input tokens.
 
         Args:
-            tokens: input tokens
-            x: current position
-            similar: list of similar clauses
+            transformed: transformed tokens
+            tokens: original input tokens
+            aliases: dict of column aliases
 
         Returns:
-            True if tokens[x] is a similar clause
+            alias text expression
         """
 
-        return similar is not None and tokens[x].lower() == "similar" and self.get(tokens, x + 1) == "("
+        # Convert tokens to expressions
+        transformed = self.buildlist(transformed)
+        tokens = self.buildlist(tokens)
+
+        expression = []
+        for x, token in enumerate(transformed):
+            if x not in aliases.values():
+                alias = tokens[x]
+
+                # Strip leading/trailing brackets from alias name that doesn't have operators
+                if not any(Token.isoperator(t) for t in alias) and alias[0] in ("[", "(") and alias[-1] in ("]", ")"):
+                    alias = alias[1:-1]
+
+                # Resolve alias
+                token = self.resolver(token, alias)
+
+            expression.append(token)
+
+        # Build alias text expression
+        return ", ".join(expression)
+
+    def bracket(self, iterator, tokens, x):
+        """
+        Consumes a [bracket] expression.
+
+        Args:
+            iterator: tokens iterator
+            tokens: input tokens
+            x: current position
+        """
+
+        # Function parameters
+        params = []
+
+        # Clear token from stream
+        token = tokens[x]
+        tokens[x] = None
+
+        # Bracket counter (current token is an open bracket)
+        brackets = 1
+
+        # Read until token is a end bracket
+        while token and (token != "]" or brackets > 0):
+            x, token = next(iterator, (None, None))
+
+            # Increase/decrease bracket counter
+            if token == "[":
+                brackets += 1
+            elif token == "]":
+                brackets -= 1
+
+            # Accumulate tokens
+            if token != "]" or brackets > 0:
+                params.append(token)
+
+            # Clear token from stream
+            tokens[x] = None
+
+        # Set last token to resolved bracket expression
+        tokens[x] = self.resolve(self.buildtext(params), None)
 
     def similar(self, iterator, tokens, x, similar):
         """
@@ -170,47 +246,33 @@ class Expression:
             iterator: tokens iterator
             tokens: input tokens
             x: current position
-            similar: list of similar clauses
+            similar: list where similar function call parameters are stored
         """
 
-        # Get function parameters
+        # Function parameters
         params = []
 
-        # Clear token from stream, it will be replaced by a placeholder for the function call
+        # Clear token from stream
         token = tokens[x]
         tokens[x] = None
 
+        # Read until token is a closing paren
         while token and token != ")":
             x, token = next(iterator, (None, None))
             if token and token not in ["(", ",", ")"]:
-                # Strip quotes
+                # Strip quotes and accumulate tokens
                 params.append(token.replace("'", "").replace('"', ""))
 
             # Clear token from stream
             tokens[x] = None
 
         # Add placeholder for embedding similarity results
-        tokens[x] = f"{Expression.SIMILAR_TOKEN}{len(similar)}"
+        tokens[x] = f"{Token.SIMILAR_TOKEN}{len(similar)}"
 
         # Save parameters
         similar.append(params)
 
-    def isfunction(self, tokens, x):
-        """
-        Checks if tokens[x] is a function.
-
-        Args:
-            tokens: input tokens
-            x: current position
-
-        Returns:
-            True if tokens[x] is a function, False otherwise
-        """
-
-        # Check if token is a functios
-        return not self.isoperator(tokens[x]) and self.get(tokens, x + 1) == "("
-
-    def function(self, iterator, tokens, token):
+    def function(self, iterator, tokens, token, aliases):
         """
         Resolves column names within the function's parameters.
 
@@ -218,186 +280,101 @@ class Expression:
             iterator: tokens iterator
             tokens: input tokens
             token: current token
+            aliases: dict of generated aliases, if present these tokens should NOT be resolved
         """
 
         # Consume function parameters
         while token and token != ")":
             x, token = next(iterator, (None, None))
-            if self.isfunction(tokens, x):
+            if Token.isfunction(tokens, x):
                 # Resolve function parameters that are functions
-                self.function(iterator, tokens, token)
-            elif self.iscolumn(token):
-                # Resolve function parameter
-                tokens[x] = self.resolver(tokens[x])
+                self.function(iterator, tokens, token, aliases)
+            elif Token.isattribute(tokens, x):
+                # Resolve attributes
+                self.attribute(tokens, x, aliases)
+            elif Token.iscompound(tokens, x):
+                # Resolve compound expressions
+                self.compound(iterator, tokens, x, aliases)
 
-    def attribute(self, tokens, x, alias):
+    def alias(self, iterator, tokens, x, aliases, index):
+        """
+        Reads an alias clause and stores it in aliases.
+
+        Args:
+            iterator: tokens iterator
+            tokens: input tokens
+            x: current position
+            aliases: dict where aliases are stored - stores {alias: clause index}
+            index: clause index, used to match aliases with columns
+        """
+
+        token = tokens[x]
+
+        # If this is an alias token, get next token
+        if token in Token.ALIAS:
+            x, token = next(iterator, (None, None))
+
+        # Consume tokens until end of stream or a separator is found. Evaluate next token to prevent consuming here.
+        while x + 1 < len(tokens) and not Token.isseparator(Token.get(tokens, x + 1)):
+            x, token = next(iterator, (None, None))
+
+        # Add normalized alias and clause index
+        aliases[Token.normalize(token)] = index
+
+    def attribute(self, tokens, x, aliases):
         """
         Resolves an attribute column name.
 
         Args:
             tokens: input tokens
             x: current token position
-            alias: if True, column aliases should be generated
+            aliases: dict of generated aliases, if present these tokens should NOT be resolved
         """
-
-        # Alias name
-        name = tokens[x]
 
         # Resolve attribute expression
-        tokens[x] = self.resolver(tokens[x])
+        tokens[x] = self.resolve(tokens[x], aliases)
 
-        # Add alias
-        if alias:
-            alias = self.resolver(name, alias=True)
-            tokens[x] += alias if alias else ""
-
-    def compound(self, iterator, tokens, x, alias):
+    def compound(self, iterator, tokens, x, aliases):
         """
-        Resolves a compound operator (left side <operator(s)> right side).
+        Resolves column names in a compound expression (left side <operator(s)> right side).
 
         Args:
             iterator: tokens iterator
             tokens: input tokens
             x: current token position
-            alias: if True, column aliases should be generated
+            aliases: dict of generated aliases, if present these tokens should NOT be resolved
         """
 
-        # Alias name
-        name = None
-
         # Resolve left side (left side already had function processing applied through standard loop)
-        if self.iscolumn(tokens[x - 1]):
-            name = tokens[x - 1]
-            tokens[x - 1] = self.resolver(tokens[x - 1])
+        if Token.iscolumn(tokens[x - 1]):
+            tokens[x - 1] = self.resolve(tokens[x - 1], aliases)
 
         # Consume operator(s), handle both single and compound operators, i.e. column NOT LIKE 1
         token = tokens[x]
-        while token and self.isoperator(token):
+        while token and Token.isoperator(token):
             x, token = next(iterator, (None, None))
 
         # Resolve right side
-        if token and self.iscolumn(token):
+        if token and Token.iscolumn(token):
             # Need to process functions since it hasn't went through the standard loop yet
-            if self.isfunction(tokens, x):
-                self.function(iterator, tokens, token)
+            if Token.isfunction(tokens, x):
+                self.function(iterator, tokens, token, aliases)
             else:
-                name = token
-                tokens[x] = self.resolver(token)
+                tokens[x] = self.resolve(token, aliases)
 
-        # Add alias to last token
-        if name and alias:
-            alias = self.resolver(name, alias=True, compound=True)
-            tokens[x] += alias if alias else ""
-
-    def iscolumn(self, token):
+    def resolve(self, token, aliases):
         """
-        Checks if token is a column name.
+        Resolves this token's value if it is not an alias.
 
         Args:
-            token: token to test
+            token: token to resolve
+            aliases: dict of generated aliases, if present these tokens should NOT be resolved
 
         Returns:
-            True if this token is a column name token, False otherwise
+            resolved token value
         """
 
-        return token and not self.isoperator(token) and not self.islogicseparator(token) and not self.isliteral(token) and not self.issortorder(token)
-
-    def isoperator(self, token):
-        """
-        Checks if token is an operator token.
-
-        Args:
-            token: token to test
-
-        Returns:
-            True if this token is an operator, False otherwise
-        """
-
-        return token and token.lower() in Expression.OPERATORS
-
-    def islogicseparator(self, token):
-        """
-        Checks if token is a logic separator token.
-
-        Args:
-            token: token to test
-
-        Returns:
-            True if this token is a logic separator, False otherwise
-        """
-
-        return token and token.lower() in Expression.LOGIC_SEPARATORS
-
-    def issortorder(self, token):
-        """
-        Checks if token is a sort order token.
-
-        Args:
-            token: token to test
-
-        Returns:
-            True if this token is a sort order operator, False otherwise
-        """
-
-        return token and token.lower() in Expression.SORT_ORDER
-
-    def isliteral(self, token):
-        """
-        Checks if token is a literal. Literals are wrapped in quotes, parens, wildcards or numeric.
-
-        Args:
-            token: token to test
-
-        Returns:
-            True if this token is a literal, False otherwise
-        """
-
-        return token and (token.startswith(("'", '"', ",", "(", ")", "[", "]", "*")) or token.replace(".", "", 1).isdigit())
-
-    def wrapspace(self, text, token):
-        """
-        Applies whitespace wrapping rules to token.
-
-        Args:
-            text: current text buffer
-            token: token to add
-
-        Returns:
-            token with whitespace rules applied
-        """
-
-        # Wildcards have no whitespace. Need special case since * is also multiply which does have whitespace.
-        if token in ["*"] and (not text or text.endswith((" ", "("))):
+        if aliases and Token.normalize(token) in aliases:
             return token
 
-        # Operator whitespace
-        if self.isoperator(token) or self.islogicseparator(token) or token.lower() in ["in"]:
-            return f" {token} " if not text.endswith(" ") else f"{token} "
-
-        # Comma whitespace
-        if token in [","]:
-            return f"{token} "
-
-        # No whitespace if any of the following is True
-        if not text or text.endswith((" ", "(", "[")) or token in ["(", "[", ")", "]"]:
-            return token
-
-        # Default is to add leading whitespace
-        return f" {token}"
-
-    def get(self, tokens, x):
-        """
-        Gets token at position x. This method will validate position is valid within tokens.
-
-        Args:
-            tokens: input tokens
-            x: position to retrieve
-
-        Returns:
-            tokens[x] if x is a valid position, None otherwise
-        """
-
-        if 0 <= x < len(tokens):
-            return tokens[x]
-
-        return None
+        return self.resolver(token)

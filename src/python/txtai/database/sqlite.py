@@ -224,19 +224,23 @@ class SQLite(Database):
         # Format and return results
         return self.cursor.fetchall()
 
-    def resolve(self, name, alias=False, compound=False):
+    def resolve(self, name, alias=None):
         # Standard column names
         sections = ["indexid", "id", "tags", "entry"]
         noprefix = ["data", "object", "score", "text"]
 
-        # Alias JSON column expressions
+        # Alias expression
         if alias:
-            # Only apply aliases to non-standard columns or compound expressions
-            if name not in sections + noprefix or compound:
-                return f' as "{name}"'
+            # Skip if name matches alias or alias is a standard column name
+            if name == alias or alias in sections:
+                return name
 
-            # No alias
-            return None
+            # Build alias clause
+            return f'{name} as "{alias}"'
+
+        # Name is already resolved, skip
+        if name.startswith("json_extract(data") or any(f"s.{s}" == name for s in sections):
+            return name
 
         # Standard columns - need prefixes
         if name.lower() in sections:

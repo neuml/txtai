@@ -32,27 +32,18 @@ class Aggregate(SQL):
         # Parse query
         query = super().__call__(query)
 
-        # Detect if this is a SQL query
+        # Check if this is a SQL query
         if "select" in query:
             # Get list of unique and aggregate columns. If no aggregate columns or order by found, skip
-            columns = query["select"]
+            columns = list(results[0].keys())
             aggcolumns = self.aggcolumns(columns)
             if aggcolumns or query["orderby"]:
-                # Query formatted columns
-                qcolumns = list(results[0].keys())
-
-                # Combine internal column names with initial result values for consistent processing
-                results = [dict(zip(columns, result.values())) for result in results]
-
                 # Merge aggregate columns
                 if aggcolumns:
                     results = self.aggregate(query, results, columns, aggcolumns)
 
-                # Sort results
-                results = self.orderby(query, results) if query["orderby"] else self.defaultsort(results)
-
-                # Combine query formatted columns with result values for final results
-                return [dict(zip(qcolumns, result.values())) for result in results]
+                # Sort results and return
+                return self.orderby(query, results) if query["orderby"] else self.defaultsort(results)
 
         # Otherwise, run default sort
         return self.defaultsort(results)
@@ -128,7 +119,7 @@ class Aggregate(SQL):
         Args:
             query: input query
             results: query results
-            columns: list of select colum
+            columns: list of select columns
 
         Returns:
             results grouped using group by clause

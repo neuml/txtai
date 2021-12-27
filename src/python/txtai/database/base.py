@@ -5,7 +5,7 @@ Database module
 import logging
 
 from .encoder import EncoderFactory
-from .sql import Expression, SQL, SQLException
+from .sql import SQL, SQLException, Token
 
 # Logging configuration
 logger = logging.getLogger(__name__)
@@ -143,7 +143,7 @@ class Database:
 
         if "select" in query and similarity:
             for x in range(len(similarity)):
-                token = f"{Expression.SIMILAR_TOKEN}{x}"
+                token = f"{Token.SIMILAR_TOKEN}{x}"
                 if where and token in where:
                     where = where.replace(token, self.embed(similarity, x))
         elif similarity:
@@ -169,14 +169,14 @@ class Database:
 
         return self.sql(query)
 
-    def resolve(self, name, alias=False, compound=False):
+    def resolve(self, name, alias=None):
         """
-        Resolves a query column name with the database column name.
+        Resolves a query column name with the database column name. This method also builds alias expressions
+        if alias is set.
 
         Args:
             name: query column name
-            alias: True if an alias clause should be added, defaults to False
-            compound: True if this column is part of a compound expression, defaults to False
+            alias: alias name, defaults to None
 
         Returns:
             database column name
