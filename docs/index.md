@@ -50,6 +50,8 @@ Summary of txtai features:
 
 Applications range from similarity search to complex NLP-driven data extractions to generate structured databases. The following applications are powered by txtai.
 
+![apps](https://raw.githubusercontent.com/neuml/txtai/master/apps.jpg)
+
 | Application  | Description  |
 |:----------|:-------------|
 | [paperai](https://github.com/neuml/paperai) | AI-powered literature discovery and review engine for medical/scientific papers |
