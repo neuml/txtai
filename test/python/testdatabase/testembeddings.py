@@ -124,6 +124,23 @@ class TestEmbeddings(unittest.TestCase):
         self.assertEqual(self.embeddings.count(), 5)
         self.assertEqual(result["text"], self.data[5])
 
+    def testGenerator(self):
+        """
+        Test index with a generator
+        """
+
+        def documents():
+            for uid, text in enumerate(self.data):
+                yield (uid, text, None)
+
+        # Create an index for the list of text
+        self.embeddings.index(documents())
+
+        # Search for best match
+        result = self.embeddings.search("feel good story", 1)[0]
+
+        self.assertEqual(result["text"], self.data[4])
+
     def testIndex(self):
         """
         Test index
@@ -314,3 +331,33 @@ class TestEmbeddings(unittest.TestCase):
         result = self.embeddings.search("feel good story", 1)[0]
 
         self.assertEqual(result["text"], data[0][1])
+
+    def testUpsertBatch(self):
+        """
+        Test upsert batch
+        """
+
+        try:
+            # Build data array
+            data = [(uid, text, None) for uid, text in enumerate(self.data)]
+
+            # Reset embeddings for test
+            self.embeddings.ann = None
+
+            # Create an index for the list of text
+            self.embeddings.upsert(data)
+
+            # Set batch size to 1
+            self.embeddings.config["batch"] = 1
+
+            # Update data
+            data[0] = (0, "Feel good story: baby panda born", None)
+            data[1] = (0, "Not good news", None)
+            self.embeddings.upsert([data[0], data[1]])
+
+            # Search for best match
+            result = self.embeddings.search("feel good story", 1)[0]
+
+            self.assertEqual(result["text"], data[0][1])
+        finally:
+            del self.embeddings.config["batch"]

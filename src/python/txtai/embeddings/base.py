@@ -17,6 +17,7 @@ from ..vectors import VectorsFactory
 from .archive import Archive
 from .reducer import Reducer
 from .search import Search
+from .transform import Action, Transform
 
 
 # pylint: disable=R0904
@@ -79,8 +80,18 @@ class Embeddings:
             reindex: if this is a reindex operation in which case database creation is skipped, defaults to False
         """
 
-        # Transform documents to embeddings vectors
-        ids, dimensions, embeddings = self.vectors(documents)
+        # Create document database, if necessary
+        if not reindex:
+            self.database = self.createdatabase()
+
+            # Reset archive since this is a new index
+            self.archive = None
+
+        # Create transform action
+        transform = Transform(self, Action.REINDEX if reindex else Action.INDEX)
+
+        # Load documents into database and transform to vectors
+        ids, dimensions, embeddings = transform(documents)
 
         # Build LSA model (if enabled). Remove principal components from embeddings.
         if self.config.get("pca"):
@@ -96,22 +107,12 @@ class Embeddings:
         # Create approximate nearest neighbor index
         self.ann = ANNFactory.create(self.config)
 
-        # Build the index
+        # Add embeddings to the index
         self.ann.index(embeddings)
 
-        # Keep existing database and archive instances if this is part of a reindex
-        if not reindex:
-            # Create document database
-            self.database = self.createdatabase()
-            if self.database:
-                # Add documents to database
-                self.database.insert(documents)
-            else:
-                # Save indexids-ids mapping for indexes with no database
-                self.config["ids"] = ids
-
-            # Reset archive since this is a new index
-            self.archive = None
+        # Save indexids-ids mapping for indexes with no database, except when this is a reindex action
+        if not reindex and not self.database:
+            self.config["ids"] = ids
 
     def upsert(self, documents):
         """
@@ -128,26 +129,20 @@ class Embeddings:
             self.index(documents)
             return
 
-        # Transform documents to embeddings vectors
-        ids, _, embeddings = self.vectors(documents)
+        # Create transform action
+        transform = Transform(self, Action.UPSERT)
+
+        # Load documents into database and transform to vectors
+        ids, _, embeddings = transform(documents)
 
         # Normalize embeddings
         self.normalize(embeddings)
 
-        # Delete existing elements
-        self.delete(ids)
-
-        # Get offset before it changes
-        offset = self.config.get("offset", 0)
-
-        # Append elements the index
+        # Append embeddings to the index
         self.ann.append(embeddings)
 
-        if self.database:
-            # Add documents to database
-            self.database.insert(documents, offset)
-        else:
-            # Save indexids-ids mapping for indexes with no database
+        # Save indexids-ids mapping for indexes with no database
+        if not self.database:
             self.config["ids"] = self.config["ids"] + ids
 
     def delete(self, ids):
@@ -491,57 +486,6 @@ class Embeddings:
         """
 
         return VectorsFactory.create(self.config, self.scoring)
-
-    def vectors(self, documents):
-        """
-        Transforms documents into embeddings vectors.
-
-        Args:
-            documents: list of (id, data, tags)
-
-        Returns:
-            (document ids, dimensions, embeddings)
-        """
-
-        # Transform documents to embeddings vectors
-        ids, dimensions, stream = self.model.index(self.getinputs(documents))
-
-        # Load streamed embeddings back to memory
-        embeddings = np.empty((len(ids), dimensions), dtype=np.float32)
-        with open(stream, "rb") as queue:
-            for x in range(embeddings.shape[0]):
-                embeddings[x] = pickle.load(queue)
-
-        # Remove temporary file
-        os.remove(stream)
-
-        return (ids, dimensions, embeddings)
-
-    def getinputs(self, documents):
-        """
-        Prepares documents for vector models.
-
-        Must be one of the following:
-            - dict with the field "text" or "object"
-            - not a dict
-
-        Otherwise, the document is not passed to the vector models.
-
-        Args:
-            documents: list of (id, data, tags)
-
-        Returns:
-            filtered documents
-        """
-
-        for document in documents:
-            if isinstance(document[1], dict):
-                if "text" in document[1]:
-                    yield (document[0], document[1]["text"], document[2])
-                elif "object" in document[1]:
-                    yield (document[0], document[1]["object"], document[2])
-            else:
-                yield document
 
     def checkarchive(self, path):
         """

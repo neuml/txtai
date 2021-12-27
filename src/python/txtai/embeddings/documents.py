@@ -1,5 +1,5 @@
 """
-Stream module
+Documents module
 """
 
 import os
@@ -14,7 +14,7 @@ class Documents:
 
     def __init__(self):
         """
-        Creates a new DocumentStream.
+        Creates a new documents stream.
         """
 
         self.documents = None

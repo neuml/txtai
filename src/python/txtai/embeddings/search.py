@@ -12,7 +12,7 @@ class Search:
 
     def __init__(self, embeddings):
         """
-        Creates a new search.
+        Creates a new search action.
 
         Args:
             embeddings: embeddings instance
