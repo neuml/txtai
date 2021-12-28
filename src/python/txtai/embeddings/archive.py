@@ -86,7 +86,9 @@ class Archive:
         compression = self.compression(path)
 
         # Create output directory, if necessary
-        os.makedirs(os.path.dirname(path), exist_ok=True)
+        output = os.path.dirname(path)
+        if output:
+            os.makedirs(output, exist_ok=True)
 
         # Zip files
         if compression == "zip":
