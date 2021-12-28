@@ -118,7 +118,7 @@ class WordVectors(Vectors):
                     ids.append(uid)
                     pickle.dump(embedding, output, protocol=4)
 
-        return (ids, dimensions, stream)
+        return (ids, dimensions, len(ids), stream)
 
     def transform(self, document):
         # Convert to tokens if necessary

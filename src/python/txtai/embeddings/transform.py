@@ -4,6 +4,7 @@ Transform module
 
 import os
 import pickle
+import tempfile
 
 from enum import Enum
 
@@ -53,13 +54,20 @@ class Transform:
         """
 
         # Transform documents to vectors and load into database
-        ids, dimensions, stream = self.model.index(self.stream(documents))
+        ids, dimensions, batches, stream = self.model.index(self.stream(documents))
+
+        # Generate buffer file name
+        # pylint: disable=R1732
+        buffer = tempfile.NamedTemporaryFile(mode="wb", suffix=".npy", delete=False)
 
         # Load streamed embeddings back to memory
-        embeddings = np.empty((len(ids), dimensions), dtype=np.float32)
+        embeddings = np.memmap(buffer, dtype=np.float32, shape=(len(ids), dimensions), mode="w+")
         with open(stream, "rb") as queue:
-            for x in range(embeddings.shape[0]):
-                embeddings[x] = pickle.load(queue)
+            x = 0
+            for _ in range(batches):
+                batch = pickle.load(queue)
+                embeddings[x : x + batch.shape[0]] = batch
+                x += batch.shape[0]
 
         # Remove temporary file
         os.remove(stream)

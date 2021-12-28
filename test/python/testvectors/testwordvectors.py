@@ -55,10 +55,11 @@ class TestWordVectors(unittest.TestCase):
 
         model = VectorsFactory.create({"path": self.path, "parallel": True}, None)
 
-        ids, dimension, stream = model.index(documents)
+        ids, dimension, batches, stream = model.index(documents)
 
         self.assertEqual(len(ids), 1000)
         self.assertEqual(dimension, 10)
+        self.assertEqual(batches, 1000)
         self.assertIsNotNone(os.path.exists(stream))
 
     def testIndexSerial(self):
@@ -71,10 +72,11 @@ class TestWordVectors(unittest.TestCase):
 
         model = VectorsFactory.create({"path": self.path, "parallel": False}, None)
 
-        ids, dimension, stream = model.index(documents)
+        ids, dimension, batches, stream = model.index(documents)
 
         self.assertEqual(len(ids), 1000)
         self.assertEqual(dimension, 10)
+        self.assertEqual(batches, 1000)
         self.assertIsNotNone(os.path.exists(stream))
 
     def testLookup(self):

@@ -31,10 +31,11 @@ class TestTransformersVectors(unittest.TestCase):
         # Generate enough volume to test batching
         documents = [(x, "This is a test", None) for x in range(1000)]
 
-        ids, dimension, stream = self.model.index(documents)
+        ids, dimension, batches, stream = self.model.index(documents)
 
         self.assertEqual(len(ids), 1000)
         self.assertEqual(dimension, 768)
+        self.assertEqual(batches, 2)
         self.assertIsNotNone(os.path.exists(stream))
 
     def testSentenceTransformers(self):

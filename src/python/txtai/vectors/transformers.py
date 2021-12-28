@@ -46,7 +46,7 @@ class TransformersVectors(Vectors):
         return SentenceTransformer(path, device=Models.reference(deviceid))
 
     def index(self, documents):
-        ids, dimensions, stream = [], None, None
+        ids, dimensions, batches, stream = [], None, 0, None
 
         # Convert all documents to embedding arrays, stream embeddings to disk to control memory usage
         with tempfile.NamedTemporaryFile(mode="wb", suffix=".npy", delete=False) as output:
@@ -59,6 +59,7 @@ class TransformersVectors(Vectors):
                     # Convert batch to embeddings
                     uids, dimensions = self.batch(batch, output)
                     ids.extend(uids)
+                    batches += 1
 
                     batch = []
 
@@ -66,8 +67,9 @@ class TransformersVectors(Vectors):
             if batch:
                 uids, dimensions = self.batch(batch, output)
                 ids.extend(uids)
+                batches += 1
 
-        return (ids, dimensions, stream)
+        return (ids, dimensions, batches, stream)
 
     def transform(self, document):
         # Prepare input document for transformers model and build embeddings
@@ -92,12 +94,9 @@ class TransformersVectors(Vectors):
 
         # Build embeddings
         embeddings = self.model.encode(documents)
-        for embedding in embeddings:
-            if not dimensions:
-                # Set number of dimensions for embeddings
-                dimensions = embedding.shape[0]
-
-            pickle.dump(embedding, output, protocol=4)
+        if embeddings is not None:
+            dimensions = embeddings.shape[1]
+            pickle.dump(embeddings, output, protocol=4)
 
         return (ids, dimensions)
 

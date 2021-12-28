@@ -6,6 +6,7 @@ import json
 import pickle
 import os
 import shutil
+import types
 
 import numpy as np
 
@@ -114,6 +115,9 @@ class Embeddings:
         if not reindex and not self.database:
             self.config["ids"] = ids
 
+        # Delete mmap buffer file
+        os.remove(embeddings.filename)
+
     def upsert(self, documents):
         """
         Runs an embeddings upsert operation. If the index exists, new data is
@@ -144,6 +148,9 @@ class Embeddings:
         # Save indexids-ids mapping for indexes with no database
         if not self.database:
             self.config["ids"] = self.config["ids"] + ids
+
+        # Delete mmap buffer file
+        os.remove(embeddings.filename)
 
     def delete(self, ids):
         """
@@ -452,7 +459,19 @@ class Embeddings:
         Prints the current embeddings index configuration.
         """
 
-        print(json.dumps(self.config, sort_keys=True, indent=2))
+        # Copy and edit config
+        config = self.config.copy()
+
+        # Remove ids array if present
+        config.pop("ids", None)
+
+        # Format functions
+        for key in config:
+            if isinstance(config[key], types.FunctionType):
+                config[key] = "<function>"
+
+        # Print configuration
+        print(json.dumps(config, sort_keys=True, indent=2))
 
     def configure(self, config):
         """
