@@ -21,7 +21,7 @@ class Vectors:
             self.tokenize = config.get("tokenize")
 
             # pylint: disable=E1111
-            self.model = self.load(config["path"])
+            self.model = self.load(config.get("path"))
 
     def load(self, path):
         """

@@ -2,6 +2,7 @@
 Factory module
 """
 
+from .external import ExternalVectors
 from .transformers import TransformersVectors
 from .words import WordVectors, WORDS
 
@@ -26,6 +27,9 @@ class VectorsFactory:
 
         # Determine vector method
         method = VectorsFactory.method(config)
+        if method == "external":
+            return ExternalVectors(config, scoring)
+
         if method == "words":
             if not WORDS:
                 # Raise error if trying to create Word Vectors without similarity extra

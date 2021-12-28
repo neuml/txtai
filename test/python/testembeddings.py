@@ -2,9 +2,13 @@
 Embeddings module tests
 """
 
+import contextlib
+import io
 import os
 import tempfile
 import unittest
+
+import numpy as np
 
 from txtai.embeddings import Embeddings
 from txtai.vectors import WordVectors
@@ -58,6 +62,29 @@ class TestEmbeddings(unittest.TestCase):
 
         self.assertEqual(self.embeddings.count(), 5)
         self.assertEqual(uid, 5)
+
+    def testExternal(self):
+        """
+        Test embeddings backed by external vectors
+        """
+
+        def transform(document):
+            return document[1].astype(np.float32)
+
+        # Generate random data and index
+        data = np.random.rand(5, 100)
+        embeddings = Embeddings({"method": "external", "transform": transform})
+        embeddings.index([(x, row, None) for x, row in enumerate(data)])
+
+        # Run search
+        self.assertGreaterEqual(len(embeddings.search(data[0])), 1)
+
+        # Run info
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            embeddings.info()
+
+        self.assertTrue("txtai" in output.getvalue())
 
     def testIndex(self):
         """
