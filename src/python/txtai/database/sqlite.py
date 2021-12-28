@@ -48,7 +48,7 @@ class SQLite(Database):
         )
     """
 
-    INSERT_DOCUMENT = "INSERT INTO documents VALUES (?, ?, ?, ?)"
+    INSERT_DOCUMENT = "REPLACE INTO documents VALUES (?, ?, ?, ?)"
     DELETE_DOCUMENTS = "DELETE FROM documents WHERE id IN (SELECT id FROM batch)"
 
     # Objects - stores binary content
@@ -61,7 +61,7 @@ class SQLite(Database):
         )
     """
 
-    INSERT_OBJECT = "INSERT INTO objects VALUES (?, ?, ?, ?)"
+    INSERT_OBJECT = "REPLACE INTO objects VALUES (?, ?, ?, ?)"
     DELETE_OBJECTS = "DELETE FROM objects WHERE id IN (SELECT id FROM batch)"
 
     # Sections - stores section text
@@ -132,7 +132,7 @@ class SQLite(Database):
                 # Insert document and use return value for sections table
                 document = self.insertdocument(uid, document, tags, entry)
 
-            if document:
+            if document is not None:
                 if isinstance(document, list):
                     # Join tokens to text
                     document = " ".join(document)
@@ -358,7 +358,8 @@ class SQLite(Database):
         obj = document.pop("object") if "object" in document else None
 
         # Insert document as JSON
-        self.cursor.execute(SQLite.INSERT_DOCUMENT, [uid, json.dumps(document), tags, entry])
+        if document:
+            self.cursor.execute(SQLite.INSERT_DOCUMENT, [uid, json.dumps(document), tags, entry])
 
         # Get value of text field
         text = document.get("text")
