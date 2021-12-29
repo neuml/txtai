@@ -4,7 +4,6 @@ Transform module
 
 import os
 import pickle
-import tempfile
 
 from enum import Enum
 
@@ -40,7 +39,7 @@ class Transform:
         # List of deleted ids with this action
         self.deletes = set()
 
-    def __call__(self, documents):
+    def __call__(self, documents, buffer):
         """
         Processes an iterable collection of documents, handles any iterable including generators.
 
@@ -48,6 +47,7 @@ class Transform:
 
         Args:
             documents: iterable collection of (id, data, tags)
+            buffer: file path used for memmap buffer
 
         Returns:
             (document ids, dimensions, embeddings)
@@ -55,10 +55,6 @@ class Transform:
 
         # Transform documents to vectors and load into database
         ids, dimensions, batches, stream = self.model.index(self.stream(documents))
-
-        # Generate buffer file name
-        # pylint: disable=R1732
-        buffer = tempfile.NamedTemporaryFile(mode="wb", suffix=".npy", delete=False)
 
         # Load streamed embeddings back to memory
         embeddings = np.memmap(buffer, dtype=np.float32, shape=(len(ids), dimensions), mode="w+")
