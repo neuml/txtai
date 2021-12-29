@@ -115,10 +115,8 @@ class Embeddings:
         if not reindex and not self.database:
             self.config["ids"] = ids
 
-        # Delete mmap buffer file
-        path = embeddings.filename
-        del embeddings
-        os.remove(path)
+        # Delete embeddings memmap buffer
+        transform.remove(embeddings)
 
     def upsert(self, documents):
         """
@@ -151,10 +149,8 @@ class Embeddings:
         if not self.database:
             self.config["ids"] = self.config["ids"] + ids
 
-        # Delete mmap buffer file
-        path = embeddings.filename
-        del embeddings
-        os.remove(path)
+        # Delete embeddings memmap buffer
+        transform.remove(embeddings)
 
     def delete(self, ids):
         """
