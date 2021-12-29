@@ -138,18 +138,6 @@ class Transform:
             self.database.insert(batch, self.offset)
             self.offset += len(batch)
 
-    def remove(self, embeddings):
-        """
-        Deletes an embeddings buffer and it's underlying file.
-
-        Args:
-            embeddings: embeddings
-        """
-
-        path = embeddings.filename
-        del embeddings
-        os.remove(path)
-
 
 class Action(Enum):
     """

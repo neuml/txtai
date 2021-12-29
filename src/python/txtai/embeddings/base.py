@@ -116,7 +116,9 @@ class Embeddings:
             self.config["ids"] = ids
 
         # Delete embeddings memmap buffer
-        transform.remove(embeddings)
+        path = embeddings.filename
+        del embeddings
+        os.remove(path)
 
     def upsert(self, documents):
         """
@@ -150,7 +152,9 @@ class Embeddings:
             self.config["ids"] = self.config["ids"] + ids
 
         # Delete embeddings memmap buffer
-        transform.remove(embeddings)
+        path = embeddings.filename
+        del embeddings
+        os.remove(path)
 
     def delete(self, ids):
         """
