@@ -116,7 +116,8 @@ class Embeddings:
             self.config["ids"] = ids
 
         # Delete mmap buffer file
-        os.remove(embeddings.filename)
+        path = embeddings.filename
+        os.remove(path)
 
     def upsert(self, documents):
         """
@@ -150,7 +151,8 @@ class Embeddings:
             self.config["ids"] = self.config["ids"] + ids
 
         # Delete mmap buffer file
-        os.remove(embeddings.filename)
+        path = embeddings.filename
+        os.remove(path)
 
     def delete(self, ids):
         """
