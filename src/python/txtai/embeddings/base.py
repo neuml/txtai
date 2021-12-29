@@ -117,6 +117,7 @@ class Embeddings:
 
         # Delete mmap buffer file
         path = embeddings.filename
+        del embeddings
         os.remove(path)
 
     def upsert(self, documents):
@@ -152,6 +153,7 @@ class Embeddings:
 
         # Delete mmap buffer file
         path = embeddings.filename
+        del embeddings
         os.remove(path)
 
     def delete(self, ids):
