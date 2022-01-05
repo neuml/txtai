@@ -1,11 +1,13 @@
 """
 txtai console module.
 
-Requires streamlit to be installed.
-  pip install streamlit
+Requires tabulate to be installed.
+  pip install tabulate
 """
 
+import shutil
 import sys
+import textwrap
 
 from cmd import Cmd
 
@@ -37,10 +39,33 @@ class Console(Cmd):
     def default(self, line):
         # pylint: disable=W0703
         try:
-            results = self.embeddings.search(line)
+            results = []
+            maxwidth = None
+            for result in self.embeddings.search(line):
+                # Calculate max width using current terminal width and number of columns
+                if not maxwidth:
+                    maxwidth = int(shutil.get_terminal_size()[0] / len(result))
+
+                # Wrap each value at maxwidth, if necessary
+                results.append({key: self.wrap(value, maxwidth) for key, value in result.items()})
+
             print(tabulate(results, headers="keys", tablefmt="psql"))
         except Exception as ex:
             print(ex)
+
+    def wrap(self, value, maxwidth):
+        """
+        Wraps value at maxwidth if value is a string.
+
+        Args:
+            value: input value
+            maxwidth: maximum number of characters before splitting text
+
+        Returns:
+            newline wrapped text at maxwidth
+        """
+
+        return "\n".join(textwrap.wrap(value, maxwidth)) if isinstance(value, str) else value
 
 
 def main(path=None):
