@@ -4,7 +4,7 @@ ONNX module
 
 # Conditional import
 try:
-    from onnxruntime import InferenceSession, SessionOptions
+    import onnxruntime as ort
 
     ONNX_RUNTIME = True
 except ImportError:
@@ -42,10 +42,26 @@ class OnnxModel(PreTrainedModel):
         super().__init__(AutoConfig.from_pretrained(config) if config else OnnxConfig())
 
         # Create ONNX session
-        self.model = InferenceSession(model, SessionOptions())
+        self.model = ort.InferenceSession(model, ort.SessionOptions(), self.providers())
 
         # Add references for this class to supported AutoModel classes
         Registry.register(self)
+
+    def providers(self):
+        """
+        Returns a list of available and usable providers.
+
+        Returns:
+            list of available and usable providers
+        """
+
+        # Create list of providers, prefer CUDA provider if available
+        # CUDA provider only available if GPU is available and onnxruntime-gpu installed
+        if torch.cuda.is_available() and "CUDAExecutionProvider" in ort.get_available_providers():
+            return ["CUDAExecutionProvider", "CPUExecutionProvider"]
+
+        # Default when CUDA provider isn't available
+        return ["CPUExecutionProvider"]
 
     def forward(self, **inputs):
         """

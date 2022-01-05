@@ -106,11 +106,11 @@ class HFOnnx(Tensors):
 
             output = temp
 
-        # Optimize model first
+        # Optimize model - only need CPU provider
         sess_option = SessionOptions()
         sess_option.optimized_model_filepath = output
         sess_option.graph_optimization_level = GraphOptimizationLevel.ORT_ENABLE_BASIC
-        _ = InferenceSession(output, sess_option)
+        _ = InferenceSession(output, sess_option, ["CPUExecutionProvider"])
 
         # Quantize optimized model
         quantize_dynamic(output, output, optimize_model=False)

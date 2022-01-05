@@ -6,6 +6,8 @@ import os
 import tempfile
 import unittest
 
+from unittest.mock import patch
+
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
@@ -60,7 +62,9 @@ class TestOnnx(unittest.TestCase):
         labels = Labels((model, path), dynamic=False)
         self.assertEqual(labels("cat")[0][0], 1)
 
-    def testPooling(self):
+    @patch("onnxruntime.get_available_providers")
+    @patch("torch.cuda.is_available")
+    def testPooling(self, cuda, providers):
         """
         Test exporting a pooling model to ONNX and running inference
         """
@@ -70,6 +74,31 @@ class TestOnnx(unittest.TestCase):
         # Export model to ONNX
         onnx = HFOnnx()
         model = onnx(path, "pooling", quantize=True)
+
+        # Test no CUDA and onnxruntime installed
+        cuda.return_value = False
+        providers.return_value = ["CPUExecutionProvider"]
+
+        embeddings = Embeddings({"path": model, "tokenizer": path})
+        self.assertEqual(embeddings.similarity("animal", ["dog", "book", "rug"])[0][0], 0)
+
+        # Test no CUDA and onnxruntime-gpu installed
+        cuda.return_value = False
+        providers.return_value = ["CUDAExecutionProvider", "CPUExecutionProvider"]
+
+        embeddings = Embeddings({"path": model, "tokenizer": path})
+        self.assertEqual(embeddings.similarity("animal", ["dog", "book", "rug"])[0][0], 0)
+
+        # Test CUDA and only onnxruntime installed
+        cuda.return_value = True
+        providers.return_value = ["CPUExecutionProvider"]
+
+        embeddings = Embeddings({"path": model, "tokenizer": path})
+        self.assertEqual(embeddings.similarity("animal", ["dog", "book", "rug"])[0][0], 0)
+
+        # Test CUDA and onnxruntime-gpu installed
+        cuda.return_value = True
+        providers.return_value = ["CUDAExecutionProvider", "CPUExecutionProvider"]
 
         embeddings = Embeddings({"path": model, "tokenizer": path})
         self.assertEqual(embeddings.similarity("animal", ["dog", "book", "rug"])[0][0], 0)
