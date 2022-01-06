@@ -1,0 +1,3 @@
+# Methods
+
+::: txtai.embeddings.Embeddings

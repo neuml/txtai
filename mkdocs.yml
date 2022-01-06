@@ -33,7 +33,11 @@ nav:
     - Why txtai?: why.md
     - Installation: install.md
     - Examples: examples.md
-    - Embeddings: embeddings.md
+    - Embeddings:
+        - Overview: embeddings/overview.md
+        - Configuration: embeddings/configuration.md
+        - Methods: embeddings/methods.md
+        - Query Guide: embeddings/query.md
     - Pipeline:
         - Overview: pipeline/overview.md
         - Audio:

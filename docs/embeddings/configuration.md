@@ -1,71 +1,57 @@
-# Embeddings
-Embeddings is the engine that delivers semantic search. Data is transformed into embeddings vectors where similar concepts will produce similar vectors. Indexes both large and small are built with these vectors. The indexes are used find results that have the same meaning, not necessarily the same keywords.
+# Configuration
 
-Embeddings parameters are set through the constructor. Examples below.
-
-```python
-# Transformers embeddings model
-Embeddings({"method": "transformers",
-            "path": "sentence-transformers/nli-mpnet-base-v2"})
-
-# Word embeddings model
-Embeddings({"method": "words",
-            "path": vectors,
-            "storevectors": True,
-            "scoring": "bm25",
-            "pca": 3,
-            "quantize": True})
-```
-
-## Configuration
-
-### method
+## method
 ```yaml
-method: transformers|sentence-transformers|words
+method: transformers|sentence-transformers|words|external
 ```
 
 Sentence embeddings method to use. Options listed below.
 
-#### transformers
+### transformers
 
 Builds sentence embeddings using a transformers model. While this can be any transformers model, it works best with
 [models trained](https://huggingface.co/models?pipeline_tag=sentence-similarity) to build sentence embeddings.
 
-#### sentence-transformers
+### sentence-transformers
 
 Same as transformers but loads models with the sentence-transformers library.
 
-#### words
+### words
 
 Builds sentence embeddings using a word embeddings model.
 
-sentence-transformers and words require the [similarity](https://neuml.github.io/txtai/install/#similarity) extras package to be installed.
+### external
 
-The method is inferred using the _path_ if not provided.
+Sentence embeddings are loaded via an external model or API. Requires setting the `transform` parameter to a function that translates data into vectors.
 
-### path
+The method is inferred using the _path_, if not provided. sentence-transformers and words require the [similarity](../../install/#similarity) extras package to be installed.
+
+## path
 ```yaml
 path: string
 ```
 
-Required field that sets the path for a vectors model. When using a transformers/sentence-transformers model, this can be any model on the
+Sets the path for a vectors model. When using a transformers/sentence-transformers model, this can be any model on the
 [Hugging Face Model Hub](https://huggingface.co/models) or a local file path. Otherwise, it must be a local file path to a word embeddings model.
 
-### backend
+## backend
 ```yaml
 backend: faiss|hnsw|annoy
 ```
 
 Approximate Nearest Neighbor (ANN) index backend for storing generated sentence embeddings. Defaults to Faiss. Additional backends require the
-[similarity](https://neuml.github.io/txtai/install/#similarity) extras package to be installed.
+[similarity](../../install/#similarity) extras package to be installed.
 
 Backend-specific settings are set with a corresponding configuration object having the same name as the backend (i.e. annoy, faiss, or hnsw). None of these are required and are set to defaults if omitted.
 
 ### faiss
 ```yaml
 faiss:
-    components: Comma separated list of components - defaults to "Flat" for small indices and "IVFx,Flat" for larger indexes where x = 4 * sqrt(embeddings count)
-    nprobe: search probe setting (int) - defaults to x/16 (as defined above) for larger indexes
+    components: Comma separated list of components - defaults to "Flat" for small
+                indices and "IVFx,Flat" for larger indexes where
+                x = 4 * sqrt(embeddings count)
+    nprobe: search probe setting (int) - defaults to x/16 (as defined above)
+            for larger indexes
 ```
 
 See the following Faiss documentation links for more information.
@@ -95,7 +81,14 @@ annoy:
 
 See [Annoy documentation](https://github.com/spotify/annoy#full-python-api) for more information on these parameters. Note that annoy indexes can not be modified after creation, upserts/deletes and other modifications are not supported.
 
-### quantize
+## content
+```yaml
+content: string|boolean
+```
+
+Enables content storage. When true, the default content storage engine will be used. Otherwise, the string must specify the supported content storage engine to use.
+
+## quantize
 ```yaml
 quantize: boolean
 ```
@@ -117,7 +110,7 @@ English language sentence embeddings in some situations.
 
 Word embeddings provide a good tradeoff of performance to functionality for a similarity search system. With that being said, Transformers models are making great progress in scaling performance down to smaller models and are the preferred vector backend in txtai for most cases.
 
-Word embeddings models require the [similarity](https://neuml.github.io/txtai/install/#similarity) extras package to be installed.
+Word embeddings models require the [similarity](../../install/#similarity) extras package to be installed.
 
 ### storevectors
 ```yaml
@@ -139,15 +132,3 @@ pca: int
 ```
 
 Removes _n_ principal components from generated sentence embeddings. When enabled, a TruncatedSVD model is built to help with dimensionality reduction. After pooling of vectors creates a single sentence embedding, this method is applied.
-
-::: txtai.embeddings.Embeddings.__init__
-::: txtai.embeddings.Embeddings.batchsearch
-::: txtai.embeddings.Embeddings.batchsimilarity
-::: txtai.embeddings.Embeddings.batchtransform
-::: txtai.embeddings.Embeddings.index
-::: txtai.embeddings.Embeddings.load
-::: txtai.embeddings.Embeddings.save
-::: txtai.embeddings.Embeddings.score
-::: txtai.embeddings.Embeddings.search
-::: txtai.embeddings.Embeddings.similarity
-::: txtai.embeddings.Embeddings.transform
