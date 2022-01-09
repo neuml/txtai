@@ -1,7 +1,7 @@
 # Why txtai?
 
-![why](/images/why.png#only-light)
-![why](/images/why-dark.png#only-dark)
+![why](images/why.png#only-light)
+![why](images/why-dark.png#only-dark)
 
 In addition to traditional search systems, a growing number of semantic search solutions are available, so why txtai?
 

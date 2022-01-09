@@ -1,7 +1,7 @@
 # Installation
 
-![install](/images/install.png#only-light)
-![install](/images/install-dark.png#only-dark)
+![install](images/install.png#only-light)
+![install](images/install-dark.png#only-dark)
 
 The easiest way to install is via pip and PyPI
 
