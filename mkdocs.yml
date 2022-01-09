@@ -14,8 +14,21 @@ theme:
     icon:
         repo: fontawesome/brands/github
     palette:
-        primary: blue
-        accent: blue
+    - scheme: default
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/toggle-switch-off-outline
+        name: Switch to dark mode
+    - scheme: slate
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to light mode
+    features:
+        - navigation.indexes
+        - navigation.instant
 plugins:
     - search
     - mkdocstrings:
@@ -34,12 +47,12 @@ nav:
     - Installation: install.md
     - Examples: examples.md
     - Embeddings:
-        - Overview: embeddings/overview.md
+        - embeddings/index.md
         - Configuration: embeddings/configuration.md
         - Methods: embeddings/methods.md
         - Query Guide: embeddings/query.md
     - Pipeline:
-        - Overview: pipeline/overview.md
+        - pipeline/index.md
         - Audio:
             - Transcription: pipeline/audio/transcription.md
         - Data:
@@ -60,7 +73,7 @@ nav:
             - ML ONNX: pipeline/train/mlonnx.md
             - Trainer: pipeline/train/trainer.md
     - Workflow:
-        - Overview: workflow/overview.md
+        - workflow/index.md
         - Task: workflow/task.md
         - File: workflow/file.md
         - Image: workflow/image.md
@@ -69,6 +82,5 @@ nav:
         - Storage: workflow/storage.md
         - Url: workflow/url.md
         - Workflow: workflow/workflow.md
-
     - API: api.md
     - Further Reading: articles.md

@@ -1,5 +1,8 @@
 # Examples
 
+![examples](/images/examples.png#only-light)
+![examples](/images/examples-dark.png#only-dark)
+
 The examples directory has a series of notebooks and applications giving an overview of txtai. See the sections below.
 
 ## Semantic Search

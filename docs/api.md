@@ -1,5 +1,8 @@
 # API
 
+![api](/images/api.png#only-light)
+![api](/images/api-dark.png#only-dark)
+
 txtai has a full-featured API that can optionally be enabled for any txtai process. All functionality found in txtai can be accessed via the API. The following is an example configuration and startup script for the API.
 
 Note that this configuration file enables all functionality. It is suggested that separate processes are used for each instance of a txtai component. Components can be joined together with workflows.

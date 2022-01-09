@@ -1,5 +1,8 @@
 # Workflow
 
+![workflow](/images/workflow.png#only-light)
+![workflow](/images/workflow-dark.png#only-dark)
+
 Workflows are a simple yet powerful construct that takes a callable and returns elements. Workflows operate well with pipelines but can work with any callable object. Workflows are streaming by nature and work on data in batches, allowing large volumes of data to be processed efficiently.
 
 Given that pipelines are callable objects, workflows enable efficient processing of pipeline data. Transformers models typically work with smaller batches of data, workflows are well suited to feed a series of transformers pipelines. 
