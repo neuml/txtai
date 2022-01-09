@@ -61,6 +61,9 @@ txtai is built with Python 3.7+, [Hugging Face Transformers](https://github.com/
 
 ## Why txtai?
 
+![why](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/why.png#gh-light-mode-only)
+![why](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/why-dark.png#gh-dark-mode-only)
+
 In addition to traditional search systems, a growing number of semantic search solutions are available, so why txtai?
 
 - `pip install txtai` is all that is needed to get started
@@ -71,6 +74,9 @@ In addition to traditional search systems, a growing number of semantic search s
 - Learn by example, notebooks cover all available functionality
 
 ## Installation
+
+![install](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/install.png#gh-light-mode-only)
+![install](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/install-dark.png#gh-dark-mode-only)
 
 The easiest way to install is via pip and PyPI
 
@@ -84,6 +90,9 @@ See the detailed [install instructions](https://neuml.github.io/txtai/install) f
 [optional dependencies](https://neuml.github.io/txtai/install/#optional-dependencies).
 
 ## Examples
+
+![examples](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/examples.png#gh-light-mode-only)
+![examples](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/examples-dark.png#gh-dark-mode-only)
 
 The examples directory has a series of notebooks and applications giving an overview of txtai. See the sections below.
 
@@ -157,6 +166,8 @@ Series of example applications with txtai. Links to hosted versions on [Hugging 
 [Full documentation on txtai](https://neuml.github.io/txtai) including configuration settings for pipelines, workflows, indexing and the API.
 
 ### Further Reading
+
+![further](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/further.png)
 
 - [Introducing txtai, AI-powered semantic search built on Transformers](https://towardsdatascience.com/introducing-txtai-an-ai-powered-search-engine-built-on-transformers-37674be252ec)
 - [Run machine-learning workflows to transform data and build AI-powered semantic search applications with txtai](https://towardsdatascience.com/run-machine-learning-workflows-to-transform-data-and-build-ai-powered-text-indices-with-txtai-43d769b566a7)
