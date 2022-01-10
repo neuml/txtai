@@ -1,8 +1,8 @@
 # Configuration
 
-Configuration is set through YAML. In most cases, YAML keys map to fields names in Python. The [example in the previous section](../) gave a full-featured example covering a wide array of configuration options. 
+Configuration is set through YAML. In most cases, YAML keys map to fields names in Python. The [example in the previous section](../) gave a full-featured example covering a wide array of configuration options.
 
-Each section below describes the available configuration settings. 
+Each section below describes the available configuration settings.
 
 ## Embeddings
 
@@ -19,7 +19,7 @@ embeddings:
   content: true
 ```
 
-Two top level settings are available to control where indexes are saved and if an index is a read-only index. 
+Two top level settings are available to control where indexes are saved and if an index is a read-only index.
 
 ### path
 ```yaml
@@ -88,7 +88,7 @@ task: string|list
 
 Both single and multi-action tasks are supported.
 
-The action parameter works slightly different when passed via configuration. The parameter(s) needs to be converted into callable method(s). If action is pipeline that has been defined in the current configuration, it will use that pipeline as the action. 
+The action parameter works slightly different when passed via configuration. The parameter(s) needs to be converted into callable method(s). If action is pipeline that has been defined in the current configuration, it will use that pipeline as the action.
 
 There are two special action names `index` and `upsert`. If those are used as the action, the task will collect workflow data elements and load them into defined the embeddings index.
 
@@ -99,11 +99,11 @@ Otherwise, the action must be a path to a static callable function. The configur
 task: string
 ```
 
-Optionally sets the type of task to create. For example, this could be a `file` task or a `retrieve` task. If this is not specified, a generic task is created. [The list of workflow tasks can be found here](../../workflow). 
+Optionally sets the type of task to create. For example, this could be a `file` task or a `retrieve` task. If this is not specified, a generic task is created. [The list of workflow tasks can be found here](../../workflow).
 
 ### args
 ```yaml
 args: list
 ```
 
-Optional list of static arguments to pass to the workflow task. These are combined with workflow data to pass to each `__call__`. 
+Optional list of static arguments to pass to the workflow task. These are combined with workflow data to pass to each `__call__`.

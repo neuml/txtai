@@ -15,7 +15,7 @@ The queries above search the index for similarity matches on `feel good story` a
 
 ## SQL
 
-txtai supports more complex queries with SQL. This is only supported if [content storage](../configuration/#content) is enabled. txtai has a translation layer that analyzes input SQL statements and combines similarity results with content stored in a relational database. 
+txtai supports more complex queries with SQL. This is only supported if [content storage](../configuration/#content) is enabled. txtai has a translation layer that analyzes input SQL statements and combines similarity results with content stored in a relational database.
 
 SQL queries are run through `embeddings.search` like natural language queries but the examples below only show the SQL query for conciseness.
 
