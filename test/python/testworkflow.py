@@ -297,8 +297,8 @@ class TestWorkflow(unittest.TestCase):
         config = """
         # Embeddings index
         writable: true
-        scoring: bm25
         embeddings:
+            scoring: bm25
             path: google/bert_uncased_L-2_H-128_A-2
 
         # Text segmentation
@@ -336,3 +336,20 @@ class TestWorkflow(unittest.TestCase):
             list(app.workflow("segment", ["This is a test sentence. And another sentence to split."])),
             ["This is a test sentence.", "And another sentence to split."],
         )
+
+    def testYamlError(self):
+        """
+        Tests reading a YAML workflow with errors.
+        """
+
+        # Read from string
+        config = """
+        # Workflow definitions
+        workflow:
+            error:
+                tasks:
+                    - action: error
+        """
+
+        with self.assertRaises(KeyError):
+            API(config)

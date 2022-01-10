@@ -37,7 +37,6 @@ workflow:
     labels:
         tasks:
             - action: labels
-              initialize: testnotfound
               args: [[positive, negative]]
     multiaction:
         tasks:

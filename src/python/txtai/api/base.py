@@ -164,20 +164,20 @@ class API:
 
     def function(self, function):
         """
-        Get a handle to a callable function
+        Get a handle to a callable function.
+
+        Args:
+            function: function name
+
+        Returns:
+            resolved function
         """
 
         if function in self.pipelines:
             return self.pipelines[function]
 
-        # pylint: disable=W0702
-        try:
-            # Attempt to resolve action as a callable function
-            return PipelineFactory.create({}, function)
-        except:
-            pass
-
-        return None
+        # Attempt to resolve action as a callable function
+        return PipelineFactory.create({}, function)
 
     def limit(self, limit):
         """
@@ -301,7 +301,7 @@ class API:
         elif self.embeddings and self.config.get("writable") and self.documents:
             with self.lock:
                 # Build scoring index if scoring method provided
-                if self.config.get("scoring"):
+                if self.embeddings.scoring:
                     self.embeddings.score(self.documents)
 
                 # Build embeddings index
