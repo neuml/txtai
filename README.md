@@ -80,7 +80,7 @@ embeddings.search("positive", 1)
 - Rich data processing framework (pipelines and workflows) to pre and post process data
 - Work in your programming language of choice via the API
 - Modular with low footprint - install additional dependencies when you need them
-- [Learn by example](../examples) - notebooks cover all available functionality
+- [Learn by example](#examples) - notebooks cover all available functionality
 
 ## Installation
 
