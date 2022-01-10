@@ -10,11 +10,10 @@ In addition to traditional search systems, a growing number of semantic search s
 # Get started in a couple lines
 from txtai.embeddings import Embeddings
 
-embeddings = Embeddings({"path": "sentence-transformers/all-MiniLM-L6-v2",
-                         "content": True})
+embeddings = Embeddings({"path": "sentence-transformers/all-MiniLM-L6-v2"})
 embeddings.index([(0, "Correct", None), (1, "Not what we hoped", None)])
 embeddings.search("positive", 1)
-# [{'id': '0', 'text': 'Correct', 'score': 0.2986203730106354}]
+#[(0, 0.2986203730106354)]
 ```
 - Works well with both small and big data - scale up as needed
 - Rich data processing framework (pipelines and workflows) to pre and post process data
