@@ -83,9 +83,3 @@ The search method takes two parameters, the query and query limit. The results f
 
 - List of `(id, score)` when content is disabled
 - List of `{**query columns}` when content is enabled
-
-## Links
-
-- [Configuration](../configuration)
-- [Methods](../methods)
-- [Query Guide](../query)

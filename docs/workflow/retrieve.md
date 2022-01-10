@@ -1,4 +1,4 @@
-## Retrieve Task
+# Retrieve Task
 
 Task that connects to a url and downloads the content locally.
 

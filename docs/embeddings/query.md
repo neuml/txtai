@@ -15,7 +15,7 @@ The queries above search the index for similarity matches on `feel good story` a
 
 ## SQL
 
-txtai supports more complex queries with [SQL](https://en.wikipedia.org/wiki/SQL). This is only supported if [content storage](../configuration/#content) is enabled. txtai has a translation layer that analyzes input SQL statements and combines similarity results with content stored in a relational database. 
+txtai supports more complex queries with SQL. This is only supported if [content storage](../configuration/#content) is enabled. txtai has a translation layer that analyzes input SQL statements and combines similarity results with content stored in a relational database. 
 
 SQL queries are run through `embeddings.search` like natural language queries but the examples below only show the SQL query for conciseness.
 
@@ -112,7 +112,7 @@ result = embeddings.search(query)[0]["object"]
 
 ## Combined index architecture
 
-When content storage is enabled, txtai becomes a dual storage engine. Content is stored in an underlying database (currently supports [SQLite](https://en.wikipedia.org/wiki/SQLite)) along with an Approximate Nearest Neighbor (ANN) index. These components combine to deliver similarity search alongside traditional structured search.
+When content storage is enabled, txtai becomes a dual storage engine. Content is stored in an underlying database (currently supports SQLite) along with an Approximate Nearest Neighbor (ANN) index. These components combine to deliver similarity search alongside traditional structured search.
 
 The ANN index stores ids and vectors for each input element. When a natural language query is run, the query is translated into a vector and a similarity query finds the best matching ids. When a database is added into the mix, an additional step is applied. This step takes those ids and effectively inserts them as part of the underlying database query.
 

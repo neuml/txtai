@@ -3,7 +3,7 @@
 ![workflow](../images/workflow.png#only-light)
 ![workflow](../images/workflow-dark.png#only-dark)
 
-Workflows are a simple yet powerful construct that takes a callable and returns elements. Workflows operate well with pipelines but can work with any callable object. Workflows are streaming by nature and work on data in batches, allowing large volumes of data to be processed efficiently.
+Workflows are a simple yet powerful construct that takes a callable and returns elements. Workflows operate well with pipelines but can work with any callable object. Workflows are streaming and work on data in batches, allowing large volumes of data to be processed efficiently.
 
 Given that pipelines are callable objects, workflows enable efficient processing of pipeline data. Transformers models typically work with smaller batches of data, workflows are well suited to feed a series of transformers pipelines. 
 
@@ -16,53 +16,107 @@ list(workflow([1, 2, 3]))
 
 This example simply multiplies each input value and returns a outputs via a generator. 
 
-A more complex example is shown below. This workflow will work with both documents and audio files. Documents will have text extracted and summarized. Audio files will be transcribed. Both results will be joined, translated into French and loaded into an Embeddings index.
+## Example
+
+A full-featured example is shown below. This workflow transcribes a set of audio files, translates the text into French and indexes the data.
 
 ```python
-# file:// prefixes are required to signal to the workflow this is a file and not a text string
-files = [
-    "file://txtai/article.pdf",
-    "file://txtai/US_tops_5_million.wav",
-    "file://txtai/Canadas_last_fully.wav",
-    "file://txtai/Beijing_mobilises.wav",
-    "file://txtai/The_National_Park.wav",
-    "file://txtai/Maine_man_wins_1_mil.wav",
-    "file://txtai/Make_huge_profits.wav"
-]
+from txtai.embeddings import Embeddings
+from txtai.pipeline import Transcription, Translation
+from txtai.workflow import FileTask, Task, Workflow
 
-data = [(x, element, None) for x, element in enumerate(files)]
+# Embeddings instance
+embeddings = Embeddings({
+    "path": "sentence-transformers/paraphrase-MiniLM-L3-v2",
+    "content": True
+})
 
-# Workflow that extracts text and builds a summary
-articles = Workflow([
-    FileTask(textractor),
-    Task(lambda x: summary([y[:1024] for y in x]))
-])
+# Transcription instance
+transcribe = Transcription()
 
-# Define workflow tasks. Workflows can also be tasks!
+# Translation instance
+translate = Translation()
+
 tasks = [
-    WorkflowTask(articles, r".\.pdf$"),
     FileTask(transcribe, r"\.wav$"),
-    Task(lambda x: translate(x, "fr")),
-    Task(index, unpack=False)
+    Task(lambda x: translate(x, "fr"))
 ]
 
-# Workflow that translates text to French
+# List of files to process
+data = [
+  "US_tops_5_million.wav",
+  "Canadas_last_fully.wav",
+  "Beijing_mobilises.wav",
+  "The_National_Park.wav",
+  "Maine_man_wins_1_mil.wav",
+  "Make_huge_profits.wav"
+]
+
+# Workflow that translate text to French
 workflow = Workflow(tasks)
-for _ in workflow(data):
-    pass
+
+# Index data
+embeddings.index((uid, text, None) for uid, text in enumerate(workflow(data)))
+
+# Search
+embeddings.search("wildlife", 1)
 ```
 
-Workflows can be defined using Python as described here but they can also be created as YAML configuration and run as shown below.
+## Configuration-driven example
+
+Workflows can be defined using Python as shown above but they can also run with YAML configuration.
+
+```yaml
+writable: true
+embeddings:
+  path: sentence-transformers/paraphrase-MiniLM-L3-v2
+  content: true
+
+# Transcribe audio to text
+transcription:
+
+# Translate text between languages
+translation:
+
+workflow:
+  index:
+    tasks:
+      - action: transcription
+        select: "\\.wav$"
+        task: file
+      - action: translation
+        args: ["fr"]
+      - action: index
+```
 
 ```python
 # Create and run the workflow
+from txtai.api import API
+
+# Create and run the workflow
 app = API("workflow.yml")
-data = list(app.workflow("workflow", ["input text"]))
+list(app.workflow("index", [
+  "US_tops_5_million.wav",
+  "Canadas_last_fully.wav",
+  "Beijing_mobilises.wav",
+  "The_National_Park.wav",
+  "Maine_man_wins_1_mil.wav",
+  "Make_huge_profits.wav"
+]))
+
+# Search
+app.search("wildlife")
 ```
 
-[Read more here on creating workflow YAML](../../api). 
+The code above executes a workflow defined in the file `workflow.yml`. The API is used to run the workflow locally, there is minimal overhead running workflows in this manner. It's a matter of preference.
 
-# Workflow
+See the following links for more information.
+
+- [Workflow builder application](../../examples/#applications)
+- [Workflow YAML](../../api/configuration/#workflow)
+- [Workflow examples](https://huggingface.co/spaces/NeuML/txtai/tree/main/workflows)
+
+## Methods
 
 Workflows are callable objects. Workflows take an input of iterable data elements and output iterable data elements. 
 

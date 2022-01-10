@@ -82,5 +82,9 @@ nav:
         - Storage: workflow/storage.md
         - Url: workflow/url.md
         - Workflow: workflow/workflow.md
-    - API: api.md
+    - API:
+        - api/index.md
+        - Configuration: api/configuration.md
+        - Cluster: api/cluster.md
+        - Docker: api/docker.md
     - Further Reading: articles.md

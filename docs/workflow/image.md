@@ -1,4 +1,4 @@
-## Image Task
+# Image Task
 
 Task that processes image urls.
 
