@@ -49,7 +49,7 @@ An embeddings instance can be created as follows:
 embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2"})
 ```
 
-The example above builds a transformers based embeddings instance. In this case, when loading and searching for data, a transformers model is used to vectorize data. The embeddings instance is [configuration driven](../configuration) based on what is passed in the constructor. A number of different options are supported to cover a wide variety of use cases.
+The example above builds a transformers based embeddings instance. In this case, when loading and searching for data, a transformers model is used to vectorize data. The embeddings instance is [configuration driven](configuration) based on what is passed in the constructor. A number of different options are supported to cover a wide variety of use cases.
 
 ## Index
 
@@ -79,7 +79,7 @@ Once data is indexed, it is ready for search.
 embeddings.search(query, limit)
 ```
 
-The search method takes two parameters, the query and query limit. The results format is different based on whether [content](../configuration/#content) is stored or not.
+The search method takes two parameters, the query and query limit. The results format is different based on whether [content](configuration/#content) is stored or not.
 
 - List of `(id, score)` when content is disabled
 - List of `{**query columns}` when content is enabled

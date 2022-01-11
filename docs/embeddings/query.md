@@ -49,7 +49,7 @@ The number of candidates should be larger than the desired number of results as 
 
 ### Dynamic columns
 
-Content can be indexed in multiple ways when content storage is enabled. [Remember that input documents](../overview#index) take the form of `(id, data, tags)` tuples. If data is a string, then content is primarily filtered with similar clauses. If data is a dictionary, then all fields in the dictionary are indexed and searchable.
+Content can be indexed in multiple ways when content storage is enabled. [Remember that input documents](../#index) take the form of `(id, data, tags)` tuples. If data is a string, then content is primarily filtered with similar clauses. If data is a dictionary, then all fields in the dictionary are indexed and searchable.
 
 For example:
 

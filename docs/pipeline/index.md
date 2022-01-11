@@ -9,21 +9,21 @@ process various types of data. Pipelines can wrap machine learning models as wel
 The following pipeline types are currently supported.
 
 - Audio
-    - [Transcription](../audio/transcription)
+    - [Transcription](audio/transcription)
 - Data Processing
-    - [Segmentation](../data/segmentation)
-    - [Tabular](../data/tabular)
-    - [Text extraction](../data/textractor)
+    - [Segmentation](data/segmentation)
+    - [Tabular](data/tabular)
+    - [Text extraction](data/textractor)
 - Image
-    - [Caption](../image/caption)
-    - [Objects](../image/objects)
+    - [Caption](image/caption)
+    - [Objects](image/objects)
 - Text
-    - [Extractive QA](../text/extractor)
-    - [Labeling](../text/labels)
-    - [Similarity](../text/similarity)
-    - [Summary](../text/summary)
-    - [Translation](../text/translation)
+    - [Extractive QA](text/extractor)
+    - [Labeling](text/labels)
+    - [Similarity](text/similarity)
+    - [Summary](text/summary)
+    - [Translation](text/translation)
 - Training
-    - [HF ONNX](../train/hfonnx)
-    - [ML ONNX](../train/mlonnx)
-    - [Trainer](../train/trainer)
+    - [HF ONNX](train/hfonnx)
+    - [ML ONNX](train/mlonnx)
+    - [Trainer](train/trainer)
