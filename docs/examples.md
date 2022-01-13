@@ -7,7 +7,7 @@ The examples directory has a series of notebooks and applications giving an over
 
 ## Semantic Search
 
-Build semantic/similarity/vector search applications.
+Build semantic/similarity/vector/neural search applications.
 
 | Notebook  | Description  |       |
 |:----------|:-------------|------:|
