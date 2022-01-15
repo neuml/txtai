@@ -14,13 +14,15 @@ theme:
     icon:
         repo: fontawesome/brands/github
     palette:
-    - scheme: default
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
       primary: blue
       accent: blue
       toggle:
         icon: material/toggle-switch-off-outline
         name: Switch to dark mode
-    - scheme: slate
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
       primary: light blue
       accent: light blue
       toggle:
