@@ -648,7 +648,7 @@ class Application:
             True if inputs changed, False otherwise
         """
 
-        change = False
+        change, query = False, None
         with st.expander("Data", expanded="embeddings" not in selected):
             default = self.appsetting(workflow, "data")
             default = default if default else ""
@@ -671,8 +671,8 @@ class Application:
             if selected and query and query != self.state("query"):
                 change = True
 
-            # Save query state
-            st.session_state["query"] = query
+        # Save query state
+        st.session_state["query"] = query
 
         return change or self.state("api") or self.state("download")
 
