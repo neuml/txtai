@@ -69,18 +69,19 @@ class Process:
 
     @staticmethod
     @st.cache(max_entries=1, allow_output_mutation=True, show_spinner=False)
-    def get(components):
+    def get(components, data):
         """
         Lookup or creates a new workflow process instance.
 
         Args:
             components: input components
+            data: initial data, only passed when indexing
 
         Returns:
             Process
         """
 
-        process = Process()
+        process = Process(data)
 
         # Build workflow
         with st.spinner("Building workflow...."):
@@ -88,9 +89,12 @@ class Process:
 
         return process
 
-    def __init__(self):
+    def __init__(self, data):
         """
         Creates a new Process.
+
+        Args:
+            data: initial data, only passed when indexing
         """
 
         # Component options
@@ -105,7 +109,7 @@ class Process:
         # Embeddings index params
         self.embeddings = None
         self.documents = None
-        self.data = None
+        self.data = data
 
     def build(self, components):
         """
@@ -692,22 +696,26 @@ class Application:
 
         return [data]
 
-    def process(self, components):
+    def process(self, components, index):
         """
         Processes the current application action.
 
         Args:
             components: workflow components
+            index: True if this is an indexing workflow
         """
 
+        # Get data
+        data = self.data()
+
         # Get workflow process
-        process = Process.get(components)
+        process = Process.get(components, data if index else None)
 
         # Run workflow process
-        process.run(self.data())
+        process.run(data)
 
         # Run search
-        if process.embeddings:
+        if index:
             process.search(self.state("query"))
 
     def run(self):
@@ -755,7 +763,7 @@ class Application:
         # Only execute if build button clicked, new workflow uploaded or inputs changed
         if build or upload or inputs:
             # Process current action
-            self.process(components)
+            self.process(components, "embeddings" in selected)
 
             with st.sidebar:
                 # Generate API configuration
