@@ -462,6 +462,7 @@ class Application:
         Args:
             component: component type
             workflow: existing workflow, can be None
+            index: task index
 
         Returns:
             dict with component settings
