@@ -112,9 +112,9 @@ The code above executes a workflow defined in the file `workflow.yml`. The API i
 
 See the following links for more information.
 
-- [Workflow builder application](../examples/#applications)
-- [Workflow YAML](../api/configuration/#workflow)
-- [Workflow examples](https://huggingface.co/spaces/NeuML/txtai/tree/main/workflows)
+- [Workflow Demo](https://huggingface.co/spaces/NeuML/txtai)
+- [Workflow YAML Examples](https://huggingface.co/spaces/NeuML/txtai/tree/main/workflows)
+- [Workflow YAML Guide](../api/configuration/#workflow)
 
 ## Methods
 
