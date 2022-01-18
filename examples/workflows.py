@@ -455,7 +455,7 @@ class Application:
 
         return [x.strip() for x in text.split(",")]
 
-    def options(self, component, workflow):
+    def options(self, component, workflow, index):
         """
         Extracts component settings into a component configuration dict.
 
@@ -487,7 +487,7 @@ class Application:
                 config = workflow.get(component)
 
         if component == "embeddings":
-            st.markdown("**Embeddings Index**  \n*Index workflow output*")
+            st.markdown(f"** {index + 1}.) Embeddings Index**  \n*Index workflow output*")
             options["index"] = self.text("Embeddings storage path", component, config, "index")
             options["path"] = self.text("Embeddings model path", component, config, "path", "sentence-transformers/nli-mpnet-base-v2")
             options["upsert"] = self.boolean("Upsert", component, config, "upsert")
@@ -495,9 +495,9 @@ class Application:
 
         elif component in ("segmentation", "textractor"):
             if component == "segmentation":
-                st.markdown("**Segment**  \n*Split text into semantic units*")
+                st.markdown(f"** {index + 1}.) Segment**  \n*Split text into semantic units*")
             else:
-                st.markdown("**Textract**  \n*Extract text from documents*")
+                st.markdown(f"** {index + 1}.) Textract**  \n*Extract text from documents*")
 
             options["sentences"] = self.boolean("Split sentences", component, config, "sentences")
             options["lines"] = self.boolean("Split lines", component, config, "lines")
@@ -506,7 +506,7 @@ class Application:
             options["minlength"] = self.number("Min section length", component, config, "minlength")
 
         elif component == "service":
-            st.markdown("**Service**  \n*Extract data from an API*")
+            st.markdown(f"** {index + 1}.) Service**  \n*Extract data from an API*")
             options["url"] = self.text("URL", component, config, "url")
             options["method"] = self.select("Method", component, config, "method", ["get", "post"], 0)
             options["params"] = self.text("URL parameters", component, config, "params")
@@ -519,13 +519,13 @@ class Application:
                 options["extract"] = self.split(options["extract"])
 
         elif component == "summary":
-            st.markdown("**Summary**  \n*Abstractive text summarization*")
+            st.markdown(f"** {index + 1}.) Summary**  \n*Abstractive text summarization*")
             options["path"] = self.text("Model", component, config, "path", "sshleifer/distilbart-cnn-12-6")
             options["minlength"] = self.number("Min length", component, config, "minlength")
             options["maxlength"] = self.number("Max length", component, config, "maxlength")
 
         elif component == "tabular":
-            st.markdown("**Tabular**  \n*Split tabular data into rows and columns*")
+            st.markdown(f"** {index + 1}.) Tabular**  \n*Split tabular data into rows and columns*")
             options["idcolumn"] = self.text("Id columns", component, config, "idcolumn")
             options["textcolumns"] = self.text("Text columns", component, config, "textcolumns")
             options["content"] = self.text("Content", component, config, "content")
@@ -539,11 +539,11 @@ class Application:
                     options["content"] = options["content"][0]
 
         elif component == "transcription":
-            st.markdown("**Transcribe**  \n*Transcribe audio to text*")
+            st.markdown(f"** {index + 1}.) Transcribe**  \n*Transcribe audio to text*")
             options["path"] = self.text("Model", component, config, "path", "facebook/wav2vec2-base-960h")
 
         elif component == "translation":
-            st.markdown("**Translate**  \n*Machine translation*")
+            st.markdown(f"** {index + 1}.) Translate**  \n*Machine translation*")
             options["target"] = self.text("Target language code", component, config, "args", "en")
 
         return options
@@ -751,7 +751,7 @@ class Application:
 
                 with st.form("workflow"):
                     # Get selected options
-                    components = [self.options(component, workflow) for component in selected]
+                    components = [self.options(component, workflow, x) for x, component in enumerate(selected)]
                     st.markdown("---")
 
                     # Build or re-build workflow when build button clicked or new workflow loaded
