@@ -39,7 +39,7 @@ Determines if the input embeddings index is writable (true) or read-only (false)
 
 Pipelines are loaded as top level configuration parameters. Pipeline names are automatically detected in the YAML configuration and created upon startup. All [pipelines](../../pipeline) are supported.
 
-The following example defines a series of pipelines.
+The following example defines a series of pipelines. Note that entries below are the lower-case names of the pipeline class.
 
 ```yaml
 caption:

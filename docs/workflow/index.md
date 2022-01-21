@@ -16,9 +16,11 @@ list(workflow([1, 2, 3]))
 
 This example simply multiplies each input value and returns a outputs via a generator. 
 
+Workflows are run with Python or configuration. Examples of both methods are shown below.
+
 ## Example
 
-A full-featured example is shown below. This workflow transcribes a set of audio files, translates the text into French and indexes the data.
+A full-featured example is shown below in Python. This workflow transcribes a set of audio files, translates the text into French and indexes the data.
 
 ```python
 from txtai.embeddings import Embeddings
@@ -122,3 +124,7 @@ Workflows are callable objects. Workflows take an input of iterable data element
 
 ### ::: txtai.workflow.Workflow.__init__
 ### ::: txtai.workflow.Workflow.__call__
+
+## More examples
+
+See [this link](../examples/#workflows) for a full list of workflow examples.

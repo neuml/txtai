@@ -1,12 +1,63 @@
 # Segmentation
 
-A Segmentation pipeline segments text into semantic units.
+![pipeline](../../images/pipeline.png#only-light)
+![pipeline](../../images/pipeline-dark.png#only-dark)
 
-Segmentation parameters are set as constructor arguments. Examples below.
+The Segmentation pipeline segments text into semantic units.
+
+## Example
+
+The following shows a simple example using this pipeline.
 
 ```python
-Segmentation()
+from txtai.pipeline import Segmentation
+
+# Create and run pipeline
+segment = Segmentation(sentences=True)
+segment("This is a test. And another test.")
 ```
 
-::: txtai.pipeline.Segmentation.__init__
-::: txtai.pipeline.Segmentation.__call__
+## Configuration-driven example
+
+Pipelines are run with Python or configuration. Pipelines can be instantiated in [configuration](../../../api/configuration/#pipeline) using the lower case name of the pipeline. Configuration-driven pipelines are run with [workflows](../../../workflow/#configuration-driven-example) or the [API](../../../api).
+
+### config.yml
+```yaml
+# Create pipeline using lower case class name
+segmentation:
+  sentences: true
+
+# Run pipeline with workflow
+workflow:
+  segment:
+    tasks:
+      - action: segmentation
+```
+
+### Run with Workflows
+
+```python
+from txtai.api import API
+
+# Create and run pipeline with workflow
+app = API("config.yml")
+list(app.workflow("segment", ["This is a test. And another test."]))
+```
+
+### Run with API
+
+```bash
+CONFIG=config.yml uvicorn "txtai.api:app" &
+
+curl \
+  -X POST "http://localhost:8000/workflow" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"segment", "elements":["This is a test. And another test."]}'
+```
+
+## Methods
+
+Python documentation for the pipeline.
+
+### ::: txtai.pipeline.Segmentation.__init__
+### ::: txtai.pipeline.Segmentation.__call__

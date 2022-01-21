@@ -3,10 +3,13 @@
 ![pipeline](../images/pipeline.png#only-light)
 ![pipeline](../images/pipeline-dark.png#only-dark)
 
-txtai provides a generic pipeline processing framework with the only interface requirement being a `__call__` method. Pipelines are flexible and can
-process various types of data. Pipelines can wrap machine learning models as well as other processes.
+txtai provides a generic pipeline processing framework with the only interface requirement being a `__call__` method. Pipelines are flexible and process various types of data. Pipelines can wrap machine learning models as well as other processes.
 
-The following pipeline types are currently supported.
+Pipelines are run with Python or configuration. Pipelines can be instantiated in [configuration](../api/configuration/#pipeline) using the lower case name of the pipeline. Configuration-driven pipelines are run with [workflows](../workflow/#configuration-driven-example) or the [API](../api).
+
+## List of pipelines
+
+The following is a list of the default pipelines available in txtai.
 
 - Audio
     - [Transcription](audio/transcription)

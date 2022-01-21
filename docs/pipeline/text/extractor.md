@@ -1,12 +1,71 @@
 # Extractor
 
-An Extractor pipeline is a combination of an embeddings query and an Extractive QA model. Filtering the context for a QA model helps maximize performance of the model.
+![pipeline](../../images/pipeline.png#only-light)
+![pipeline](../../images/pipeline-dark.png#only-dark)
 
-Extractor parameters are set as constructor arguments. Examples below.
+The Extractor pipeline is a combination of an embeddings query and an Extractive QA model. Filtering the context for a QA model helps maximize performance of the model.
+
+## Example
+
+The following shows a simple example using this pipeline.
 
 ```python
-Extractor(embeddings, path, quantize, gpu, model, tokenizer)
+from txtai.embeddings import Embeddings
+from txtai.pipeline import Extractor
+
+# Embeddings model ranks candidates before passing to QA pipeline
+embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2"})
+
+# Create and run pipeline
+extractor = Extractor(embeddings, "distilbert-base-cased-distilled-squad")
+extractor([["What was won"] * 3 + [False]],
+          ["Maine man wins $1M from $25 lottery ticket"])
 ```
 
-::: txtai.pipeline.Extractor.__init__
-::: txtai.pipeline.Extractor.__call__
+See the links below for more detailed examples.
+
+| Notebook  | Description  |       |
+|:----------|:-------------|------:|
+| [Extractive QA with txtai](https://github.com/neuml/txtai/blob/master/examples/05_Extractive_QA_with_txtai.ipynb) | Introduction to extractive question-answering with txtai | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/05_Extractive_QA_with_txtai.ipynb) |
+| [Extractive QA with Elasticsearch](https://github.com/neuml/txtai/blob/master/examples/06_Extractive_QA_with_Elasticsearch.ipynb) | Run extractive question-answering queries with Elasticsearch | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/06_Extractive_QA_with_Elasticsearch.ipynb) |
+| [Extractive QA to build structured data](https://github.com/neuml/txtai/blob/master/examples/20_Extractive_QA_to_build_structured_data.ipynb) | Build structured datasets using extractive question-answering | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/20_Extractive_QA_to_build_structured_data.ipynb) |
+
+## Configuration-driven example
+
+Pipelines are run with Python or configuration. Pipelines can be instantiated in [configuration](../../../api/configuration/#pipeline) using the lower case name of the pipeline. Configuration-driven pipelines are run with [workflows](../../../workflow/#configuration-driven-example) or the [API](../../../api).
+
+### config.yml
+```yaml
+# Create pipeline using lower case class name
+extractor:
+```
+
+### Run with Workflows
+
+```python
+from txtai.api import API
+
+# Create and run pipeline with workflow
+app = API("config.yml")
+list(app.extract([{"name": "What was won", "query": "What was won",
+                   "question", "What was won", "snippet": False}], 
+                 ["Maine man wins $1M from $25 lottery ticket"]))
+```
+
+### Run with API
+
+```bash
+CONFIG=config.yml uvicorn "txtai.api:app" &
+
+curl \
+  -X POST "http://localhost:8000/extract" \
+  -H "Content-Type: application/json" \
+  -d '{"queue": [{"name":"What was won", "query": "What was won", "question": "What was won", "snippet": false}], "texts": ["Maine man wins $1M from $25 lottery ticket"]}'
+```
+
+## Methods
+
+Python documentation for the pipeline.
+
+### ::: txtai.pipeline.Extractor.__init__
+### ::: txtai.pipeline.Extractor.__call__

@@ -1,9 +1,14 @@
 # HFOnnx
 
+![pipeline](../../images/pipeline.png#only-light)
+![pipeline](../../images/pipeline-dark.png#only-dark)
+
 Exports a Hugging Face Transformer model to ONNX. Currently, this works best with classification/pooling/qa models. Work is ongoing for sequence to
 sequence models (summarization, transcription, translation).
 
-Example on how to use the pipeline below.
+## Example
+
+The following shows a simple example using this pipeline.
 
 ```python
 from txtai.pipeline import HFOnnx, Labels
@@ -20,5 +25,14 @@ labels = Labels((model, path), dynamic=False)
 labels("I am happy")
 ```
 
-::: txtai.pipeline.HFOnnx.__init__
-::: txtai.pipeline.HFOnnx.__call__
+See the link below for a more detailed example.
+
+| Notebook  | Description  |       |
+|:----------|:-------------|------:|
+| [Export and run models with ONNX](https://github.com/neuml/txtai/blob/master/examples/18_Export_and_run_models_with_ONNX.ipynb) | Export models with ONNX, run natively in JavaScript, Java and Rust | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/18_Export_and_run_models_with_ONNX.ipynb) |
+
+## Methods 
+
+Python documentation for the pipeline.
+
+### ::: txtai.pipeline.HFOnnx.__call__

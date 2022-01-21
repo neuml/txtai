@@ -1,6 +1,9 @@
 # Task
 
-Workflows execute tasks. Tasks are callable objects with a number of parameters to control the processing of data at a given step. 
+![task](../images/task.png#only-light)
+![task](../images/task-dark.png#only-dark)
+
+Workflows execute tasks. Tasks are callable objects with a number of parameters to control the processing of data at a given step. While similar to pipelines, tasks encapsulate processing and don't perform signficant transformations on their own. Tasks perform logic to prepare content for the underlying action(s).
 
 A simple task is shown below.
 
@@ -26,6 +29,14 @@ task(["Very long text here"])
 
 workflow = Workflow([task])
 list(workflow(["Very long text here"]))
+```
+
+Tasks can also be created with configuration as part of a workflow.
+
+```yaml
+workflow:
+  tasks:
+    - action: summary 
 ```
 
 ::: txtai.workflow.Task.__init__

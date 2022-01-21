@@ -1,14 +1,62 @@
 # Objects
 
-A objects pipeline reads a list of images and returns a list of detected objects.
+![pipeline](../../images/pipeline.png#only-light)
+![pipeline](../../images/pipeline-dark.png#only-dark)
+
+The Objects pipeline reads a list of images and returns a list of detected objects.
+
+## Example
+
+The following shows a simple example using this pipeline.
 
 ```python
-# Default configuration
-Objects()
+from txtai.pipeline import Objects
 
-# Detect objects with an image classificaton model
-Objects(classification=True, threshold=0.95)
+# Create and run pipeline
+objects = Objects()
+objects("path to image file")
 ```
 
-::: txtai.pipeline.Objects.__init__
-::: txtai.pipeline.Objects.__call__
+## Configuration-driven example
+
+Pipelines are run with Python or configuration. Pipelines can be instantiated in [configuration](../../../api/configuration/#pipeline) using the lower case name of the pipeline. Configuration-driven pipelines are run with [workflows](../../../workflow/#configuration-driven-example) or the [API](../../../api).
+
+### config.yml
+```yaml
+# Create pipeline using lower case class name
+objects:
+
+# Run pipeline with workflow
+workflow:
+  objects:
+    tasks:
+      - action: objects
+```
+
+### Run with Workflows
+
+```python
+from txtai.api import API
+
+# Create and run pipeline with workflow
+app = API("config.yml")
+list(app.workflow("objects", ["path to image file"]))
+```
+
+### Run with API
+
+```bash
+CONFIG=config.yml uvicorn "txtai.api:app" &
+
+curl \
+  -X POST "http://localhost:8000/workflow" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"objects", "elements":["path to image file"]}'
+```
+
+## Methods
+
+Python documentation for the pipeline.
+
+### ::: txtai.pipeline.Objects.__init__
+### ::: txtai.pipeline.Objects.__call__

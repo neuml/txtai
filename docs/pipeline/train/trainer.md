@@ -1,8 +1,13 @@
 # HFTrainer
 
+![pipeline](../../images/pipeline.png#only-light)
+![pipeline](../../images/pipeline-dark.png#only-dark)
+
 Trains a new Hugging Face Transformer model using the Trainer framework.
 
-Examples on how to use the trainer below.
+## Example
+
+The following shows a simple example using this pipeline.
 
 ```python
 import pandas as pd
@@ -32,5 +37,16 @@ model, tokenizer = trainer("bert-base-uncased", dt,
 
 All [TrainingArguments](https://huggingface.co/transformers/main_classes/trainer.html#transformers.TrainingArguments) are supported as function arguments to the trainer call.
 
-::: txtai.pipeline.HFTrainer.__init__
-::: txtai.pipeline.HFTrainer.__call__
+See the links below for more detailed examples.
+
+| Notebook  | Description  |       |
+|:----------|:-------------|------:|
+| [Train a text labeler](https://github.com/neuml/txtai/blob/master/examples/16_Train_a_text_labeler.ipynb) | Build text sequence classification models | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/16_Train_a_text_labeler.ipynb) |
+| [Train without labels](https://github.com/neuml/txtai/blob/master/examples/17_Train_without_labels.ipynb) | Use zero-shot classifiers to train new models | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/17_Train_without_labels.ipynb) |
+| [Train a QA model](https://github.com/neuml/txtai/blob/master/examples/19_Train_a_QA_model.ipynb) | Build and fine-tune question-answering models | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/19_Train_a_QA_model.ipynb) |
+
+## Methods 
+
+Python documentation for the pipeline.
+
+### ::: txtai.pipeline.HFTrainer.__call__
