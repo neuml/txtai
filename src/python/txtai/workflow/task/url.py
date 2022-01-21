@@ -16,5 +16,5 @@ class UrlTask(Task):
     PREFIX = r"\w+:\/\/"
 
     def accept(self, element):
-        # Only accept file URLs
+        # Only accept elements that start with a url prefix
         return super().accept(element) and re.match(UrlTask.PREFIX, element.lower())
