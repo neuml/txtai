@@ -11,6 +11,7 @@ theme:
     name: material
     logo: images/logo.png
     favicon: images/logo.png
+    custom_dir: docs/overrides
     icon:
         repo: fontawesome/brands/github
     palette:
