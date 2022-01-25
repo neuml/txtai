@@ -4,6 +4,7 @@ Router imports
 
 from . import caption
 from . import embeddings
+from . import entity
 from . import extractor
 from . import labels
 from . import objects

@@ -2,6 +2,7 @@
 Text imports
 """
 
+from .entity import Entity
 from .extractor import Extractor
 from .labels import Labels
 from .questions import Questions

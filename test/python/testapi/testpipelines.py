@@ -21,6 +21,10 @@ PIPELINES = """
 # Image captions
 caption:
 
+# Entity extraction
+entity:
+    path: dslim/bert-base-NER
+
 # Label settings
 labels:
     path: prajjwal1/bert-medium-mnli
@@ -120,6 +124,22 @@ class TestPipelines(unittest.TestCase):
 
         captions = self.client.post("batchcaption", json=[path, path]).json()
         self.assertEqual(captions, ["a book shelf filled with many books"] * 2)
+
+    def testEntity(self):
+        """
+        Test entity extraction via API
+        """
+
+        entities = self.client.get(f"entity?text={self.data[1]}").json()
+        self.assertEqual([e[0] for e in entities], ["Canada", "Manhattan"])
+
+    def testEntityBatch(self):
+        """
+        Test batch entity via API
+        """
+
+        entities = self.client.post("batchentity", json=[self.data[1]]).json()
+        self.assertEqual([e[0] for e in entities[0]], ["Canada", "Manhattan"])
 
     def testEmpty(self):
         """
