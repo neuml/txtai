@@ -30,6 +30,21 @@ class TestEntity(unittest.TestCase):
         Test entity with flattened output
         """
 
-        # Run entity extraction
+        # Test flatten
         entities = self.entity("Canada's last fully intact ice shelf has suddenly collapsed, forming a Manhattan-sized iceberg", flatten=True)
         self.assertEqual(entities, ["Canada", "Manhattan"])
+
+        # Test flatten with join
+        entities = self.entity(
+            "Canada's last fully intact ice shelf has suddenly collapsed, forming a Manhattan-sized iceberg", flatten=True, join=True
+        )
+        self.assertEqual(entities, "Canada Manhattan")
+
+    def testEntityTypes(self):
+        """
+        Test entity type filtering
+        """
+
+        # Run entity extraction
+        entities = self.entity("Canada's last fully intact ice shelf has suddenly collapsed, forming a Manhattan-sized iceberg", labels=["PER"])
+        self.assertFalse(entities)

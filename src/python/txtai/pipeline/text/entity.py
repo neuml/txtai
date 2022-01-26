@@ -13,14 +13,16 @@ class Entity(HFPipeline):
     def __init__(self, path=None, quantize=False, gpu=True, model=None):
         super().__init__("token-classification", path, quantize, gpu, model)
 
-    def __call__(self, text, aggregate="simple", flatten=None, workers=0):
+    def __call__(self, text, labels=None, aggregate="simple", flatten=None, join=False, workers=0):
         """
         Applies a token classifier to text.
 
         Args:
             text: text|list
+            labels: list of entity type labels to accept, defaults to None which accepts all
             aggregate: method to combine multi token entities - options are "simple" (default), "first", "average" or "max"
             flatten: flatten output to a list of labels if present. Accepts a boolean or float value to only keep scores greater than that number.
+            join: joins flattened output into a string if True, ignored if flatten not set
             workers: number of concurrent workers to use for processing data, defaults to None
 
         Returns:
@@ -41,8 +43,23 @@ class Entity(HFPipeline):
         outputs = []
         for result in results:
             if flatten:
-                outputs.append([r["word"] for r in result if r["score"] >= threshold])
+                output = [r["word"] for r in result if self.accept(r["entity_group"], labels) and r["score"] >= threshold]
+                outputs.append(" ".join(output) if join else output)
             else:
-                outputs.append([(r["word"], r["entity_group"], float(r["score"])) for r in result])
+                outputs.append([(r["word"], r["entity_group"], float(r["score"])) for r in result if self.accept(r["entity_group"], labels)])
 
         return outputs[0] if isinstance(text, str) else outputs
+
+    def accept(self, etype, labels):
+        """
+        Determines if entity type is in valid entity type.
+
+        Args:
+            etype: entity type
+            labels: list of entities to accept
+
+        Returns:
+            if etype is accepted
+        """
+
+        return not labels or etype in labels
