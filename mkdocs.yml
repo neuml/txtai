@@ -66,6 +66,7 @@ nav:
             - Caption: pipeline/image/caption.md
             - Objects: pipeline/image/objects.md
         - Text:
+            - Entity: pipeline/text/entity.md
             - Extractor: pipeline/text/extractor.md
             - Labels: pipeline/text/labels.md
             - Similarity: pipeline/text/similarity.md

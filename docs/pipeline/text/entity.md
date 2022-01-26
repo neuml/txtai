@@ -1,27 +1,28 @@
-# Caption
+# Entity
 
 ![pipeline](../../images/pipeline.png#only-light)
 ![pipeline](../../images/pipeline-dark.png#only-dark)
 
-The caption pipeline reads a list of images and returns a list of captions for those images.
+The entity extraction pipeline applies a token classifier to text and extracts known entity/label combinations.
 
 ## Example
 
 The following shows a simple example using this pipeline.
 
 ```python
-from txtai.pipeline import Caption
+from txtai.pipeline import Entity
 
 # Create and run pipeline
-caption = Caption()
-caption("path to image file")
+entity = Entity()
+entity("Canada's last fully intact ice shelf has suddenly collapsed, " \
+       "forming a Manhattan-sized iceberg")
 ```
 
 See the link below for a more detailed example.
 
 | Notebook  | Description  |       |
 |:----------|:-------------|------:|
-| [Generate image captions and detect objects](https://github.com/neuml/txtai/blob/master/examples/25_Generate_image_captions_and_detect_objects.ipynb) | Captions and object detection for images | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/25_Generate_image_captions_and_detect_objects.ipynb) |
+| [Entity extraction workflows](https://github.com/neuml/txtai/blob/master/examples/26_Entity_extraction_workflows.ipynb) | Identify entity/label combinations | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/26_Entity_extraction_workflows.ipynb) |
 
 ## Configuration-driven example
 
@@ -30,13 +31,13 @@ Pipelines are run with Python or configuration. Pipelines can be instantiated in
 ### config.yml
 ```yaml
 # Create pipeline using lower case class name
-caption:
+entity:
 
 # Run pipeline with workflow
 workflow:
-  caption:
+  entity:
     tasks:
-      - action: caption
+      - action: entity
 ```
 
 ### Run with Workflows
@@ -46,7 +47,7 @@ from txtai.api import API
 
 # Create and run pipeline with workflow
 app = API("config.yml")
-list(app.workflow("caption", ["path to image file"]))
+list(app.workflow("entity", ["Canada's last fully intact ice shelf has suddenly collapsed, forming a Manhattan-sized iceberg"]))
 ```
 
 ### Run with API
@@ -57,12 +58,12 @@ CONFIG=config.yml uvicorn "txtai.api:app" &
 curl \
   -X POST "http://localhost:8000/workflow" \
   -H "Content-Type: application/json" \
-  -d '{"name":"caption", "elements":["path to image file"]}'
+  -d '{"name":"entity", "elements": ["Canadas last fully intact ice shelf has suddenly collapsed, forming a Manhattan-sized iceberg"]}'
 ```
 
 ## Methods
 
 Python documentation for the pipeline.
 
-### ::: txtai.pipeline.Caption.__init__
-### ::: txtai.pipeline.Caption.__call__
+### ::: txtai.pipeline.Entity.__init__
+### ::: txtai.pipeline.Entity.__call__
