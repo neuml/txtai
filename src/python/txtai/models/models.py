@@ -32,7 +32,12 @@ class Models:
         if hasattr(config, "config"):
             config = config.config
 
-        if hasattr(config, "max_position_embeddings") and tokenizer and tokenizer.model_max_length == int(1e30):
+        if (
+            hasattr(config, "max_position_embeddings")
+            and tokenizer
+            and hasattr(tokenizer, "model_max_length")
+            and tokenizer.model_max_length == int(1e30)
+        ):
             tokenizer.model_max_length = config.max_position_embeddings
 
     @staticmethod
