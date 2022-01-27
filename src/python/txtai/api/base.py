@@ -4,6 +4,7 @@ API module
 
 import os
 
+from multiprocessing.pool import ThreadPool
 from threading import Lock
 
 import yaml
@@ -13,6 +14,7 @@ from .cluster import Cluster
 from ..embeddings import Documents, Embeddings
 from ..pipeline import PipelineFactory
 from ..workflow import WorkflowFactory
+
 
 # pylint: disable=R0904
 class API:
@@ -59,6 +61,9 @@ class API:
         # Write lock - allows only a single thread to update embeddings
         self.lock = Lock()
 
+        # ThreadPool - runs scheduled workflows
+        self.pool = ThreadPool()
+
         # Local embeddings index
         if self.config.get("path") and Embeddings().exists(self.config["path"]):
             # Load existing index if available
@@ -77,6 +82,14 @@ class API:
 
         # Create workflows
         self.flows()
+
+    def __del__(self):
+        """
+        Close threadpool when this object is garbage collected.
+        """
+
+        if self.pool:
+            self.pool.close()
 
     def pipes(self):
         """
@@ -118,11 +131,22 @@ class API:
         # Create workflows
         if "workflow" in self.config:
             for workflow, config in self.config["workflow"].items():
+                # Create copy of config
+                config = config.copy()
+
                 # Resolve callable functions
                 for task in config["tasks"]:
                     self.resolve(task)
 
-                self.workflows[workflow] = WorkflowFactory.create(config)
+                # Get scheduler config
+                schedule = config.pop("schedule", None)
+
+                # Create workflow
+                self.workflows[workflow] = WorkflowFactory.create(workflow, config)
+
+                # Schedule job if necessary
+                if schedule:
+                    self.pool.apply_async(self.workflows[workflow].schedule, kwds=schedule)
 
     def resolve(self, task):
         """
@@ -519,3 +543,13 @@ class API:
 
         # Execute workflow
         return self.workflows[name](elements)
+
+    def wait(self):
+        """
+        Closes threadpool and waits for completion.
+        """
+
+        if self.pool:
+            self.pool.close()
+            self.pool.join()
+            self.pool = None

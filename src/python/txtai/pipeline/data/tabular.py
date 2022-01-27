@@ -104,6 +104,7 @@ class Tabular(Pipeline):
         # Transform into (id, text, tag) tuples
         for index, row in df.iterrows():
             uid = row[self.idcolumn] if self.idcolumn else index
+            uid = uid if uid is not None else index
             text = ". ".join([str(row[column]) for column in columns])
 
             rows.append((uid, text, None))

@@ -9,7 +9,6 @@ from .sql import SQL, SQLException, Token
 
 # Logging configuration
 logger = logging.getLogger(__name__)
-logging.basicConfig(format="%(asctime)s %(levelname)s [%(name)s:%(lineno)s] %(message)s")
 
 
 class Database:

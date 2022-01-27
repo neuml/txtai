@@ -237,6 +237,35 @@ class TestWorkflow(unittest.TestCase):
         results = list(workflow(["file://" + Utils.PATH + "/books.jpg"]))
         self.assertTrue(results[0].endswith("books.jpg"))
 
+    def testScheduleWorkflow(self):
+        """
+        Tests workflow schedules
+        """
+
+        # Test workflow schedule with Python
+        workflow = Workflow([Task()])
+        workflow.schedule("* * * * * *", ["test"], 1)
+        self.assertEqual(len(workflow.tasks), 1)
+
+        # Test workflow schedule with YAML
+        workflow = """
+        segmentation:
+            sentences: true
+        workflow:
+            segment:
+                schedule:
+                    cron: '* * * * * *'
+                    elements:
+                        - test
+                    iterations: 1
+                tasks:
+                    - action: segmentation
+        """
+
+        app = API(workflow)
+        app.wait()
+        self.assertIsNone(app.pool)
+
     def testStorageWorkflow(self):
         """
         Tests a storage task

@@ -23,6 +23,7 @@ class TestOptional(unittest.TestCase):
 
         modules = [
             "annoy",
+            "croniter",
             "fastapi",
             "fasttext",
             "hnswlib",
@@ -159,7 +160,7 @@ class TestOptional(unittest.TestCase):
         Test missing workflow dependencies
         """
 
-        from txtai.workflow import ImageTask, ServiceTask, StorageTask
+        from txtai.workflow import ImageTask, ServiceTask, StorageTask, Workflow
 
         with self.assertRaises(ImportError):
             ImageTask()
@@ -169,3 +170,6 @@ class TestOptional(unittest.TestCase):
 
         with self.assertRaises(ImportError):
             StorageTask()
+
+        with self.assertRaises(ImportError):
+            Workflow([], workers=1).schedule(None, [])

@@ -2,7 +2,24 @@
 Workflow module
 """
 
+import logging
+import time
+
+from datetime import datetime
+
+# Conditional import
+try:
+    from croniter import croniter
+
+    CRONITER = True
+except ImportError:
+    CRONITER = False
+
 from .execute import Execute
+
+# Logging configuration
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 class Workflow:
@@ -10,7 +27,7 @@ class Workflow:
     Base class for all workflows.
     """
 
-    def __init__(self, tasks, batch=100, workers=None):
+    def __init__(self, tasks, batch=100, workers=None, name=None):
         """
         Creates a new workflow. Workflows are lists of tasks to execute.
 
@@ -18,11 +35,13 @@ class Workflow:
             tasks: list of workflow tasks
             batch: how many items to process at a time, defaults to 100
             workers: number of concurrent workers
+            name: workflow name
         """
 
         self.tasks = tasks
         self.batch = batch
         self.workers = workers
+        self.name = name
 
         # Set default number of executor workers to max number of actions in a task
         self.workers = max(len(task.action) for task in self.tasks) if not self.workers else self.workers
@@ -49,6 +68,39 @@ class Workflow:
 
             # Run task finalizers
             self.finalize()
+
+    def schedule(self, cron, elements, iterations=None):
+        """
+        Schedules a workflow using a cron expression and elements.
+
+        Args:
+            cron: cron expression
+            elements: iterable data elements passed to workflow each call
+            iterations: number of times to run workflow, defaults to run indefinitely
+        """
+
+        # Check that croniter is installed
+        if not CRONITER:
+            raise ImportError('Workflow scheduling is not available - install "workflow" extra to enable')
+
+        logger.info("'%s' scheduler started with schedule %s", self.name, cron)
+
+        maxiterations = iterations
+        while iterations is None or iterations > 0:
+            # Schedule using localtime
+            schedule = croniter(cron, datetime.now().astimezone()).get_next(datetime)
+            logger.info("'%s' next run scheduled for %s", self.name, schedule.isoformat())
+            time.sleep(schedule.timestamp() - time.time())
+
+            # Run workflow
+            for _ in self(elements):
+                pass
+
+            # Decrement iterations remaining, if necessary
+            if iterations is not None:
+                iterations -= 1
+
+        logger.info("'%s' max iterations (%d) reached", self.name, maxiterations)
 
     def initialize(self):
         """

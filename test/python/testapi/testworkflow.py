@@ -49,6 +49,14 @@ workflow:
               args:
                 - [[positive, negative], false, True]
                 - null
+    schedule:
+        schedule:
+            cron: '* * * * * *'
+            elements:
+                - This is a test sentence. And another sentence to split.
+            iterations: 1
+        tasks:
+            - action: segmentation
     segment:
         tasks:
             - action: segmentation

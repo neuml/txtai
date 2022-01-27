@@ -12,11 +12,12 @@ class WorkflowFactory:
     """
 
     @staticmethod
-    def create(config):
+    def create(name, config):
         """
         Creates a new Workflow instance.
 
         Args:
+            name: Workflow name
             config: Workflow configuration
 
         Returns:
@@ -32,4 +33,4 @@ class WorkflowFactory:
         config["tasks"] = tasks
 
         # Create workflow
-        return Workflow(**config)
+        return Workflow(name=name, **config)
