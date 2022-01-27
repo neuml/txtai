@@ -62,7 +62,7 @@ class API:
         self.lock = Lock()
 
         # ThreadPool - runs scheduled workflows
-        self.pool = ThreadPool()
+        self.pool = None
 
         # Local embeddings index
         if self.config.get("path") and Embeddings().exists(self.config["path"]):
@@ -146,6 +146,10 @@ class API:
 
                 # Schedule job if necessary
                 if schedule:
+                    # Create pool if necessary
+                    if not self.pool:
+                        self.pool = ThreadPool()
+
                     self.pool.apply_async(self.workflows[workflow].schedule, kwds=schedule)
 
     def resolve(self, task):
