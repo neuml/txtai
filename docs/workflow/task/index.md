@@ -1,7 +1,7 @@
-# Task
+# Tasks
 
-![task](../images/task.png#only-light)
-![task](../images/task-dark.png#only-dark)
+![task](../../images/task.png#only-light)
+![task](../../images/task-dark.png#only-dark)
 
 Workflows execute tasks. Tasks are callable objects with a number of parameters to control the processing of data at a given step. While similar to pipelines, tasks encapsulate processing and don't perform signficant transformations on their own. Tasks perform logic to prepare content for the underlying action(s).
 

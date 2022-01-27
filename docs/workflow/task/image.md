@@ -1,7 +1,7 @@
 # Image Task
 
-![task](../images/task.png#only-light)
-![task](../images/task-dark.png#only-dark)
+![task](../../images/task.png#only-light)
+![task](../../images/task-dark.png#only-dark)
 
 The Image Task reads file paths, check the file is an image and opens it as an Image object. Note that this task _only_ works with local files.
 

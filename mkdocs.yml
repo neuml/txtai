@@ -78,14 +78,16 @@ nav:
             - Trainer: pipeline/train/trainer.md
     - Workflow:
         - workflow/index.md
-        - Task: workflow/task.md
-        - File: workflow/file.md
-        - Image: workflow/image.md
-        - Retrieve: workflow/retrieve.md
-        - Service: workflow/service.md
-        - Storage: workflow/storage.md
-        - Url: workflow/url.md
-        - Workflow: workflow/workflow.md
+        - Schedule: workflow/schedule.md
+        - Tasks:
+            - workflow/task/index.md
+            - File: workflow/task/file.md
+            - Image: workflow/task/image.md
+            - Retrieve: workflow/task/retrieve.md
+            - Service: workflow/task/service.md
+            - Storage: workflow/task/storage.md
+            - Url: workflow/task/url.md
+            - Workflow: workflow/task/workflow.md
     - API:
         - api/index.md
         - Configuration: api/configuration.md

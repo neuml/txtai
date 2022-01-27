@@ -1,7 +1,7 @@
 # Url Task
 
-![task](../images/task.png#only-light)
-![task](../images/task-dark.png#only-dark)
+![task](../../images/task.png#only-light)
+![task](../../images/task-dark.png#only-dark)
 
 The Url Task validates that inputs start with a url prefix.
 

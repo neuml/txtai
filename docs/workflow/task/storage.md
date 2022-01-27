@@ -1,7 +1,7 @@
 # Storage Task
 
-![task](../images/task.png#only-light)
-![task](../images/task-dark.png#only-dark)
+![task](../../images/task.png#only-light)
+![task](../../images/task-dark.png#only-dark)
 
 The Storage Task expands a local directory or cloud storage bucket into a list of URLs to process.
 

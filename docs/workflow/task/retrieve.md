@@ -1,7 +1,7 @@
 # Retrieve Task
 
-![task](../images/task.png#only-light)
-![task](../images/task-dark.png#only-dark)
+![task](../../images/task.png#only-light)
+![task](../../images/task-dark.png#only-dark)
 
 The Retrieve Task connects to a url and downloads the content locally. This task is helpful when working with actions that require data to be available locally.
 

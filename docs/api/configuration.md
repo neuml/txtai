@@ -72,6 +72,22 @@ workflow:
         - action: translation
 ```
 
+### schedule
+
+Schedules a workflow using a [cron expression](../../workflow/schedule).
+
+```yaml
+workflow:
+  index:
+    schedule:
+      cron: 0/10 * * * * *
+      elements: ["api params"] 
+    tasks:
+      - task: service
+        url: api url
+      - action: index
+```
+
 ### tasks
 ```yaml
 tasks: list
@@ -81,7 +97,7 @@ Expects a list of workflow tasks. Each element defines a single workflow task. A
 
 Each task element supports the following additional arguments.
 
-### action
+#### action
 ```yaml
 task: string|list
 ```
@@ -94,14 +110,14 @@ There are two special action names `index` and `upsert`. If those are used as th
 
 Otherwise, the action must be a path to a static callable function. The configuration parser will resolve the function name and use that as the task action.
 
-### task
+#### task
 ```yaml
 task: string
 ```
 
 Optionally sets the type of task to create. For example, this could be a `file` task or a `retrieve` task. If this is not specified, a generic task is created. [The list of workflow tasks can be found here](../../workflow).
 
-### args
+#### args
 ```yaml
 args: list
 ```

@@ -1,7 +1,7 @@
 # File Task
 
-![task](../images/task.png#only-light)
-![task](../images/task-dark.png#only-dark)
+![task](../../images/task.png#only-light)
+![task](../../images/task-dark.png#only-dark)
 
 The File Task validates a file exists. It handles both file paths and local file urls. Note that this task _only_ works with local files.
 

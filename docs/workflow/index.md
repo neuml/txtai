@@ -124,6 +124,7 @@ Workflows are callable objects. Workflows take an input of iterable data element
 
 ### ::: txtai.workflow.Workflow.__init__
 ### ::: txtai.workflow.Workflow.__call__
+### ::: txtai.workflow.Workflow.schedule
 
 ## More examples
 

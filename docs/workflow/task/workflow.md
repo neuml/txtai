@@ -1,7 +1,7 @@
 # Workflow Task
 
-![task](../images/task.png#only-light)
-![task](../images/task-dark.png#only-dark)
+![task](../../images/task.png#only-light)
+![task](../../images/task-dark.png#only-dark)
 
 The Workflow Task runs a workflow. Allows creating workflows of workflows.
 

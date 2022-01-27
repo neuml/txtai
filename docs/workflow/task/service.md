@@ -1,7 +1,7 @@
 # Service Task
 
-![task](../images/task.png#only-light)
-![task](../images/task-dark.png#only-dark)
+![task](../../images/task.png#only-light)
+![task](../../images/task-dark.png#only-dark)
 
 The Service Task extracts content from a http service.
 
