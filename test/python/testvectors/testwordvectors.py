@@ -6,6 +6,8 @@ import os
 import tempfile
 import unittest
 
+from unittest.mock import patch
+
 from txtai.vectors import WordVectors, VectorsFactory
 
 
@@ -45,10 +47,14 @@ class TestWordVectors(unittest.TestCase):
 
         self.assertTrue(model.initialized)
 
-    def testIndex(self):
+    @patch(os.cpu_count)
+    def testIndex(self, cpucount):
         """
         Test word vector indexing
         """
+
+        # Mock CPU count
+        cpucount.return_value = 2
 
         # Generate data
         documents = [(x, "This is a test", None) for x in range(1000)]
