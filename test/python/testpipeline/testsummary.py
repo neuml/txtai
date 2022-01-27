@@ -15,7 +15,7 @@ class TestSummary(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """
-        Create single summary instance
+        Create single summary instance.
         """
 
         cls.text = (
@@ -28,6 +28,14 @@ class TestSummary(unittest.TestCase):
         )
 
         cls.summary = Summary("t5-small")
+
+    @classmethod
+    def tearDownClass(cls):
+        """
+        Cleanup data.
+        """
+
+        cls.summary = None
 
     def testSummary(self):
         """

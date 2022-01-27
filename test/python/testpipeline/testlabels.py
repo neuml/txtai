@@ -30,6 +30,15 @@ class TestLabels(unittest.TestCase):
         cls.labels = Labels("prajjwal1/bert-medium-mnli")
         cls.similarity = Similarity(model=cls.labels)
 
+    @classmethod
+    def tearDownClass(cls):
+        """
+        Cleanup data.
+        """
+
+        cls.labels = None
+        cls.similarity = None
+
     def testLabel(self):
         """
         Test labels with single text input

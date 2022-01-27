@@ -23,6 +23,14 @@ class TestTransformersVectors(unittest.TestCase):
 
         cls.model = VectorsFactory.create({"path": "sentence-transformers/nli-mpnet-base-v2"}, None)
 
+    @classmethod
+    def tearDownClass(cls):
+        """
+        Cleanup data
+        """
+
+        cls.model = None
+
     def testIndex(self):
         """
         Test transformers indexing

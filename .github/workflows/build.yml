@@ -8,7 +8,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-10.15, windows-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
 
     steps:
       - uses: actions/checkout@v2
@@ -27,7 +27,7 @@ jobs:
         run: |
           brew install libomp
           pip install annoy==1.16.3
-        if: matrix.os == 'macos-10.15'
+        if: matrix.os == 'macos-latest'
 
       - name: Install dependencies - Windows
         run: choco install wget

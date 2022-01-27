@@ -50,6 +50,8 @@ class TestExtractor(unittest.TestCase):
         if cls.embeddings:
             cls.embeddings.close()
 
+        cls.extractor = None
+
     def testAnswer(self):
         """
         Test qa extraction with an answer

@@ -14,7 +14,19 @@ class TestEntity(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        """
+        Create entity instance.
+        """
+
         cls.entity = Entity("dslim/bert-base-NER")
+
+    @classmethod
+    def tearDownClass(cls):
+        """
+        Cleanup data.
+        """
+
+        cls.entity = None
 
     def testEntity(self):
         """
