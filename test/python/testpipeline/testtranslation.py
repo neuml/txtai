@@ -3,6 +3,7 @@ Translation module tests
 """
 
 import os
+import platform
 import unittest
 
 from txtai.pipeline import Translation
@@ -26,7 +27,7 @@ class TestTranslation(unittest.TestCase):
         # Validate translation text
         self.assertIsNotNone(translation)
 
-    @unittest.skipIf(os.name == "nt", "M2M100 skipped on Windows")
+    @unittest.skipIf(os.name == "nt" or platform.system() == "Darwin", "M2M100 skipped on Windows and macOS")
     def testM2M100Translation(self):
         """
         Tests a translation using M2M100 models
