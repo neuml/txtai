@@ -7,7 +7,7 @@ from ..hfpipeline import HFPipeline
 
 class Entity(HFPipeline):
     """
-    Applies a token classifier to text. Extracts known entity/label combinations.
+    Applies a token classifier to text and extracts entity/label combinations.
     """
 
     def __init__(self, path=None, quantize=False, gpu=True, model=None):
@@ -15,7 +15,7 @@ class Entity(HFPipeline):
 
     def __call__(self, text, labels=None, aggregate="simple", flatten=None, join=False, workers=0):
         """
-        Applies a token classifier to text.
+        Applies a token classifier to text and extracts entity/label combinations.
 
         Args:
             text: text|list

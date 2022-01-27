@@ -3,7 +3,7 @@
 ![pipeline](../../images/pipeline.png#only-light)
 ![pipeline](../../images/pipeline-dark.png#only-dark)
 
-The entity extraction pipeline applies a token classifier to text and extracts known entity/label combinations.
+The entity extraction pipeline applies a token classifier to text and extracts entity/label combinations.
 
 ## Example
 
