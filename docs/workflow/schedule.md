@@ -12,8 +12,8 @@ Below are a couple example cron expressions.
 ```bash
 * * * * * *       # Run every second
 0/5 * * * *       # Run every 5 minutes
-0 0 1 * * *       # Run on the 1st
-0 0 1 1 * *       # Run on Jan 1 at 12am
+0 0 1 * *         # Run monthly on 1st
+0 0 1 1 *         # Run on Jan 1 at 12am
 0 0 * * mon,wed   # Run Monday and Wednesday
 ```
 
