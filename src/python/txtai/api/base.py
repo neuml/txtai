@@ -90,6 +90,7 @@ class API:
 
         if self.pool:
             self.pool.close()
+            self.pool = None
 
     def pipes(self):
         """

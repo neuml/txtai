@@ -8,12 +8,13 @@ import tempfile
 import unittest
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
+from multiprocessing.pool import ThreadPool
 from threading import Thread
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-from txtai.api import app, start
+from txtai.api import app, start, API
 
 # Configuration for workflows
 WORKFLOWS = """
@@ -174,6 +175,17 @@ class TestWorkflow(unittest.TestCase):
         """
 
         cls.httpd.shutdown()
+
+    def testAPICleanup(self):
+        """
+        Test API threadpool closed when __del__ called.
+        """
+
+        api = API({})
+        api.pool = ThreadPool()
+        api.__del__()
+
+        self.assertIsNone(api.pool)
 
     def testServiceGet(self):
         """
