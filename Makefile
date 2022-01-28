@@ -28,4 +28,4 @@ test:
 coverage:
 	#coverage run -m unittest discover -v -s ${TEST_DIR}
 	#coverage combine
-	${PYTHON} -m unittest -v -s testvectors.testwordvectors
+	${PYTHON} -m unittest -v testvectors.testwordvectors
