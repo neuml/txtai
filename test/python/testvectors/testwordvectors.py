@@ -47,7 +47,7 @@ class TestWordVectors(unittest.TestCase):
 
         self.assertTrue(model.initialized)
 
-    @patch(os.cpu_count)
+    @patch("os.cpu_count")
     def testIndex(self, cpucount):
         """
         Test word vector indexing
