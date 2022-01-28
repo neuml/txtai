@@ -29,14 +29,6 @@ class TestSummary(unittest.TestCase):
 
         cls.summary = Summary("t5-small")
 
-    @classmethod
-    def tearDownClass(cls):
-        """
-        Cleanup data.
-        """
-
-        cls.summary = None
-
     def testSummary(self):
         """
         Test summarization of text

@@ -20,14 +20,6 @@ class TestEntity(unittest.TestCase):
 
         cls.entity = Entity("dslim/bert-base-NER")
 
-    @classmethod
-    def tearDownClass(cls):
-        """
-        Cleanup data.
-        """
-
-        cls.entity = None
-
     def testEntity(self):
         """
         Test entity
