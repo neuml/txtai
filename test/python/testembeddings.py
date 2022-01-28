@@ -8,6 +8,8 @@ import os
 import tempfile
 import unittest
 
+from unittest.mock import patch
+
 import numpy as np
 
 from txtai.embeddings import Embeddings
@@ -155,10 +157,14 @@ class TestEmbeddings(unittest.TestCase):
 
         self.assertEqual(uid, 0)
 
-    def testWords(self):
+    @patch("os.cpu_count")
+    def testWords(self, cpucount):
         """
         Test embeddings backed by word vectors
         """
+
+        # Mock CPU count
+        cpucount.return_value = 1
 
         # Initialize model path
         path = os.path.join(tempfile.gettempdir(), "model")

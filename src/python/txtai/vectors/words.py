@@ -96,7 +96,7 @@ class WordVectors(Vectors):
             raise IOError(ENOENT, "Vector model file not found", path)
 
         # Load magnitude model. If this is a training run (uninitialized config), block until vectors are fully loaded
-        return Magnitude(path, case_insensitive=True, blocking=not self.initialized, eager=self.config.get("eager", False))
+        return Magnitude(path, case_insensitive=True, blocking=not self.initialized)
 
     def index(self, documents):
         ids, dimensions, stream = [], None, None
