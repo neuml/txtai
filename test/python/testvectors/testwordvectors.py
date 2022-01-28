@@ -3,6 +3,7 @@ Vectors module tests
 """
 
 import os
+import platform
 import tempfile
 import unittest
 
@@ -45,6 +46,7 @@ class TestWordVectors(unittest.TestCase):
 
         self.assertTrue(model.initialized)
 
+    @unittest.skipIf(platform.system() == "Darwin", "Word vector embeddings tests skipped on macOS")
     def testIndex(self):
         """
         Test word vectors indexing

@@ -26,6 +26,5 @@ test:
 
 # Run tests while calculating code coverage
 coverage:
-	#coverage run -m unittest discover -v -s ${TEST_DIR}
-	#coverage combine
-	${PYTHON} -m unittest -v testvectors.testwordvectors
+	coverage run -m unittest discover -v -s ${TEST_DIR}
+	coverage combine
