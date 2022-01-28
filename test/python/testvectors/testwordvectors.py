@@ -3,10 +3,9 @@ Vectors module tests
 """
 
 import os
+import platform
 import tempfile
 import unittest
-
-from unittest.mock import patch
 
 from txtai.vectors import WordVectors, VectorsFactory
 
@@ -47,14 +46,11 @@ class TestWordVectors(unittest.TestCase):
 
         self.assertTrue(model.initialized)
 
-    @patch("os.cpu_count")
-    def testIndex(self, cpucount):
+    @unittest.skipIf(platform.system() == "Darwin", "Word vector embeddings tests skipped on macOS")
+    def testIndex(self):
         """
-        Test word vector indexing
+        Test word vectors indexing
         """
-
-        # Mock CPU count
-        cpucount.return_value = 2
 
         # Generate data
         documents = [(x, "This is a test", None) for x in range(1000)]

@@ -5,10 +5,9 @@ Embeddings module tests
 import contextlib
 import io
 import os
+import platform
 import tempfile
 import unittest
-
-from unittest.mock import patch
 
 import numpy as np
 
@@ -157,14 +156,11 @@ class TestEmbeddings(unittest.TestCase):
 
         self.assertEqual(uid, 0)
 
-    @patch("os.cpu_count")
-    def testWords(self, cpucount):
+    @unittest.skipIf(platform.system() == "Darwin", "Word vector embeddings tests skipped on macOS")
+    def testWords(self):
         """
         Test embeddings backed by word vectors
         """
-
-        # Mock CPU count
-        cpucount.return_value = 2
 
         # Initialize model path
         path = os.path.join(tempfile.gettempdir(), "model")
