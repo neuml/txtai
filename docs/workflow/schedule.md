@@ -15,7 +15,7 @@ Below are a couple example cron expressions.
 # | | ┌─────────── day of the month (1 - 31)
 # | | | ┌───────── month (1 - 12)
 # | | | | ┌─────── day of the week (0 - 6)
-# | | | | | ┌───── seconds (0 - 59)
+# | | | | | ┌───── second (0 - 59)
 # | | | | | |
   * * * * * *      # Run every second
 0/5 * * * *        # Run every 5 minutes

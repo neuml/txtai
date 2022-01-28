@@ -5,7 +5,6 @@ Embeddings module tests
 import contextlib
 import io
 import os
-import platform
 import tempfile
 import unittest
 
@@ -156,7 +155,6 @@ class TestEmbeddings(unittest.TestCase):
 
         self.assertEqual(uid, 0)
 
-    @unittest.skipIf(platform.system() == "Darwin", "Word vector embeddings tests skipped on macOS")
     def testWords(self):
         """
         Test embeddings backed by word vectors
