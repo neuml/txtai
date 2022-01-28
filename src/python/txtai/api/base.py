@@ -142,7 +142,7 @@ class API:
                 schedule = config.pop("schedule", None)
 
                 # Create workflow
-                self.workflows[workflow] = WorkflowFactory.create(workflow, config)
+                self.workflows[workflow] = WorkflowFactory.create(config, workflow)
 
                 # Schedule job if necessary
                 if schedule:
