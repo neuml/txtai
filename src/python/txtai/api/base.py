@@ -49,7 +49,7 @@ class API:
 
     def __init__(self, config):
         """
-        Creates an embeddings index instance that is called by FastAPI.
+        Creates an API instance, which encapsulates embeddings, pipelines and workflows.
 
         Args:
             config: index configuration
@@ -222,7 +222,7 @@ class API:
         # Return between 1 and 250 results, defaults to 10
         return max(1, min(250, int(limit) if limit else 10))
 
-    def search(self, query, request=None):
+    def search(self, query, request=None, limit=None):
         """
         Finds documents in the embeddings model most similar to the input query. Returns
         a list of {id: value, score: value} sorted by highest score, where id is the
@@ -232,13 +232,16 @@ class API:
 
         Args:
             query: query text
-            request: FastAPI request
+            request: query request
+            limit: maximum results, used if request is None
 
         Returns:
             list of {id: value, score: value}
         """
 
-        limit = self.limit(request.query_params.get("limit") if request else None)
+        # When search is invoked via the API, limit is set from the request
+        # When search is invoked directly, limit is set using the method parameter
+        limit = self.limit(request.query_params.get("limit") if request and hasattr(request, "query_params") else limit)
 
         if self.cluster:
             return self.cluster.search(query, limit)
