@@ -5,7 +5,7 @@
 
 txtai provides a generic pipeline processing framework with the only interface requirement being a `__call__` method. Pipelines are flexible and process various types of data. Pipelines can wrap machine learning models as well as other processes.
 
-Pipelines are run with Python or configuration. Pipelines can be instantiated in [configuration](../api/configuration/#pipeline) using the lower case name of the pipeline. Configuration-driven pipelines are run with [workflows](../workflow/#configuration-driven-example) or the [API](../api).
+Pipelines are run with Python or configuration. Pipelines can be instantiated in [configuration](../api/configuration/#pipeline) using the lower case name of the pipeline. Configuration-driven pipelines are run with [workflows](../workflow/#configuration-driven-example) or the [API](../api#local-instance).
 
 ## List of pipelines
 

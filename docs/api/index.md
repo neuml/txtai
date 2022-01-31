@@ -7,7 +7,7 @@ txtai has a full-featured API, backed by [FastAPI](https://github.com/tiangolo/f
 
 The following is an example configuration and startup script for the API.
 
-Note: that this configuration file enables all functionality. It is suggested that separate processes are used for each instance of a txtai component.
+Note: This configuration file enables all functionality. For memory-bound systems, splitting pipelines into multiple instances is a best practice.
 
 ```yaml
 # Index file path
@@ -89,9 +89,26 @@ curl \
   -d '{"name":"sumfrench", "elements": ["https://github.com/neuml/txtai"]}'
 ```
 
+## Local instance
+
+A local API instance can be instantiated. In this case, the API runs internally, without any network connections, providing the same consolidated functionality. This enables running txtai in Python with configuration.
+
+The configuration above can be run in Python with:
+
+```python
+from txtai.api import API
+
+app = API(index.yml)
+
+# Run action
+app.workflow("sumfrench", ["https://github.com/neuml/txtai"])
+```
+
+See this [link for a full list of methods](./methods).
+
 ## Supported language bindings
 
-The following programming languages have txtai bindings:
+The following programming languages have bindings with the txtai API:
 
 - [JavaScript](https://github.com/neuml/txtai.js)
 - [Java](https://github.com/neuml/txtai.java)

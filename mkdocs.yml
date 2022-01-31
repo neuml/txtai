@@ -90,7 +90,8 @@ nav:
             - Workflow: workflow/task/workflow.md
     - API:
         - api/index.md
-        - Configuration: api/configuration.md
         - Cluster: api/cluster.md
+        - Configuration: api/configuration.md
         - Docker: api/docker.md
+        - Methods: api/methods.md
     - Further Reading: further.md
