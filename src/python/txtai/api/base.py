@@ -5,7 +5,7 @@ API module
 import os
 
 from multiprocessing.pool import ThreadPool
-from threading import Lock
+from threading import RLock
 
 import yaml
 
@@ -59,7 +59,7 @@ class API:
         self.config, self.documents, self.embeddings, self.cluster = API.read(config), None, None, None
 
         # Write lock - allows only a single thread to update embeddings
-        self.lock = Lock()
+        self.lock = RLock()
 
         # ThreadPool - runs scheduled workflows
         self.pool = None
@@ -274,7 +274,8 @@ class API:
         if self.cluster:
             return self.cluster.batchsearch(queries, self.limit(limit))
         if self.embeddings:
-            search = self.embeddings.batchsearch(queries, self.limit(limit))
+            with self.lock:
+                search = self.embeddings.batchsearch(queries, self.limit(limit))
 
             results = []
             for result in search:
