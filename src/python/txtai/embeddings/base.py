@@ -176,7 +176,7 @@ class Embeddings:
 
             # Delete ids from database
             self.database.delete(deletes)
-        else:
+        elif self.ann:
             # Lookup indexids from config for indexes with no database
             indexids = self.config["ids"]
 

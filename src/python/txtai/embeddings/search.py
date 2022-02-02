@@ -61,7 +61,7 @@ class Search:
         embeddings = np.array([self.transform((None, query, None)) for query in queries])
 
         # Search approximate nearest neighbor index
-        results = self.ann.search(embeddings, limit)
+        results = self.ann.search(embeddings, limit) if self.ann else []
 
         # Require scores to be greater than 0
         results = [[(i, score) for i, score in r if score > 0] for r in results]
