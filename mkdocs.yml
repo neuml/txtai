@@ -81,6 +81,8 @@ nav:
         - Schedule: workflow/schedule.md
         - Tasks:
             - workflow/task/index.md
+            - Console: workflow/task/console.md
+            - Export: workflow/task/export.md
             - File: workflow/task/file.md
             - Image: workflow/task/image.md
             - Retrieve: workflow/task/retrieve.md

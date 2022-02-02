@@ -95,20 +95,32 @@ tasks: list
 
 Expects a list of workflow tasks. Each element defines a single workflow task. All [task configuration](../../workflow/task) is supported.
 
+A shorthand syntax for creating tasks is supported. This syntax will automatically map task strings to an `action:value` pair.
+
+Example below.
+
+```yaml
+workflow:
+  index:
+    tasks:
+      - action1
+      - action2
+```
+
 Each task element supports the following additional arguments.
 
 #### action
 ```yaml
-task: string|list
+action: string|list
 ```
 
 Both single and multi-action tasks are supported.
 
-The action parameter works slightly different when passed via configuration. The parameter(s) needs to be converted into callable method(s). If action is pipeline that has been defined in the current configuration, it will use that pipeline as the action.
+The action parameter works slightly different when passed via configuration. The parameter(s) needs to be converted into callable method(s). If action is a pipeline that has been defined in the current configuration, it will use that pipeline as the action.
 
-There are two special action names `index` and `upsert`. If those are used as the action, the task will collect workflow data elements and load them into defined the embeddings index.
+There are three special action names `index`, `upsert` and `search`. If `index` or `upsert` are used as the action, the task will collect workflow data elements and load them into defined the embeddings index. If `search` is used, the task will execute embeddings queries for each input data element.
 
-Otherwise, the action must be a path to a static callable function. The configuration parser will resolve the function name and use that as the task action.
+Otherwise, the action must be a path to a callable object or function. The configuration parser will resolve the function name and use that as the task action.
 
 #### task
 ```yaml
