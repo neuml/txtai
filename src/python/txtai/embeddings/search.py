@@ -39,6 +39,10 @@ class Search:
             list of (id, score) per query for ann search, list of dict per query for an ann+database search
         """
 
+        # Return empty results if ANN is not set
+        if not self.ann:
+            return []
+
         if self.database:
             return self.dbsearch(queries, limit)
 
@@ -61,7 +65,7 @@ class Search:
         embeddings = np.array([self.transform((None, query, None)) for query in queries])
 
         # Search approximate nearest neighbor index
-        results = self.ann.search(embeddings, limit) if self.ann else []
+        results = self.ann.search(embeddings, limit)
 
         # Require scores to be greater than 0
         results = [[(i, score) for i, score in r if score > 0] for r in results]
