@@ -3,6 +3,8 @@ Task imports
 """
 
 from .base import Task
+from .console import ConsoleTask
+from .export import ExportTask
 from .factory import TaskFactory
 from .file import FileTask
 from .image import ImageTask

@@ -124,7 +124,8 @@ class Task:
         for x, element in indexed:
             if x in ids:
                 # Get result for process id
-                result = results[ids.index(x)]
+                index = ids.index(x)
+                result = results[index] if index < len(results) else None
 
                 if isinstance(result, OneToMany):
                     # One to many transformations

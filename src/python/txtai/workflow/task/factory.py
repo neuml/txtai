@@ -27,6 +27,7 @@ class TaskFactory:
             # Get parent package
             task = ".".join(__name__.split(".")[:-1]) + "." + task.capitalize() + "Task"
 
+        # Attempt to load custom task
         parts = task.split(".")
         module = ".".join(parts[:-1])
         m = __import__(module)
