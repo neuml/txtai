@@ -4,6 +4,7 @@ Workflow module
 
 import logging
 import time
+import traceback
 
 from datetime import datetime
 
@@ -93,8 +94,12 @@ class Workflow:
             time.sleep(schedule.timestamp() - time.time())
 
             # Run workflow
-            for _ in self(elements):
-                pass
+            # pylint: disable=W0703
+            try:
+                for _ in self(elements):
+                    pass
+            except Exception:
+                logger.error(traceback.format_exc())
 
             # Decrement iterations remaining, if necessary
             if iterations is not None:
