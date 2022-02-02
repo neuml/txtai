@@ -4,6 +4,7 @@ Pipeline factory module
 
 import inspect
 import sys
+import types
 
 from .base import Pipeline
 
@@ -14,7 +15,7 @@ class PipelineFactory:
     """
 
     @staticmethod
-    def get(pclass):
+    def get(pipeline):
         """
         Gets a new instance of pipeline class.
 
@@ -26,11 +27,11 @@ class PipelineFactory:
         """
 
         # Local pipeline if no package
-        if "." not in pclass:
-            return PipelineFactory.list()[pclass]
+        if "." not in pipeline:
+            return PipelineFactory.list()[pipeline]
 
         # Attempt to load custom pipeline
-        parts = pclass.split(".")
+        parts = pipeline.split(".")
         module = ".".join(parts[:-1])
         m = __import__(module)
         for comp in parts[1:]:
@@ -39,20 +40,23 @@ class PipelineFactory:
         return m
 
     @staticmethod
-    def create(config, pclass):
+    def create(config, pipeline):
         """
         Creates a new Pipeline instance.
 
         Args:
             config: Pipeline configuration
-            pclass: Pipeline instance class
+            pipeline: Pipeline instance class
 
         Returns:
             Pipeline
         """
 
-        # Get Pipeline instance
-        return PipelineFactory.get(pclass)(**config)
+        # Resolve pipeline
+        pipeline = PipelineFactory.get(pipeline)
+
+        # Return functions directly, otherwise create pipeline instance
+        return pipeline if isinstance(pipeline, types.FunctionType) else pipeline(**config)
 
     @staticmethod
     def list():
