@@ -136,8 +136,7 @@ class API:
                 config = config.copy()
 
                 # Resolve callable functions
-                for task in config["tasks"]:
-                    self.resolve(task)
+                config["tasks"] = [self.resolve(task) for task in config["tasks"]]
 
                 # Get scheduler config
                 schedule = config.pop("schedule", None)
@@ -161,6 +160,9 @@ class API:
             task: input task config
         """
 
+        # Check for task shorthand syntax
+        task = {"action": task} if isinstance(task, (str, list)) else task
+
         if "action" in task:
             action = task["action"]
             values = [action] if not isinstance(action, list) else action
@@ -176,6 +178,8 @@ class API:
 
                     # Add finalize to trigger indexing
                     task["finalize"] = self.upsert if a == "upsert" else self.index
+                elif a == "search":
+                    actions.append(self.batchsearch)
                 else:
                     # Resolve action to callable function
                     actions.append(self.function(a))
@@ -190,6 +194,8 @@ class API:
         # Resolve finalizer
         if "finalize" in task and isinstance(task["finalize"], str):
             task["finalize"] = self.function(task["finalize"])
+
+        return task
 
     def function(self, function):
         """
@@ -251,7 +257,7 @@ class API:
 
         return None
 
-    def batchsearch(self, queries, limit):
+    def batchsearch(self, queries, limit=None):
         """
         Finds documents in the embeddings model most similar to the input queries. Returns
         a list of {id: value, score: value} sorted by highest score per query, where id is
