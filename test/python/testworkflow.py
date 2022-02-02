@@ -2,6 +2,9 @@
 Workflow module tests
 """
 
+import contextlib
+import glob
+import io
 import os
 import tempfile
 import unittest
@@ -12,16 +15,47 @@ import torch
 from txtai.api import API
 from txtai.embeddings import Documents, Embeddings
 from txtai.pipeline import Nop, Segmentation, Summary, Translation, Textractor
-from txtai.workflow import Workflow, Task, FileTask, ImageTask, RetrieveTask, StorageTask, WorkflowTask
+from txtai.workflow import Workflow, Task, ConsoleTask, ExportTask, FileTask, ImageTask, RetrieveTask, StorageTask, WorkflowTask
 
 # pylint: disable = C0411
 from utils import Utils
 
 
+# pylint: disable=R0904
 class TestWorkflow(unittest.TestCase):
     """
     Workflow tests.
     """
+
+    @classmethod
+    def setUpClass(cls):
+        """
+        Initialize test data.
+        """
+
+        # Default YAML workflow configuration
+        cls.config = """
+        # Embeddings index
+        writable: true
+        embeddings:
+            scoring: bm25
+            path: google/bert_uncased_L-2_H-128_A-2
+            content: true
+
+        # Text segmentation
+        segmentation:
+            sentences: true
+
+        # Workflow definitions
+        workflow:
+            index:
+                tasks:
+                    - action: segmentation
+                    - action: index
+            search:
+                tasks:
+                    - search
+        """
 
     def testBaseWorkflow(self):
         """
@@ -107,6 +141,46 @@ class TestWorkflow(unittest.TestCase):
         workflow = Workflow([Task([nop, nop], concurrency="unknown")])
         results = list(workflow([2, 4]))
         self.assertEqual(results, [(2, 2), (4, 4)])
+
+    def testConsoleWorkflow(self):
+        """
+        Tests a console task
+        """
+
+        # Excel export
+        workflow = Workflow([ConsoleTask()])
+
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            list(workflow([{"id": 1, "text": "Sentence 1"}, {"id": 2, "text": "Sentence 2"}]))
+
+        self.assertIn("Sentence 2", output.getvalue())
+
+    def testExportWorkflow(self):
+        """
+        Tests an export task
+        """
+
+        # Excel export
+        path = os.path.join(tempfile.gettempdir(), "export.xlsx")
+        workflow = Workflow([ExportTask(output=path)])
+        list(workflow([{"id": 1, "text": "Sentence 1"}, {"id": 2, "text": "Sentence 2"}]))
+        self.assertGreater(os.path.getsize(path), 0)
+
+        # Export CSV
+        path = os.path.join(tempfile.gettempdir(), "export.csv")
+        workflow = Workflow([ExportTask(output=path)])
+        list(workflow([{"id": 1, "text": "Sentence 1"}, {"id": 2, "text": "Sentence 2"}]))
+        self.assertGreater(os.path.getsize(path), 0)
+
+        # Export CSV with timestamp
+        path = os.path.join(tempfile.gettempdir(), "export-timestamp.csv")
+        workflow = Workflow([ExportTask(output=path, timestamp=True)])
+        list(workflow([{"id": 1, "text": "Sentence 1"}, {"id": 2, "text": "Sentence 2"}]))
+
+        # Find timestamped file and ensure it has data
+        path = glob.glob(os.path.join(tempfile.gettempdir(), "export-timestamp*.csv"))[0]
+        self.assertGreater(os.path.getsize(path), 0)
 
     def testExtractWorkflow(self):
         """
@@ -256,15 +330,34 @@ class TestWorkflow(unittest.TestCase):
                 schedule:
                     cron: '* * * * * *'
                     elements:
-                        - test
+                        - a sentence to segment
                     iterations: 1
                 tasks:
                     - action: segmentation
+                      task: console
         """
 
-        app = API(workflow)
-        app.wait()
-        self.assertIsNone(app.pool)
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            app = API(workflow)
+            app.wait()
+
+        self.assertIn("a sentence to segment", output.getvalue())
+
+    def testScheduleErrorWorkflow(self):
+        """
+        Tests workflow schedules with errors
+        """
+
+        def action(elements):
+            raise FileNotFoundError
+
+        # Test workflow proceeds after exception raised
+        with self.assertLogs() as logs:
+            workflow = Workflow([Task(action=action)])
+            workflow.schedule("* * * * * *", ["test"], 1)
+
+        self.assertIn("FileNotFoundError", " ".join(logs.output))
 
     def testStorageWorkflow(self):
         """
@@ -317,53 +410,46 @@ class TestWorkflow(unittest.TestCase):
         results = np.array([x.numpy() for x in workflow(torch.tensor([2, 4, 6]))])
         self.assertTrue(np.array_equal(np.array(results), np.array([[4, 16, 36], [8, 64, 216]])))
 
-    def testYamlWorkflow(self):
+    def testYamlIndexWorkflow(self):
         """
-        Tests reading a YAML workflow in Python.
-        """
-
-        # Read from string
-        config = """
-        # Embeddings index
-        writable: true
-        embeddings:
-            scoring: bm25
-            path: google/bert_uncased_L-2_H-128_A-2
-
-        # Text segmentation
-        segmentation:
-            sentences: true
-
-        # Workflow definitions
-        workflow:
-            segment:
-                tasks:
-                    - action: segmentation
-                    - action: index
+        Tests reading a YAML index workflow in Python.
         """
 
-        app = API(config)
+        app = API(self.config)
         self.assertEqual(
-            list(app.workflow("segment", ["This is a test sentence. And another sentence to split."])),
+            list(app.workflow("index", ["This is a test sentence. And another sentence to split."])),
             ["This is a test sentence.", "And another sentence to split."],
         )
 
         # Read from file
         path = os.path.join(tempfile.gettempdir(), "workflow.yml")
         with open(path, "w", encoding="utf-8") as f:
-            f.write(config)
+            f.write(self.config)
 
         app = API(path)
         self.assertEqual(
-            list(app.workflow("segment", ["This is a test sentence. And another sentence to split."])),
+            list(app.workflow("index", ["This is a test sentence. And another sentence to split."])),
             ["This is a test sentence.", "And another sentence to split."],
         )
 
         # Read from YAML object
-        app = API(API.read(config))
+        app = API(API.read(self.config))
         self.assertEqual(
-            list(app.workflow("segment", ["This is a test sentence. And another sentence to split."])),
+            list(app.workflow("index", ["This is a test sentence. And another sentence to split."])),
             ["This is a test sentence.", "And another sentence to split."],
+        )
+
+    def testYamlSearchWorkflow(self):
+        """
+        Test reading a YAML search workflow in Python.
+        """
+
+        # Test search
+        app = API(self.config)
+        list(app.workflow("index", ["This is a test sentence. And another sentence to split."]))
+        self.assertEqual(
+            list(app.workflow("search", ["another"]))[0]["text"],
+            "And another sentence to split.",
         )
 
     def testYamlError(self):

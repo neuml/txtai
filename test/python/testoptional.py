@@ -160,7 +160,10 @@ class TestOptional(unittest.TestCase):
         Test missing workflow dependencies
         """
 
-        from txtai.workflow import ImageTask, ServiceTask, StorageTask, Workflow
+        from txtai.workflow import ExportTask, ImageTask, ServiceTask, StorageTask, Workflow
+
+        with self.assertRaises(ImportError):
+            ExportTask()
 
         with self.assertRaises(ImportError):
             ImageTask()

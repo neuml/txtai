@@ -48,7 +48,7 @@ extras["similarity"] = [
     "sentence-transformers>=2.1.0",
 ]
 
-extras["workflow"] = ["apache-libcloud>=3.3.1", "croniter>=1.2.0", "pillow>=7.2.0", "requests>=2.26.0", "xmltodict>=0.12.0"]
+extras["workflow"] = ["apache-libcloud>=3.3.1", "croniter>=1.2.0", "pandas>=1.1.0", "pillow>=7.2.0", "requests>=2.26.0", "xmltodict>=0.12.0"]
 
 extras["all"] = extras["api"] + extras["database"] + extras["model"] + extras["pipeline"] + extras["similarity"] + extras["workflow"]
 

@@ -179,7 +179,7 @@ class TestEmbeddings(unittest.TestCase):
         with contextlib.redirect_stdout(output):
             self.embeddings.info()
 
-        self.assertTrue("txtai" in output.getvalue())
+        self.assertIn("txtai", output.getvalue())
 
     def testMultiSave(self):
         """
