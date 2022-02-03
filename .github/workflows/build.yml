@@ -36,7 +36,8 @@ jobs:
 
       - name: Build
         run: |
-          pip install -U pip wheel coverage coveralls
+          pip install -U pip
+          pip install -U wheel coverage coveralls
           pip install .[all]
           python -c "import nltk; nltk.download('punkt')"
           python --version
