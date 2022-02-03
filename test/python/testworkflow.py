@@ -7,6 +7,7 @@ import glob
 import io
 import os
 import tempfile
+import sys
 import unittest
 
 import numpy as np
@@ -409,6 +410,27 @@ class TestWorkflow(unittest.TestCase):
         task.merge = None
         results = np.array([x.numpy() for x in workflow(torch.tensor([2, 4, 6]))])
         self.assertTrue(np.array_equal(np.array(results), np.array([[4, 16, 36], [8, 64, 216]])))
+
+    def testYamlFunctionWorkflow(self):
+        """
+        Tests YAML workflow with a function action
+        """
+
+        # Create function and add to module
+        def action(elements):
+            return [x * 2 for x in elements]
+
+        sys.modules[__name__].action = action
+
+        workflow = """
+        workflow:
+            run:
+                tasks:
+                    - testworkflow.action
+        """
+
+        app = API(workflow)
+        self.assertEqual(list(app.workflow("run", [1, 2])), [2, 4])
 
     def testYamlIndexWorkflow(self):
         """

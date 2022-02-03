@@ -124,6 +124,14 @@ class TestEmbeddings(unittest.TestCase):
         self.assertEqual(self.embeddings.count(), 5)
         self.assertEqual(result["text"], self.data[5])
 
+    def testEmpty(self):
+        """
+        Test empty index
+        """
+
+        embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2", "content": True})
+        self.assertEqual(embeddings.search("test"), [])
+
     def testGenerator(self):
         """
         Test index with a generator

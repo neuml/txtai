@@ -283,7 +283,8 @@ class Embeddings:
             list of (id, score) for ann search, list of dict for an ann+database search
         """
 
-        return self.batchsearch([query], limit)[0]
+        results = self.batchsearch([query], limit)
+        return results[0] if results else results
 
     def batchsearch(self, queries, limit=3):
         """

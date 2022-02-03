@@ -65,6 +65,14 @@ class TestEmbeddings(unittest.TestCase):
         self.assertEqual(self.embeddings.count(), 5)
         self.assertEqual(uid, 5)
 
+    def testEmpty(self):
+        """
+        Test empty index
+        """
+
+        embeddings = Embeddings()
+        self.assertEqual(embeddings.search("test"), [])
+
     def testExternal(self):
         """
         Test embeddings backed by external vectors
