@@ -25,12 +25,18 @@ Below are a couple example cron expressions.
 ```
 
 ## Python
-Simple workflow scheduled with Python. See [schedule](../#txtai.workflow.base.Workflow.schedule) method definition below.
+Simple workflow [scheduled](../#txtai.workflow.base.Workflow.schedule) with Python.
 
 ```python
 workflow = Workflow(tasks)
 workflow.schedule("0/5 * * * *", elements)
 ```
+
+See the link below for a more detailed example.
+
+| Notebook  | Description  |       |
+|:----------|:-------------|------:|
+| [Workflow Scheduling](https://github.com/neuml/txtai/blob/master/examples/27_Workflow_scheduling.ipynb) | Schedule workflows with cron expressions | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/27_Workflow_scheduling.ipynb) |
 
 ## Configuration 
 Simple workflow scheduled with configuration.
