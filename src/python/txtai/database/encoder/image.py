@@ -40,4 +40,4 @@ class ImageEncoder(Encoder):
 
     def decode(self, data):
         # Return a PIL image
-        return Image.open(BytesIO(data))
+        return Image.open(BytesIO(data)) if data else None

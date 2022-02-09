@@ -18,4 +18,4 @@ class PickleEncoder(Encoder):
 
     def decode(self, data):
         # Unpickle to object
-        return pickle.loads(data)
+        return pickle.loads(data) if data else None

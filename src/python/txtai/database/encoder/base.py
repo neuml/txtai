@@ -31,4 +31,4 @@ class Encoder:
             decoded object
         """
 
-        return BytesIO(data)
+        return BytesIO(data) if data else None
