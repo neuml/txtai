@@ -52,11 +52,11 @@ class TestEncoder(unittest.TestCase):
         """
 
         try:
-            # Change to use default encoder
+            # Set default encoder
             self.embeddings.config["objects"] = True
             data = [(0, {"object": bytearray([1, 2, 3]), "text": "default test"}, None)]
 
-            # Create an index for the list of images
+            # Create an index
             self.embeddings.index(data)
 
             result = self.embeddings.search("select object from txtai limit 1")[0]
@@ -84,11 +84,11 @@ class TestEncoder(unittest.TestCase):
         """
 
         try:
-            # Change to use default encoder
+            # Set pickle encoder
             self.embeddings.config["objects"] = "pickle"
             data = [(0, {"object": [1, 2, 3, 4, 5], "text": "default test"}, None)]
 
-            # Create an index for the list of images
+            # Create an index
             self.embeddings.index(data)
 
             result = self.embeddings.search("select object from txtai limit 1")[0]
