@@ -12,7 +12,7 @@ class Token:
     SIMILAR_TOKEN = "__SIMILAR__"
 
     # Default list of comparison operators
-    OPERATORS = ["=", "!=", "<>", ">", ">=", "<", "<=", "+", "-", "*", "/", "%", "not", "between", "like", "is", "null"]
+    OPERATORS = ["=", "!=", "<>", ">", ">=", "<", "<=", "+", "-", "*", "/", "%", "||", "not", "between", "like", "is", "null"]
 
     # Default list of logic separators
     LOGIC_SEPARATORS = ["and", "or"]

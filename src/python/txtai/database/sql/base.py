@@ -112,7 +112,7 @@ class SQL:
         #   - Punctuation chars are parsed as standalone tokens which helps identify operators
         #   - Add additional wordchars to prevent splitting on those values
         #   - Disable comments
-        tokens = shlex(StringIO(query), punctuation_chars="=!<>+-*/%")
+        tokens = shlex(StringIO(query), punctuation_chars="=!<>+-*/%|")
         tokens.wordchars += ":@#"
         tokens.commenters = ""
         tokens = list(tokens)
