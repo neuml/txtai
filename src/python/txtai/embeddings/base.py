@@ -95,27 +95,27 @@ class Embeddings:
         with tempfile.NamedTemporaryFile(mode="wb", suffix=".npy") as buffer:
             # Load documents into database and transform to vectors
             ids, dimensions, embeddings = transform(documents, buffer)
+            if ids:
+                # Build LSA model (if enabled). Remove principal components from embeddings.
+                if self.config.get("pca"):
+                    self.reducer = Reducer(embeddings, self.config["pca"])
+                    self.reducer(embeddings)
 
-            # Build LSA model (if enabled). Remove principal components from embeddings.
-            if self.config.get("pca"):
-                self.reducer = Reducer(embeddings, self.config["pca"])
-                self.reducer(embeddings)
+                # Normalize embeddings
+                self.normalize(embeddings)
 
-            # Normalize embeddings
-            self.normalize(embeddings)
+                # Save index dimensions
+                self.config["dimensions"] = dimensions
 
-            # Save index dimensions
-            self.config["dimensions"] = dimensions
+                # Create approximate nearest neighbor index
+                self.ann = ANNFactory.create(self.config)
 
-            # Create approximate nearest neighbor index
-            self.ann = ANNFactory.create(self.config)
+                # Add embeddings to the index
+                self.ann.index(embeddings)
 
-            # Add embeddings to the index
-            self.ann.index(embeddings)
-
-            # Save indexids-ids mapping for indexes with no database, except when this is a reindex action
-            if not reindex and not self.database:
-                self.config["ids"] = ids
+                # Save indexids-ids mapping for indexes with no database, except when this is a reindex action
+                if not reindex and not self.database:
+                    self.config["ids"] = ids
 
     def upsert(self, documents):
         """
@@ -138,16 +138,16 @@ class Embeddings:
         with tempfile.NamedTemporaryFile(mode="wb", suffix=".npy") as buffer:
             # Load documents into database and transform to vectors
             ids, _, embeddings = transform(documents, buffer)
+            if ids:
+                # Normalize embeddings
+                self.normalize(embeddings)
 
-            # Normalize embeddings
-            self.normalize(embeddings)
+                # Append embeddings to the index
+                self.ann.append(embeddings)
 
-            # Append embeddings to the index
-            self.ann.append(embeddings)
-
-            # Save indexids-ids mapping for indexes with no database
-            if not self.database:
-                self.config["ids"] = self.config["ids"] + ids
+                # Save indexids-ids mapping for indexes with no database
+                if not self.database:
+                    self.config["ids"] = self.config["ids"] + ids
 
     def delete(self, ids):
         """

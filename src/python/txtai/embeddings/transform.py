@@ -56,14 +56,16 @@ class Transform:
         # Transform documents to vectors and load into database
         ids, dimensions, batches, stream = self.model.index(self.stream(documents))
 
-        # Load streamed embeddings back to memory
-        embeddings = np.memmap(buffer, dtype=np.float32, shape=(len(ids), dimensions), mode="w+")
-        with open(stream, "rb") as queue:
-            x = 0
-            for _ in range(batches):
-                batch = pickle.load(queue)
-                embeddings[x : x + batch.shape[0]] = batch
-                x += batch.shape[0]
+        # Check that embeddings are available and load as a memmap
+        embeddings = None
+        if ids:
+            embeddings = np.memmap(buffer, dtype=np.float32, shape=(len(ids), dimensions), mode="w+")
+            with open(stream, "rb") as queue:
+                x = 0
+                for _ in range(batches):
+                    batch = pickle.load(queue)
+                    embeddings[x : x + batch.shape[0]] = batch
+                    x += batch.shape[0]
 
         # Remove temporary file
         os.remove(stream)
