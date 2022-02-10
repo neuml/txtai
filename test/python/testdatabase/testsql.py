@@ -161,6 +161,9 @@ class TestSQL(unittest.TestCase):
             'func(func2(s.indexid + 1), json_extract(data, "$.a")) as "func(func2(indexid + 1), a)"',
         )
         self.assertSql("select", "select func(func2(indexid + 1), a) a from txtai", 'func(func2(s.indexid + 1), json_extract(data, "$.a")) a')
+        self.assertSql("select", "select 'prefix' || id from txtai", "'prefix' || s.id as \"'prefix' || id\"")
+        self.assertSql("select", "select 'prefix' || id id from txtai", "'prefix' || s.id id")
+        self.assertSql("select", "select 'prefix' || a a from txtai", "'prefix' || json_extract(data, \"$.a\") a")
 
     def testSimilar(self):
         """

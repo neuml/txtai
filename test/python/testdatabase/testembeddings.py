@@ -129,8 +129,18 @@ class TestEmbeddings(unittest.TestCase):
         Test empty index
         """
 
+        # Test search against empty index
         embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2", "content": True})
         self.assertEqual(embeddings.search("test"), [])
+
+        # Test index with no data
+        embeddings.index([])
+        self.assertIsNone(embeddings.ann)
+
+        # Test upsert with no data
+        embeddings.index([(0, "this is a test", None)])
+        embeddings.upsert([])
+        self.assertIsNotNone(embeddings.ann)
 
     def testGenerator(self):
         """
@@ -188,6 +198,15 @@ class TestEmbeddings(unittest.TestCase):
             self.embeddings.info()
 
         self.assertIn("txtai", output.getvalue())
+
+    def testInvalidData(self):
+        """
+        Test invalid JSON data
+        """
+
+        # Test invalid JSON value
+        with self.assertRaises(ValueError):
+            self.embeddings.index([(0, {"text": "This is a test", "flag": float("NaN")}, None)])
 
     def testMultiSave(self):
         """

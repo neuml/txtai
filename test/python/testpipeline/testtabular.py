@@ -32,7 +32,8 @@ class TestTabular(unittest.TestCase):
 
         row = {"id": 0, "text": "This is a test", "flag": 1}
 
-        # When content is enabled, both (uid, text, tags) and (uid, data, tags) rows will be generated
+        # When content is enabled, both (uid, text, tags) and (uid, data, tags) rows are generated
+        # given that data doesn't necessarily include the text to index
         rows = tabular([row])
         uid, data, _ = rows[1]
 
@@ -82,6 +83,21 @@ class TestTabular(unittest.TestCase):
 
         self.assertEqual(uid, 0)
         self.assertEqual(text, "This is a test")
+
+    def testMissingColumns(self):
+        """
+        Tests rows with uneven or missing columns
+        """
+
+        tabular = Tabular("id", ["text"], True)
+
+        rows = tabular([{"id": 0, "text": "This is a test", "metadata": "meta"}, {"id": 1, "text": "This is a test"}])
+
+        # When content is enabled both (id, text, tag) and (id, data, tag) tuples are generated given that
+        # data doesn't necessarily include the text to index
+        _, data, _ = rows[3]
+
+        self.assertIsNone(data["metadata"])
 
     def testNoColumns(self):
         """
