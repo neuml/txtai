@@ -41,7 +41,7 @@ class Search:
 
         # Return empty results if ANN is not set
         if not self.ann:
-            return []
+            return [[]] * len(queries)
 
         if self.database:
             return self.dbsearch(queries, limit)
