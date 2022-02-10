@@ -105,15 +105,50 @@ class Tabular(Pipeline):
         for index, row in df.iterrows():
             uid = row[self.idcolumn] if self.idcolumn else index
             uid = uid if uid is not None else index
-            text = ". ".join([str(row[column]) for column in columns])
+            text = self.concat(row, columns)
 
             rows.append((uid, text, None))
 
             # Also add row for content
             if isinstance(self.content, list):
-                row = {column: value for column, value in row.to_dict().items() if column in self.content}
+                row = {column: self.column(value) for column, value in row.to_dict().items() if column in self.content}
                 rows.append((uid, row, None))
             elif self.content:
-                rows.append((uid, row.to_dict(), None))
+                row = {column: self.column(value) for column, value in row.to_dict().items()}
+                rows.append((uid, row, None))
 
         return rows
+
+    def concat(self, row, columns):
+        """
+        Builds a text field from row using columns.
+
+        Args:
+            row: input row
+            columns: list of columns to join together
+
+        Returns:
+            text
+        """
+
+        parts = []
+        for column in columns:
+            column = self.column(row[column])
+            if column:
+                parts.append(str(column))
+
+        return ". ".join(parts) if parts else None
+
+    def column(self, value):
+        """
+        Applies column standardization logic:
+            - Replace NaN values with None
+
+        Args:
+            value: input value
+
+        Returns:
+            formatted value
+        """
+
+        return None if pd.isnull(value) else value

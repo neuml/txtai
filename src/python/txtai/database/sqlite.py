@@ -359,7 +359,7 @@ class SQLite(Database):
 
         # Insert document as JSON
         if document:
-            self.cursor.execute(SQLite.INSERT_DOCUMENT, [uid, json.dumps(document), tags, entry])
+            self.cursor.execute(SQLite.INSERT_DOCUMENT, [uid, json.dumps(document, allow_nan=False), tags, entry])
 
         # Get value of text field
         text = document.get("text")
