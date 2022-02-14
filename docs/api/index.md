@@ -110,7 +110,7 @@ See this [link for a full list of methods](./methods).
 
 The API can be containerized and run. This will bring up an API instance without having to install Python, txtai or any dependencies on your machine!
 
-[See this section for more information](/cloud/#api).
+[See this section for more information](../cloud/#api).
 
 ## Supported language bindings
 
