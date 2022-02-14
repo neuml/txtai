@@ -1,5 +1,6 @@
 build/
 dist/
+docker/**/*.yml
 htmlcov/
 *egg-info/
 __pycache__/
