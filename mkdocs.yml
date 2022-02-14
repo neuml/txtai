@@ -94,7 +94,6 @@ nav:
         - api/index.md
         - Cluster: api/cluster.md
         - Configuration: api/configuration.md
-        - Docker: api/docker.md
         - Methods: api/methods.md
     - Cloud: cloud.md
     - Further Reading: further.md

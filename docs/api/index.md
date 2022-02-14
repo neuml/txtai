@@ -68,10 +68,10 @@ workflow:
               args: ["es"]
 ```
 
-Assuming this YAML content is stored in a file named index.yml, the following command starts the API process.
+Assuming this YAML content is stored in a file named config.yml, the following command starts the API process.
 
 ```bash
-CONFIG=index.yml uvicorn "txtai.api:app"
+CONFIG=config.yml uvicorn "txtai.api:app"
 ```
 
 uvicorn is a full-featured production ready server with support for SSL and more. See the [uvicorn deployment guide](https://www.uvicorn.org/deployment/) for details.
@@ -98,13 +98,19 @@ The configuration above can be run in Python with:
 ```python
 from txtai.api import API
 
-app = API(index.yml)
+app = API(config.yml)
 
 # Run action
 app.workflow("sumfrench", ["https://github.com/neuml/txtai"])
 ```
 
 See this [link for a full list of methods](./methods).
+
+## Run with containers
+
+The API can be containerized and run. This will bring up an API instance without having to install Python, txtai or any dependencies on your machine!
+
+[See this section for more information](/cloud/#api).
 
 ## Supported language bindings
 
