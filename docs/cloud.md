@@ -21,9 +21,9 @@ The base txtai images have no models installed and models will be downloaded eac
 
 ## Build txtai images
 
-The txtai images found on Docker Hub are configured to support most situations. The Dockerfile is [available on GitHub](https://github.com/neuml/txtai/docker/base/Dockerfile). This image can be locally built with different options as desired.
+The txtai images found on Docker Hub are configured to support most situations. This image can be locally built with different options as desired.
 
-Examples build commands below
+Examples build commands below.
 
 ```bash
 # Get Dockerfile
