@@ -44,6 +44,21 @@ docker build -t txtai --build-arg COMPONENTS= .
 As mentioned previously, model caching is recommended to reduce container start times. The following commands demonstrate this. In all cases, it is assumed a config.yml file is present in the local directory with the desired configuration set.
 
 ### API
+This section builds a Docker image that caches models and starts an API service. The config.yml file should be configured with the desired components to expose via the API.
+
+The following is a sample config.yml file that creates an Embeddings API service
+
+```yaml
+# config.yml
+writable: true
+
+embeddings:
+  path: sentence-transformers/nli-mpnet-base-v2
+  content: true
+```
+
+The next section builds the Docker image and starts an instance.
+
 ```bash
 # Get Dockerfile
 wget https://raw.githubusercontent.com/neuml/txtai/master/docker/api/Dockerfile
@@ -59,6 +74,8 @@ docker run -p 8000:8000 --rm -it txtai-api
 ```
 
 ### Service
+This section builds a scheduled workflow service. [More on scheduled workflows can be found here.](../workflow/schedule)
+
 ```bash
 # Get Dockerfile
 wget https://raw.githubusercontent.com/neuml/txtai/master/docker/service/Dockerfile
@@ -71,6 +88,8 @@ docker build -t txtai-service --build-arg BASE_IMAGE=neuml/txtai-gpu .
 ```
 
 ### Workflow
+This section builds a single run workflow. [Example workflows can be found here.](../examples/#workflows)
+
 ```bash
 # Get Dockerfile
 wget https://raw.githubusercontent.com/neuml/txtai/master/docker/workflow/Dockerfile
