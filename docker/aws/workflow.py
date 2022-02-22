@@ -2,6 +2,8 @@
 Lambda handler for txtai workflows
 """
 
+import json
+
 from txtai.api import API
 
 APP = None
@@ -23,5 +25,8 @@ def handler(event, context):
     global APP
     APP = APP if APP else API("config.yml")
 
+    # Get parameters from event body
+    event = json.loads(event["body"])
+
     # Run workflow and return results
-    return list(APP.workflow(event["name"], event["elements"]))
+    return {"statusCode": 200, "headers": {"Content-Type": "application/json"}, "body": list(APP.workflow(event["name"], event["elements"]))}
