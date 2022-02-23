@@ -20,6 +20,8 @@ extras["api"] = [
     "uvicorn>=0.12.1",
 ]
 
+extras["cloud"] = ["apache-libcloud>=3.3.1"]
+
 extras["database"] = ["pillow>=7.2.0"]
 
 extras["model"] = ["onnxruntime>=1.8.1"]
@@ -58,7 +60,9 @@ extras["workflow"] = [
     "xmltodict>=0.12.0",
 ]
 
-extras["all"] = extras["api"] + extras["database"] + extras["model"] + extras["pipeline"] + extras["similarity"] + extras["workflow"]
+extras["all"] = (
+    extras["api"] + extras["cloud"] + extras["database"] + extras["model"] + extras["pipeline"] + extras["similarity"] + extras["workflow"]
+)
 
 setup(
     name="txtai",

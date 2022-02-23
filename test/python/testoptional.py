@@ -77,6 +77,16 @@ class TestOptional(unittest.TestCase):
         with self.assertRaises(ImportError):
             import txtai.api
 
+    def testCloud(self):
+        """
+        Test missing cloud dependencies
+        """
+
+        from txtai.embeddings import Cloud
+
+        with self.assertRaises(ImportError):
+            Cloud(None)
+
     def testDatabase(self):
         """
         Test missing database dependencies

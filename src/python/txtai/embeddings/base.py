@@ -340,18 +340,38 @@ class Embeddings:
         # Add index and sort desc based on score
         return [sorted(enumerate(score), key=lambda x: x[1], reverse=True) for score in scores]
 
-    def load(self, path):
+    def exists(self, path, archive=None):
+        """
+        Checks if an index exists at path.
+
+        Args:
+            path: input path
+            archive: archive configuration
+
+        Returns:
+            True if index exists, False otherwise
+        """
+
+        # Check if this is an archive file and exists
+        path, apath = self.checkarchive(path)
+        if apath:
+            return self.archive.exists(apath, archive)
+
+        return os.path.exists(f"{path}/config") and os.path.exists(f"{path}/embeddings")
+
+    def load(self, path, archive=None):
         """
         Loads an existing index from path.
 
         Args:
             path: input path
+            archive: archive configuration
         """
 
         # Check if this is an archive file and extract
         path, apath = self.checkarchive(path)
         if apath:
-            self.archive.load(apath)
+            self.archive.load(apath, archive)
 
         # Index configuration
         with open(f"{path}/config", "rb") as handle:
@@ -383,25 +403,13 @@ class Embeddings:
         if self.database:
             self.database.load(f"{path}/documents")
 
-    def exists(self, path):
-        """
-        Checks if an index exists at path.
-
-        Args:
-            path: input path
-
-        Returns:
-            True if index exists, False otherwise
-        """
-
-        return os.path.exists(f"{path}/config") and os.path.exists(f"{path}/embeddings")
-
-    def save(self, path):
+    def save(self, path, archive=None):
         """
         Saves an index.
 
         Args:
             path: output path
+            archive: archive configuration
         """
 
         if self.config:
@@ -438,7 +446,7 @@ class Embeddings:
 
             # If this is an archive, save it
             if apath:
-                self.archive.save(apath)
+                self.archive.save(apath, archive)
 
     def close(self):
         """

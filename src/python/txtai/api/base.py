@@ -47,12 +47,13 @@ class API:
         # Return unmodified
         return data
 
-    def __init__(self, config):
+    def __init__(self, config, loaddata=True):
         """
         Creates an API instance, which encapsulates embeddings, pipelines and workflows.
 
         Args:
             config: index configuration
+            loaddata: If True (default), load existing index data, if available. Otherwise, only load models.
         """
 
         # Initialize member variables
@@ -65,10 +66,10 @@ class API:
         self.pool = None
 
         # Local embeddings index
-        if self.config.get("path") and Embeddings().exists(self.config["path"]):
+        if loaddata and self.config.get("path") and Embeddings().exists(self.config["path"], self.config.get("archive")):
             # Load existing index if available
             self.embeddings = Embeddings()
-            self.embeddings.load(self.config["path"])
+            self.embeddings.load(self.config["path"], self.config.get("archive"))
         elif self.config.get("embeddings"):
             # Initialize empty embeddings
             self.embeddings = Embeddings(self.config["embeddings"])
@@ -348,7 +349,7 @@ class API:
 
                 # Save index if path available, otherwise this is an memory-only index
                 if self.config.get("path"):
-                    self.embeddings.save(self.config["path"])
+                    self.embeddings.save(self.config["path"], self.config.get("archive"))
 
                 # Reset document stream
                 self.documents.close()

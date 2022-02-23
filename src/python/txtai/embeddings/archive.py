@@ -8,6 +8,8 @@ import tarfile
 from tempfile import TemporaryDirectory
 from zipfile import ZipFile, ZIP_DEFLATED
 
+from .cloud import Cloud
+
 
 class Archive:
     """
@@ -53,13 +55,39 @@ class Archive:
 
         return self.directory.name
 
-    def load(self, path):
+    def exists(self, path, config):
+        """
+        Checks if file at path exists.
+
+        Args:
+            path: path to archive file
+            config: additional configuration
+
+        Returns:
+            True if path exists, False otherwise
+        """
+
+        # Check if archive exists in cloud storage
+        cloud = self.cloud(config)
+        if cloud:
+            return cloud.exists(path)
+
+        # Check if archive exists locally
+        return os.path.exists(path)
+
+    def load(self, path, config):
         """
         Extracts file at path to archive working directory.
 
         Args:
             path: path to archive file
+            config: additional configuration
         """
+
+        # Retrieve archive from cloud storage, if necessary
+        cloud = self.cloud(config)
+        if cloud:
+            cloud.load(path)
 
         # Get compression type
         compression = self.compression(path)
@@ -74,12 +102,13 @@ class Archive:
             with tarfile.open(path, f"r:{compression}") as tar:
                 tar.extractall(self.path())
 
-    def save(self, path):
+    def save(self, path, config):
         """
         Archives files in archive working directory to file at path.
 
         Args:
             path: path to archive file
+            config: additional configuration
         """
 
         # Get compression type
@@ -102,6 +131,11 @@ class Archive:
             with tarfile.open(path, f"w:{compression}") as tar:
                 tar.add(self.path(), arcname=".")
 
+        # Save file to cloud storage, if necessary
+        cloud = self.cloud(config)
+        if cloud:
+            cloud.save(path)
+
     def compression(self, path):
         """
         Gets compression type for path.
@@ -114,3 +148,17 @@ class Archive:
         """
 
         return path.lower().split(".")[-1]
+
+    def cloud(self, config):
+        """
+        Gets a cloud storage instance, if specified in config.
+
+        Args:
+            config: cloud storage configuration
+
+        Returns:
+            Cloud storage instance
+        """
+
+        # Create cloud storage connection, if necessary
+        return Cloud(config) if config and "provider" in config else None

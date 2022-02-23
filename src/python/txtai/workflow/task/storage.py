@@ -75,8 +75,8 @@ class StorageTask(Task):
 
         key, container = os.path.dirname(path), os.path.basename(path)
 
-        client = get_driver(provider)
-        driver = client(key)
+        driver = get_driver(provider)
+        client = driver(key)
 
-        container = driver.get_container(container_name=container)
-        return [driver.get_object_cdn_url(obj) for obj in driver.list_container_objects(container=container)]
+        container = client.get_container(container_name=container)
+        return [client.get_object_cdn_url(obj) for obj in client.list_container_objects(container=container)]

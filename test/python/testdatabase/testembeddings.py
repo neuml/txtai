@@ -6,7 +6,10 @@ import contextlib
 import io
 import os
 import tempfile
+import time
 import unittest
+
+from libcloud.storage.types import ContainerDoesNotExistError, ObjectDoesNotExistError
 
 from txtai.embeddings import Embeddings
 from txtai.database import Database, SQLException
@@ -67,6 +70,43 @@ class TestEmbeddings(unittest.TestCase):
             # Test offsets still work after save/load
             self.embeddings.upsert([(0, "Looking out into the dreadful abyss", None)])
             self.assertEqual(self.embeddings.count(), len(self.data))
+
+    def testArchiveCloud(self):
+        """
+        Tests embeddings index archiving with cloud storage
+        """
+
+        # Create an index for the list of text
+        self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        # Generate temp file path
+        index = os.path.join(tempfile.gettempdir(), "cloud.tar.gz")
+
+        # Test save with local cloud provider
+        cloud = {"provider": "local", "container": f"cloud.{time.time()}", "key": tempfile.gettempdir()}
+
+        # Test exists handles missing cloud storage object
+        self.assertFalse(self.embeddings.exists(index, cloud))
+
+        # Test exception raised when trying to load index and doesn't exist in cloud storage
+        with self.assertRaises((ContainerDoesNotExistError, ObjectDoesNotExistError)):
+            self.embeddings.load(index, cloud)
+
+        # Save index
+        self.embeddings.save(index, cloud)
+
+        # Test object exists in cloud storage
+        self.assertTrue(self.embeddings.exists(index, cloud))
+
+        # Test object exists locally
+        self.assertTrue(self.embeddings.exists(index))
+
+        # Test index can be reloaded
+        self.embeddings.load(index, cloud)
+
+        # Search for best match
+        result = self.embeddings.search("feel good story", 1)[0]
+        self.assertEqual(result["text"], self.data[4])
 
     def testClose(self):
         """
