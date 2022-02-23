@@ -12,7 +12,7 @@ RUN pip install awslambdaric mangum
 COPY config.yml .
 
 # Run local API instance to cache models in container
-RUN python -c "from txtai.api import API; API('config.yml')"
+RUN python -c "from txtai.api import API; API('config.yml', False)"
 
 # Copy application
 COPY $APP ./app.py
