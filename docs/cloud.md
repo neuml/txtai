@@ -39,7 +39,7 @@ docker build -t txtai --build-arg GPU=1 .
 docker build -t txtai --build-arg COMPONENTS= .
 ```
 
-## Cache models in container images
+## Container image model caching
 
 As mentioned previously, model caching is recommended to reduce container start times. The following commands demonstrate this. In all cases, it is assumed a config.yml file is present in the local directory with the desired configuration set.
 
@@ -100,3 +100,64 @@ docker build -t txtai-workflow .
 # GPU build
 docker build -t txtai-workflow --build-arg BASE_IMAGE=neuml/txtai-gpu .
 ```
+
+## Serverless Compute
+
+One of the most powerful features of txtai is building YAML-configured applications with the "build once, run anywhere" approach. API instances and workflows can run locally, on a server, on a cluster or serverless.
+
+Serverless instances of txtai are supported with frameworks such as [AWS SAM](https://github.com/aws/serverless-application-model) and [Serverless](https://github.com/serverless/serverless).
+
+The following steps shows a basic example of how to spin up a serverless API instance with AWS SAM.
+
+- Create config.yml and template.yml
+
+```yaml
+# config.yml
+writable: true
+
+embeddings:
+  path: sentence-transformers/nli-mpnet-base-v2
+  content: true
+```
+
+```yaml
+# template.yml
+Resources:
+  txtai:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      MemorySize: 3000
+      Timeout: 20
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: "/{proxy+}"
+            Method: ANY
+    Metadata:
+      Dockerfile: Dockerfile
+      DockerContext: ./
+      DockerTag: api
+```
+
+- Install [AWS SAM](https://pypi.org/project/aws-sam-cli/)
+
+- Run following
+
+```bash
+# Get Dockerfile and application
+wget https://raw.githubusercontent.com/neuml/txtai/master/docker/aws/api.py
+wget https://raw.githubusercontent.com/neuml/txtai/master/docker/aws/Dockerfile
+
+# Build the docker image
+sam build
+
+# Start API gateway and Lambda instance locally
+sam local start-api -p 8000 --warm-containers LAZY
+
+# Verify instance running (should return 0)
+curl http://localhost:8080/count
+```
+
+If successful, a local API instance is now running in a "serverless" fashion. This configuration can be deployed to AWS using SAM. [See this link for more information.](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-cli-command-reference-sam-deploy.html)

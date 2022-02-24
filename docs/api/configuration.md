@@ -19,7 +19,7 @@ embeddings:
   content: true
 ```
 
-Two top level settings are available to control where indexes are saved and if an index is a read-only index.
+Three top level settings are available to control where indexes are saved and if an index is a read-only index.
 
 ### path
 ```yaml
@@ -34,6 +34,9 @@ path: boolean
 ```
 
 Determines if the input embeddings index is writable (true) or read-only (false). This allows serving a read-only index.
+
+### cloud
+[Cloud storage settings](../../embeddings/configuration#cloud) can be set under a `cloud` top level configuration group.
 
 ## Pipeline
 

@@ -37,7 +37,12 @@ class Cloud:
 
         # Get client connection
         self.client = driver(
-            config.get("key", os.environ.get("access_key")), config.get("secret", os.environ.get("access_secret")), region=config.get("region")
+            config.get("key", os.environ.get("ACCESS_KEY")),
+            config.get("secret", os.environ.get("ACCESS_SECRET")),
+            host=config.get("host"),
+            port=config.get("port"),
+            token=config.get("token"),
+            region=config.get("region"),
         )
 
     def exists(self, path):

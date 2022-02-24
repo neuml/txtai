@@ -1,32 +1,35 @@
 # Configuration
 
-## method
+## Embeddings
+This following describes available embeddings configuration. These parameters are set via the [Embeddings constructor](../methods#txtai.embeddings.base.Embeddings.__init__).
+
+### method
 ```yaml
 method: transformers|sentence-transformers|words|external
 ```
 
 Sentence embeddings method to use. Options listed below.
 
-### transformers
+#### transformers
 
 Builds sentence embeddings using a transformers model. While this can be any transformers model, it works best with
 [models trained](https://huggingface.co/models?pipeline_tag=sentence-similarity) to build sentence embeddings.
 
-### sentence-transformers
+#### sentence-transformers
 
 Same as transformers but loads models with the sentence-transformers library.
 
-### words
+#### words
 
 Builds sentence embeddings using a word embeddings model.
 
-### external
+#### external
 
 Sentence embeddings are loaded via an external model or API. Requires setting the `transform` parameter to a function that translates data into vectors.
 
 The method is inferred using the _path_, if not provided. sentence-transformers and words require the [similarity](../../install/#similarity) extras package to be installed.
 
-## path
+### path
 ```yaml
 path: string
 ```
@@ -34,7 +37,7 @@ path: string
 Sets the path for a vectors model. When using a transformers/sentence-transformers model, this can be any model on the
 [Hugging Face Model Hub](https://huggingface.co/models) or a local file path. Otherwise, it must be a local file path to a word embeddings model.
 
-## backend
+### backend
 ```yaml
 backend: faiss|hnsw|annoy
 ```
@@ -44,7 +47,7 @@ Approximate Nearest Neighbor (ANN) index backend for storing generated sentence 
 
 Backend-specific settings are set with a corresponding configuration object having the same name as the backend (i.e. annoy, faiss, or hnsw). None of these are required and are set to defaults if omitted.
 
-### faiss
+#### faiss
 ```yaml
 faiss:
     components: Comma separated list of components - defaults to "Flat" for small
@@ -61,7 +64,7 @@ See the following Faiss documentation links for more information.
 - [Index Factory](https://github.com/facebookresearch/faiss/wiki/The-index-factory)
 - [Search Tuning](https://github.com/facebookresearch/faiss/wiki/Faster-search)
 
-### hnsw
+#### hnsw
 ```yaml
 hnsw:
     efconstruction:  ef_construction param for init_index (int) - defaults to 200
@@ -72,7 +75,7 @@ hnsw:
 
 See [Hnswlib documentation](https://github.com/nmslib/hnswlib/blob/master/ALGO_PARAMS.md) for more information on these parameters.
 
-### annoy
+#### annoy
 ```yaml
 annoy:
     ntrees: number of trees (int) - defaults to 10
@@ -81,14 +84,14 @@ annoy:
 
 See [Annoy documentation](https://github.com/spotify/annoy#full-python-api) for more information on these parameters. Note that annoy indexes can not be modified after creation, upserts/deletes and other modifications are not supported.
 
-## content
+### content
 ```yaml
 content: string|boolean
 ```
 
 Enables content storage. When true, the default content storage engine will be used. Otherwise, the string must specify the supported content storage engine to use.
 
-## quantize
+### quantize
 ```yaml
 quantize: boolean
 ```
@@ -96,9 +99,9 @@ quantize: boolean
 Enables quanitization of generated sentence embeddings. If the index backend supports it, sentence embeddings will be stored with 8-bit precision vs 32-bit.
 Only Faiss currently supports quantization.
 
-## Additional configuration for Transformers models
+### Additional configuration for Transformers models
 
-### tokenize
+#### tokenize
 ```yaml
 tokenize: boolean
 ```
@@ -106,29 +109,89 @@ tokenize: boolean
 Enables string tokenization (defaults to false). This method applies tokenization rules that only work with English language text and may increase the quality of
 English language sentence embeddings in some situations.
 
-## Additional configuration for Word embedding models
+### Additional configuration for Word embedding models
 
 Word embeddings provide a good tradeoff of performance to functionality for a similarity search system. With that being said, Transformers models are making great progress in scaling performance down to smaller models and are the preferred vector backend in txtai for most cases.
 
 Word embeddings models require the [similarity](../../install/#similarity) extras package to be installed.
 
-### storevectors
+#### storevectors
 ```yaml
 storevectors: boolean
 ```
 
 Enables copying of a vectors model set in path into the embeddings models output directory on save. This option enables a fully encapsulated index with no external file dependencies.
 
-### scoring
+#### scoring
 ```yaml
 scoring: bm25|tfidf|sif
 ```
 
 A scoring model builds weighted averages of word vectors for a given sentence. Supports BM25, TF-IDF and SIF (smooth inverse frequency) methods. If a scoring method is not provided, mean sentence embeddings are built.
 
-### pca
+#### pca
 ```yaml
 pca: int
 ```
 
 Removes _n_ principal components from generated sentence embeddings. When enabled, a TruncatedSVD model is built to help with dimensionality reduction. After pooling of vectors creates a single sentence embedding, this method is applied.
+
+## Cloud
+
+This section describes parameters used to sync compressed indexes with cloud storage. These parameters are only enabled if an embeddings index is stored as compressed. They are set via the [embeddings.load](../methods/#txtai.embeddings.base.Embeddings.load) and [embeddings.save](../methods/#txtai.embeddings.base.Embeddings.save) methods.
+
+### provider
+```yaml
+provider: string
+```
+
+The cloud storage provider, see [full list of providers here](https://libcloud.readthedocs.io/en/stable/storage/supported_providers.html).
+
+### container
+```yaml
+container: string
+```
+
+Container/bucket/directory name.
+
+### key
+```yaml
+key: string
+```
+
+Provider-specific access key. Can also be set via ACCESS_KEY environment variable. Ensure the configuration file is secured if added to the file.
+
+### secret
+```yaml
+secret: string
+```
+
+Provider-specific access secret. Can also be set via ACCESS_SECRET environment variable. Ensure the configuration file is secured if added to the file.
+
+### host
+```yaml
+host: string
+```
+
+Optional server host name. Set when using a local cloud storage server.
+
+### port
+```yaml
+port: int
+```
+
+Optional server port. Set when using a local cloud storage server.
+
+### token
+```yaml
+token: string
+```
+
+Optional temporary session token
+
+### region
+```yaml
+region: string
+```
+
+Optional parameter to specify the storage region, provider-specific.

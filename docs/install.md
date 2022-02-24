@@ -52,6 +52,14 @@ Serve txtai via a web API.
 pip install txtai[api]
 ```
 
+### Cloud
+
+Interface with cloud compute.
+
+```
+pip install txtai[cloud]
+```
+
 ### Database
 
 Additional content storage options
