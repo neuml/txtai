@@ -94,9 +94,7 @@ The easiest way to install is via pip and PyPI
 Python 3.7+ is supported. Using a Python [virtual environment](https://docs.python.org/3/library/venv.html) is recommended.
 
 See the detailed [install instructions](https://neuml.github.io/txtai/install) for more information covering
-[installing from source](https://neuml.github.io/txtai/install/#install-from-source),
-[environment specific prerequisites](https://neuml.github.io/txtai/install/#environment-specific-prerequisites) and
-[optional dependencies](https://neuml.github.io/txtai/install/#optional-dependencies).
+[optional dependencies](https://neuml.github.io/txtai/install/#optional-dependencies), [environment specific prerequisites](https://neuml.github.io/txtai/install/#environment-specific-prerequisites), [installing from source](https://neuml.github.io/txtai/install/#install-from-source) and how to [run with containers](https://neuml.github.io/txtai/cloud).
 
 ## Examples
 

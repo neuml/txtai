@@ -9,28 +9,6 @@ The easiest way to install is via pip and PyPI
 
 Python 3.7+ is supported. Using a Python [virtual environment](https://docs.python.org/3/library/venv.html) is recommended.
 
-## Install from source
-
-txtai can also be installed directly from GitHub to access the latest, unreleased features.
-
-    pip install git+https://github.com/neuml/txtai
-
-## Environment specific prerequisites
-
-Additional environment specific prerequisites are below.
-
-### Linux
-
-Optional audio transcription requires a [system library to be installed](https://github.com/bastibe/python-soundfile#installation)
-
-### macOS
-
-Run `brew install libomp` see [this link](https://github.com/kyamagu/faiss-wheels#prerequisite)
-
-### Windows
-
-Optional dependencies require [C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
-
 ## Optional dependencies
 
 txtai has the following optional dependencies that can be installed as extras. The patterns below are supported
@@ -105,3 +83,29 @@ Multiple dependencies can be specified at the same time.
 ```
 pip install txtai[pipeline,workflow]
 ```
+
+## Environment specific prerequisites
+
+Additional environment specific prerequisites are below.
+
+### Linux
+
+Optional audio transcription requires a [system library to be installed](https://github.com/bastibe/python-soundfile#installation)
+
+### macOS
+
+Run `brew install libomp` see [this link](https://github.com/kyamagu/faiss-wheels#prerequisite)
+
+### Windows
+
+Optional dependencies require [C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
+
+## Install from source
+
+txtai can also be installed directly from GitHub to access the latest, unreleased features.
+
+    pip install git+https://github.com/neuml/txtai
+
+## Run with containers
+
+Docker images are available for txtai. [See this section](../cloud) for more information on container-based installs.
