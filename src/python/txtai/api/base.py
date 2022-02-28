@@ -66,10 +66,10 @@ class API:
         self.pool = None
 
         # Local embeddings index
-        if loaddata and self.config.get("path") and Embeddings().exists(self.config["path"], self.config.get("archive")):
+        if loaddata and self.config.get("path") and Embeddings().exists(self.config["path"], self.config.get("cloud")):
             # Load existing index if available
             self.embeddings = Embeddings()
-            self.embeddings.load(self.config["path"], self.config.get("archive"))
+            self.embeddings.load(self.config["path"], self.config.get("cloud"))
         elif self.config.get("embeddings"):
             # Initialize empty embeddings
             self.embeddings = Embeddings(self.config["embeddings"])
@@ -349,7 +349,7 @@ class API:
 
                 # Save index if path available, otherwise this is an memory-only index
                 if self.config.get("path"):
-                    self.embeddings.save(self.config["path"], self.config.get("archive"))
+                    self.embeddings.save(self.config["path"], self.config.get("cloud"))
 
                 # Reset document stream
                 self.documents.close()
