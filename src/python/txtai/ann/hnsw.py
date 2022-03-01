@@ -56,8 +56,9 @@ class HNSW(ANN):
         # Append new ids - position in embeddings + existing offset is used as the id
         self.model.add_items(embeddings, np.arange(self.config["offset"], self.config["offset"] + new))
 
-        # Update id offset
+        # Update id offset and index metadata
         self.config["offset"] += new
+        self.metadata(None, True)
 
     def delete(self, ids):
         # Mark elements as deleted to omit from search results
