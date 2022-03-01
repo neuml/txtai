@@ -58,7 +58,7 @@ class HNSW(ANN):
 
         # Update id offset and index metadata
         self.config["offset"] += new
-        self.metadata(None, True)
+        self.metadata(None)
 
     def delete(self, ids):
         # Mark elements as deleted to omit from search results

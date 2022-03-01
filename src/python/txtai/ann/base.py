@@ -114,20 +114,19 @@ class ANN:
         setting = backend.get(name) if backend else None
         return setting if setting else default
 
-    def metadata(self, settings, update=False):
+    def metadata(self, settings):
         """
         Adds index build metadata.
 
         Args:
             settings: index build settings
-            update: True if this is a metadata update, False otherwise
         """
 
         # ISO 8601 timestamp
         create = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
         # Set build metadata if this is not an update
-        if not update:
+        if settings:
             self.config["build"] = {
                 "create": create,
                 "python": platform.python_version(),
