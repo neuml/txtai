@@ -11,6 +11,8 @@ from fastapi import APIRouter, FastAPI
 from .base import API
 from .factory import Factory
 
+from ..app import Application
+
 # API instance
 app = FastAPI()
 
@@ -58,7 +60,7 @@ def start():
     global INSTANCE
 
     # Load YAML settings
-    config = API.read(os.getenv("CONFIG"))
+    config = Application.read(os.getenv("CONFIG"))
 
     # Instantiate API instance
     api = os.getenv("API_CLASS")

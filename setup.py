@@ -6,7 +6,7 @@ with open("README.md", "r", encoding="utf-8") as f:
     DESCRIPTION = "".join([line for line in f if "gh-dark-mode-only" not in line])
 
 # Required dependencies
-install = ["faiss-cpu>=1.7.1.post2", "numpy>=1.18.4", "torch>=1.6.0", "transformers>=4.12.3", "tokenizers>=0.10.3"]
+install = ["faiss-cpu>=1.7.1.post2", "numpy>=1.18.4", "PyYAML>=5.3", "torch>=1.6.0", "transformers>=4.12.3", "tokenizers>=0.10.3"]
 
 # Optional dependencies
 extras = {}
@@ -16,7 +16,6 @@ extras["dev"] = ["black", "coverage", "pre-commit", "pylint"]
 extras["api"] = [
     "aiohttp>=3.8.1",
     "fastapi>=0.61.1",
-    "PyYAML>=5.3",
     "uvicorn>=0.12.1",
 ]
 
