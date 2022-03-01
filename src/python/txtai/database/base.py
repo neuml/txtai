@@ -5,7 +5,7 @@ Database module
 import logging
 
 from .encoder import EncoderFactory
-from .sql import SQL, SQLException, Token
+from .sql import SQL, SQLError, Token
 
 # Logging configuration
 logger = logging.getLogger(__name__)
@@ -226,4 +226,4 @@ class Database:
 
             return function(*args)
         except Exception as ex:
-            raise SQLException(ex) from None
+            raise SQLError(ex) from None

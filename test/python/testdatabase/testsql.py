@@ -4,7 +4,7 @@ SQL module tests
 
 import unittest
 
-from txtai.database import SQL, SQLException, SQLite
+from txtai.database import SQL, SQLError, SQLite
 
 
 class TestSQL(unittest.TestCase):
@@ -58,16 +58,16 @@ class TestSQL(unittest.TestCase):
         Test invalid SQL
         """
 
-        with self.assertRaises(SQLException):
+        with self.assertRaises(SQLError):
             self.db.search("select * from txtai where order by")
 
-        with self.assertRaises(SQLException):
+        with self.assertRaises(SQLError):
             self.db.search("select * from txtai where groupby order by")
 
-        with self.assertRaises(SQLException):
+        with self.assertRaises(SQLError):
             self.db.search("select * from txtai where a(1)")
 
-        with self.assertRaises(SQLException):
+        with self.assertRaises(SQLError):
             self.db.search("select a b c from txtai where id match id")
 
     def testBracket(self):

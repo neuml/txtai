@@ -12,7 +12,7 @@ import unittest
 from libcloud.storage.types import ContainerDoesNotExistError, ObjectDoesNotExistError
 
 from txtai.embeddings import Embeddings
-from txtai.database import Database, SQLException
+from txtai.database import Database, SQLError
 
 
 class TestEmbeddings(unittest.TestCase):
@@ -373,7 +373,7 @@ class TestEmbeddings(unittest.TestCase):
         self.assertEqual(sorted(result.keys()), ["data", "entry", "id", "text"])
 
         # Test SQL parse error
-        with self.assertRaises(SQLException):
+        with self.assertRaises(SQLError):
             self.embeddings.search("select * from txtai where bad,query")
 
     def testUpsert(self):
