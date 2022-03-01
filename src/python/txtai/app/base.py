@@ -17,7 +17,7 @@ from ..workflow import WorkflowFactory
 # pylint: disable=R0904
 class Application:
     """
-    Supports building YAML-configured txtai applications.
+    Builds YAML-configured txtai applications.
     """
 
     @staticmethod
