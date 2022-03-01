@@ -270,9 +270,12 @@ class Application:
             unmodified input documents
         """
 
-        if self.embeddings and self.config.get("writable"):
+        # Raise error if index is not writable
+        if not self.config.get("writable"):
+            raise ReadOnlyError("Attempting to add documents to a read-only index (writable != True)")
+
+        if self.embeddings:
             with self.lock:
-                # Only add batch if index is marked writable
                 # Create documents file if not already open
                 if not self.documents:
                     self.documents = Documents()
@@ -305,7 +308,11 @@ class Application:
         Builds an embeddings index for previously batched documents.
         """
 
-        if self.embeddings and self.config.get("writable") and self.documents:
+        # Raise error if index is not writable
+        if not self.config.get("writable"):
+            raise ReadOnlyError("Attempting to index a read-only index (writable != True)")
+
+        if self.embeddings and self.documents:
             with self.lock:
                 # Build scoring index if scoring method provided
                 if self.embeddings.scoring:
@@ -327,7 +334,11 @@ class Application:
         Runs an embeddings upsert operation for previously batched documents.
         """
 
-        if self.embeddings and self.config.get("writable") and self.documents:
+        # Raise error if index is not writable
+        if not self.config.get("writable"):
+            raise ReadOnlyError("Attempting to upsert a read-only index (writable != True)")
+
+        if self.embeddings and self.documents:
             with self.lock:
                 # Run upsert
                 self.embeddings.upsert(self.documents)
@@ -351,7 +362,11 @@ class Application:
             ids deleted
         """
 
-        if self.embeddings and self.config.get("writable"):
+        # Raise error if index is not writable
+        if not self.config.get("writable"):
+            raise ReadOnlyError("Attempting to delete from a read-only index (writable != True)")
+
+        if self.embeddings:
             with self.lock:
                 return self.embeddings.delete(ids)
 
@@ -530,3 +545,9 @@ class Application:
             self.pool.close()
             self.pool.join()
             self.pool = None
+
+
+class ReadOnlyError(Exception):
+    """
+    Error raised when trying to modify a read-only index
+    """

@@ -4,9 +4,10 @@ Defines API paths for embeddings endpoints.
 
 from typing import List
 
-from fastapi import APIRouter, Body, Request
+from fastapi import APIRouter, Body, HTTPException, Request
 
 from .. import application
+from ...app import ReadOnlyError
 
 router = APIRouter()
 
@@ -56,7 +57,10 @@ def add(documents: List[dict] = Body(...)):
         documents: list of {id: value, text: value}
     """
 
-    application.get().add(documents)
+    try:
+        application.get().add(documents)
+    except ReadOnlyError as e:
+        raise HTTPException(status_code=403, detail=e.args[0]) from e
 
 
 @router.get("/index")
@@ -65,7 +69,10 @@ def index():
     Builds an embeddings index for previously batched documents.
     """
 
-    application.get().index()
+    try:
+        application.get().index()
+    except ReadOnlyError as e:
+        raise HTTPException(status_code=403, detail=e.args[0]) from e
 
 
 @router.get("/upsert")
@@ -74,7 +81,10 @@ def upsert():
     Runs an embeddings upsert operation for previously batched documents.
     """
 
-    application.get().upsert()
+    try:
+        application.get().upsert()
+    except ReadOnlyError as e:
+        raise HTTPException(status_code=403, detail=e.args[0]) from e
 
 
 @router.post("/delete")
@@ -89,7 +99,10 @@ def delete(ids: List = Body(...)):
         ids deleted
     """
 
-    return application.get().delete(ids)
+    try:
+        return application.get().delete(ids)
+    except ReadOnlyError as e:
+        raise HTTPException(status_code=403, detail=e.args[0]) from e
 
 
 @router.get("/count")

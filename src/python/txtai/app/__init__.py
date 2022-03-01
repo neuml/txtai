@@ -2,4 +2,4 @@
 App imports
 """
 
-from .base import Application
+from .base import Application, ReadOnlyError

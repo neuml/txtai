@@ -119,7 +119,7 @@ class TestEmbeddings(unittest.TestCase):
         Test empty API configuration
         """
 
-        api = API({})
+        api = API({"writable": True})
 
         self.assertIsNone(api.search("test", None))
         self.assertIsNone(api.batchsearch(["test"], None))
@@ -259,5 +259,10 @@ class TestEmbeddings(unittest.TestCase):
 
         # Test similarity
         uid = self.client.post("similarity", json={"query": "feel good story", "texts": self.data}).json()[0]["id"]
-
         self.assertEqual(uid, 4)
+
+        # Test errors raised for write operations
+        self.assertEqual(self.client.post("add", json=[{"id": 0, "text": "test"}]).status_code, 403)
+        self.assertEqual(self.client.get("index").status_code, 403)
+        self.assertEqual(self.client.get("upsert").status_code, 403)
+        self.assertEqual(self.client.post("delete", json=[0]).status_code, 403)
