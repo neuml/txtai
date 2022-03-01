@@ -269,7 +269,7 @@ class Embeddings:
 
         return self.ann.count() if self.ann else 0
 
-    def search(self, query, limit=3):
+    def search(self, query, limit=None):
         """
         Finds documents most similar to the input queries. This method will run either an approximate
         nearest neighbor (ann) search or an approximate nearest neighbor + database search depending
@@ -283,10 +283,10 @@ class Embeddings:
             list of (id, score) for ann search, list of dict for an ann+database search
         """
 
-        results = self.batchsearch([query], limit)
+        results = self.batchsearch([query], limit if limit else 3)
         return results[0] if results else results
 
-    def batchsearch(self, queries, limit=3):
+    def batchsearch(self, queries, limit=None):
         """
         Finds documents most similar to the input queries. This method will run either an approximate
         nearest neighbor (ann) search or an approximate nearest neighbor + database search depending
@@ -300,7 +300,7 @@ class Embeddings:
             list of (id, score) per query for ann search, list of dict per query for an ann+database search
         """
 
-        return Search(self)(queries, limit)
+        return Search(self)(queries, limit if limit else 3)
 
     def similarity(self, query, data):
         """
