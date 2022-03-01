@@ -209,21 +209,7 @@ class Application:
         # Attempt to resolve action as a callable function
         return PipelineFactory.create({}, function)
 
-    def limit(self, limit):
-        """
-        Parses the number of results to return from the request. Allows range of 1-250, with a default of 10.
-
-        Args:
-            limit: limit parameter
-
-        Returns:
-            bounded limit
-        """
-
-        # Return between 1 and 250 results, defaults to 10
-        return max(1, min(250, int(limit) if limit else 10))
-
-    def search(self, query, limit=None):
+    def search(self, query, limit=10):
         """
         Finds documents in the embeddings model most similar to the input query. Returns
         a list of {id: value, score: value} sorted by highest score, where id is the
@@ -245,7 +231,7 @@ class Application:
 
         return None
 
-    def batchsearch(self, queries, limit=None):
+    def batchsearch(self, queries, limit=10):
         """
         Finds documents in the embeddings model most similar to the input queries. Returns
         a list of {id: value, score: value} sorted by highest score per query, where id is
@@ -261,7 +247,7 @@ class Application:
 
         if self.embeddings:
             with self.lock:
-                search = self.embeddings.batchsearch(queries, self.limit(limit))
+                search = self.embeddings.batchsearch(queries, limit)
 
             results = []
             for result in search:

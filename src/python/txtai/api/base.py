@@ -105,3 +105,17 @@ class API(Application):
             return self.cluster.count()
 
         return super().count()
+
+    def limit(self, limit):
+        """
+        Parses the number of results to return from the request. Allows range of 1-250, with a default of 10.
+
+        Args:
+            limit: limit parameter
+
+        Returns:
+            bounded limit
+        """
+
+        # Return between 1 and 250 results, defaults to 10
+        return max(1, min(250, int(limit) if limit else 10))
