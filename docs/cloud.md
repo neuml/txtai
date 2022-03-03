@@ -3,17 +3,17 @@
 ![cloud](images/cloud.png#only-light)
 ![cloud](images/cloud-dark.png#only-dark)
 
-Scalable cloud-native applications can be built with txtai. The following runtimes are supported.
+Scalable cloud-native applications can be built with txtai. The following container runtimes are supported.
 
-- Container Orchestration (i.e. Kubernetes)
+- Container Orchestration Systems (i.e. Kubernetes)
 - Docker Engine
-- Serverless
+- Serverless Compute
 
 Images for txtai are available on Docker Hub for [CPU](https://hub.docker.com/r/neuml/txtai-cpu) and [GPU](https://hub.docker.com/r/neuml/txtai-gpu) installs. The CPU install is recommended when GPUs aren't available given the image is half the size.
 
 The base txtai images have no models installed and models will be downloaded each time the container starts. Caching the models is recommended as that will significantly reduce container start times. This can be done a couple different ways.
 
-- Create a container with the [models cached](#cache-models-in-container-images)
+- Create a container with the [models cached](#container-image-model-caching)
 - Set the transformers cache environment variable and mount that volume when starting the image
     ```bash
     docker run -v <local dir>:/models -e TRANSFORMERS_CACHE=/models --rm --it <docker image>
@@ -44,9 +44,9 @@ docker build -t txtai --build-arg COMPONENTS= .
 As mentioned previously, model caching is recommended to reduce container start times. The following commands demonstrate this. In all cases, it is assumed a config.yml file is present in the local directory with the desired configuration set.
 
 ### API
-This section builds a Docker image that caches models and starts an API service. The config.yml file should be configured with the desired components to expose via the API.
+This section builds an image that caches models and starts an API service. The config.yml file should be configured with the desired components to expose via the API.
 
-The following is a sample config.yml file that creates an Embeddings API service
+The following is a sample config.yml file that creates an Embeddings API service.
 
 ```yaml
 # config.yml
@@ -57,7 +57,7 @@ embeddings:
   content: true
 ```
 
-The next section builds the Docker image and starts an instance.
+The next section builds the image and starts an instance.
 
 ```bash
 # Get Dockerfile
@@ -85,6 +85,9 @@ docker build -t txtai-service .
 
 # GPU build
 docker build -t txtai-service --build-arg BASE_IMAGE=neuml/txtai-gpu .
+
+# Run
+docker run --rm -it txtai-service
 ```
 
 ### Workflow
@@ -99,15 +102,20 @@ docker build -t txtai-workflow .
 
 # GPU build
 docker build -t txtai-workflow --build-arg BASE_IMAGE=neuml/txtai-gpu .
+
+# Run
+docker run --rm -it txtai-workflow <workflow name> <workflow parameters>
 ```
 
 ## Serverless Compute
 
 One of the most powerful features of txtai is building YAML-configured applications with the "build once, run anywhere" approach. API instances and workflows can run locally, on a server, on a cluster or serverless.
 
-Serverless instances of txtai are supported with frameworks such as [AWS SAM](https://github.com/aws/serverless-application-model) and [Serverless](https://github.com/serverless/serverless).
+Serverless instances of txtai are supported on frameworks such as [AWS Lambda](https://aws.amazon.com/lambda/), [Google Cloud Functions](https://cloud.google.com/functions), [Azure Cloud Functions](https://azure.microsoft.com/en-us/services/functions/) and [Kubernetes](https://kubernetes.io/) with [Knative](https://knative.dev/docs/).
 
-The following steps shows a basic example of how to spin up a serverless API instance with AWS SAM.
+### AWS Lambda
+
+The following steps show a basic example of how to spin up a serverless API instance with [AWS SAM](https://github.com/aws/serverless-application-model).
 
 - Create config.yml and template.yml
 
@@ -161,3 +169,7 @@ curl http://localhost:8080/count
 ```
 
 If successful, a local API instance is now running in a "serverless" fashion. This configuration can be deployed to AWS using SAM. [See this link for more information.](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-cli-command-reference-sam-deploy.html)
+
+### Kubernetes with Knative
+
+A full example covering how to build a serverless txtai application on Kubernetes with Knative [can be found here](https://towardsdatascience.com/serverless-vector-search-with-txtai-96f6163ab972).
