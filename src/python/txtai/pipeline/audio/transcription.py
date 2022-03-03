@@ -9,7 +9,7 @@ try:
 except (ImportError, OSError):
     SOUNDFILE = False
 
-from transformers import Wav2Vec2ForCTC, Wav2Vec2Processor
+from transformers import AutoModelForCTC, Wav2Vec2Processor
 
 from ..hfmodel import HFModel
 
@@ -38,7 +38,7 @@ class Transcription(HFModel):
             raise ImportError("SoundFile library not installed or libsndfile not found")
 
         # load model and processor
-        self.model = Wav2Vec2ForCTC.from_pretrained(self.path)
+        self.model = AutoModelForCTC.from_pretrained(self.path)
         self.processor = Wav2Vec2Processor.from_pretrained(self.path)
 
         # Move model to device
