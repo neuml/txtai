@@ -115,7 +115,7 @@ Serverless instances of txtai are supported on frameworks such as [AWS Lambda](h
 
 ### AWS Lambda
 
-The following steps show a basic example of how to spin up a serverless API instance with [AWS SAM](https://github.com/aws/serverless-application-model).
+The following steps show a basic example of how to build a serverless API instance with [AWS SAM](https://github.com/aws/serverless-application-model).
 
 - Create config.yml and template.yml
 
