@@ -27,6 +27,7 @@ class TestOptional(unittest.TestCase):
             "fastapi",
             "fasttext",
             "hnswlib",
+            "imagehash",
             "nltk",
             "libcloud.storage.providers",
             "onnxmltools",
@@ -116,13 +117,16 @@ class TestOptional(unittest.TestCase):
         Test missing pipeline dependencies
         """
 
-        from txtai.pipeline import Caption, HFOnnx, MLOnnx, Objects, Segmentation, Tabular, Textractor, Transcription, Translation
+        from txtai.pipeline import Caption, HFOnnx, ImageHash, MLOnnx, Objects, Segmentation, Tabular, Textractor, Transcription, Translation
 
         with self.assertRaises(ImportError):
             Caption()
 
         with self.assertRaises(ImportError):
             HFOnnx()("google/bert_uncased_L-2_H-128_A-2", quantize=True)
+
+        with self.assertRaises(ImportError):
+            ImageHash()
 
         with self.assertRaises(ImportError):
             MLOnnx()

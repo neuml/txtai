@@ -6,7 +6,7 @@ with open("README.md", "r", encoding="utf-8") as f:
     DESCRIPTION = "".join([line for line in f if "gh-dark-mode-only" not in line])
 
 # Required dependencies
-install = ["faiss-cpu>=1.7.1.post2", "numpy>=1.18.4", "PyYAML>=5.3", "torch>=1.6.0", "transformers>=4.12.3", "tokenizers>=0.10.3"]
+install = ["faiss-cpu>=1.7.1.post2", "numpy>=1.18.4", "pyyaml>=5.3", "torch>=1.6.0", "transformers>=4.12.3", "tokenizers>=0.10.3"]
 
 # Optional dependencies
 extras = {}
@@ -28,6 +28,7 @@ extras["model"] = ["onnxruntime>=1.8.1"]
 extras["pipeline"] = [
     "beautifulsoup4>=4.9.3",
     "fasttext>=0.9.2",
+    "imagehash>=4.2.1",
     "nltk>=3.5",
     "onnx>=1.10.1",
     "onnxmltools>=1.9.1",
