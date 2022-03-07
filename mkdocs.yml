@@ -64,6 +64,7 @@ nav:
             - Textractor: pipeline/data/textractor.md
         - Image:
             - Caption: pipeline/image/caption.md
+            - Image Hash: pipeline/image/imagehash.md
             - Objects: pipeline/image/objects.md
         - Text:
             - Entity: pipeline/text/entity.md
