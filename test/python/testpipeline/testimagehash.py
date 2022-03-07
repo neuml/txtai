@@ -12,7 +12,7 @@ from txtai.pipeline import ImageHash
 from utils import Utils
 
 
-class TestCaption(unittest.TestCase):
+class TestImageHash(unittest.TestCase):
     """
     Caption tests.
     """
@@ -39,7 +39,7 @@ class TestCaption(unittest.TestCase):
         """
 
         ihash = ImageHash("average")
-        self.assertEqual(ihash(self.image), "0859dd04bfbfbf00")
+        self.assertEqual(ihash(self.image), "0859dd04ffbfbf00")
 
     def testColor(self):
         """
@@ -47,7 +47,7 @@ class TestCaption(unittest.TestCase):
         """
 
         ihash = ImageHash("color")
-        self.assertEqual(ihash(self.image), "1ffffe02000e000c0e0000070000")
+        self.assertEqual(ihash(self.image), "1ff8fe03000e00070e0000070000")
 
     def testDifference(self):
         """
