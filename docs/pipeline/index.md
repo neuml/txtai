@@ -19,6 +19,7 @@ The following is a list of the default pipelines available in txtai.
     - [Text extraction](data/textractor)
 - Image
     - [Caption](image/caption)
+    - [Image Hash](image/imagehash)
     - [Objects](image/objects)
 - Text
     - [Entity](text/entity)
