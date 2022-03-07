@@ -14,7 +14,7 @@ from utils import Utils
 
 class TestImageHash(unittest.TestCase):
     """
-    Caption tests.
+    ImageHash tests.
     """
 
     @classmethod
