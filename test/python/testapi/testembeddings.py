@@ -39,6 +39,22 @@ path: %s
 writable: False
 """
 
+# Configuration for an index with custom functions
+FUNCTIONS = """
+pathignore: %s
+
+writable: True
+
+# Embeddings settings
+embeddings:
+    path: sentence-transformers/nli-mpnet-base-v2
+    content: True
+    functions:
+        - testapi.testembeddings.Elements
+        - testapi.testembeddings.length
+    transform: testapi.testembeddings.transform
+"""
+
 
 class TestEmbeddings(unittest.TestCase):
     """
@@ -47,19 +63,19 @@ class TestEmbeddings(unittest.TestCase):
 
     @staticmethod
     @patch.dict(os.environ, {"CONFIG": os.path.join(tempfile.gettempdir(), "testapi.yml"), "API_CLASS": "txtai.api.API"})
-    def start(full):
+    def start(yaml):
         """
         Starts a mock FastAPI client.
 
         Args:
-            full: true if full api configuration should be loaded, otherwise a read-only configuration is used
+            yaml: input configuration
         """
 
         config = os.path.join(tempfile.gettempdir(), "testapi.yml")
         index = os.path.join(tempfile.gettempdir(), "testapi")
 
         with open(config, "w", encoding="utf-8") as output:
-            output.write((INDEX if full else READONLY) % (index))
+            output.write(yaml % index)
 
         client = TestClient(app)
         start()
@@ -72,7 +88,7 @@ class TestEmbeddings(unittest.TestCase):
         Create API client on creation of class.
         """
 
-        cls.client = TestEmbeddings.start(True)
+        cls.client = TestEmbeddings.start(INDEX)
 
         cls.data = [
             "US tops 5 million confirmed virus cases",
@@ -250,7 +266,7 @@ class TestEmbeddings(unittest.TestCase):
         """
 
         # Re-create read-only model
-        self.client = TestEmbeddings.start(False)
+        self.client = TestEmbeddings.start(READONLY)
 
         # Test search
         query = urllib.parse.quote("feel good story")
@@ -266,3 +282,46 @@ class TestEmbeddings(unittest.TestCase):
         self.assertEqual(self.client.get("index").status_code, 403)
         self.assertEqual(self.client.get("upsert").status_code, 403)
         self.assertEqual(self.client.post("delete", json=[0]).status_code, 403)
+
+    def testXFunctions(self):
+        """
+        Test API instance with custom functions
+        """
+
+        # Re-create model with custom functions
+        self.client = TestEmbeddings.start(FUNCTIONS)
+
+        # Index data
+        self.client.post("add", json=[{"id": x, "text": row} for x, row in enumerate(self.data)])
+        self.client.get("index")
+
+        query = urllib.parse.quote("select elements('text') length from txtai limit 1")
+        self.assertEqual(self.client.get(f"search?query={query}").json()[0]["length"], 4)
+
+        query = urllib.parse.quote("select length('text') length from txtai limit 1")
+        self.assertEqual(self.client.get(f"search?query={query}").json()[0]["length"], 4)
+
+
+class Elements:
+    """
+    Custom SQL function as callable object.
+    """
+
+    def __call__(self, text):
+        return length(text)
+
+
+def transform(document):
+    """
+    Custom transform function.
+    """
+
+    return document
+
+
+def length(text):
+    """
+    Custom SQL function.
+    """
+
+    return len(text)

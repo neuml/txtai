@@ -3,6 +3,9 @@ Database module
 """
 
 import logging
+import types
+
+from inspect import signature
 
 from .encoder import EncoderFactory
 from .sql import SQL, SQLError, Token
@@ -22,7 +25,7 @@ class Database:
         Creates a new Database.
 
         Args:
-            config: database configuration parameters
+            config: database configuration
         """
 
         # Database configuration
@@ -34,6 +37,9 @@ class Database:
         # Load objects encoder
         encoder = self.config.get("objects")
         self.encoder = EncoderFactory.create(encoder) if encoder else None
+
+        # Load custom functions
+        self.functions = self.register(self.config)
 
     def load(self, path):
         """
@@ -207,6 +213,35 @@ class Database:
         """
 
         raise NotImplementedError
+
+    def register(self, config):
+        """
+        Register custom functions. This method stores the function details for underlying
+        database implementations to handle.
+
+        Args:
+            config: database configuration
+        """
+
+        inputs = config.get("functions") if config else None
+        if inputs:
+            functions = []
+            for fn in inputs:
+                # Determine if this is a callable object or a function
+                if not isinstance(fn, types.FunctionType) and hasattr(fn, "__call__"):
+                    name = fn.__class__.__name__.lower()
+                    argcount = len(signature(fn.__call__).parameters)
+                    fn = fn.__call__
+                else:
+                    name = fn.__name__.lower()
+                    argcount = len(signature(fn).parameters)
+
+                # Store function details
+                functions.append((name, argcount, fn))
+
+            return functions
+
+        return None
 
     def execute(self, function, *args):
         """

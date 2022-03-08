@@ -7,7 +7,6 @@ import pickle
 import os
 import shutil
 import tempfile
-import types
 
 import numpy as np
 
@@ -471,13 +470,8 @@ class Embeddings:
         # Remove ids array if present
         config.pop("ids", None)
 
-        # Format functions
-        for key in config:
-            if isinstance(config[key], types.FunctionType):
-                config[key] = "<function>"
-
         # Print configuration
-        print(json.dumps(config, sort_keys=True, indent=2))
+        print(json.dumps(config, sort_keys=True, default=str, indent=2))
 
     def configure(self, config):
         """

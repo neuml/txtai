@@ -63,20 +63,14 @@ class Application:
         # ThreadPool - runs scheduled workflows
         self.pool = None
 
-        # Local embeddings index
-        if loaddata and self.config.get("path") and Embeddings().exists(self.config["path"], self.config.get("cloud")):
-            # Load existing index if available
-            self.embeddings = Embeddings()
-            self.embeddings.load(self.config["path"], self.config.get("cloud"))
-        elif self.config.get("embeddings"):
-            # Initialize empty embeddings
-            self.embeddings = Embeddings(self.config["embeddings"])
-
         # Create pipelines
         self.pipes()
 
         # Create workflows
         self.flows()
+
+        # Create embeddings index
+        self.indexes(loaddata)
 
     def __del__(self):
         """
@@ -146,6 +140,36 @@ class Application:
                         self.pool = ThreadPool()
 
                     self.pool.apply_async(self.workflows[workflow].schedule, kwds=schedule)
+
+    def indexes(self, loaddata):
+        """
+        Initialize an embeddings index.
+
+        Args:
+            loaddata: If True (default), load existing index data, if available. Otherwise, only load models.
+        """
+
+        # Resolve functions in embeddings config
+        config = self.config.get("embeddings") if self.config else None
+        if config:
+            # Create copy of config
+            config = config.copy()
+
+            if "functions" in config:
+                # Resolve callable functions
+                config["functions"] = [self.function(fn) for fn in config["functions"]]
+            if "transform" in config:
+                # Resolve transform function
+                config["transform"] = self.function(config["transform"])
+
+        # Local embeddings index
+        if loaddata and self.config.get("path") and Embeddings().exists(self.config["path"], self.config.get("cloud")):
+            # Load existing index if available
+            self.embeddings = Embeddings()
+            self.embeddings.load(self.config["path"], self.config.get("cloud"))
+        elif config:
+            # Initialize empty embeddings
+            self.embeddings = Embeddings(config)
 
     def resolve(self, task):
         """
@@ -475,9 +499,14 @@ class Application:
         """
 
         if self.embeddings and "extractor" in self.pipelines:
+            # Set similarity function
+            extractor = self.pipelines["extractor"]
+            if not extractor.similarity:
+                extractor.similarity = self.embeddings
+
             # Convert queue to tuples
             queue = [(x["name"], x["query"], x.get("question"), x.get("snippet")) for x in queue]
-            return [{"name": name, "answer": answer} for name, answer in self.pipelines["extractor"](queue, texts)]
+            return [{"name": name, "answer": answer} for name, answer in extractor(queue, texts)]
 
         return None
 

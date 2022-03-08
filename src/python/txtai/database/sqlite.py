@@ -119,6 +119,9 @@ class SQLite(Database):
         self.cursor = self.connection.cursor()
         self.path = path
 
+        # Register custom functions
+        self.addfunctions()
+
     def insert(self, documents, index=0):
         # Initialize connection if not open
         self.initialize()
@@ -202,6 +205,9 @@ class SQLite(Database):
             self.connection = connection
             self.cursor = self.connection.cursor()
             self.path = path
+
+            # Register custom functions
+            self.addfunctions()
 
         # Paths are equal, commit changes
         elif self.path == path:
@@ -319,6 +325,15 @@ class SQLite(Database):
 
         return results
 
+    def addfunctions(self):
+        """
+        Adds custom functions in current connection.
+        """
+
+        if self.connection and self.functions:
+            for name, argcount, fn in self.functions:
+                self.connection.create_function(name, argcount, fn)
+
     def initialize(self):
         """
         Creates connection and initial database schema if no connection exists.
@@ -330,6 +345,9 @@ class SQLite(Database):
             # Create temporary database. Thread locking must be handled externally.
             self.connection = sqlite3.connect("", check_same_thread=False)
             self.cursor = self.connection.cursor()
+
+            # Register custom functions
+            self.addfunctions()
 
             # Create initial schema and indices
             self.cursor.execute(SQLite.CREATE_DOCUMENTS)
