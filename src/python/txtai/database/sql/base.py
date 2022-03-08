@@ -94,7 +94,7 @@ class SQL:
             True if this is a valid SQL query, False otherwise
         """
 
-        # Reduce query to a single line, lower-cased and stripped of leading/trailing whitespace
+        # Reduce query to a lower-cased single line stripped of leading/trailing whitespace
         query = query.lower().strip(";").replace("\n", " ").replace("\t", " ").strip()
 
         # Detect if this is a valid txtai SQL statement
