@@ -227,14 +227,20 @@ class Database:
         if inputs:
             functions = []
             for fn in inputs:
+                name, argcount = None, None
+
+                # Optional function configuration
+                if isinstance(fn, dict):
+                    name, argcount, fn = fn.get("name"), fn.get("argcount"), fn["function"]
+
                 # Determine if this is a callable object or a function
                 if not isinstance(fn, types.FunctionType) and hasattr(fn, "__call__"):
-                    name = fn.__class__.__name__.lower()
-                    argcount = len(signature(fn.__call__).parameters)
+                    name = name if name else fn.__class__.__name__.lower()
+                    argcount = argcount if argcount else len(signature(fn.__call__).parameters)
                     fn = fn.__call__
                 else:
-                    name = fn.__name__.lower()
-                    argcount = len(signature(fn).parameters)
+                    name = name if name else fn.__name__.lower()
+                    argcount = argcount if argcount else len(signature(fn).parameters)
 
                 # Store function details
                 functions.append((name, argcount, fn))

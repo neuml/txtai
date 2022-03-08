@@ -157,7 +157,16 @@ class Application:
 
             if "functions" in config:
                 # Resolve callable functions
-                config["functions"] = [self.function(fn) for fn in config["functions"]]
+                functions = []
+                for fn in config["functions"]:
+                    if isinstance(fn, dict):
+                        fn["function"] = self.function(fn["function"])
+                    else:
+                        fn = self.function(fn)
+                    functions.append(fn)
+
+                config["functions"] = functions
+
             if "transform" in config:
                 # Resolve transform function
                 config["transform"] = self.function(config["transform"])

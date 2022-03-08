@@ -51,7 +51,9 @@ embeddings:
     content: True
     functions:
         - testapi.testembeddings.Elements
-        - testapi.testembeddings.length
+        - name: length
+          argcount: 1
+          function: testapi.testembeddings.length
     transform: testapi.testembeddings.transform
 """
 
