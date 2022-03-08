@@ -94,7 +94,10 @@ class SQL:
             True if this is a valid SQL query, False otherwise
         """
 
-        query = query.lower().strip(";")
+        # Reduce query to a single line, lower-cased and stripped of leading/trailing whitespace
+        query = query.lower().strip(";").replace("\n", " ").replace("\t", " ").strip()
+
+        # Detect if this is a valid txtai SQL statement
         return query.startswith("select ") and (" from txtai " in query or query.endswith(" from txtai"))
 
     def tokenize(self, query):
