@@ -17,6 +17,12 @@ ihash = ImageHash()
 ihash("path to image file")
 ```
 
+See the link below for a more detailed example.
+
+| Notebook  | Description  |       |
+|:----------|:-------------|------:|
+| [Near duplicate image detection](https://github.com/neuml/txtai/blob/master/examples/31_Near_duplicate_image_detection.ipynb) | Identify duplicate and near-duplicate images | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/31_Near_duplicate_image_detection.ipynb) |
+
 ## Configuration-driven example
 
 Pipelines are run with Python or configuration. Pipelines can be instantiated in [configuration](../../../api/configuration/#pipeline) using the lower case name of the pipeline. Configuration-driven pipelines are run with [workflows](../../../workflow/#configuration-driven-example) or the [API](../../../api#local-instance).
