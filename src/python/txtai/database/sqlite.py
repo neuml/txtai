@@ -331,6 +331,9 @@ class SQLite(Database):
         """
 
         if self.connection and self.functions:
+            # Enable callback tracebacks to show user-defined function errors
+            sqlite3.enable_callback_tracebacks(True)
+
             for name, argcount, fn in self.functions:
                 self.connection.create_function(name, argcount, fn)
 
