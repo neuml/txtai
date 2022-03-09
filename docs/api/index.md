@@ -91,16 +91,15 @@ curl \
 
 ## Local instance
 
-A local API instance can be instantiated. In this case, the API runs internally, without any network connections, providing the same consolidated functionality. This enables running txtai in Python with configuration.
+A local instance can be instantiated. In this case, a txtai application runs internally, without any network connections, providing the same consolidated functionality. This enables running txtai in Python with configuration.
 
 The configuration above can be run in Python with:
 
 ```python
-from txtai.api import API
+from txtai.app import Application
 
-app = API(config.yml)
-
-# Run action
+# Load and run workflow
+app = Application(config.yml)
 app.workflow("sumfrench", ["https://github.com/neuml/txtai"])
 ```
 

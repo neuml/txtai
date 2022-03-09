@@ -43,10 +43,10 @@ extractor:
 ### Run with Workflows
 
 ```python
-from txtai.api import API
+from txtai.app import Application
 
 # Create and run pipeline with workflow
-app = API("config.yml")
+app = Application("config.yml")
 list(app.extract([{"name": "What was won", "query": "What was won",
                    "question", "What was won", "snippet": False}], 
                  ["Maine man wins $1M from $25 lottery ticket"]))

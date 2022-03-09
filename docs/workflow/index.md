@@ -93,10 +93,10 @@ workflow:
 
 ```python
 # Create and run the workflow
-from txtai.api import API
+from txtai.app import Application
 
 # Create and run the workflow
-app = API("workflow.yml")
+app = Application("workflow.yml")
 list(app.workflow("index", [
   "US_tops_5_million.wav",
   "Canadas_last_fully.wav",

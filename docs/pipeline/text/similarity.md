@@ -41,10 +41,10 @@ similarity:
 ### Run with Workflows
 
 ```python
-from txtai.api import API
+from txtai.app import Application
 
 # Create and run pipeline with workflow
-app = API("config.yml")
+app = Application("config.yml")
 app.similarity("feel good story", [
     "Maine man wins $1M from $25 lottery ticket", 
     "Don't sacrifice slower friends in a bear attack"

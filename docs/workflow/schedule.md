@@ -52,10 +52,10 @@ workflow:
 
 ```python
 # Create and run the workflow
-from txtai.api import API
+from txtai.app import Application
 
 # Create and run the workflow
-app = API("workflow.yml")
+app = Application("workflow.yml")
 
 # Wait for scheduled workflows
 app.wait()

@@ -42,10 +42,10 @@ workflow:
 ### Run with Workflows
 
 ```python
-from txtai.api import API
+from txtai.app import Application
 
 # Create and run pipeline with workflow
-app = API("config.yml")
+app = Application("config.yml")
 list(app.workflow("objects", ["path to image file"]))
 ```
 
