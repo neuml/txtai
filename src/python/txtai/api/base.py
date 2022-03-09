@@ -54,8 +54,10 @@ class API(Application):
 
         if self.cluster:
             self.cluster.add(documents)
+        else:
+            super().add(documents)
 
-        return super().add(documents)
+        return documents
 
     def index(self):
         """
