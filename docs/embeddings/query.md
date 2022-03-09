@@ -110,6 +110,31 @@ query = "select object from txtai where similar('machine learning') limit 1"
 result = embeddings.search(query)[0]["object"]
 ```
 
+## Custom SQL functions
+
+Custom, user-defined SQL functions extend selection, filtering and ordering clauses with additional logic. For example, the following snippet defines a function that translates text using a translation pipeline.
+
+```python
+# Translation pipeline
+translate = Translation()
+
+# Create embeddings index
+embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2",
+                         "content": True,
+                         "functions": [translate]})
+
+# Run a search using a custom SQL function
+embeddings.search("""
+select
+  text,
+  translation(text, 'de', null) 'text (DE)',
+  translation(text, 'es', null) 'text (ES)',
+  translation(text, 'fr', null) 'text (FR)'
+from txtai where similar('feel good story')
+limit 1
+""")
+```
+
 ## Combined index architecture
 
 When content storage is enabled, txtai becomes a dual storage engine. Content is stored in an underlying database (currently supports SQLite) along with an Approximate Nearest Neighbor (ANN) index. These components combine to deliver similarity search alongside traditional structured search.

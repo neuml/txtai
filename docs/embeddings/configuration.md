@@ -3,32 +3,6 @@
 ## Embeddings
 This following describes available embeddings configuration. These parameters are set via the [Embeddings constructor](../methods#txtai.embeddings.base.Embeddings.__init__).
 
-### method
-```yaml
-method: transformers|sentence-transformers|words|external
-```
-
-Sentence embeddings method to use. Options listed below.
-
-#### transformers
-
-Builds sentence embeddings using a transformers model. While this can be any transformers model, it works best with
-[models trained](https://huggingface.co/models?pipeline_tag=sentence-similarity) to build sentence embeddings.
-
-#### sentence-transformers
-
-Same as transformers but loads models with the sentence-transformers library.
-
-#### words
-
-Builds sentence embeddings using a word embeddings model.
-
-#### external
-
-Sentence embeddings are loaded via an external model or API. Requires setting the `transform` parameter to a function that translates data into vectors.
-
-The method is inferred using the _path_, if not provided. sentence-transformers and words require the [similarity](../../install/#similarity) extras package to be installed.
-
 ### path
 ```yaml
 path: string
@@ -37,12 +11,66 @@ path: string
 Sets the path for a vectors model. When using a transformers/sentence-transformers model, this can be any model on the
 [Hugging Face Model Hub](https://huggingface.co/models) or a local file path. Otherwise, it must be a local file path to a word embeddings model.
 
+### method
+```yaml
+method: transformers|sentence-transformers|words|external
+```
+
+Sentence embeddings method to use. If the method is not provided, it is inferred using the `path`.
+
+`sentence-transformers` and `words` require the [similarity](../../install/#similarity) extras package to be installed.
+
+#### transformers
+
+Builds sentence embeddings using a transformers model. While this can be any transformers model, it works best with
+[models trained](https://huggingface.co/models?pipeline_tag=sentence-similarity) to build sentence embeddings.
+
+#### sentence-transformers
+
+Same as transformers but loads models with the [sentence-transformers](https://github.com/UKPLab/sentence-transformers) library.
+
+#### words
+
+Builds sentence embeddings using a word embeddings model. Transformers models are the preferred vector backend in most cases. Word embeddings models may be deprecated in the future.
+
+##### storevectors
+```yaml
+storevectors: boolean
+```
+
+Enables copying of a vectors model set in path into the embeddings models output directory on save. This option enables a fully encapsulated index with no external file dependencies.
+
+##### scoring
+```yaml
+scoring: bm25|tfidf|sif
+```
+
+A scoring model builds weighted averages of word vectors for a given sentence. Supports BM25, TF-IDF and SIF (smooth inverse frequency) methods. If a scoring method is not provided, mean sentence embeddings are built.
+
+##### pca
+```yaml
+pca: int
+```
+
+Removes _n_ principal components from generated sentence embeddings. When enabled, a TruncatedSVD model is built to help with dimensionality reduction. After pooling of vectors creates a single sentence embedding, this method is applied.
+
+#### external
+
+Sentence embeddings are loaded via an external model or API. Requires setting the [transform](#transform) parameter to a function that translates data into vectors.
+
+##### transform
+```yaml
+transform: function
+```
+
+When method is `external`, this function transforms input content into embeddings.
+
 ### backend
 ```yaml
 backend: faiss|hnsw|annoy
 ```
 
-Approximate Nearest Neighbor (ANN) index backend for storing generated sentence embeddings. Defaults to Faiss. Additional backends require the
+Approximate Nearest Neighbor (ANN) index backend for storing generated sentence embeddings. `Defaults to Faiss`. Additional backends require the
 [similarity](../../install/#similarity) extras package to be installed.
 
 Backend-specific settings are set with a corresponding configuration object having the same name as the backend (i.e. annoy, faiss, or hnsw). None of these are required and are set to defaults if omitted.
@@ -91,6 +119,19 @@ content: string|boolean
 
 Enables content storage. When true, the default content storage engine will be used. Otherwise, the string must specify the supported content storage engine to use.
 
+### functions
+```yaml
+functions: list
+```
+
+List of functions with user-defined SQL functions, only used when [content](#content) is enabled. Each list element must be one of the following:
+
+- function
+- callable object
+- dict with fields for name, argcount and function
+
+[An example can be found here](../query#custom-sql-functions).
+
 ### quantize
 ```yaml
 quantize: boolean
@@ -99,42 +140,13 @@ quantize: boolean
 Enables quanitization of generated sentence embeddings. If the index backend supports it, sentence embeddings will be stored with 8-bit precision vs 32-bit.
 Only Faiss currently supports quantization.
 
-### Additional configuration for Transformers models
-
-#### tokenize
+### tokenize
 ```yaml
 tokenize: boolean
 ```
 
 Enables string tokenization (defaults to false). This method applies tokenization rules that only work with English language text and may increase the quality of
 English language sentence embeddings in some situations.
-
-### Additional configuration for Word embedding models
-
-Word embeddings provide a good tradeoff of performance to functionality for a similarity search system. With that being said, Transformers models are making great progress in scaling performance down to smaller models and are the preferred vector backend in txtai for most cases.
-
-Word embeddings models require the [similarity](../../install/#similarity) extras package to be installed.
-
-#### storevectors
-```yaml
-storevectors: boolean
-```
-
-Enables copying of a vectors model set in path into the embeddings models output directory on save. This option enables a fully encapsulated index with no external file dependencies.
-
-#### scoring
-```yaml
-scoring: bm25|tfidf|sif
-```
-
-A scoring model builds weighted averages of word vectors for a given sentence. Supports BM25, TF-IDF and SIF (smooth inverse frequency) methods. If a scoring method is not provided, mean sentence embeddings are built.
-
-#### pca
-```yaml
-pca: int
-```
-
-Removes _n_ principal components from generated sentence embeddings. When enabled, a TruncatedSVD model is built to help with dimensionality reduction. After pooling of vectors creates a single sentence embedding, this method is applied.
 
 ## Cloud
 
