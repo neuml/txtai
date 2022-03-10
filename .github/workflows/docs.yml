@@ -13,6 +13,6 @@ jobs:
           python-version: 3.7
       - run: |
           pip install -U pip wheel
-          pip install mkdocs-material mkdocstrings mkdocs-autorefs==0.3.1 .[all]
+          pip install mkdocs-material mkdocstrings .[all]
       - run: mkdocs gh-deploy --force
  
