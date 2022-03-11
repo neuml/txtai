@@ -3,6 +3,7 @@ External module tests
 """
 
 import os
+import pickle
 import unittest
 
 import numpy as np
@@ -40,3 +41,7 @@ class TestExternalVectors(unittest.TestCase):
         self.assertEqual(dimension, 768)
         self.assertEqual(batches, 2)
         self.assertIsNotNone(os.path.exists(stream))
+
+        # Test shape of serialized embeddings
+        with open(stream, "rb") as queue:
+            self.assertEqual(pickle.load(queue).shape, (500, 768))

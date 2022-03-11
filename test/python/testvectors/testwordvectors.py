@@ -3,6 +3,7 @@ Vectors module tests
 """
 
 import os
+import pickle
 import tempfile
 import unittest
 
@@ -68,6 +69,10 @@ class TestWordVectors(unittest.TestCase):
         self.assertEqual(batches, 1000)
         self.assertIsNotNone(os.path.exists(stream))
 
+        # Test shape of serialized embeddings
+        with open(stream, "rb") as queue:
+            self.assertEqual(pickle.load(queue).shape, (1, 10))
+
     def testIndexSerial(self):
         """
         Test word vector indexing in single process mode
@@ -84,6 +89,10 @@ class TestWordVectors(unittest.TestCase):
         self.assertEqual(dimension, 10)
         self.assertEqual(batches, 1000)
         self.assertIsNotNone(os.path.exists(stream))
+
+        # Test shape of serialized embeddings
+        with open(stream, "rb") as queue:
+            self.assertEqual(pickle.load(queue).shape, (1, 10))
 
     def testLookup(self):
         """
