@@ -71,6 +71,16 @@ The input iterable can be a list and/or a generator. [Generators](https://wiki.p
 
 txtai buffers data to temporary storage along the way during indexing as embeddings vectors can be quite large (for example 768 dimensions of float32 is 768 * 4 = 3072 bytes per vector).
 
+### Scoring
+When using [word vector backed models](./configuration#words) with scoring set, a separate call is required before calling `index` as follows:
+
+```python
+embeddings.score([(uid, text, None) for uid, text in enumerate(data)])
+embeddings.index([(uid, text, None) for uid, text in enumerate(data)])
+```
+
+Two calls are required to support generator-backed iteration of data. The scoring index requires a separate full-pass of the data.
+
 ## Search
 
 Once data is indexed, it is ready for search.
