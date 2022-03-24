@@ -20,6 +20,7 @@ Build semantic/similarity/vector/neural search applications.
 | [What's new in txtai 4.0](https://github.com/neuml/txtai/blob/master/examples/24_Whats_new_in_txtai_4_0.ipynb) | Content storage, SQL, object storage, reindex and compressed indexes | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/24_Whats_new_in_txtai_4_0.ipynb) |
 | [Anatomy of a txtai index](https://github.com/neuml/txtai/blob/master/examples/29_Anatomy_of_a_txtai_index.ipynb) | Deep dive into the file formats behind a txtai embeddings index | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/29_Anatomy_of_a_txtai_index.ipynb) |
 | [Custom Embeddings SQL functions](https://github.com/neuml/txtai/blob/master/examples/30_Embeddings_SQL_custom_functions.ipynb) | Add user-defined functions to Embeddings SQL | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/30_Embeddings_SQL_custom_functions.ipynb) |
+| [Model explainability](https://github.com/neuml/txtai/blob/master/examples/32_Model_explainability.ipynb) | Explainability for semantic search | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/32_Model_explainability.ipynb) |
 
 ## Pipelines
 
