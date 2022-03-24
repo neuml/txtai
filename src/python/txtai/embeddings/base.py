@@ -283,7 +283,7 @@ class Embeddings:
             list of (id, score) for ann search, list of dict for an ann+database search
         """
 
-        results = self.batchsearch([query], limit if limit else 3)
+        results = self.batchsearch([query], limit)
         return results[0] if results else results
 
     def batchsearch(self, queries, limit=None):
@@ -353,7 +353,8 @@ class Embeddings:
             list of dict per input text where a higher token scores represents higher importance relative to the query
         """
 
-        return Explain(self)([query], texts, limit)[0]
+        results = self.batchexplain([query], texts, limit)
+        return results[0] if results else results
 
     def batchexplain(self, queries, texts=None, limit=None):
         """
