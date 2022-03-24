@@ -462,6 +462,42 @@ class Application:
 
         return None
 
+    def explain(self, query, texts=None, limit=10):
+        """
+        Explains the importance of each input token in text for a query.
+
+        Args:
+            query: query text
+            texts: optional list of text, otherwise runs search query
+            limit: optional limit if texts is None
+
+        Returns:
+            list of dict per input text where a higher token scores represents higher importance relative to the query
+        """
+
+        if self.embeddings:
+            return self.embeddings.explain(query, texts, limit)
+
+        return None
+
+    def batchexplain(self, queries, texts=None, limit=10):
+        """
+        Explains the importance of each input token in text for a list of queries.
+
+        Args:
+            query: queries text
+            texts: optional list of text, otherwise runs search queries
+            limit: optional limit if texts is None
+
+        Returns:
+            list of dict per input text per query where a higher token scores represents higher importance relative to the query
+        """
+
+        if self.embeddings:
+            return self.embeddings.batchexplain(queries, texts, limit)
+
+        return None
+
     def transform(self, text):
         """
         Transforms text into embeddings arrays.

@@ -15,6 +15,7 @@ from txtai.embeddings import Embeddings
 from txtai.database import Database, SQLError
 
 
+# pylint: disable=R0904
 class TestEmbeddings(unittest.TestCase):
     """
     Embeddings with a database tests.
@@ -181,6 +182,28 @@ class TestEmbeddings(unittest.TestCase):
         embeddings.index([(0, "this is a test", None)])
         embeddings.upsert([])
         self.assertIsNotNone(embeddings.ann)
+
+    def testExplain(self):
+        """
+        Test query explain
+        """
+
+        # Test explain with similarity
+        result = self.embeddings.explain("feel good story", self.data)[0]
+        self.assertEqual(result["text"], self.data[4])
+        self.assertEqual(len(result.get("tokens")), 8)
+
+    def testExplainBatch(self):
+        """
+        Test query explain batch
+        """
+
+        # Test explain with query
+        self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        result = self.embeddings.batchexplain(["feel good story"], limit=1)[0][0]
+        self.assertEqual(result["text"], self.data[4])
+        self.assertEqual(len(result.get("tokens")), 8)
 
     def testGenerator(self):
         """

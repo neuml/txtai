@@ -120,6 +120,38 @@ def count():
     return application.get().count()
 
 
+@router.post("/explain")
+def explain(query: str = Body(...), texts: List[str] = Body(default=None), limit: int = Body(default=None)):
+    """
+    Explains the importance of each input token in text for a query.
+
+    Args:
+        query: query text
+        texts: list of text
+
+    Returns:
+        list of dict where a higher scores represents higher importance relative to the query
+    """
+
+    return application.get().explain(query, texts, limit)
+
+
+@router.post("/batchexplain")
+def batchexplain(queries: List[str] = Body(...), texts: List[str] = Body(default=None), limit: int = Body(default=None)):
+    """
+    Explains the importance of each input token in text for a query.
+
+    Args:
+        query: query text
+        texts: list of text
+
+    Returns:
+        list of dict where a higher scores represents higher importance relative to the query
+    """
+
+    return application.get().batchexplain(queries, texts, limit)
+
+
 @router.get("/transform")
 def transform(text: str):
     """

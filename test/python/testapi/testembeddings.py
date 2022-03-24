@@ -145,6 +145,8 @@ class TestEmbeddings(unittest.TestCase):
         self.assertIsNone(api.count())
         self.assertIsNone(api.similarity("test", ["test"]))
         self.assertIsNone(api.batchsimilarity(["test"], ["test"]))
+        self.assertIsNone(api.explain("test"))
+        self.assertIsNone(api.batchexplain(["test"]))
         self.assertIsNone(api.transform("test"))
         self.assertIsNone(api.batchtransform(["test"]))
         self.assertIsNone(api.extract(["test"], ["test"]))
@@ -302,6 +304,27 @@ class TestEmbeddings(unittest.TestCase):
 
         query = urllib.parse.quote("select length('text') length from txtai limit 1")
         self.assertEqual(self.client.get(f"search?query={query}").json()[0]["length"], 4)
+
+    def testXPlain(self):
+        """
+        Test API instance with explain methods
+        """
+
+        results = self.client.post("explain", json={"query": "feel good story", "limit": 1}).json()
+
+        self.assertEqual(results[0]["text"], self.data[4])
+        self.assertIsNotNone(results[0].get("tokens"))
+
+    def testXPlainBatch(self):
+        """
+        Test batch query explain via API
+        """
+
+        results = self.client.post("batchexplain", json={"queries": ["feel good story", "climate change"], "limit": 1}).json()
+
+        text = [result[0]["text"] for result in results]
+        self.assertEqual(text, [self.data[4], self.data[1]])
+        self.assertIsNotNone(results[0][0].get("tokens"))
 
 
 class Elements:

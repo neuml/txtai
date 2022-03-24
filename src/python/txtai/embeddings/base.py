@@ -16,6 +16,7 @@ from ..scoring import ScoringFactory
 from ..vectors import VectorsFactory
 
 from .archive import Archive
+from .explain import Explain
 from .reducer import Reducer
 from .search import Search
 from .transform import Action, Transform
@@ -338,6 +339,36 @@ class Embeddings:
 
         # Add index and sort desc based on score
         return [sorted(enumerate(score), key=lambda x: x[1], reverse=True) for score in scores]
+
+    def explain(self, query, texts=None, limit=None):
+        """
+        Explains the importance of each input token in text for a query.
+
+        Args:
+            query: input query
+            texts: optional list of (text|list of tokens), otherwise runs search query
+            limit: optional limit if texts is None
+
+        Returns:
+            list of dict per input text where a higher token scores represents higher importance relative to the query
+        """
+
+        return Explain(self)([query], texts, limit)[0]
+
+    def batchexplain(self, queries, texts=None, limit=None):
+        """
+        Explains the importance of each input token in text for a list of queries.
+
+        Args:
+            query: input queries
+            texts: optional list of (text|list of tokens), otherwise runs search queries
+            limit: optional limit if texts is None
+
+        Returns:
+            list of dict per input text per query where a higher token scores represents higher importance relative to the query
+        """
+
+        return Explain(self)(queries, texts, limit)
 
     def exists(self, path, cloud=None):
         """
