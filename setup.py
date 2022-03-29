@@ -21,6 +21,8 @@ extras["api"] = [
 
 extras["cloud"] = ["apache-libcloud>=3.3.1"]
 
+extras["console"] = ["rich>=12.0.1"]
+
 extras["database"] = ["pillow>=9.0.1"]
 
 extras["model"] = ["onnxruntime>=1.8.1"]
@@ -61,7 +63,14 @@ extras["workflow"] = [
 ]
 
 extras["all"] = (
-    extras["api"] + extras["cloud"] + extras["database"] + extras["model"] + extras["pipeline"] + extras["similarity"] + extras["workflow"]
+    extras["api"]
+    + extras["cloud"]
+    + extras["console"]
+    + extras["database"]
+    + extras["model"]
+    + extras["pipeline"]
+    + extras["similarity"]
+    + extras["workflow"]
 )
 
 setup(

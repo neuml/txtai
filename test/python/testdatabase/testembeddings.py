@@ -205,6 +205,13 @@ class TestEmbeddings(unittest.TestCase):
         self.assertEqual(result["text"], self.data[4])
         self.assertEqual(len(result.get("tokens")), 8)
 
+    def testExplainEmpty(self):
+        """
+        Test query explain with no filtering criteria
+        """
+
+        self.assertEqual(self.embeddings.explain("select * from txtai limit 1")[0]["id"], "0")
+
     def testGenerator(self):
         """
         Test index with a generator
