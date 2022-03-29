@@ -132,7 +132,7 @@ class TestConsole(unittest.TestCase):
         Test .workflow command
         """
 
-        self.command(f".load {self.apppath}")
+        self.command(fr".load {self.apppath}")
         self.assertIn("echo", self.command(".workflow test echo"))
 
     def command(self, command, console=None):
