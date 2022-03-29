@@ -22,6 +22,9 @@ class Explain:
         self.embeddings = embeddings
         self.content = self.embeddings.config.get("content")
 
+        # Alias embeddings attributes
+        self.database = self.embeddings.database
+
     def __call__(self, queries, texts, limit):
         """
         Explains the importance of each input token in text for a list of queries.
@@ -80,9 +83,21 @@ class Explain:
         # Explain results
         results = []
 
+        # Parse out similar clauses, if necessary
+        if self.database:
+            # Parse query
+            query = self.database.parse(query)
+
+            # Extract query from similar clause
+            query = " ".join([" ".join(clause) for clause in query["similar"]]) if "similar" in query else None
+
+        # Return original texts if query, text or score not present
+        if not query or not texts or "score" not in texts[0] or "text" not in texts[0]:
+            return texts
+
         # Calculate result per input text element
-        for x in texts:
-            text = x["text"]
+        for result in texts:
+            text = result["text"]
             tokens = text if isinstance(text, list) else text.split()
 
             # Create permutations of input text, masking each token to determine importance
@@ -93,12 +108,13 @@ class Explain:
                 permutations.append([" ".join(data)])
 
             # Calculate similarity for each input text permutation and get score delta as importance
-            scores = [(i, x["score"] - np.abs(s)) for i, s in self.embeddings.similarity(query, permutations)]
+            scores = [(i, result["score"] - np.abs(s)) for i, s in self.embeddings.similarity(query, permutations)]
+
+            # Append tokens to result
+            result["tokens"] = [(tokens[i], score) for i, score in sorted(scores, key=lambda x: x[0])]
 
             # Add data sorted in index order
-            results.append(
-                {"id": x["id"], "text": text, "score": x["score"], "tokens": [(tokens[i], score) for i, score in sorted(scores, key=lambda x: x[0])]}
-            )
+            results.append(result)
 
         # Sort score descending and return
         return sorted(results, key=lambda x: x["score"], reverse=True)
