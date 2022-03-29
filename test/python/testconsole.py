@@ -40,12 +40,12 @@ class TestConsole(unittest.TestCase):
 
         # Create app paths
         cls.apppath = os.path.join(tempfile.gettempdir(), "console.yml")
-        cls.embedpath = os.path.join(tempfile.gettempdir(), "cembeddings")
+        cls.embedpath = os.path.join(tempfile.gettempdir(), "embeddings.console")
 
         # Create app.yml
         with open(cls.apppath, "w", encoding="utf-8") as out:
             out.write(
-                f"""
+                fr"""
                 path: {cls.embedpath}
 
                 workflow:
@@ -59,7 +59,6 @@ class TestConsole(unittest.TestCase):
         cls.embeddings.save(cls.embedpath)
 
         # Create console
-        cls.app = os.path.join(cls.apppath)
         cls.console = Console(cls.embedpath)
 
     def testApplication(self):
@@ -67,7 +66,7 @@ class TestConsole(unittest.TestCase):
         Test application
         """
 
-        self.assertIn("console.yml", self.command(f".load {self.apppath}"))
+        self.assertIn("console.yml", self.command(fr".load {self.apppath}"))
         self.assertIn("1", self.command(".limit 1"))
         self.assertIn("Maine man wins", self.command("feel good story"))
 
@@ -83,7 +82,7 @@ class TestConsole(unittest.TestCase):
         Test embeddings index
         """
 
-        self.assertIn("embeddings", self.command(f".load {self.embedpath}"))
+        self.assertIn("embeddings", self.command(fr".load {self.embedpath}"))
         self.assertIn("1", self.command(".limit 1"))
         self.assertIn("Maine man wins", self.command("feel good story"))
 
