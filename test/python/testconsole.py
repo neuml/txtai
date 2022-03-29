@@ -40,7 +40,7 @@ class TestConsole(unittest.TestCase):
 
         # Create app paths
         cls.apppath = os.path.join(tempfile.gettempdir(), "console.yml")
-        cls.embedpath = os.path.join(tempfile.gettempdir(), "embeddings")
+        cls.embedpath = os.path.join(tempfile.gettempdir(), "cembeddings")
 
         # Create app.yml
         with open(cls.apppath, "w", encoding="utf-8") as out:
