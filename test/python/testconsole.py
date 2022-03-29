@@ -45,8 +45,8 @@ class TestConsole(unittest.TestCase):
         # Create app.yml
         with open(cls.apppath, "w", encoding="utf-8") as out:
             out.write(
-                """
-                path: /tmp/embeddings
+                f"""
+                path: {cls.embedpath}
 
                 workflow:
                     test:
