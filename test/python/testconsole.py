@@ -66,7 +66,7 @@ class TestConsole(unittest.TestCase):
         Test application
         """
 
-        self.assertIn("console.yml", self.command(".load " + self.apppath))
+        self.assertIn("console.yml", self.command(f".load {self.apppath}"))
         self.assertIn("1", self.command(".limit 1"))
         self.assertIn("Maine man wins", self.command("feel good story"))
 
@@ -82,7 +82,7 @@ class TestConsole(unittest.TestCase):
         Test embeddings index
         """
 
-        self.assertIn("embeddings", self.command(".load " + self.embedpath))
+        self.assertIn("embeddings", self.command(f".load {self.embedpath}"))
         self.assertIn("1", self.command(".limit 1"))
         self.assertIn("Maine man wins", self.command("feel good story"))
 
@@ -132,7 +132,7 @@ class TestConsole(unittest.TestCase):
         Test .workflow command
         """
 
-        self.command(".load " + self.apppath)
+        self.command(f".load {self.apppath}")
         self.assertIn("echo", self.command(".workflow test echo"))
 
     def command(self, command, console=None):

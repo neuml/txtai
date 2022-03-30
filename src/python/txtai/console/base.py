@@ -72,7 +72,7 @@ class Console(Cmd):
             elif command.startswith(".limit"):
                 self.limit(command)
             elif command.startswith(".load"):
-                command = shlex.split(line)
+                command = self.split(line)
                 self.path = command[1]
                 self.load(self.path)
             elif command.startswith(".workflow"):
@@ -144,7 +144,7 @@ class Console(Cmd):
         if isinstance(self.app, Application):
             self.console.print(list(self.app.workflow(command[1], command[2:])))
 
-    def split(self, command, default):
+    def split(self, command, default=None):
         """
         Splits command by whitespace.
 
