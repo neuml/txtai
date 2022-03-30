@@ -11,6 +11,15 @@ import unittest
 from txtai.console import Console
 from txtai.embeddings import Embeddings
 
+APPLICATION = """
+path: %s
+
+workflow:
+  test:
+     tasks:
+       - task: console
+"""
+
 
 class TestConsole(unittest.TestCase):
     """
@@ -44,16 +53,7 @@ class TestConsole(unittest.TestCase):
 
         # Create app.yml
         with open(cls.apppath, "w", encoding="utf-8") as out:
-            out.write(
-                fr"""
-                path: {cls.embedpath}
-
-                workflow:
-                    test:
-                        tasks:
-                            - task: console
-            """
-            )
+            out.write(APPLICATION % cls.embedpath)
 
         # Save index
         cls.embeddings.save(cls.embedpath)
@@ -66,7 +66,7 @@ class TestConsole(unittest.TestCase):
         Test application
         """
 
-        self.assertIn("console.yml", self.command(fr".load {self.apppath}"))
+        self.assertIn("console.yml", self.command(".load " + self.apppath))
         self.assertIn("1", self.command(".limit 1"))
         self.assertIn("Maine man wins", self.command("feel good story"))
 
@@ -82,7 +82,7 @@ class TestConsole(unittest.TestCase):
         Test embeddings index
         """
 
-        self.assertIn("embeddings", self.command(fr".load {self.embedpath}"))
+        self.assertIn("embeddings", self.command(".load " + self.embedpath))
         self.assertIn("1", self.command(".limit 1"))
         self.assertIn("Maine man wins", self.command("feel good story"))
 
@@ -132,7 +132,7 @@ class TestConsole(unittest.TestCase):
         Test .workflow command
         """
 
-        self.command(fr".load {self.apppath}")
+        self.command(".load " + self.apppath)
         self.assertIn("echo", self.command(".workflow test echo"))
 
     def command(self, command, console=None):
