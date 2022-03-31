@@ -190,6 +190,7 @@ Series of example applications with txtai. Links to hosted versions on [Hugging 
 - [Semantic search on the cheap](https://towardsdatascience.com/semantic-search-on-the-cheap-55940c0fcdab)
 - [What's new in txtai 4.0](https://towardsdatascience.com/whats-new-in-txtai-4-0-bbc3a65c3d1c)
 - [Serverless vector search with txtai](https://towardsdatascience.com/serverless-vector-search-with-txtai-96f6163ab972)
+- [Insights from the txtai console](https://medium.com/neuml/insights-from-the-txtai-console-d307c28e149e)
 
 ### Contributing
 
