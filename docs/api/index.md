@@ -54,8 +54,7 @@ workflow:
     sumfrench:
         tasks:
             - action: textractor
-              task: storage
-              ids: false
+              task: url
             - action: summary
             - action: translation
               args: ["fr"]
