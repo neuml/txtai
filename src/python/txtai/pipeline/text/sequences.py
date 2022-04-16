@@ -13,12 +13,14 @@ class Sequences(HFPipeline):
     def __init__(self, path=None, quantize=False, gpu=True, model=None):
         super().__init__("text2text-generation", path, quantize, gpu, model)
 
-    def __call__(self, text, prefix=None, max_length=512, workers=0):
+    def __call__(self, text, prefix=None, maxlength=512, workers=0):
         """
         Runs a sequence-sequence model for input texts.
 
         Args:
             text: text|list
+            prefix: optional prefix to prepend to text elements
+            maxlength: maximum sequence length
             workers: number of concurrent workers to use for processing data, defaults to None
 
         Returns:
@@ -33,7 +35,7 @@ class Sequences(HFPipeline):
             texts = [f"{prefix}{x}" for x in texts]
 
         # Run text2text pipeline
-        results = self.pipeline(texts, max_length=max_length, num_workers=workers)
+        results = self.pipeline(texts, max_length=maxlength, num_workers=workers)
 
         # Get generated text
         results = [self.clean(x["generated_text"]) for x in results]
