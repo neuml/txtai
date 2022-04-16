@@ -7,7 +7,7 @@ from .base import Data
 
 class Questions(Data):
     """
-    Tokenizes question-answering datasets used as input for training question-answering models.
+    Tokenizes question-answering datasets as input for training question-answering models.
     """
 
     def __init__(self, tokenizer, columns, maxlength, stride):

@@ -7,7 +7,7 @@ from .base import Data
 
 class Labels(Data):
     """
-    Tokenizes text-classification datasets used as input for training text-classification models.
+    Tokenizes text-classification datasets as input for training text-classification models.
     """
 
     def __init__(self, tokenizer, columns, maxlength):

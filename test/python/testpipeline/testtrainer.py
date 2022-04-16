@@ -11,7 +11,7 @@ import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
 from txtai.data import Data
-from txtai.pipeline import HFTrainer, Labels, Questions
+from txtai.pipeline import HFTrainer, Labels, Questions, Sequences
 
 
 class TestTrainer(unittest.TestCase):
@@ -178,3 +178,22 @@ class TestTrainer(unittest.TestCase):
 
         # Regression tasks return a single entry with the regression output
         self.assertGreater(labels("cat")[0][1], 0.5)
+
+    def testSeqSeq(self):
+        """
+        Tests training a sequence-sequence model
+        """
+
+        data = [
+            {"source": "Running again", "target": "Sleeping again"},
+            {"source": "Run", "target": "Sleep"},
+            {"source": "running", "target": "sleeping"},
+        ]
+
+        trainer = HFTrainer()
+        model, tokenizer = trainer("t5-small", data, task="sequence-sequence", prefix="translate Run to Sleep: ", learning_rate=1e-3)
+
+        # Run run-sleep translation
+        sequences = Sequences((model, tokenizer))
+        result = sequences("translate Run to Sleep: run")
+        self.assertEqual(result.lower(), "sleep")

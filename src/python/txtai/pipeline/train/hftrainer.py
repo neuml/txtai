@@ -4,12 +4,12 @@ Hugging Face Transformers trainer wrapper module
 
 import sys
 
-from transformers import AutoConfig, AutoModelForQuestionAnswering, AutoModelForSequenceClassification, AutoTokenizer
-from transformers import Trainer, set_seed
+from transformers import AutoConfig, AutoModelForQuestionAnswering, AutoModelForSeq2SeqLM, AutoModelForSequenceClassification, AutoTokenizer
+from transformers import DataCollatorForSeq2Seq, Trainer, set_seed
 
 from transformers import TrainingArguments as HFTrainingArguments
 
-from ...data import Labels, Questions
+from ...data import Labels, Questions, Sequences
 from ...models import Models
 from ..tensors import Tensors
 
@@ -19,7 +19,7 @@ class HFTrainer(Tensors):
     Trains a new Hugging Face Transformer model using the Trainer framework.
     """
 
-    def __call__(self, base, train, validation=None, columns=None, maxlength=None, stride=128, task="text-classification", **args):
+    def __call__(self, base, train, validation=None, columns=None, maxlength=None, stride=128, task="text-classification", prefix=None, **args):
         """
         Builds a new model using arguments.
 
@@ -31,6 +31,7 @@ class HFTrainer(Tensors):
             maxlength: maximum sequence length, defaults to tokenizer.model_max_length
             stride: chunk size for splitting data for QA tasks
             task: optional model task or category, determines the model type, defaults to "text-classification"
+            prefix: optional source prefix
             args: training arguments
 
         Returns:
@@ -46,12 +47,15 @@ class HFTrainer(Tensors):
         # Load model configuration, tokenizer and max sequence length
         config, tokenizer, maxlength = self.load(base, maxlength)
 
-        # List of labels (only for classification models)
-        labels = None
+        # Data collator and list of labels (only for classification models)
+        collator, labels = None, None
 
         # Prepare datasets
         if task == "question-answering":
             process = Questions(tokenizer, columns, maxlength, stride)
+        elif task == "sequence-sequence":
+            process = Sequences(tokenizer, columns, maxlength, prefix)
+            collator = DataCollatorForSeq2Seq(tokenizer, pad_to_multiple_of=8 if args.fp16 else None)
         else:
             process = Labels(tokenizer, columns, maxlength)
             labels = process.labels(train)
@@ -62,8 +66,14 @@ class HFTrainer(Tensors):
         # Create model to train
         model = self.model(task, base, config, labels)
 
+        # Add model to collator
+        if collator:
+            collator.model = model
+
         # Build trainer
-        trainer = Trainer(model=model, tokenizer=tokenizer, args=args, train_dataset=train, eval_dataset=validation if validation else None)
+        trainer = Trainer(
+            model=model, tokenizer=tokenizer, data_collator=collator, args=args, train_dataset=train, eval_dataset=validation if validation else None
+        )
 
         # Run training
         trainer.train()
@@ -154,6 +164,8 @@ class HFTrainer(Tensors):
             return base[0]
         if task == "question-answering":
             return AutoModelForQuestionAnswering.from_pretrained(base, config=config)
+        if task == "sequence-sequence":
+            return AutoModelForSeq2SeqLM.from_pretrained(base, config=config)
 
         return AutoModelForSequenceClassification.from_pretrained(base, config=config)
 
