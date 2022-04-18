@@ -330,6 +330,21 @@ class TestEmbeddings(unittest.TestCase):
         self.assertRaises(NotImplementedError, database.embed, None, None)
         self.assertRaises(NotImplementedError, database.query, None, None)
 
+    def testQueryModel(self):
+        """
+        Test index
+        """
+
+        embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2", "content": True, "query": {"path": "NeuML/t5-small-txtsql"}})
+
+        # Create an index for the list of text
+        embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        # Search for best match
+        result = embeddings.search("feel good story with lottery in text", 1)[0]
+
+        self.assertEqual(result["text"], self.data[4])
+
     def testReindex(self):
         """
         Test reindex

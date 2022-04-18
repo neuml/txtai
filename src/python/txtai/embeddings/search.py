@@ -2,7 +2,12 @@
 Search module
 """
 
+import logging
+
 import numpy as np
+
+# Logging configuration
+logger = logging.getLogger(__name__)
 
 
 class Search:
@@ -25,6 +30,7 @@ class Search:
         self.ann = embeddings.ann
         self.database = embeddings.database
         self.transform = embeddings.transform
+        self.query = embeddings.query
 
     def __call__(self, queries, limit):
         """
@@ -90,7 +96,7 @@ class Search:
         """
 
         # Parse queries
-        queries = [self.database.parse(query) for query in queries]
+        queries = self.parse(queries)
 
         # Override limit with query limit, if applicable
         limit = max(limit, self.limit(queries))
@@ -124,6 +130,37 @@ class Search:
             results.append(result)
 
         return results
+
+    def parse(self, queries):
+        """
+        Parses a list of database queries.
+
+        Args:
+            queries: list of queries
+
+        Returns:
+            parsed queries
+        """
+
+        # Parsed queries
+        parsed = []
+
+        for query in queries:
+            # Parse query
+            parse = self.database.parse(query)
+
+            # Transform query if SQL not parsed and reparse
+            if self.query and "select" not in parse:
+                # Generate query
+                query = self.query(query)
+                logging.debug(query)
+
+                # Reparse query
+                parse = self.database.parse(query)
+
+            parsed.append(parse)
+
+        return parsed
 
     def limit(self, queries):
         """

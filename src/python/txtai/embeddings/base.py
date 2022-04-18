@@ -18,6 +18,7 @@ from ..vectors import VectorsFactory
 from .archive import Archive
 from .explain import Explain
 from .reducer import Reducer
+from .query import Query
 from .search import Search
 from .transform import Action, Transform
 
@@ -54,6 +55,9 @@ class Embeddings:
 
         # Document database
         self.database = None
+
+        # Query model
+        self.query = None
 
         # Index archive
         self.archive = None
@@ -429,6 +433,9 @@ class Embeddings:
         # Sentence vectors model - transforms data to embeddings vectors
         self.model = self.loadvectors()
 
+        # Query model
+        self.query = self.loadquery()
+
         # Document database - stores document content
         self.database = self.createdatabase()
         if self.database:
@@ -484,7 +491,7 @@ class Embeddings:
         Closes this embeddings index and frees all resources.
         """
 
-        self.config, self.reducer, self.scoring, self.model, self.ann, self.archive = None, None, None, None, None, None
+        self.config, self.reducer, self.scoring, self.model, self.ann, self.query, self.archive = None, None, None, None, None, None, None
 
         # Close database connection if open
         if self.database:
@@ -528,6 +535,9 @@ class Embeddings:
         # Sentence vectors model - transforms data to embeddings vectors
         self.model = self.loadvectors() if self.config else None
 
+        # Query model
+        self.query = self.loadquery() if self.config else None
+
     def loadvectors(self):
         """
         Loads a vector model set in config.
@@ -537,6 +547,19 @@ class Embeddings:
         """
 
         return VectorsFactory.create(self.config, self.scoring)
+
+    def loadquery(self):
+        """
+        Loads a query model set in config.
+
+        Returns:
+            query model
+        """
+
+        if "query" in self.config:
+            return Query(**self.config["query"])
+
+        return None
 
     def checkarchive(self, path):
         """
