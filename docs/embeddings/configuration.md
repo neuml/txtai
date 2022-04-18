@@ -148,6 +148,18 @@ tokenize: boolean
 Enables string tokenization (defaults to false). This method applies tokenization rules that only work with English language text and may increase the quality of
 English language sentence embeddings in some situations.
 
+### query
+```yaml
+query:
+    path: Sets the path for the query model. This can be any model on the
+          [Hugging Face Model Hub](https://huggingface.co/models) or
+          a local file path.
+    prefix: text prefix to prepend to all inputs
+    maxlength: maximum generated sequence length
+```
+
+Query translation model. Translates natural language queries to txtai compatible SQL statements.
+
 ## Cloud
 
 This section describes parameters used to sync compressed indexes with cloud storage. These parameters are only enabled if an embeddings index is stored as compressed. They are set via the [embeddings.load](../methods/#txtai.embeddings.base.Embeddings.load) and [embeddings.save](../methods/#txtai.embeddings.base.Embeddings.save) methods.

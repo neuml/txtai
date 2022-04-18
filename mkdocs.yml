@@ -70,6 +70,7 @@ nav:
             - Entity: pipeline/text/entity.md
             - Extractor: pipeline/text/extractor.md
             - Labels: pipeline/text/labels.md
+            - Sequences: pipeline/text/sequences.md
             - Similarity: pipeline/text/similarity.md
             - Summary: pipeline/text/summary.md
             - Translation: pipeline/text/translation.md
