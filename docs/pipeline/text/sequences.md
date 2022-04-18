@@ -3,7 +3,7 @@
 ![pipeline](../../images/pipeline.png#only-light)
 ![pipeline](../../images/pipeline-dark.png#only-dark)
 
-The sequences pipeline runs text through a sequence-sequence model and generates output text.
+The Sequences pipeline runs text through a sequence-sequence model and generates output text.
 
 ## Example
 
@@ -14,7 +14,7 @@ from txtai.pipeline import Sequences
 
 # Create and run pipeline
 sequences = Sequences()
-sequences("translate English to French: Hello, how are you?")
+sequences("Hello, how are you?", "translate English to French: ")
 ```
 
 ## Configuration-driven example
@@ -31,6 +31,7 @@ workflow:
   sequences:
     tasks:
       - action: sequences
+        args: ["translate English to French: "]
 ```
 
 ### Run with Workflows
@@ -40,7 +41,7 @@ from txtai.app import Application
 
 # Create and run pipeline with workflow
 app = Application("config.yml")
-list(app.workflow("sequences", ["translate English to French: Hello, how are you?"]))
+list(app.workflow("sequences", ["Hello, how are you?"]))
 ```
 
 ### Run with API
@@ -51,7 +52,7 @@ CONFIG=config.yml uvicorn "txtai.api:app" &
 curl \
   -X POST "http://localhost:8000/workflow" \
   -H "Content-Type: application/json" \
-  -d '{"name":"sequences", "elements": ["translate English to French: Hello, how are you?"]}'
+  -d '{"name":"sequences", "elements": ["Hello, how are you?"]}'
 ```
 
 ## Methods

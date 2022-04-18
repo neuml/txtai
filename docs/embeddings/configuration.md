@@ -132,6 +132,18 @@ List of functions with user-defined SQL functions, only used when [content](#con
 
 [An example can be found here](../query#custom-sql-functions).
 
+### query
+```yaml
+query:
+    path: Sets the path for the query model. This can be any model on the
+          [Hugging Face Model Hub](https://huggingface.co/models) or
+          a local file path.
+    prefix: text prefix to prepend to all inputs
+    maxlength: maximum generated sequence length
+```
+
+Query translation model. Translates natural language queries to txtai compatible SQL statements.
+
 ### quantize
 ```yaml
 quantize: boolean
@@ -147,18 +159,6 @@ tokenize: boolean
 
 Enables string tokenization (defaults to false). This method applies tokenization rules that only work with English language text and may increase the quality of
 English language sentence embeddings in some situations.
-
-### query
-```yaml
-query:
-    path: Sets the path for the query model. This can be any model on the
-          [Hugging Face Model Hub](https://huggingface.co/models) or
-          a local file path.
-    prefix: text prefix to prepend to all inputs
-    maxlength: maximum generated sequence length
-```
-
-Query translation model. Translates natural language queries to txtai compatible SQL statements.
 
 ## Cloud
 

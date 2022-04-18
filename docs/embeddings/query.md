@@ -135,6 +135,23 @@ limit 1
 """)
 ```
 
+## Query translation
+
+Natural language queries with filters can be converted to txtai-compatible SQL statements with query translation. For example:
+
+```python
+embeddings.search("feel good story since yesterday")
+```
+
+can be converted to a SQL statement with a similar clause and date filter.
+
+```sql
+select id, text, score from txtai where similar('feel good story') and
+entry >= date('now', '-1 day')
+```
+
+This requires setting a [query translation model](../configuration#query). The default query translation model is [t5-small-txtsql](https://huggingface.co/NeuML/t5-small-txtsql) but this can easily be finetuned to handle different use cases.
+
 ## Combined index architecture
 
 When content storage is enabled, txtai becomes a dual storage engine. Content is stored in an underlying database (currently supports SQLite) along with an Approximate Nearest Neighbor (ANN) index. These components combine to deliver similarity search alongside traditional structured search.
