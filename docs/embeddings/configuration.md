@@ -136,8 +136,7 @@ List of functions with user-defined SQL functions, only used when [content](#con
 ```yaml
 query:
     path: Sets the path for the query model. This can be any model on the
-          [Hugging Face Model Hub](https://huggingface.co/models) or
-          a local file path.
+          Hugging Face Model Hub or a local file path.
     prefix: text prefix to prepend to all inputs
     maxlength: maximum generated sequence length
 ```
