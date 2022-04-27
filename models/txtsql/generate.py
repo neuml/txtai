@@ -27,7 +27,7 @@ def run(outfile):
         outfile: output file path
     """
 
-    with open("queries.txt", "r", encoding="utf-8") as queries:
+    with open("../queries.txt", "r", encoding="utf-8") as queries:
         with open(outfile, "w", encoding="utf-8") as output:
             output.write("source,target\n")
             for query in queries:
