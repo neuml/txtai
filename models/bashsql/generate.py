@@ -89,6 +89,14 @@ def run(outfile):
                     f"select id, summary(text) text, score from txtai where similar('{query}') and entry >= date('now', '-1 day')",
                 )
 
+                # Limit
+                write(output, f"{find} -limit 1", f"{sql} limit 1")
+                write(
+                    output,
+                    f"{find} -limit 5 -summary",
+                    f"select id, summary(text) text, score from txtai where similar('{query}') and entry >= date('now', '-1 day') limit 5",
+                )
+
 
 if __name__ == "__main__":
     # Set seed (to generate consistent output) and run
