@@ -153,7 +153,7 @@ class Search:
             if self.query and "select" not in parse:
                 # Generate query
                 query = self.query(query)
-                logging.debug(query)
+                logger.debug(query)
 
                 # Reparse query
                 parse = self.database.parse(query)
