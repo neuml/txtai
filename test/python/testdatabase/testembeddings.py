@@ -341,7 +341,7 @@ class TestEmbeddings(unittest.TestCase):
         embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
 
         # Search for best match
-        result = embeddings.search("feel good story with lottery in text", 1)[0]
+        result = embeddings.search("feel good story with maine in text", 1)[0]
 
         self.assertEqual(result["text"], self.data[4])
 
