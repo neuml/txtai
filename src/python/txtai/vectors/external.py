@@ -27,9 +27,8 @@ class ExternalVectors(Vectors):
             stream = output.name
             batch = []
             for document in documents:
-                # Require embeddings vector as input
-                if isinstance(document[1], np.ndarray):
-                    batch.append(document)
+                # Add document batch
+                batch.append(document)
 
                 if len(batch) == 500:
                     # Convert batch to embeddings
@@ -48,11 +47,8 @@ class ExternalVectors(Vectors):
         return (ids, dimensions, batches, stream)
 
     def transform(self, document):
-        # Get transform function
-        transform = self.config.get("transform")
-
-        # Apply transform function if set, otherwise, assume input is an array
-        return transform(document) if transform else document[1].astype(np.float32)
+        # Encode data and return
+        return self.encode([document[1]])[0]
 
     def batch(self, documents, output):
         """
@@ -66,14 +62,34 @@ class ExternalVectors(Vectors):
             (ids, dimensions) list of ids and number of dimensions in embeddings
         """
 
-        # Extract ids and prepare input documents for transformers model
+        # Extract ids and prepare input documents
         ids = [uid for uid, _, _ in documents]
+        documents = [data for _, data, _ in documents]
         dimensions = None
 
         # Build embeddings
-        embeddings = np.array([data for _, data, _ in documents])
+        embeddings = np.array(self.encode(documents))
         if embeddings is not None:
             dimensions = embeddings.shape[1]
             pickle.dump(embeddings, output, protocol=4)
 
         return (ids, dimensions)
+
+    def encode(self, data):
+        """
+        Encodes a batch of data using the external transform function.
+
+        Args:
+            data: batch of data
+
+        Return:
+            transformed data
+        """
+
+        # Call external transform function, if available and data not already an array
+        transform = self.config.get("transform")
+        if transform and data and not isinstance(data[0], np.ndarray):
+            data = transform(data)
+
+        # Cast to float32
+        return data.astype(np.float32) if isinstance(data, np.ndarray) else [d.astype(np.float32) for d in data]

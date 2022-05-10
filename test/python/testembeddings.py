@@ -2,8 +2,6 @@
 Embeddings module tests
 """
 
-import contextlib
-import io
 import os
 import tempfile
 import unittest
@@ -88,23 +86,37 @@ class TestEmbeddings(unittest.TestCase):
         Test embeddings backed by external vectors
         """
 
-        def transform(document):
-            return document[1].astype(np.float32)
+        def transform(data):
+            embeddings = []
+            for text in data:
+                # Create dummy embedding using sum and mean of character ordinals
+                ordinals = [ord(c) for c in text]
+                embeddings.append(np.array([sum(ordinals), np.mean(ordinals)]))
 
-        # Generate random data and index
-        data = np.random.rand(5, 100)
+            return embeddings
+
+        # Index data using simple embeddings transform method
         embeddings = Embeddings({"method": "external", "transform": transform})
-        embeddings.index([(x, row, None) for x, row in enumerate(data)])
+        embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
 
         # Run search
-        self.assertGreaterEqual(len(embeddings.search(data[0])), 1)
+        uid = embeddings.search(self.data[4], 1)[0][0]
+        self.assertEqual(uid, 4)
 
-        # Run info
-        output = io.StringIO()
-        with contextlib.redirect_stdout(output):
-            embeddings.info()
+    def testExternalPrecomputed(self):
+        """
+        Test embeddings backed by external pre-computed vectors
+        """
 
-        self.assertTrue("txtai" in output.getvalue())
+        # Test with no transform function
+        data = np.random.rand(5, 10)
+
+        embeddings = Embeddings({"method": "external"})
+        embeddings.index([(uid, row, None) for uid, row in enumerate(data)])
+
+        # Run search
+        uid = embeddings.search(data[4], 1)[0][0]
+        self.assertEqual(uid, 4)
 
     def testIndex(self):
         """
