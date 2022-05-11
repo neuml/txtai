@@ -20,5 +20,4 @@ class TestVectors(unittest.TestCase):
         vectors = Vectors(None, None)
 
         self.assertRaises(NotImplementedError, vectors.load, None)
-        self.assertRaises(NotImplementedError, vectors.index, None)
-        self.assertRaises(NotImplementedError, vectors.transform, None)
+        self.assertRaises(NotImplementedError, vectors.encode, None)

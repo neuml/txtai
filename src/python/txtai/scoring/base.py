@@ -83,12 +83,12 @@ class Scoring:
         # Filter for tags that appear in at least 1% of the documents
         self.tags = {tag: number for tag, number in self.tags.items() if number >= self.total * 0.005}
 
-    def weights(self, document):
+    def weights(self, tokens):
         """
         Builds weight vector for each token in the input token.
 
         Args:
-            document: (id, tokens, tags)
+            tokens: input tokens
 
         Returns:
             list of weights for each token
@@ -96,9 +96,6 @@ class Scoring:
 
         # Weights array
         weights = []
-
-        # Unpack document
-        _, tokens, _ = document
 
         # Document length
         length = len(tokens)

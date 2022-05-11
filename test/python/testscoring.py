@@ -122,7 +122,7 @@ class TestScoring(unittest.TestCase):
         document = (1, ["bear", "wins"], None)
 
         model = self.method(method)
-        weights = model.weights(document)
+        weights = model.weights(document[1])
 
         # Default weights
         self.assertNotEqual(weights[0], weights[1])
@@ -133,7 +133,7 @@ class TestScoring(unittest.TestCase):
         data[3] = (uid, text, "wins")
 
         model = self.method(method, data)
-        weights = model.weights(document)
+        weights = model.weights(document[1])
 
         # Modified weights
         self.assertEqual(weights[0], weights[1])

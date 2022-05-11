@@ -57,34 +57,6 @@ def transform(document):
     return (document[0], VECTORS.transform(document))
 
 
-class SerialPool:
-    """
-    Custom pool to execute vector transforms serially.
-    """
-
-    def __init__(self, vectors):
-        global VECTORS
-        VECTORS = vectors
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        pass
-
-    def imap(self, func, iterable):
-        """
-        Single process version of imap.
-
-        Args:
-            func: function to run
-            iterable: iterable to use
-        """
-
-        for x in iterable:
-            yield func(x)
-
-
 class WordVectors(Vectors):
     """
     Builds sentence embeddings/vectors using weighted word embeddings.
@@ -98,16 +70,42 @@ class WordVectors(Vectors):
         # Load magnitude model. If this is a training run (uninitialized config), block until vectors are fully loaded
         return Magnitude(path, case_insensitive=True, blocking=not self.initialized)
 
-    def index(self, documents):
+    def encode(self, data):
+        # Iterate over each data element, tokenize (if necessary) and build an aggregated embeddings vector
+        embeddings = []
+        for tokens in data:
+            # Convert to tokens if necessary
+            if isinstance(tokens, str):
+                tokens = Tokenizer.tokenize(tokens)
+
+            # Generate weights for each vector using a scoring method
+            weights = self.scoring.weights(tokens) if self.scoring else None
+
+            # pylint: disable=E1133
+            if weights and [x for x in weights if x > 0]:
+                # Build weighted average embeddings vector. Create weights array os float32 to match embeddings precision.
+                embedding = np.average(self.lookup(tokens), weights=np.array(weights, dtype=np.float32), axis=0)
+            else:
+                # If no weights, use mean
+                embedding = np.mean(self.lookup(tokens), axis=0)
+
+            embeddings.append(embedding)
+
+        return np.array(embeddings, dtype=np.float32)
+
+    def index(self, documents, batchsize=1):
+        # Use default single process indexing logic
+        if "parallel" in self.config and not self.config["parallel"]:
+            return super().index(documents, batchsize)
+
+        # Customize indexing logic with multiprocessing pool to efficiently build vectors
         ids, dimensions, stream = [], None, None
 
         # Shared objects with Pool
         args = (self.config, self.scoring)
 
         # Convert all documents to embedding arrays, stream embeddings to disk to control memory usage
-        with SerialPool(self) if "parallel" in self.config and not self.config["parallel"] else Pool(
-            os.cpu_count(), initializer=create, initargs=args
-        ) as pool:
+        with Pool(os.cpu_count(), initializer=create, initargs=args) as pool:
             with tempfile.NamedTemporaryFile(mode="wb", suffix=".npy", delete=False) as output:
                 stream = output.name
                 for uid, embedding in pool.imap(transform, documents):
@@ -119,24 +117,6 @@ class WordVectors(Vectors):
                     pickle.dump(embedding.reshape(1, -1), output, protocol=4)
 
         return (ids, dimensions, len(ids), stream)
-
-    def transform(self, document):
-        # Convert to tokens if necessary
-        if isinstance(document[1], str):
-            document = (document[0], Tokenizer.tokenize(document[1]), document[2])
-
-        # Generate weights for each vector using a scoring method
-        weights = self.scoring.weights(document) if self.scoring else None
-
-        # pylint: disable=E1133
-        if weights and [x for x in weights if x > 0]:
-            # Build weighted average embeddings vector. Create weights array os float32 to match embeddings precision.
-            embedding = np.average(self.lookup(document[1]), weights=np.array(weights, dtype=np.float32), axis=0)
-        else:
-            # If no weights, use mean
-            embedding = np.mean(self.lookup(document[1]), axis=0)
-
-        return embedding
 
     def lookup(self, tokens):
         """
