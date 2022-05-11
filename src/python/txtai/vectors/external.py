@@ -27,7 +27,6 @@ class ExternalVectors(Vectors):
             stream = output.name
             batch = []
             for document in documents:
-                # Add document batch
                 batch.append(document)
 
                 if len(batch) == 500:
@@ -68,7 +67,7 @@ class ExternalVectors(Vectors):
         dimensions = None
 
         # Build embeddings
-        embeddings = np.array(self.encode(documents))
+        embeddings = self.encode(documents)
         if embeddings is not None:
             dimensions = embeddings.shape[1]
             pickle.dump(embeddings, output, protocol=4)
@@ -92,4 +91,4 @@ class ExternalVectors(Vectors):
             data = transform(data)
 
         # Cast to float32
-        return data.astype(np.float32) if isinstance(data, np.ndarray) else [d.astype(np.float32) for d in data]
+        return data.astype(np.float32) if isinstance(data, np.ndarray) else np.array(data, dtype=np.float32)

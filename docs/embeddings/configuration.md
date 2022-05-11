@@ -63,7 +63,7 @@ Sentence embeddings are loaded via an external model or API. Requires setting th
 transform: function
 ```
 
-When method is `external`, this function transforms input content into embeddings.
+When method is `external`, this function transforms input content into embeddings. The input to this function is a list of data. This method must return either a numpy array or list of numpy arrays.
 
 ### backend
 ```yaml
