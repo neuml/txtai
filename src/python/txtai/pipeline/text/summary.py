@@ -39,11 +39,8 @@ class Summary(HFPipeline):
         texts = text if isinstance(text, list) else [text]
         params = [(x, text if len(text) >= check else None) for x, text in enumerate(texts)]
 
-        kwargs = {"truncation": True}
-        if minlength:
-            kwargs["min_length"] = minlength
-        if maxlength:
-            kwargs["max_length"] = maxlength
+        # Build keyword arguments
+        kwargs = self.args(minlength, maxlength)
 
         inputs = [text for _, text in params if text]
         if inputs:
@@ -74,3 +71,27 @@ class Summary(HFPipeline):
         text = text.strip()
 
         return text
+
+    def args(self, minlength, maxlength):
+        """
+        Builds keyword arguments.
+
+        Args:
+            minlength: minimum length for summary
+            maxlength: maximum length for summary
+
+        Returns:
+            keyword arguments
+        """
+
+        kwargs = {"truncation": True}
+        if minlength:
+            kwargs["min_length"] = minlength
+        if maxlength:
+            kwargs["max_length"] = maxlength
+
+            # Default minlength if not provided or it's bigger than maxlength
+            if "min_length" not in kwargs or kwargs["min_length"] > kwargs["max_length"]:
+                kwargs["min_length"] = kwargs["max_length"]
+
+        return kwargs
