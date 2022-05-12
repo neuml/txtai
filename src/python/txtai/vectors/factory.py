@@ -54,12 +54,15 @@ class VectorsFactory:
             vector method
         """
 
-        # Determine vector type (words or transformers)
+        # Determine vector type (external, transformers or words)
         method = config.get("method")
         path = config.get("path")
 
         # Infer method from path, if blank
-        if not method and path:
-            method = "words" if WordVectors.isdatabase(path) else "transformers"
+        if not method:
+            if path:
+                method = "words" if WordVectors.isdatabase(path) else "transformers"
+            elif config.get("transform"):
+                method = "external"
 
         return method

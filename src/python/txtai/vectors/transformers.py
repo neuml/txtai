@@ -43,6 +43,10 @@ class TransformersVectors(Vectors):
         # Build embeddings with sentence-transformers
         return SentenceTransformer(path, device=Models.reference(deviceid))
 
+    def encode(self, data):
+        # Encode data using vectors model
+        return self.model.encode(data)
+
     def prepare(self, data):
         # Optional string tokenization
         if self.tokenize and isinstance(data, str):
@@ -53,7 +57,3 @@ class TransformersVectors(Vectors):
             data = " ".join(data)
 
         return data
-
-    def encode(self, data):
-        # Encode data using vectors model
-        return self.model.encode(data)

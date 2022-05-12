@@ -8,7 +8,7 @@ import unittest
 
 import numpy as np
 
-from txtai.vectors import VectorsFactory
+from txtai.vectors import ExternalVectors, VectorsFactory
 
 
 class TestExternalVectors(unittest.TestCase):
@@ -45,3 +45,11 @@ class TestExternalVectors(unittest.TestCase):
         # Test shape of serialized embeddings
         with open(stream, "rb") as queue:
             self.assertEqual(pickle.load(queue).shape, (500, 768))
+
+    def testMethod(self):
+        """
+        Test method is derived when transform function passed
+        """
+
+        model = VectorsFactory.create({"transform": lambda x: x}, None)
+        self.assertTrue(isinstance(model, ExternalVectors))
