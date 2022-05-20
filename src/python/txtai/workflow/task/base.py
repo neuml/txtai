@@ -14,7 +14,17 @@ class Task:
     """
 
     def __init__(
-        self, action=None, select=None, unpack=True, column=None, merge="hstack", initialize=None, finalize=None, concurrency=None, **kwargs
+        self,
+        action=None,
+        select=None,
+        unpack=True,
+        column=None,
+        merge="hstack",
+        initialize=None,
+        finalize=None,
+        concurrency=None,
+        onetomany=True,
+        **kwargs,
     ):
         """
         Creates a new task. A task defines two methods, type of data it accepts and the action to execute
@@ -30,6 +40,7 @@ class Task:
             finalize: action to execute after processing
             concurrency: sets concurrency method when execute instance available
                          valid values: "thread" for thread-based concurrency, "process" for process-based concurrency
+            onetomany: if one-to-many data transformations should be enabled, defaults to True
             kwargs: additional keyword arguments
         """
 
@@ -47,6 +58,7 @@ class Task:
         self.initialize = initialize
         self.finalize = finalize
         self.concurrency = concurrency
+        self.onetomany = onetomany
 
         # Check for custom registration. Adds additional instance members and validates required dependencies available.
         if hasattr(self, "register"):
@@ -342,7 +354,7 @@ class Task:
             post processed outputs
         """
 
-        if isinstance(outputs, list):
+        if self.onetomany and isinstance(outputs, list):
             # Wrap one to many transformations
             outputs = [OneToMany(output) if isinstance(output, list) else output for output in outputs]
 

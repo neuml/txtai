@@ -56,6 +56,9 @@ class TestWorkflow(unittest.TestCase):
             search:
                 tasks:
                     - search
+            transform:
+                tasks:
+                    - transform
         """
 
     def testBaseWorkflow(self):
@@ -473,6 +476,15 @@ class TestWorkflow(unittest.TestCase):
             list(app.workflow("search", ["another"]))[0]["text"],
             "And another sentence to split.",
         )
+
+    def testYamlTransformWorkflow(self):
+        """
+        Test reading a YAML transform workflow in Python.
+        """
+
+        # Test search
+        app = API(self.config)
+        self.assertEqual(len(list(app.workflow("transform", ["text"]))[0]), 128)
 
     def testYamlError(self):
         """

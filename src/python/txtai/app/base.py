@@ -208,6 +208,12 @@ class Application:
                     task["finalize"] = self.upsert if a == "upsert" else self.index
                 elif a == "search":
                     actions.append(self.batchsearch)
+                elif a == "transform":
+                    # Transform vectors
+                    actions.append(self.batchtransform)
+
+                    # Override and disable one-to-many transformations
+                    task["onetomany"] = False
                 else:
                     # Resolve action to callable function
                     actions.append(self.function(a))
