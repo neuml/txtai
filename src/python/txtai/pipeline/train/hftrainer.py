@@ -37,7 +37,6 @@ class HFTrainer(Tensors):
         Returns:
             (model, tokenizer)
         """
-
         # Parse TrainingArguments
         args = self.parse(args)
 
@@ -166,8 +165,11 @@ class HFTrainer(Tensors):
             return AutoModelForQuestionAnswering.from_pretrained(base, config=config)
         if task == "sequence-sequence":
             return AutoModelForSeq2SeqLM.from_pretrained(base, config=config)
-
-        return AutoModelForSequenceClassification.from_pretrained(base, config=config)
+        if task == "multi-lable-text-classification":
+            config.update({"problem_type":"multi_label_classification"})
+        
+        #problem_type="multi_label_classification"
+        return AutoModelForSequenceClassification.from_pretrained(base,config=config)
 
 
 class TrainingArguments(HFTrainingArguments):

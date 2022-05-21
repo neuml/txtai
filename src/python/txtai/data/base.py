@@ -3,6 +3,7 @@ Data module
 """
 
 from .tokens import Tokens
+import numpy as np
 
 
 class Data:
@@ -85,7 +86,12 @@ class Data:
 
         if hasattr(data, "map"):
             # Hugging Face dataset
-            labels = sorted(data.unique(self.columns[-1]))
+            if type(data[self.columns[-1]][0]) in [list,np.array]:
+              labels = list(data[self.columns[-1]][0])
+            else:
+              labels = sorted(data.unique(self.columns[-1]))
+
+
         else:
             # pandas DataFrame
             if hasattr(data, "to_dict"):
