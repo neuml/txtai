@@ -14,6 +14,9 @@ class Encoder:
         """
         Encodes an object to a byte array using the encoder.
 
+        Args:
+            obj: object to encode
+
         Returns:
             encoded object as a byte array
         """
