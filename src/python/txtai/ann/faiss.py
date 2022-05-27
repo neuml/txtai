@@ -114,7 +114,10 @@ class Faiss(ANN):
 
     def nprobe(self):
         """
-        Gets or derives the nprobe search parameter
+        Gets or derives the nprobe search parameter.
+
+        Returns:
+            nprobe setting
         """
 
         # Get size of embeddings index

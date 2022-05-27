@@ -30,6 +30,9 @@ class ANN:
     def load(self, path):
         """
         Loads an ANN model at path.
+
+        Args:
+            path: path to load ann index
         """
 
         raise NotImplementedError
@@ -91,6 +94,9 @@ class ANN:
     def save(self, path):
         """
         Saves an ANN model at path.
+
+        Args:
+            path: path to save ann index
         """
 
         raise NotImplementedError
