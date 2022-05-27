@@ -591,6 +591,9 @@ class Application:
         Args:
             name: pipeline name
             args: pipeline arguments
+
+        Returns:
+            pipeline results
         """
 
         if name in self.pipelines:
