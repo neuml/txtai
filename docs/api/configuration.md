@@ -30,7 +30,7 @@ Path to save and load the embeddings index. Each API instance can only access a 
 
 ### writable
 ```yaml
-path: boolean
+writable: boolean
 ```
 
 Determines if the input embeddings index is writable (true) or read-only (false). This allows serving a read-only index.
