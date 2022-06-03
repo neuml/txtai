@@ -477,6 +477,30 @@ class TestWorkflow(unittest.TestCase):
             "And another sentence to split.",
         )
 
+    def testYamlWorkflowTask(self):
+        """
+        Tests YAML workflow with a workflow task
+        """
+
+        # Create function and add to module
+        def action(elements):
+            return [x * 2 for x in elements]
+
+        sys.modules[__name__].action = action
+
+        workflow = """
+        workflow:
+            run:
+                tasks:
+                    - testworkflow.action
+            flow:
+                tasks:
+                    - run
+        """
+
+        app = API(workflow)
+        self.assertEqual(list(app.workflow("flow", [1, 2])), [2, 4])
+
     def testYamlTransformWorkflow(self):
         """
         Test reading a YAML transform workflow in Python.

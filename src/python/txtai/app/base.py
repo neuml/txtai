@@ -242,8 +242,13 @@ class Application:
             resolved function
         """
 
+        # Check if function is a pipeline
         if function in self.pipelines:
             return self.pipelines[function]
+
+        # Check if function is a workflow
+        if function in self.workflows:
+            return self.workflows[function]
 
         # Attempt to resolve action as a callable function
         return PipelineFactory.create({}, function)
