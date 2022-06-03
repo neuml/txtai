@@ -3,6 +3,7 @@ Task module
 """
 
 import re
+import types
 
 import numpy as np
 import torch
@@ -314,7 +315,13 @@ class Task:
         """
 
         # Execute action and get outputs
-        return action(inputs)
+        outputs = action(inputs)
+
+        # Consume generator output, if necessary
+        if isinstance(outputs, types.GeneratorType):
+            outputs = list(outputs)
+
+        return outputs
 
     def postprocess(self, outputs):
         """
