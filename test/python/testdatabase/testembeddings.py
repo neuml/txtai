@@ -405,6 +405,10 @@ class TestEmbeddings(unittest.TestCase):
         result = self.embeddings.search("select * from txtai where similar('feel good story', 1) limit 1")[0]
         self.assertEqual(result["text"], self.data[4])
 
+        # Test similar with offset
+        result = self.embeddings.search("select * from txtai where similar('feel good story') offset 1")[0]
+        self.assertEqual(result["text"], self.data[5])
+
         # Test where
         result = self.embeddings.search("select * from txtai where text like '%iceberg%'", 1)[0]
         self.assertEqual(result["text"], self.data[1])

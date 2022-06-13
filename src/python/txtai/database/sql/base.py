@@ -14,7 +14,7 @@ class SQL:
     """
 
     # List of clauses to parse
-    CLAUSES = ["select", "from", "where", "group", "having", "order", "limit"]
+    CLAUSES = ["select", "from", "where", "group", "having", "order", "limit", "offset"]
 
     def __init__(self, database=None, tolist=False):
         """
@@ -59,6 +59,7 @@ class SQL:
                 "having": self.parse(tokens, positions, "having", aliases=aliases),
                 "orderby": self.parse(tokens, positions, "order", offset=2, aliases=aliases),
                 "limit": self.parse(tokens, positions, "limit", aliases=aliases),
+                "offset": self.parse(tokens, positions, "offset", aliases=aliases),
             }
 
             # Add parsed similar queries, if any

@@ -270,12 +270,13 @@ class SQLite(Database):
         # Return ids clause placeholder
         return SQLite.IDS_CLAUSE % batch
 
+    # pylint: disable=R0912
     def query(self, query, limit):
         # Extract query components
         select = query.get("select", self.defaults())
         where = query.get("where")
         groupby, having = query.get("groupby"), query.get("having")
-        orderby, qlimit = query.get("orderby"), query.get("limit")
+        orderby, qlimit, offset = query.get("orderby"), query.get("limit"), query.get("offset")
         similarity = query.get("similar")
 
         # Build query text
@@ -296,6 +297,10 @@ class SQLite(Database):
         # Apply query limit
         if qlimit is not None or limit:
             query += f" LIMIT {qlimit if qlimit else limit}"
+
+            # Apply offset
+            if offset is not None:
+                query += f" OFFSET {offset}"
 
         # Clear scores when no similar clauses present
         if not similarity:

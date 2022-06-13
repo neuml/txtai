@@ -119,6 +119,16 @@ class TestSQL(unittest.TestCase):
 
         self.assertSql("limit", prefix + "limit 100", "100")
 
+    def testOffset(self):
+        """
+        Test offset clauses
+        """
+
+        prefix = "select count(*) from txtai "
+
+        self.assertSql("offset", prefix + "limit 100 offset 50", "50")
+        self.assertSql("offset", prefix + "offset 50", "50")
+
     def testOrderby(self):
         """
         Test order by clauses
