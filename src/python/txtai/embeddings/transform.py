@@ -89,35 +89,39 @@ class Transform:
             documents: iterable collection (id, data, tags)
         """
 
-        batch = []
+        batch, offset = [], 0
 
         # Iterate and process documents stream
         for document in documents:
             if isinstance(document[1], dict):
                 if "text" in document[1]:
                     yield (document[0], document[1]["text"], document[2])
+                    offset += 1
                 elif "object" in document[1]:
                     yield (document[0], document[1]["object"], document[2])
+                    offset += 1
             else:
                 yield document
+                offset += 1
 
             # Batch document
             batch.append(document)
             if len(batch) == self.batch:
-                self.load(batch)
-                batch = []
+                self.load(batch, offset)
+                batch, offset = [], 0
 
         # Final batch
         if batch:
-            self.load(batch)
+            self.load(batch, offset)
 
-    def load(self, batch):
+    def load(self, batch, offset):
         """
         Loads a document batch. This method deletes existing ids from an embeddings index and
         load into a database, if applicable.
 
         Args:
             batch: list of (id, data, tags)
+            offset: index offset for batch
         """
 
         # Delete from embeddings index first (which deletes from underlying ANN index and database) if this is an upsert
@@ -134,7 +138,7 @@ class Transform:
         # Load batch into database except if this is a reindex
         if self.database and self.action != Action.REINDEX:
             self.database.insert(batch, self.offset)
-            self.offset += len(batch)
+            self.offset += offset
 
 
 class Action(Enum):

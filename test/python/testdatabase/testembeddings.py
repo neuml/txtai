@@ -330,6 +330,26 @@ class TestEmbeddings(unittest.TestCase):
         self.assertRaises(NotImplementedError, database.embed, None, None)
         self.assertRaises(NotImplementedError, database.query, None, None)
 
+    def testMultiData(self):
+        """
+        Test indexing with multiple data types (text, documents)
+        """
+
+        embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2", "content": True, "batch": len(self.data)})
+
+        # Create an index using mixed data (text and documents)
+        data = []
+        for uid, text in enumerate(self.data):
+            data.append((uid, text, None))
+            data.append((uid, {"content": text}, None))
+
+        embeddings.index(data)
+
+        # Search for best match
+        result = embeddings.search("feel good story", 1)[0]
+
+        self.assertEqual(result["text"], self.data[4])
+
     def testQueryModel(self):
         """
         Test index
