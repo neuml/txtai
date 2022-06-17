@@ -151,4 +151,5 @@ class Tabular(Pipeline):
             formatted value
         """
 
-        return None if pd.isnull(value) else value
+        # Check for null - treat lists as not null
+        return None if not isinstance(value, list) and pd.isnull(value) else value
