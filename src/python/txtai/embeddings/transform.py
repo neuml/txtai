@@ -89,6 +89,7 @@ class Transform:
             documents: iterable collection (id, data, tags)
         """
 
+        # Batch and index offset. Index offset increments by count of documents streamed for vectorization
         batch, offset = [], 0
 
         # Iterate and process documents stream
