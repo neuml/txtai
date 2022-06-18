@@ -13,6 +13,6 @@ jobs:
           python-version: 3.7
       - run: |
           pip install -U pip wheel
-          pip install mkdocs-material mkdocstrings[python-legacy] .[all] protobuf==3.20.1
+          pip install mkdocs-material mkdocstrings[python-legacy] .[all]
       - run: mkdocs gh-deploy --force
  
