@@ -86,8 +86,8 @@ embeddings:
 CONFIG=app.yml uvicorn "txtai.api:app"
 curl -X GET "http://localhost:8000/search?query=positive"
 ```
-- Works with both small and big data - scale up as needed
-- Rich data processing framework (pipelines and workflows) to pre and post process data
+- Connect machine learning models together to build intelligent data processing workflows
+- Works with both small and big data - scale when needed
 - Low footprint - install additional dependencies when you need them
 - [Learn by example](#examples) - notebooks cover all available functionality
 
