@@ -26,7 +26,6 @@ jobs:
 
       - name: Install dependencies - MacOS
         run: |
-          brew install libomp@14.0.5
           brew switch libomp 14.0.5
           pip install annoy==1.16.3
         if: matrix.os == 'macos-latest'
