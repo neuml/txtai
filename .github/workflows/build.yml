@@ -26,9 +26,7 @@ jobs:
 
       - name: Install dependencies - MacOS
         run: |
-          brew uninstall --ignore-dependencies libomp
-          wget https://raw.githubusercontent.com/Homebrew/homebrew-core/f519ebec0994b2882c24c0bab77236fa4db8fcd1/Formula/libomp.rb
-          brew install libomp.rb
+          brew install libomp
           pip install annoy==1.16.3
         if: matrix.os == 'macos-latest'
 
