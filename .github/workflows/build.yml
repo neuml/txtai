@@ -26,7 +26,7 @@ jobs:
 
       - name: Install dependencies - MacOS
         run: |
-          brew uninstall libomp
+          brew uninstall --ignore-dependencies libomp
           brew install libomp@14.0.5
           pip install annoy==1.16.3
         if: matrix.os == 'macos-latest'
