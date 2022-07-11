@@ -23,7 +23,7 @@ extras["cloud"] = ["apache-libcloud>=3.3.1"]
 
 extras["console"] = ["rich>=12.0.1"]
 
-extras["database"] = ["pillow>=9.0.1"]
+extras["database"] = ["pillow>=7.2.0"]
 
 extras["model"] = ["onnxruntime>=1.8.1"]
 
@@ -36,7 +36,7 @@ extras["pipeline"] = [
     "onnxmltools>=1.9.1",
     "onnxruntime>=1.8.1",
     "pandas>=1.1.0",
-    "pillow>=9.0.1",
+    "pillow>=7.2.0",
     "sentencepiece>=0.1.91",
     "soundfile>=0.10.3.post1",
     "tika>=1.24",
@@ -57,7 +57,7 @@ extras["workflow"] = [
     "croniter>=1.2.0",
     "openpyxl>=3.0.9",
     "pandas>=1.1.0",
-    "pillow>=9.0.1",
+    "pillow>=7.2.0",
     "requests>=2.26.0",
     "xmltodict>=0.12.0",
 ]
