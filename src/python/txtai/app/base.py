@@ -270,8 +270,11 @@ class Application:
         """
 
         if self.embeddings:
+            with self.lock:
+                results = self.embeddings.search(query, limit)
+
             # Unpack (id, score) tuple, if necessary. Otherwise, results are dictionaries.
-            return [{"id": r[0], "score": float(r[1])} if isinstance(r, tuple) else r for r in self.embeddings.search(query, limit)]
+            return [{"id": r[0], "score": float(r[1])} if isinstance(r, tuple) else r for r in results]
 
         return None
 
@@ -487,7 +490,8 @@ class Application:
         """
 
         if self.embeddings:
-            return self.embeddings.explain(query, texts, limit)
+            with self.lock:
+                return self.embeddings.explain(query, texts, limit)
 
         return None
 
@@ -505,7 +509,8 @@ class Application:
         """
 
         if self.embeddings:
-            return self.embeddings.batchexplain(queries, texts, limit)
+            with self.lock:
+                return self.embeddings.batchexplain(queries, texts, limit)
 
         return None
 
