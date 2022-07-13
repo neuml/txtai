@@ -392,7 +392,7 @@ class Application:
 
                 # Save index if path available, otherwise this is an memory-only index
                 if self.config.get("path"):
-                    self.embeddings.save(self.config["path"])
+                    self.embeddings.save(self.config["path"], self.config.get("cloud"))
 
                 # Reset document stream
                 self.documents.close()
