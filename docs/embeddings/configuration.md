@@ -83,8 +83,8 @@ faiss:
                 x = 4 * sqrt(embeddings count)
     nprobe: search probe setting (int) - defaults to x/16 (as defined above)
             for larger indexes
-    mmap: load as on-disk index (boolean) - defaults to false, trade query response time
-          for a smaller RAM footprint
+    mmap: load as on-disk index (boolean) - trade query response time for a
+          smaller RAM footprint, defaults to false
 ```
 
 See the following Faiss documentation links for more information.
