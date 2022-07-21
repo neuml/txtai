@@ -20,6 +20,8 @@ try:
 except ImportError:
     WORDS = False
 
+from .. import __pickle__
+
 from .base import Vectors
 from ..pipeline import Tokenizer
 
@@ -118,14 +120,14 @@ class WordVectors(Vectors):
                     embeddings.append(embedding)
 
                     if len(embeddings) == batchsize:
-                        pickle.dump(np.array(embeddings, dtype=np.float32), output, protocol=4)
+                        pickle.dump(np.array(embeddings, dtype=np.float32), output, protocol=__pickle__)
                         batches += 1
 
                         embeddings = []
 
                 # Final embeddings batch
                 if embeddings:
-                    pickle.dump(np.array(embeddings, dtype=np.float32), output, protocol=4)
+                    pickle.dump(np.array(embeddings, dtype=np.float32), output, protocol=__pickle__)
                     batches += 1
 
         return (ids, dimensions, batches, stream)

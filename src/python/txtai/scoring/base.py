@@ -7,6 +7,8 @@ import pickle
 
 from collections import Counter
 
+from .. import __pickle__
+
 from ..pipeline import Tokenizer
 
 
@@ -139,7 +141,7 @@ class Scoring:
         """
 
         with open(path, "wb") as handle:
-            pickle.dump(self.__dict__, handle, protocol=4)
+            pickle.dump(self.__dict__, handle, protocol=__pickle__)
 
     def computeidf(self, freq):
         """

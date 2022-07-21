@@ -6,6 +6,8 @@ import os
 import pickle
 import tempfile
 
+from .. import __pickle__
+
 
 class Documents:
     """
@@ -62,7 +64,7 @@ class Documents:
             self.documents = tempfile.NamedTemporaryFile(mode="wb", suffix=".docs", delete=False)
 
         # Add batch
-        pickle.dump(documents, self.documents, protocol=4)
+        pickle.dump(documents, self.documents, protocol=__pickle__)
         self.batch += 1
         self.size += len(documents)
 

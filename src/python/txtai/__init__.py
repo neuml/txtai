@@ -9,3 +9,6 @@ logging.basicConfig(format="%(asctime)s [%(levelname)s] %(funcName)s: %(message)
 
 # Current version tag
 __version__ = "4.6.0"
+
+# Current pickle protocol
+__pickle__ = 4

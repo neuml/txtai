@@ -12,6 +12,8 @@ try:
 except ImportError:
     REDUCER = False
 
+from .. import __pickle__
+
 
 class Reducer:
     """
@@ -95,4 +97,4 @@ class Reducer:
         """
 
         with open(path, "wb") as handle:
-            pickle.dump(self.model, handle, protocol=4)
+            pickle.dump(self.model, handle, protocol=__pickle__)

@@ -10,6 +10,8 @@ import tempfile
 
 import numpy as np
 
+from .. import __pickle__
+
 from ..ann import ANNFactory
 from ..database import DatabaseFactory
 from ..scoring import ScoringFactory
@@ -465,7 +467,7 @@ class Embeddings:
 
             # Write index configuration
             with open(f"{path}/config", "wb") as handle:
-                pickle.dump(self.config, handle, protocol=4)
+                pickle.dump(self.config, handle, protocol=__pickle__)
 
             # Save approximate nearest neighbor index
             self.ann.save(f"{path}/embeddings")
