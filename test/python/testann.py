@@ -46,6 +46,14 @@ class TestANN(unittest.TestCase):
         # Test with custom settings
         self.runTests("faiss", {"faiss": {"nprobe": 2, "components": "PCA16,IDMap,SQ8"}}, False)
 
+    def testFaissMmap(self):
+        """
+        Test Faiss backend with mmap enabled
+        """
+
+        # Test to with mmap enabled
+        self.runTests("faiss", {"faiss": {"mmap": True}}, False)
+
     def testHnsw(self):
         """
         Test Hnswlib backend

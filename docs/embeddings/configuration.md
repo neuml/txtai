@@ -78,11 +78,13 @@ Backend-specific settings are set with a corresponding configuration object havi
 #### faiss
 ```yaml
 faiss:
-    components: Comma separated list of components - defaults to "Flat" for small
+    components: comma separated list of components - defaults to "Flat" for small
                 indices and "IVFx,Flat" for larger indexes where
                 x = 4 * sqrt(embeddings count)
     nprobe: search probe setting (int) - defaults to x/16 (as defined above)
             for larger indexes
+    mmap: load as on-disk index (boolean) - defaults to false, trade query response time
+          for a smaller RAM footprint
 ```
 
 See the following Faiss documentation links for more information.
@@ -135,7 +137,7 @@ List of functions with user-defined SQL functions, only used when [content](#con
 ### query
 ```yaml
 query:
-    path: Sets the path for the query model. This can be any model on the
+    path: sets the path for the query model - this can be any model on the
           Hugging Face Model Hub or a local file path.
     prefix: text prefix to prepend to all inputs
     maxlength: maximum generated sequence length

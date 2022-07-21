@@ -6,7 +6,7 @@ import math
 
 import numpy as np
 
-from faiss import index_factory, METRIC_INNER_PRODUCT, read_index, write_index
+from faiss import index_factory, IO_FLAG_MMAP, METRIC_INNER_PRODUCT, read_index, write_index
 
 from .base import ANN
 
@@ -18,7 +18,7 @@ class Faiss(ANN):
 
     def load(self, path):
         # Load index
-        self.model = read_index(path)
+        self.model = read_index(path, IO_FLAG_MMAP if self.setting("mmap") is True else 0)
 
     def index(self, embeddings):
         # Configure embeddings index. Inner product is equal to cosine similarity on normalized vectors.
