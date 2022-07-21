@@ -54,7 +54,7 @@ class Transform:
         """
 
         # Transform documents to vectors and load into database
-        ids, dimensions, batches, stream = self.model.index(self.stream(documents))
+        ids, dimensions, batches, stream = self.model.index(self.stream(documents), self.batch)
 
         # Check that embeddings are available and load as a memmap
         embeddings = None

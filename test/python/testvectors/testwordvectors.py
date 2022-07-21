@@ -73,6 +73,32 @@ class TestWordVectors(unittest.TestCase):
         with open(stream, "rb") as queue:
             self.assertEqual(pickle.load(queue).shape, (1, 10))
 
+    @patch("os.cpu_count")
+    def testIndexBatch(self, cpucount):
+        """
+        Test word vectors indexing with batch size set
+        """
+
+        # Mock CPU count
+        cpucount.return_value = 1
+
+        # Generate data
+        documents = [(x, "This is a test", None) for x in range(1000)]
+
+        model = VectorsFactory.create({"path": self.path, "parallel": True}, None)
+
+        ids, dimension, batches, stream = model.index(documents, 512)
+
+        self.assertEqual(len(ids), 1000)
+        self.assertEqual(dimension, 10)
+        self.assertEqual(batches, 2)
+        self.assertIsNotNone(os.path.exists(stream))
+
+        # Test shape of serialized embeddings
+        with open(stream, "rb") as queue:
+            self.assertEqual(pickle.load(queue).shape, (512, 10))
+            self.assertEqual(pickle.load(queue).shape, (488, 10))
+
     def testIndexSerial(self):
         """
         Test word vector indexing in single process mode
@@ -93,6 +119,28 @@ class TestWordVectors(unittest.TestCase):
         # Test shape of serialized embeddings
         with open(stream, "rb") as queue:
             self.assertEqual(pickle.load(queue).shape, (1, 10))
+
+    def testIndexSerialBatch(self):
+        """
+        Test word vector indexing in single process mode with batch size set
+        """
+
+        # Generate data
+        documents = [(x, "This is a test", None) for x in range(1000)]
+
+        model = VectorsFactory.create({"path": self.path, "parallel": False}, None)
+
+        ids, dimension, batches, stream = model.index(documents, 512)
+
+        self.assertEqual(len(ids), 1000)
+        self.assertEqual(dimension, 10)
+        self.assertEqual(batches, 2)
+        self.assertIsNotNone(os.path.exists(stream))
+
+        # Test shape of serialized embeddings
+        with open(stream, "rb") as queue:
+            self.assertEqual(pickle.load(queue).shape, (512, 10))
+            self.assertEqual(pickle.load(queue).shape, (488, 10))
 
     def testLookup(self):
         """

@@ -99,7 +99,7 @@ class WordVectors(Vectors):
             return super().index(documents, batchsize)
 
         # Customize indexing logic with multiprocessing pool to efficiently build vectors
-        ids, dimensions, stream = [], None, None
+        ids, dimensions, batches, stream = [], None, 0, None
 
         # Shared objects with Pool
         args = (self.config, self.scoring)
@@ -108,15 +108,27 @@ class WordVectors(Vectors):
         with Pool(os.cpu_count(), initializer=create, initargs=args) as pool:
             with tempfile.NamedTemporaryFile(mode="wb", suffix=".npy", delete=False) as output:
                 stream = output.name
+                embeddings = []
                 for uid, embedding in pool.imap(transform, documents):
                     if not dimensions:
                         # Set number of dimensions for embeddings
                         dimensions = embedding.shape[0]
 
                     ids.append(uid)
-                    pickle.dump(embedding.reshape(1, -1), output, protocol=4)
+                    embeddings.append(embedding)
 
-        return (ids, dimensions, len(ids), stream)
+                    if len(embeddings) == batchsize:
+                        pickle.dump(np.array(embeddings, dtype=np.float32), output, protocol=4)
+                        batches += 1
+
+                        embeddings = []
+
+                # Final embeddings batch
+                if embeddings:
+                    pickle.dump(np.array(embeddings, dtype=np.float32), output, protocol=4)
+                    batches += 1
+
+        return (ids, dimensions, batches, stream)
 
     def lookup(self, tokens):
         """

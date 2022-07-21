@@ -17,7 +17,7 @@ class Pooling(nn.Module):
     Builds pooled vectors usings outputs from a transformers model.
     """
 
-    def __init__(self, path, device, tokenizer=None, batch=32, maxlength=None):
+    def __init__(self, path, device, tokenizer=None, maxlength=None):
         """
         Creates a new Pooling model.
 
@@ -25,7 +25,6 @@ class Pooling(nn.Module):
             path: path to model, accepts Hugging Face model hub id or local path
             device: tensor device id
             tokenizer: optional path to tokenizer
-            batch: batch size
             maxlength: max sequence length
         """
 
@@ -38,19 +37,19 @@ class Pooling(nn.Module):
         # Detect unbounded tokenizer typically found in older models
         Models.checklength(self.model, self.tokenizer)
 
-        # Set batch and max length
-        self.batch = batch
+        # Set max length
         self.maxlength = maxlength if maxlength else self.tokenizer.model_max_length
 
         # Move to device
         self.to(self.device)
 
-    def encode(self, documents):
+    def encode(self, documents, batch=32):
         """
         Builds an array of pooled embeddings for documents.
 
         Args:
             documents: list of documents used to build embeddings
+            batch: model batch size
 
         Returns:
             pooled embeddings
@@ -64,7 +63,7 @@ class Pooling(nn.Module):
         lengths = np.argsort([-len(x) for x in documents])
         documents = [documents[x] for x in lengths]
 
-        for chunk in self.chunk(documents, self.batch):
+        for chunk in self.chunk(documents, batch):
             # Tokenize input
             inputs = self.tokenizer(chunk, padding=True, truncation="longest_first", return_tensors="pt", max_length=self.maxlength)
 

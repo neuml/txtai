@@ -23,8 +23,11 @@ class Vectors:
             # Enables optional string tokenization
             self.tokenize = config.get("tokenize")
 
-            # pylint: disable=E1111
+            # Load model
             self.model = self.load(config.get("path"))
+
+            # Encode batch size - controls underlying model batch size when encoding vectors
+            self.encodebatch = config.get("encodebatch", 32)
 
     def load(self, path):
         """

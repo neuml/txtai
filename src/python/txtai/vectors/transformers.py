@@ -45,7 +45,7 @@ class TransformersVectors(Vectors):
 
     def encode(self, data):
         # Encode data using vectors model
-        return self.model.encode(data)
+        return self.model.encode(data, self.encodebatch)
 
     def prepare(self, data):
         # Optional string tokenization
