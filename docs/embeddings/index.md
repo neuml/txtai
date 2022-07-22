@@ -49,11 +49,13 @@ An embeddings instance can be created as follows:
 embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2"})
 ```
 
-The example above builds a transformers based embeddings instance. In this case, when loading and searching for data, a transformers model is used to vectorize data. The embeddings instance is [configuration driven](configuration) based on what is passed in the constructor. A number of different options are supported to cover a wide variety of use cases.
+The example above builds a transformers-based embeddings instance. In this case, when loading and searching for data, a transformers model is used to vectorize data.
+
+The embeddings instance is [configuration-driven](configuration) based on what is passed in the constructor. Embeddings indexes store vectors and can optionally [store content](configuration#content). Content storage enables additional filtering and data retrieval options.
 
 ## Index
 
-After creating a new Embeddings instance, the next step is adding data to it. 
+After creating a new embeddings instance, the next step is adding data to it.
 
 ```python
 embeddings.index([(uid, text, None) for uid, text in enumerate(data)])
@@ -67,19 +69,11 @@ The index method takes an iterable collection of tuples with three values.
 | data        | input data to index, can be text, a dictionary or object      |
 | tags        | optional tags string, used to mark/label data as it's indexed |
 
-The input iterable can be a list and/or a generator. [Generators](https://wiki.python.org/moin/Generators) help with indexing very large datasets as only portions of the data is in memory at any given time.
+When the data element is a dictionary and it has a field named `text`, that will be used for indexing.
 
-txtai buffers data to temporary storage along the way during indexing as embeddings vectors can be quite large (for example 768 dimensions of float32 is 768 * 4 = 3072 bytes per vector).
+The input iterable can be a list or generator. [Generators](https://wiki.python.org/moin/Generators) help with indexing very large datasets as only portions of the data is in memory at any given time.
 
-### Scoring
-When using [word vector backed models](./configuration#words) with scoring set, a separate call is required before calling `index` as follows:
-
-```python
-embeddings.score([(uid, text, None) for uid, text in enumerate(data)])
-embeddings.index([(uid, text, None) for uid, text in enumerate(data)])
-```
-
-Two calls are required to support generator-backed iteration of data. The scoring index requires a separate full-pass of the data.
+More information on indexing can be found in the [index guide](indexing).
 
 ## Search
 
@@ -91,8 +85,10 @@ embeddings.search(query, limit)
 
 The search method takes two parameters, the query and query limit. The results format is different based on whether [content](configuration/#content) is stored or not.
 
-- List of `(id, score)` when content is disabled
-- List of `{**query columns}` when content is enabled
+- List of `(id, score)` when content is _not_ stored
+- List of `{**query columns}` when content is stored
+
+Both natural language and SQL queries are supported. More information can be found in the [query guide](query).
 
 ## More examples
 

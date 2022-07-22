@@ -52,6 +52,7 @@ nav:
     - Embeddings:
         - embeddings/index.md
         - Configuration: embeddings/configuration.md
+        - Index Guide: embeddings/indexing.md
         - Methods: embeddings/methods.md
         - Query Guide: embeddings/query.md
     - Pipeline:

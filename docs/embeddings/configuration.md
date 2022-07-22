@@ -65,6 +65,20 @@ transform: function
 
 When method is `external`, this function transforms input content into embeddings. The input to this function is a list of data. This method must return either a numpy array or list of numpy arrays.
 
+### batch
+```yaml
+batch: int
+```
+
+Sets the transform batch size. This parameter controls how input streams are chunked and vectorized.
+
+### encodebatch
+```yaml
+encodebatch: int
+```
+
+Sets the encode batch size. This parameter controls the underlying vector model batch size. This often corresponds to a GPU batch size, which controls GPU memory usage.
+
 ### backend
 ```yaml
 backend: faiss|hnsw|annoy
@@ -83,6 +97,8 @@ faiss:
                 x = 4 * sqrt(embeddings count)
     nprobe: search probe setting (int) - defaults to x/16 (as defined above)
             for larger indexes
+    quantize: store vectors with 8-bit precision vs 32-bit (boolean)
+              defaults to false
     mmap: load as on-disk index (boolean) - trade query response time for a
           smaller RAM footprint, defaults to false
 ```
@@ -144,14 +160,6 @@ query:
 ```
 
 Query translation model. Translates natural language queries to txtai compatible SQL statements.
-
-### quantize
-```yaml
-quantize: boolean
-```
-
-Enables quanitization of generated sentence embeddings. If the index backend supports it, sentence embeddings will be stored with 8-bit precision vs 32-bit.
-Only Faiss currently supports quantization.
 
 ### tokenize
 ```yaml

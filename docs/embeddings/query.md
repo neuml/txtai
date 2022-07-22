@@ -11,7 +11,7 @@ embeddings.search("feel good story")
 embeddings.search("wildlife")
 ```
 
-The queries above search the index for similarity matches on `feel good story` and `wildlife`. If content storage is enabled, a list of `{**query columns}` is returned. Otherwise, a list of `(id, score)` tuples are returned.
+The queries above [search](../methods#txtai.embeddings.base.Embeddings.search) the index for similarity matches on `feel good story` and `wildlife`. If content storage is enabled, a list of `{**query columns}` is returned. Otherwise, a list of `(id, score)` tuples are returned.
 
 ## SQL
 
