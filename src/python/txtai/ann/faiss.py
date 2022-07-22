@@ -86,7 +86,7 @@ class Faiss(ANN):
             return components
 
         # Get storage setting
-        storage = "SQ8" if self.config.get("quantize") else "Flat"
+        storage = "SQ8" if self.setting("quantize", self.config.get("quantize")) else "Flat"
 
         # Small index, use storage directly with IDMap
         if count <= 5000:
