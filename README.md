@@ -35,8 +35,8 @@ txtai executes machine-learning workflows to transform data and build AI-powered
 
 Traditional search systems use keywords to find data. Semantic search applications have an understanding of natural language and identify results that have the same meaning, not necessarily the same keywords.
 
-![search](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/search.png#only-light)
-![search](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/search-dark.png#only-dark)
+![search](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/search.png#gh-light-mode-only)
+![search](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/search-dark.png#gh-dark-mode-only)
 
 Backed by state-of-the-art machine learning models, data is transformed into vector representations for search (also known as embeddings). Innovation is happening at a rapid pace, models can understand concepts in documents, audio, images and more.
 
@@ -51,8 +51,8 @@ Summary of txtai features:
 
 Applications range from similarity search to complex NLP-driven data extractions to generate structured databases. Semantic workflows transform and find data driven by user intent.
 
-![flows](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/flows.png#only-light)
-![flows](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/flows-dark.png#only-dark)
+![flows](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/flows.png#gh-light-mode-only)
+![flows](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/flows-dark.png#gh-dark-mode-only)
 
 The following applications are powered by txtai.
 
