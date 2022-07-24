@@ -35,6 +35,9 @@ txtai executes machine-learning workflows to transform data and build AI-powered
 
 Traditional search systems use keywords to find data. Semantic search applications have an understanding of natural language and identify results that have the same meaning, not necessarily the same keywords.
 
+![search](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/search.png#only-light)
+![search](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/search-dark.png#only-dark)
+
 Backed by state-of-the-art machine learning models, data is transformed into vector representations for search (also known as embeddings). Innovation is happening at a rapid pace, models can understand concepts in documents, audio, images and more.
 
 Summary of txtai features:
@@ -46,7 +49,12 @@ Summary of txtai features:
 - 🔗 API bindings for [JavaScript](https://github.com/neuml/txtai.js), [Java](https://github.com/neuml/txtai.java), [Rust](https://github.com/neuml/txtai.rs) and [Go](https://github.com/neuml/txtai.go)
 - ☁️ Cloud-native architecture that scales out with container orchestration systems (e.g. Kubernetes)
 
-Applications range from similarity search to complex NLP-driven data extractions to generate structured databases. The following applications are powered by txtai.
+Applications range from similarity search to complex NLP-driven data extractions to generate structured databases. Semantic workflows transform and find data driven by user intent.
+
+![flows](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/flows.png#only-light)
+![flows](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/flows-dark.png#only-dark)
+
+The following applications are powered by txtai.
 
 ![apps](https://raw.githubusercontent.com/neuml/txtai/master/apps.jpg)
 
