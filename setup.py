@@ -6,7 +6,7 @@ with open("README.md", "r", encoding="utf-8") as f:
     DESCRIPTION = "".join([line for line in f if "gh-dark-mode-only" not in line])
 
 # Required dependencies
-install = ["faiss-cpu>=1.7.1.post2", "numpy>=1.18.4", "pyyaml>=5.3", "torch>=1.6.0", "transformers>=4.12.3", "tokenizers>=0.10.3"]
+install = ["faiss-cpu>=1.7.1.post2", "numpy>=1.18.4", "pyyaml>=5.3", "torch>=1.6.0", "transformers>=4.20.1"]
 
 # Optional dependencies
 extras = {}
@@ -49,7 +49,7 @@ extras["similarity"] = [
     "hnswlib>=0.5.0",
     "pymagnitude-lite>=0.1.43",
     "scikit-learn>=0.23.1",
-    "sentence-transformers>=2.1.0",
+    "sentence-transformers>=2.2.0",
 ]
 
 extras["workflow"] = [

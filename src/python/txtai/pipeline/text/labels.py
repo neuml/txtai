@@ -45,10 +45,10 @@ class Labels(HFPipeline):
             function = "none" if multilabel is None else "sigmoid" if multilabel or len(self.labels()) == 1 else "softmax"
 
             # Run text classification pipeline
-            results = self.pipeline(text, return_all_scores=True, function_to_apply=function, num_workers=workers)
+            results = self.pipeline(text, top_k=None, function_to_apply=function, num_workers=workers)
 
         # Convert results to a list if necessary
-        if not isinstance(results, list):
+        if isinstance(text, str):
             results = [results]
 
         # Build list of outputs and return
@@ -90,13 +90,11 @@ class Labels(HFPipeline):
                     outputs.append([(labels.index(label), result["scores"][x]) for x, label in enumerate(result["labels"])])
             else:
                 if flatten:
-                    result = sorted(result, key=lambda x: x["score"], reverse=True)
                     result = [x["label"] for x in result if x["score"] >= threshold and (not labels or x["label"] in labels)]
                     outputs.append(result[:1] if isinstance(flatten, bool) else result)
                 else:
                     # Filter results using labels, if provided
-                    result = self.limit(result, labels)
-                    outputs.append(sorted(enumerate(result), key=lambda x: x[1], reverse=True))
+                    outputs.append(self.limit(result, labels))
 
         return outputs
 
@@ -105,19 +103,21 @@ class Labels(HFPipeline):
         Filter result using labels. If labels is None, original result is returned.
 
         Args:
-            result: results array
+            result: results array sorted by score descending
             labels: list of labels or None
 
         Returns:
             filtered results
         """
 
-        # Extract scores from result
-        result = [x["score"] for x in result]
+        # Get config
+        config = self.pipeline.model.config
+
+        # Resolve label ids for labels
+        result = [(config.label2id.get(x["label"], 0), x["score"]) for x in result]
 
         if labels:
-            config = self.pipeline.model.config
-            indices = []
+            matches = []
             for label in labels:
                 # Lookup label keys from model config
                 if label.isdigit():
@@ -127,9 +127,10 @@ class Labels(HFPipeline):
                     label = label.lower()
                     keys = [x.lower() for x in config.label2id.keys()]
 
-                # Get index, default to 0 if not found
-                indices.append(keys.index(label) if label in keys else 0)
+                # Find and add label match
+                if label in keys:
+                    matches.append(keys.index(label))
 
-            return [result[i] for i in indices]
+            return [(label, score) for label, score in result if label in matches]
 
         return result
