@@ -38,7 +38,7 @@ jobs:
         run: |
           pip install -U pip
           pip install -U wheel coverage coveralls
-          pip install .[all] torch==1.11.0
+          pip install .[all]
           python -c "import nltk; nltk.download('punkt')"
           python --version
           make data coverage
