@@ -25,12 +25,13 @@ class SQLite(Database):
     """
 
     DELETE_BATCH = "DELETE FROM batch"
-    INSERT_BATCH = "INSERT INTO batch VALUES (?, ?, ?)"
+    INSERT_BATCH_INDEXID = "INSERT INTO batch (indexid, batch) VALUES (?, ?)"
+    INSERT_BATCH_ID = "INSERT INTO batch (id, batch) VALUES (?, ?)"
 
     # Temporary table for joining similarity scores
     CREATE_SCORES = """
         CREATE TEMP TABLE IF NOT EXISTS scores (
-            indexid INTEGER,
+            indexid INTEGER PRIMARY KEY,
             score REAL
         )
     """
@@ -485,9 +486,9 @@ class SQLite(Database):
             self.cursor.execute(SQLite.DELETE_BATCH)
 
         if indexids:
-            self.cursor.executemany(SQLite.INSERT_BATCH, [(i, None, batch) for i in indexids])
+            self.cursor.executemany(SQLite.INSERT_BATCH_INDEXID, [(i, batch) for i in indexids])
         if ids:
-            self.cursor.executemany(SQLite.INSERT_BATCH, [(None, str(uid), batch) for uid in ids])
+            self.cursor.executemany(SQLite.INSERT_BATCH_ID, [(str(uid), batch) for uid in ids])
 
     def scores(self, similarity):
         """
