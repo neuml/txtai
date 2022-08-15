@@ -75,7 +75,7 @@ extras["all"] = (
 
 setup(
     name="txtai",
-    version="4.6.0",
+    version="4.7.0",
     author="NeuML",
     description="Build AI-powered semantic search applications",
     long_description=DESCRIPTION,
