@@ -445,7 +445,8 @@ class Embeddings:
 
     def save(self, path, cloud=None):
         """
-        Saves an index.
+        Saves an index in a directory at path unless path ends with tar.gz, tar.bz2, tar.xz or zip.
+        In those cases, the index is stored as a compressed file.
 
         Args:
             path: output path

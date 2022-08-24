@@ -31,15 +31,31 @@ The `index` call will build a brand new index replacing an existing one. `upsert
 
 ## Save
 
-Indexes don't automatically persist. Indexes can be persisted using the [save](../methods/#txtai.embeddings.base.Embeddings.save) method.
+Indexes can be stored in a directory using the [save](../methods/#txtai.embeddings.base.Embeddings.save) method.
 
 ```python
 embeddings.save("/path/to/save")
 ```
 
+Compressed indexes are also supported.
+
+```python
+embeddings.save("/path/to/save/index.tar.gz")
+```
+
+In addition to saving indexes locally, they can also be persisted to [cloud storage](../configuration#cloud).
+
+```python
+embeddings.save("/path/to/save/index.tar.gz", cloud={...})
+```
+
+This is especially useful when running in a serverless context or otherwise running on temporary compute. Cloud storage is only supported with compressed indexes.
+
 Embeddings indexes can be restored using the [load](../methods/#txtai.embeddings.base.Embeddings.load) method.
 
-In addition to saving indexes locally, they can also be persisted to [cloud storage](../configuration#cloud). This is especially useful when running from a serverless context or otherwise running on temporary compute.
+```python
+embeddings.load("/path/to/load")
+```
 
 ## Delete
 
