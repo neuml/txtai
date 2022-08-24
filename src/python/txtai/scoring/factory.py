@@ -13,23 +13,29 @@ class ScoringFactory:
     """
 
     @staticmethod
-    def create(method):
+    def create(config):
         """
         Factory method to construct a Scoring object.
 
         Args:
-            method: scoring method (bm25, sif, tfidf)
+            config: scoring configuration parameters - supports bm25, sif, tfidf
 
         Returns:
             Scoring
         """
 
+        # Support string and dict configuration
+        if isinstance(config, str):
+            config = {"method": config}
+
+        method = config.get("method") if config else None
+
         if method == "bm25":
-            return BM25()
+            return BM25(config)
         if method == "sif":
-            return SIF()
+            return SIF(config)
         if method == "tfidf":
             # Default scoring object implements tf-idf
-            return Scoring()
+            return Scoring(config)
 
         return None

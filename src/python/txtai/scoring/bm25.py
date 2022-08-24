@@ -9,16 +9,15 @@ from .base import Scoring
 
 class BM25(Scoring):
     """
-    BM25 scoring. Scores using Apache Lucene's version of BM25 which adds 1 to prevent
-    negative scores.
+    Best matching (BM25) scoring.
     """
 
-    def __init__(self, k1=0.1, b=0.75):
-        super().__init__()
+    def __init__(self, config=None):
+        super().__init__(config)
 
         # BM25 configurable parameters
-        self.k1 = k1
-        self.b = b
+        self.k1 = self.config.get("k1", 0.1)
+        self.b = self.config.get("b", 0.75)
 
     def computeidf(self, freq):
         # Calculate BM25 IDF score

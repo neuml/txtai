@@ -37,24 +37,21 @@ class TestScoring(unittest.TestCase):
         Test bm25
         """
 
-        self.method("bm25")
-        self.weights("bm25")
+        self.runTests("bm25")
 
     def testSIF(self):
         """
         Test sif
         """
 
-        self.method("sif")
-        self.weights("sif")
+        self.runTests("sif")
 
     def testTFIDF(self):
         """
         Test tfidf
         """
 
-        self.method("tfidf")
-        self.weights("tfidf")
+        self.runTests("tfidf")
 
     def testUnknown(self):
         """
@@ -63,12 +60,27 @@ class TestScoring(unittest.TestCase):
 
         self.assertIsNone(ScoringFactory.create("unknown"))
 
-    def method(self, method, data=None):
+    def runTests(self, method):
         """
-        Runs scoring method.
+        Runs a series of tests for a scoring method.
 
         Args:
             method: scoring method
+        """
+
+        config = {"method": method}
+
+        self.index(config)
+        self.weights(config)
+        self.search(config)
+        self.content(config)
+
+    def index(self, config, data=None):
+        """
+        Test scoring index method.
+
+        Args:
+            config: scoring config
             data: data to index with scoring method
 
         Returns:
@@ -78,7 +90,7 @@ class TestScoring(unittest.TestCase):
         # Derive input data
         data = data if data else self.data
 
-        model = ScoringFactory.create(method)
+        model = ScoringFactory.create(config)
         model.index(data)
 
         keys = [k for k, v in sorted(model.idf.items(), key=lambda x: x[1])]
@@ -88,6 +100,9 @@ class TestScoring(unittest.TestCase):
 
         # Test save/load
         self.assertIsNotNone(self.save(model))
+
+        # Test search returns none when terms disabled (default)
+        self.assertIsNone(model.search("query"))
 
         return model
 
@@ -111,17 +126,17 @@ class TestScoring(unittest.TestCase):
 
         return model
 
-    def weights(self, method):
+    def weights(self, config):
         """
         Test standard and tag weighted scores.
 
         Args:
-            method: scoring method
+            config: scoring config
         """
 
         document = (1, ["bear", "wins"], None)
 
-        model = self.method(method)
+        model = self.index(config)
         weights = model.weights(document[1])
 
         # Default weights
@@ -132,8 +147,50 @@ class TestScoring(unittest.TestCase):
         uid, text, _ = data[3]
         data[3] = (uid, text, "wins")
 
-        model = self.method(method, data)
+        model = self.index(config, data)
         weights = model.weights(document[1])
 
         # Modified weights
         self.assertEqual(weights[0], weights[1])
+
+    def search(self, config):
+        """
+        Test scoring search.
+
+        Args:
+            method: scoring method
+        """
+
+        model = ScoringFactory.create({**config, **{"terms": True}})
+        model.index(self.data)
+
+        # Run search and validate correct result returned
+        index, _ = model.search("bear", 1)[0]
+        self.assertEqual(index, 3)
+
+    def content(self, config):
+        """
+        Test scoring search with content.
+
+        Args:
+            config: scoring config
+        """
+
+        model = ScoringFactory.create({**config, **{"terms": True, "content": True}})
+        model.index(self.data)
+
+        # Test text with content
+        text = "Great news today"
+        model.index([(model.total, text, None)])
+
+        # Run search and validate correct result returned
+        result = model.search("great news", 1)[0]["text"]
+        self.assertEqual(result, text)
+
+        # Test reading text from dictionary
+        text = "Feel good story: baby panda born"
+        model.index([(model.total, {"text": text}, None)])
+
+        # Run search and validate correct result returned
+        result = model.search("feel good story", 1)[0]["text"]
+        self.assertEqual(result, text)
