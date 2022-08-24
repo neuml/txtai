@@ -95,6 +95,9 @@ class TestScoring(unittest.TestCase):
 
         keys = [k for k, v in sorted(model.idf.items(), key=lambda x: x[1])]
 
+        # Test count
+        self.assertEqual(model.count(), len(data))
+
         # Win should be lowest score for all models
         self.assertEqual(keys[0], "wins")
 

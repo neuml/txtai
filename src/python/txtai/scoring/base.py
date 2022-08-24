@@ -241,6 +241,16 @@ class Scoring:
 
         return topn
 
+    def count(self):
+        """
+        Returns the total number of documents indexed.
+
+        Returns:
+            total number of documents indexed
+        """
+
+        return self.total
+
     def load(self, path):
         """
         Loads a saved Scoring object from path.
