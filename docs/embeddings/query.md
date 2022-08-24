@@ -45,7 +45,10 @@ similar("query", "number of candidates")
 
 The txtai query layer has to join results from two separate components, a relational store and a similarity index. With a similar clause, a similarity search is run and those ids are fed to the underlying database query.
 
-The number of candidates should be larger than the desired number of results as additional filtering could occur. If this is not specified, it defaults to 10 times the number of desired results. 
+The number of candidates should be larger than the desired number of results when applying additional filter clauses. This ensures that `limit` results are still returned after applying additional filters. If the number of candidates is not specified, it is defaulted as follows:
+
+- For a single query filter clause, the default is the query limit
+- With multiple filtering clauses, the default is 10x the query limit
 
 ### Dynamic columns
 

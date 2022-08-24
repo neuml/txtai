@@ -102,22 +102,10 @@ class Search:
         limit = max(limit, self.limit(queries))
 
         # Extract embeddings queries as single batch across all queries
-        equeries, search, candidates = [], [], 0
-        for x, query in enumerate(queries):
-            if "similar" in query:
-                # Get handle to similar queries
-                for params in query["similar"]:
-                    # Store the query index and similar query argument (first argument)
-                    equeries.append((x, params[0]))
-
-                    # Second argument is similar candidate limit
-                    if len(params) > 1 and params[1].isdigit():
-                        # Get largest candidate limit across all queries
-                        candidates = int(params[1]) if int(params[1]) > candidates else candidates
+        equeries, candidates = self.extract(queries, limit)
 
         # Bulk approximate nearest neighbor search
-        if equeries:
-            search = self.search([query for _, query in equeries], limit * 10 if not candidates else candidates)
+        search = self.search([query for _, query in equeries], candidates) if equeries else []
 
         # Combine approximate nearest neighbor search results with database search results
         results = []
@@ -184,3 +172,41 @@ class Search:
             qlimit = l if l and l > qlimit else qlimit
 
         return qlimit
+
+    def extract(self, queries, limit):
+        """
+        Extract embeddings queries text and number of candidates from a list of parsed queries.
+
+        The number of candidates are the number of results to bring back from ANN queries. This is an optional
+        second argument to similar() clauses. For a single query filter clause, the default is the query limit.
+        With multiple filtering clauses, the default is 10x the query limit. This ensures that limit results
+        are still returned with additional filtering after an ANN query.
+
+        Args:
+            queries: list of parsed queries
+            limit: maximum results
+
+        Returns:
+            (list of embeddings queries, number of candidates)
+        """
+
+        # Extract embeddings queries as single batch across all queries
+        equeries, candidates = [], 0
+        for x, query in enumerate(queries):
+            if "similar" in query:
+                # Get handle to similar queries
+                for params in query["similar"]:
+                    # Store the query index and similar query argument (first argument)
+                    equeries.append((x, params[0]))
+
+                    # Second argument is similar candidate limit
+                    if len(params) > 1 and params[1].isdigit():
+                        # Get largest candidate limit across all queries
+                        candidates = int(params[1]) if int(params[1]) > candidates else candidates
+
+        # Default number of candidates, if not specified
+        if not candidates:
+            multitoken = any(query.get("where") and len(query["where"].split()) > 1 for query in queries)
+            candidates = limit * 10 if multitoken else limit
+
+        return (equeries, candidates)
