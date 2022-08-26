@@ -5,6 +5,7 @@ Factory module
 from .annoy import Annoy, ANNOY
 from .faiss import Faiss
 from .hnsw import HNSW, HNSWLIB
+from .qdrant import Qdrant, QDRANT
 
 
 class ANNFactory:
@@ -39,6 +40,10 @@ class ANNFactory:
                 raise ImportError('hnswlib library is not available - install "similarity" extra to enable')
 
             model = HNSW(config)
+        elif backend == "qdrant":
+            if not QDRANT:
+                raise ImportError('qdrant-client library is not available - install "qdrant" extra to enable')
+            model = Qdrant(config)
         else:
             model = Faiss(config)
 

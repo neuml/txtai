@@ -52,6 +52,8 @@ extras["similarity"] = [
     "sentence-transformers>=2.2.0",
 ]
 
+extras["qdrant"] = ["qdrant-client>=0.9.5"]
+
 extras["workflow"] = [
     "apache-libcloud>=3.3.1",
     "croniter>=1.2.0",

@@ -1,0 +1,17 @@
+# Index file path
+path: /tmp/index
+
+# Allow indexing of documents
+writable: True
+
+# Embeddings index
+embeddings:
+  path: sentence-transformers/all-MiniLM-L6-v2
+  backend: qdrant
+  qdrant:
+    collection_name: Example
+    connection:
+      host: localhost
+    collection:
+      hnsw_config:
+        ef_construct: 150

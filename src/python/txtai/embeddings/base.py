@@ -418,6 +418,7 @@ class Embeddings:
             if self.config.get("storevectors"):
                 self.config["path"] = os.path.join(path, self.config["path"])
 
+
         # Approximate nearest neighbor index - stores embeddings vectors
         self.ann = ANNFactory.create(self.config)
         self.ann.load(f"{path}/embeddings")
