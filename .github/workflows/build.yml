@@ -37,7 +37,9 @@ jobs:
       - name: Build
         run: |
           pip install -U pip
-          pip install -U wheel coverage coveralls networkit cython
+          pip install -U cython
+          pip install -U networkit
+          pip install -U wheel coverage coveralls
           pip install .[all]
           python -c "import nltk; nltk.download('punkt')"
           python --version
