@@ -23,7 +23,7 @@ extras["cloud"] = ["apache-libcloud>=3.3.1"]
 
 extras["console"] = ["rich>=12.0.1"]
 
-extras["database"] = ["pillow>=7.1.2"]
+extras["database"] = ["pillow>=7.1.2", "cython>=0.29.32", "networkit>=10.0"]
 
 extras["model"] = ["onnxruntime>=1.8.1"]
 
