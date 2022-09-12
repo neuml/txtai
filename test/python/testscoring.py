@@ -74,6 +74,7 @@ class TestScoring(unittest.TestCase):
         self.weights(config)
         self.search(config)
         self.content(config)
+        self.empty(config)
 
     def index(self, config, data=None):
         """
@@ -139,8 +140,8 @@ class TestScoring(unittest.TestCase):
 
         document = (1, ["bear", "wins"], None)
 
-        model = self.index(config)
-        weights = model.weights(document[1])
+        scoring = self.index(config)
+        weights = scoring.weights(document[1])
 
         # Default weights
         self.assertNotEqual(weights[0], weights[1])
@@ -150,8 +151,8 @@ class TestScoring(unittest.TestCase):
         uid, text, _ = data[3]
         data[3] = (uid, text, "wins")
 
-        model = self.index(config, data)
-        weights = model.weights(document[1])
+        scoring = self.index(config, data)
+        weights = scoring.weights(document[1])
 
         # Modified weights
         self.assertEqual(weights[0], weights[1])
@@ -164,11 +165,11 @@ class TestScoring(unittest.TestCase):
             method: scoring method
         """
 
-        model = ScoringFactory.create({**config, **{"terms": True}})
-        model.index(self.data)
+        scoring = ScoringFactory.create({**config, **{"terms": True}})
+        scoring.index(self.data)
 
         # Run search and validate correct result returned
-        index, _ = model.search("bear", 1)[0]
+        index, _ = scoring.search("bear", 1)[0]
         self.assertEqual(index, 3)
 
     def content(self, config):
@@ -179,21 +180,36 @@ class TestScoring(unittest.TestCase):
             config: scoring config
         """
 
-        model = ScoringFactory.create({**config, **{"terms": True, "content": True}})
-        model.index(self.data)
+        scoring = ScoringFactory.create({**config, **{"terms": True, "content": True}})
+        scoring.index(self.data)
 
         # Test text with content
         text = "Great news today"
-        model.index([(model.total, text, None)])
+        scoring.index([(scoring.total, text, None)])
 
         # Run search and validate correct result returned
-        result = model.search("great news", 1)[0]["text"]
+        result = scoring.search("great news", 1)[0]["text"]
         self.assertEqual(result, text)
 
         # Test reading text from dictionary
         text = "Feel good story: baby panda born"
-        model.index([(model.total, {"text": text}, None)])
+        scoring.index([(scoring.total, {"text": text}, None)])
 
         # Run search and validate correct result returned
-        result = model.search("feel good story", 1)[0]["text"]
+        result = scoring.search("feel good story", 1)[0]["text"]
         self.assertEqual(result, text)
+
+    def empty(self, config):
+        """
+        Tests scoring index properly handles an index call when no data present.
+
+        Args:
+            config: scoring config
+        """
+
+        # Create scoring index with no data
+        scoring = ScoringFactory.create(config)
+        scoring.index([])
+
+        # Assert index call returns and index has a count of 0
+        self.assertEqual(scoring.total, 0)

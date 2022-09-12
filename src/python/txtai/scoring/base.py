@@ -60,27 +60,29 @@ class Scoring:
         # Parse documents
         tokenlists = self.parse(documents)
 
-        # Calculate total token frequency
-        self.tokens = sum(self.wordfreq.values())
+        # Build index if tokens parsed
+        if self.wordfreq:
+            # Calculate total token frequency
+            self.tokens = sum(self.wordfreq.values())
 
-        # Calculate average frequency per token
-        self.avgfreq = self.tokens / len(self.wordfreq.values())
+            # Calculate average frequency per token
+            self.avgfreq = self.tokens / len(self.wordfreq.values())
 
-        # Calculate average document length in tokens
-        self.avgdl = self.tokens / self.total
+            # Calculate average document length in tokens
+            self.avgdl = self.tokens / self.total
 
-        # Compute IDF scores
-        for word, freq in self.docfreq.items():
-            self.idf[word] = self.computeidf(freq)
+            # Compute IDF scores
+            for word, freq in self.docfreq.items():
+                self.idf[word] = self.computeidf(freq)
 
-        # Average IDF score per token
-        self.avgidf = sum(self.idf.values()) / len(self.idf)
+            # Average IDF score per token
+            self.avgidf = sum(self.idf.values()) / len(self.idf)
 
-        # Filter for tags that appear in at least 1% of the documents
-        self.tags = {tag: number for tag, number in self.tags.items() if number >= self.total * 0.005}
+            # Filter for tags that appear in at least 1% of the documents
+            self.tags = {tag: number for tag, number in self.tags.items() if number >= self.total * 0.005}
 
-        # Process document terms, if necessary
-        self.terms(tokenlists)
+            # Process document terms, if necessary
+            self.terms(tokenlists)
 
     def parse(self, documents):
         """
@@ -197,7 +199,7 @@ class Scoring:
 
         # Check if document terms available
         if self.docterms:
-            query = Tokenizer.tokenize(query)
+            query = Tokenizer.tokenize(query) if isinstance(query, str) else query
 
             scores = {}
             for token in query:
@@ -256,7 +258,7 @@ class Scoring:
         Loads a saved Scoring object from path.
 
         Args:
-            path: directory path to load model
+            path: directory path to load scoring index
         """
 
         with open(path, "rb") as handle:
@@ -267,7 +269,7 @@ class Scoring:
         Saves a Scoring object to path.
 
         Args:
-            path: directory path to save model
+            path: directory path to save scoring index
         """
 
         with open(path, "wb") as handle:
