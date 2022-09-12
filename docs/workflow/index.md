@@ -14,7 +14,22 @@ workflow = Workflow([Task(lambda x: [y * 2 for y in x])])
 list(workflow([1, 2, 3]))
 ```
 
-This example simply multiplies each input value and returns a outputs via a generator. 
+This example multiplies each input value by 2 and returns transformed elements via a generator.
+
+Since workflows run as generators, output must be consumed for execution to occur. The following snippets show how output can be consumed.
+
+```python
+# Small dataset where output fits in memory
+list(workflow(elements))
+
+# Large dataset
+for output in workflow(elements):
+    function(output)
+
+# Large dataset where output is discarded
+for _ in workflow(elements):
+    pass
+```
 
 Workflows are run with Python or configuration. Examples of both methods are shown below.
 

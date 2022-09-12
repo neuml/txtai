@@ -49,13 +49,14 @@ class Workflow:
 
     def __call__(self, elements):
         """
-        Executes a workflow for input elements.
+        Executes a workflow for input elements. This method returns a generator that yields transformed
+        data elements.
 
         Args:
             elements: iterable data elements
 
         Returns:
-            transformed data elements
+            generator that yields transformed data elements
         """
 
         # Create execute instance for this run
