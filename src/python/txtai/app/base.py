@@ -160,6 +160,7 @@ class Application:
                 functions = []
                 for fn in config["functions"]:
                     if isinstance(fn, dict):
+                        fn = fn.copy()
                         fn["function"] = self.function(fn["function"])
                     else:
                         fn = self.function(fn)
@@ -331,17 +332,17 @@ class Application:
                 index = self.count() + len(self.documents)
                 for document in documents:
                     if isinstance(document, dict):
-                        # Pass dictionary, the embeddings instance handles parsing out the "text" field
+                        # Create (id, data, tags) tuple from dictionary
                         document = (document["id"], document, None)
-                    elif isinstance(document, str):
-                        # Add id via autosequence
+                    elif isinstance(document, tuple):
+                        # Create (id, data, tags) tuple
+                        document = (document[0], document[1], None) if len(document) < 3 else document[:3]
+                    else:
+                        # Create (id, data, tags) tuple using id autosequence
                         document = (index, document, None)
                         index += 1
-                    elif isinstance(document, tuple) and len(document) < 3:
-                        # Copy partial tuple
-                        document = (document[0], document[1], None)
 
-                    # Add document tuple (id, text, element)
+                    # Add document tuple (id, data, tags)
                     batch.append(document)
 
                 # Add batch
