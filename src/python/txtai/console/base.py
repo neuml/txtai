@@ -7,9 +7,15 @@ import shlex
 
 from cmd import Cmd
 
-from rich import box
-from rich.console import Console as RichConsole
-from rich.table import Table
+# Conditional import
+try:
+    from rich import box
+    from rich.console import Console as RichConsole
+    from rich.table import Table
+
+    RICH = True
+except ImportError:
+    RICH = False
 
 from txtai.app import Application
 from txtai.embeddings import Embeddings
@@ -29,6 +35,9 @@ class Console(Cmd):
         """
 
         super().__init__()
+
+        if not RICH:
+            raise ImportError('Console is not available - install "console" extra to enable')
 
         self.prompt = ">>> "
 

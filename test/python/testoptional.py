@@ -5,9 +5,8 @@ Optional module tests
 import sys
 import unittest
 
-# pylint: disable=C0415,W0611
-import transformers
-from transformers import Trainer, set_seed, ViTFeatureExtractor
+# pylint: disable=C0415, W0611
+from transformers import Trainer
 
 
 class TestOptional(unittest.TestCase):
@@ -34,6 +33,7 @@ class TestOptional(unittest.TestCase):
             "onnxruntime",
             "pandas",
             "PIL",
+            "rich",
             "sklearn.decomposition",
             "sentence_transformers",
             "soundfile",
@@ -77,6 +77,16 @@ class TestOptional(unittest.TestCase):
 
         with self.assertRaises(ImportError):
             import txtai.api
+
+    def testConsole(self):
+        """
+        Test missing console dependencies
+        """
+
+        from txtai.console import Console
+
+        with self.assertRaises(ImportError):
+            Console()
 
     def testCloud(self):
         """
