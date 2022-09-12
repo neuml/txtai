@@ -13,23 +13,23 @@ from .base import ANN
 
 class Faiss(ANN):
     """
-    Builds an ANN model using the Faiss library.
+    Builds an ANN index using the Faiss library.
     """
 
     def load(self, path):
         # Load index
-        self.model = read_index(path, IO_FLAG_MMAP if self.setting("mmap") is True else 0)
+        self.backend = read_index(path, IO_FLAG_MMAP if self.setting("mmap") is True else 0)
 
     def index(self, embeddings):
         # Configure embeddings index. Inner product is equal to cosine similarity on normalized vectors.
         params = self.configure(embeddings.shape[0])
-        self.model = index_factory(embeddings.shape[1], params, METRIC_INNER_PRODUCT)
+        self.backend = index_factory(embeddings.shape[1], params, METRIC_INNER_PRODUCT)
 
         # Train model
-        self.model.train(embeddings)
+        self.backend.train(embeddings)
 
         # Add embeddings - position in embeddings is used as the id
-        self.model.add_with_ids(embeddings, np.arange(embeddings.shape[0], dtype=np.int64))
+        self.backend.add_with_ids(embeddings, np.arange(embeddings.shape[0], dtype=np.int64))
 
         # Add id offset and index build metadata
         self.config["offset"] = embeddings.shape[0]
@@ -39,7 +39,7 @@ class Faiss(ANN):
         new = embeddings.shape[0]
 
         # Append new ids - position in embeddings + existing offset is used as the id
-        self.model.add_with_ids(embeddings, np.arange(self.config["offset"], self.config["offset"] + new, dtype=np.int64))
+        self.backend.add_with_ids(embeddings, np.arange(self.config["offset"], self.config["offset"] + new, dtype=np.int64))
 
         # Update id offset and index metadata
         self.config["offset"] += new
@@ -47,12 +47,12 @@ class Faiss(ANN):
 
     def delete(self, ids):
         # Remove specified ids
-        self.model.remove_ids(np.array(ids, dtype=np.int64))
+        self.backend.remove_ids(np.array(ids, dtype=np.int64))
 
     def search(self, queries, limit):
         # Run the query
-        self.model.nprobe = self.nprobe()
-        scores, ids = self.model.search(queries, limit)
+        self.backend.nprobe = self.nprobe()
+        scores, ids = self.backend.search(queries, limit)
 
         # Map results to [(id, score)]
         results = []
@@ -62,11 +62,11 @@ class Faiss(ANN):
         return results
 
     def count(self):
-        return self.model.ntotal
+        return self.backend.ntotal
 
     def save(self, path):
         # Write index
-        write_index(self.model, path)
+        write_index(self.backend, path)
 
     def configure(self, count):
         """

@@ -18,13 +18,19 @@ from .base import ANN
 
 class HNSW(ANN):
     """
-    Builds an ANN model using the hnswlib library.
+    Builds an ANN index using the hnswlib library.
     """
+
+    def __init__(self, config):
+        super().__init__(config)
+
+        if not HNSWLIB:
+            raise ImportError('HNSW is not available - install "similarity" extra to enable')
 
     def load(self, path):
         # Load index
-        self.model = Index(dim=self.config["dimensions"], space=self.config["metric"])
-        self.model.load_index(path)
+        self.backend = Index(dim=self.config["dimensions"], space=self.config["metric"])
+        self.backend.load_index(path)
 
     def index(self, embeddings):
         # Inner product is equal to cosine similarity on normalized vectors
@@ -36,11 +42,11 @@ class HNSW(ANN):
         seed = self.setting("randomseed", 100)
 
         # Create index
-        self.model = Index(dim=self.config["dimensions"], space=self.config["metric"])
-        self.model.init_index(max_elements=embeddings.shape[0], ef_construction=efconstruction, M=m, random_seed=seed)
+        self.backend = Index(dim=self.config["dimensions"], space=self.config["metric"])
+        self.backend.init_index(max_elements=embeddings.shape[0], ef_construction=efconstruction, M=m, random_seed=seed)
 
         # Add items - position in embeddings is used as the id
-        self.model.add_items(embeddings, np.arange(embeddings.shape[0]))
+        self.backend.add_items(embeddings, np.arange(embeddings.shape[0]))
 
         # Add id offset, delete counter and index build metadata
         self.config["offset"] = embeddings.shape[0]
@@ -51,10 +57,10 @@ class HNSW(ANN):
         new = embeddings.shape[0]
 
         # Resize index
-        self.model.resize_index(self.config["offset"] + new)
+        self.backend.resize_index(self.config["offset"] + new)
 
         # Append new ids - position in embeddings + existing offset is used as the id
-        self.model.add_items(embeddings, np.arange(self.config["offset"], self.config["offset"] + new))
+        self.backend.add_items(embeddings, np.arange(self.config["offset"], self.config["offset"] + new))
 
         # Update id offset and index metadata
         self.config["offset"] += new
@@ -64,7 +70,7 @@ class HNSW(ANN):
         # Mark elements as deleted to omit from search results
         for uid in ids:
             try:
-                self.model.mark_deleted(uid)
+                self.backend.mark_deleted(uid)
                 self.config["deletes"] += 1
             except RuntimeError:
                 # Ignore label not found error
@@ -74,10 +80,10 @@ class HNSW(ANN):
         # Set ef query param
         ef = self.setting("efsearch")
         if ef:
-            self.model.set_ef(ef)
+            self.backend.set_ef(ef)
 
         # Run the query
-        ids, distances = self.model.knn_query(queries, k=limit)
+        ids, distances = self.backend.knn_query(queries, k=limit)
 
         # Map results to [(id, score)]
         results = []
@@ -91,8 +97,8 @@ class HNSW(ANN):
         return results
 
     def count(self):
-        return self.model.get_current_count() - self.config["deletes"]
+        return self.backend.get_current_count() - self.config["deletes"]
 
     def save(self, path):
         # Write index
-        self.model.save_index(path)
+        self.backend.save_index(path)

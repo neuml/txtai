@@ -2,20 +2,20 @@
 Factory module
 """
 
-from .annoy import Annoy, ANNOY
+from .annoy import Annoy
 from .faiss import Faiss
-from .hnsw import HNSW, HNSWLIB
+from .hnsw import HNSW
 
 
 class ANNFactory:
     """
-    Methods to create ANN models.
+    Methods to create ANN indexes.
     """
 
     @staticmethod
     def create(config):
         """
-        Create an ANN model.
+        Create an ANN.
 
         Args:
             config: index configuration parameters
@@ -24,25 +24,19 @@ class ANNFactory:
             ANN
         """
 
-        # ANN model
-        model = None
+        # ANN instance
+        ann = None
         backend = config.get("backend", "faiss")
 
         # Create ANN instance
         if backend == "annoy":
-            if not ANNOY:
-                raise ImportError('annoy library is not available - install "similarity" extra to enable')
-
-            model = Annoy(config)
+            ann = Annoy(config)
         elif backend == "hnsw":
-            if not HNSWLIB:
-                raise ImportError('hnswlib library is not available - install "similarity" extra to enable')
-
-            model = HNSW(config)
+            ann = HNSW(config)
         else:
-            model = Faiss(config)
+            ann = Faiss(config)
 
         # Store config back
         config["backend"] = backend
 
-        return model
+        return ann
