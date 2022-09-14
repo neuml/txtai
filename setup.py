@@ -69,6 +69,7 @@ extras["all"] = (
     + extras["cloud"]
     + extras["console"]
     + extras["database"]
+    + extras["graph"]
     + extras["model"]
     + extras["pipeline"]
     + extras["similarity"]
