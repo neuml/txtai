@@ -245,6 +245,10 @@ class SQLite(Database):
             # Build alias clause
             return f'{name} as "{alias}"'
 
+        # Resolve expression
+        if self.expressions and name in self.expressions:
+            return self.expressions[name]
+
         # Name is already resolved, skip
         if name.startswith("json_extract(data") or any(f"s.{s}" == name for s in sections):
             return name

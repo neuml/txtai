@@ -5,8 +5,6 @@ Database module
 import logging
 import types
 
-from inspect import signature
-
 from .encoder import EncoderFactory
 from .sql import SQL, SQLError, Token
 
@@ -38,8 +36,14 @@ class Database:
         encoder = self.config.get("objects")
         self.encoder = EncoderFactory.create(encoder) if encoder else None
 
+        # Custom functions and expressions
+        self.functions, self.expressions = None, None
+
         # Load custom functions
-        self.functions = self.register(self.config)
+        self.registerfunctions(self.config)
+
+        # Load custom expressions
+        self.registerexpressions(self.config)
 
     def load(self, path):
         """
@@ -214,7 +218,7 @@ class Database:
 
         raise NotImplementedError
 
-    def register(self, config):
+    def registerfunctions(self, config):
         """
         Register custom functions. This method stores the function details for underlying
         database implementations to handle.
@@ -227,27 +231,42 @@ class Database:
         if inputs:
             functions = []
             for fn in inputs:
-                name, argcount = None, None
+                name, argcount = None, -1
 
                 # Optional function configuration
                 if isinstance(fn, dict):
-                    name, argcount, fn = fn.get("name"), fn.get("argcount"), fn["function"]
+                    name, argcount, fn = fn.get("name"), fn.get("argcount", -1), fn["function"]
 
                 # Determine if this is a callable object or a function
                 if not isinstance(fn, types.FunctionType) and hasattr(fn, "__call__"):
                     name = name if name else fn.__class__.__name__.lower()
-                    argcount = argcount if argcount else len(signature(fn.__call__).parameters)
                     fn = fn.__call__
                 else:
                     name = name if name else fn.__name__.lower()
-                    argcount = argcount if argcount else len(signature(fn).parameters)
 
                 # Store function details
                 functions.append((name, argcount, fn))
 
-            return functions
+            self.functions = functions
 
-        return None
+    def registerexpressions(self, config):
+        """
+        Register custom expressions. This method parses and resolves expressions for later use in SQL queries.
+
+        Args:
+            config: database configuration
+        """
+
+        inputs = config.get("expressions") if config else None
+        if inputs:
+            expressions = {}
+            for entry in inputs:
+                name = entry.get("name")
+                expression = entry.get("expression")
+                if name and expression:
+                    expressions[name] = self.sql.snippet(expression)
+
+            self.expressions = expressions
 
     def execute(self, function, *args):
         """

@@ -95,11 +95,28 @@ class SQL:
             True if this is a valid SQL query, False otherwise
         """
 
-        # Reduce query to a lower-cased single line stripped of leading/trailing whitespace
-        query = query.lower().strip(";").replace("\n", " ").replace("\t", " ").strip()
+        if isinstance(query, str):
+            # Reduce query to a lower-cased single line stripped of leading/trailing whitespace
+            query = query.lower().strip(";").replace("\n", " ").replace("\t", " ").strip()
 
-        # Detect if this is a valid txtai SQL statement
-        return query.startswith("select ") and (" from txtai " in query or query.endswith(" from txtai"))
+            # Detect if this is a valid txtai SQL statement
+            return query.startswith("select ") and (" from txtai " in query or query.endswith(" from txtai"))
+
+        return False
+
+    def snippet(self, text):
+        """
+        Parses a partial SQL snippet.
+
+        Args:
+            text: SQL snippet
+
+        Returns:
+            parsed snippet
+        """
+
+        tokens, _ = self.tokenize(text)
+        return self.expression(tokens)
 
     def tokenize(self, query):
         """

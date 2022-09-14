@@ -212,6 +212,27 @@ class TestEmbeddings(unittest.TestCase):
 
         self.assertEqual(self.embeddings.explain("select * from txtai limit 1")[0]["id"], "0")
 
+    def testFunction(self):
+        """
+        Test custom functions
+        """
+
+        embeddings = Embeddings(
+            {
+                "path": "sentence-transformers/nli-mpnet-base-v2",
+                "content": True,
+                "functions": [{"name": "length", "function": "testdatabase.testembeddings.length"}],
+            }
+        )
+
+        # Create an index for the list of text
+        embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        # Search for best match
+        result = embeddings.search("select length(text) length from txtai where id = 0", 1)[0]
+
+        self.assertEqual(result["length"], 39)
+
     def testGenerator(self):
         """
         Test index with a generator
@@ -497,3 +518,11 @@ class TestEmbeddings(unittest.TestCase):
             self.assertEqual(result["text"], data[0][1])
         finally:
             del self.embeddings.config["batch"]
+
+
+def length(text):
+    """
+    Custom SQL function.
+    """
+
+    return len(text)

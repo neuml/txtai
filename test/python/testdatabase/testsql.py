@@ -110,6 +110,14 @@ class TestSQL(unittest.TestCase):
         self.assertSql("having", prefix + "group by text having count(*) > 1", "count(*) > 1")
         self.assertSql("having", prefix + "where flag = 1 group by text having count(*) > 1", "count(*) > 1")
 
+    def testIsSQL(self):
+        """
+        Tests SQL detection method.
+        """
+
+        self.assertTrue(self.sql.issql("select text from txtai where id = 1"))
+        self.assertFalse(self.sql.issql(1234))
+
     def testLimit(self):
         """
         Test limit clauses
