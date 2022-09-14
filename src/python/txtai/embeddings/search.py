@@ -15,15 +15,17 @@ class Search:
     Executes a batch search action. A search can be both approximate nearest neighbor and/or database driven.
     """
 
-    def __init__(self, embeddings):
+    def __init__(self, embeddings, indexids=False):
         """
         Creates a new search action.
 
         Args:
             embeddings: embeddings instance
+            indexids: searches return indexids when True, otherwise run standard search
         """
 
         self.embeddings = embeddings
+        self.indexids = indexids
 
         # Alias embeddings attributes
         self.config = embeddings.config
@@ -49,7 +51,7 @@ class Search:
         if not self.ann:
             return [[]] * len(queries)
 
-        if self.database:
+        if not self.indexids and self.database:
             return self.dbsearch(queries, limit)
 
         # Default: execute an approximate nearest neighbor search
@@ -77,7 +79,7 @@ class Search:
         results = [[(i, score) for i, score in r if score > 0] for r in results]
 
         # Map indexids to ids if "ids" available
-        if "ids" in self.config:
+        if not self.indexids and "ids" in self.config:
             lookup = self.config["ids"]
             return [[(lookup[i], score) for i, score in r] for r in results]
 

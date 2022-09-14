@@ -14,11 +14,13 @@ from .. import __pickle__
 
 from ..ann import ANNFactory
 from ..database import DatabaseFactory
+from ..graph import GraphFactory
 from ..scoring import ScoringFactory
 from ..vectors import VectorsFactory
 
 from .archive import Archive
 from .explain import Explain
+from .functions import Functions
 from .reducer import Reducer
 from .query import Query
 from .search import Search
@@ -46,7 +48,7 @@ class Embeddings:
         # Index configuration
         self.config = None
 
-        # Dimensionality reduction and scoring models - word vectors only
+        # Dimensionality reduction and scoring index - word vectors only
         self.reducer, self.scoring = None, None
 
         # Embeddings vector model - transforms data into similarity vectors
@@ -57,6 +59,9 @@ class Embeddings:
 
         # Document database
         self.database = None
+
+        # Graph network
+        self.graph = None
 
         # Query model
         self.query = None
@@ -95,6 +100,9 @@ class Embeddings:
             # Reset archive since this is a new index
             self.archive = None
 
+        # Create graph, if necessary
+        self.graph = self.creategraph()
+
         # Create transform action
         transform = Transform(self, Action.REINDEX if reindex else Action.INDEX)
 
@@ -122,6 +130,10 @@ class Embeddings:
                 # Save indexids-ids mapping for indexes with no database, except when this is a reindex action
                 if not reindex and not self.database:
                     self.config["ids"] = ids
+
+        # Index graph, if necessary
+        if self.graph:
+            self.graph.index(Search(self, True), self.batchsimilarity)
 
     def upsert(self, documents):
         """
@@ -154,6 +166,10 @@ class Embeddings:
                 # Save indexids-ids mapping for indexes with no database
                 if not self.database:
                     self.config["ids"] = self.config["ids"] + ids
+
+        # Graph upsert, if necessary
+        if self.graph:
+            self.graph.upsert(Search(self, True))
 
     def delete(self, ids):
         """
@@ -199,6 +215,10 @@ class Embeddings:
         if indices:
             # Delete ids from index
             self.ann.delete(indices)
+
+            # Delete ids from graph
+            if self.graph:
+                self.graph.delete(indices)
 
         return deletes
 
@@ -427,7 +447,7 @@ class Embeddings:
             self.reducer = Reducer()
             self.reducer.load(f"{path}/lsa")
 
-        # Embedding scoring model - word vectors only
+        # Embedding scoring index - word vectors only
         if self.config.get("scoring"):
             self.scoring = ScoringFactory.create(self.config["scoring"])
             self.scoring.load(f"{path}/scoring")
@@ -442,6 +462,11 @@ class Embeddings:
         self.database = self.createdatabase()
         if self.database:
             self.database.load(f"{path}/documents")
+
+        # Graph network - stores relationships
+        self.graph = self.creategraph()
+        if self.graph:
+            self.graph.load(f"{path}/graph")
 
     def save(self, path, cloud=None):
         """
@@ -477,13 +502,17 @@ class Embeddings:
             if self.reducer:
                 self.reducer.save(f"{path}/lsa")
 
-            # Save embedding scoring model (word vectors only)
+            # Save embedding scoring index (word vectors only)
             if self.scoring:
                 self.scoring.save(f"{path}/scoring")
 
             # Save document database
             if self.database:
                 self.database.save(f"{path}/documents")
+
+            # Save graph
+            if self.graph:
+                self.graph.save(f"{path}/graph")
 
             # If this is an archive, save it
             if apath:
@@ -494,7 +523,8 @@ class Embeddings:
         Closes this embeddings index and frees all resources.
         """
 
-        self.config, self.reducer, self.scoring, self.model, self.ann, self.query, self.archive = None, None, None, None, None, None, None
+        self.config, self.reducer, self.scoring, self.model = None, None, None, None
+        self.ann, self.graph, self.query, self.archive = None, None, None, None
 
         # Close database connection if open
         if self.database:
@@ -597,8 +627,24 @@ class Embeddings:
         if self.database:
             self.database.close()
 
+        config = self.config.copy()
+
+        # Resolve callable functions
+        if "functions" in config:
+            config["functions"] = Functions(self)(config)
+
         # Create database from config and return
-        return DatabaseFactory.create(self.config)
+        return DatabaseFactory.create(config)
+
+    def creategraph(self):
+        """
+        Creates a graph from config.
+
+        Returns:
+            new graph, if enabled in config
+        """
+
+        return GraphFactory.create(self.config["graph"]) if "graph" in self.config else None
 
     def normalize(self, embeddings):
         """

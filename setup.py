@@ -25,6 +25,8 @@ extras["console"] = ["rich>=12.0.1"]
 
 extras["database"] = ["pillow>=7.1.2"]
 
+extras["graph"] = ["networkx>=2.6.3", "python-louvain>=0.16"]
+
 extras["model"] = ["onnxruntime>=1.8.1"]
 
 extras["pipeline"] = [

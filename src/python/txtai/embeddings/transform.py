@@ -31,6 +31,7 @@ class Transform:
         self.delete = self.embeddings.delete
         self.model = self.embeddings.model
         self.database = self.embeddings.database
+        self.graph = self.embeddings.graph
 
         # Get config parameters
         self.offset = self.embeddings.config.get("offset", 0) if self.action == Action.UPSERT else 0
@@ -139,7 +140,13 @@ class Transform:
         # Load batch into database except if this is a reindex
         if self.database and self.action != Action.REINDEX:
             self.database.insert(batch, self.offset)
-            self.offset += offset
+
+        # Load batch into graph
+        if self.graph:
+            self.graph.insert(batch, self.offset)
+
+        # Increment offset
+        self.offset += offset
 
 
 class Action(Enum):

@@ -29,6 +29,7 @@ class TestOptional(unittest.TestCase):
             "imagehash",
             "nltk",
             "libcloud.storage.providers",
+            "networkx",
             "onnxmltools",
             "onnxruntime",
             "pandas",
@@ -107,6 +108,16 @@ class TestOptional(unittest.TestCase):
 
         with self.assertRaises(ImportError):
             ImageEncoder()
+
+    def testGraph(self):
+        """
+        Test missing graph dependencies
+        """
+
+        from txtai.graph import GraphFactory
+
+        with self.assertRaises(ImportError):
+            GraphFactory.create({"backend": "networkx"})
 
     def testModel(self):
         """
