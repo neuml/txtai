@@ -10,9 +10,9 @@ try:
 except ImportError:
     FASTTEXT = False
 
+from huggingface_hub import cached_download
 from huggingface_hub.hf_api import HfApi
 from transformers import M2M100ForConditionalGeneration, M2M100Tokenizer, MarianMTModel, MarianTokenizer
-from transformers.file_utils import cached_path
 
 from ..hfmodel import HFModel
 
@@ -121,7 +121,7 @@ class Translation(HFModel):
             fasttext.FastText.eprint = lambda x: None
 
             # Load language detection model
-            path = cached_path(self.langdetect)
+            path = cached_download(self.langdetect, legacy_cache_layout=True)
             self.detector = fasttext.load_model(path)
 
         # Transform texts to format expected by language detection model
@@ -160,10 +160,10 @@ class Translation(HFModel):
                 tokenizer.src_lang = source
                 tokens, indices = self.tokenize(tokenizer, texts)
 
-                translated = model.generate(**tokens, forced_bos_token_id=tokenizer.lang_code_to_id[target])
+                translated = model.generate(**tokens, forced_bos_token_id=tokenizer.lang_code_to_id[target], max_length=model.config.max_length)
             else:
                 tokens, indices = self.tokenize(tokenizer, texts)
-                translated = model.generate(**tokens)
+                translated = model.generate(**tokens, max_length=model.config.max_length)
 
         # Decode translations
         translated = tokenizer.batch_decode(translated, skip_special_tokens=True)
