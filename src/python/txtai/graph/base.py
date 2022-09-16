@@ -486,7 +486,7 @@ class Graph:
         # Clear previous topics, if any
         self.cleartopics()
 
-        # Use community detection o get topics
+        # Use community detection to get topics
         config = self.config["topics"]
         topics = Topics(config)
         self.topics = topics(self)
