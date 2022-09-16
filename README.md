@@ -139,6 +139,7 @@ Build semantic/similarity/vector/neural search applications.
 | [Query translation](https://github.com/neuml/txtai/blob/master/examples/33_Query_translation.ipynb) | Domain-specific natural language queries with query translation | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/33_Query_translation.ipynb) |
 | [Build a QA database](https://github.com/neuml/txtai/blob/master/examples/34_Build_a_QA_database.ipynb) | Question matching with semantic search | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/34_Build_a_QA_database.ipynb) |
 | [Embeddings components](https://github.com/neuml/txtai/blob/master/examples/37_Embeddings_index_components.ipynb) | Composable search with vector, SQL and scoring components | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/37_Embeddings_index_components.ipynb) |
+| [Semantic Graphs](https://github.com/neuml/txtai/blob/master/examples/38_Introducing_the_Semantic_Graph.ipynb) | Explore topics, data connectivity and run network analysis| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/38_Introducing_the_Semantic_Graph.ipynb) |
 
 ### Pipelines
 
