@@ -3,8 +3,10 @@
 ::: txtai.embeddings.Embeddings
     selection:
         filters:
+            - "!createdatabase"
+            - "!creategraph"
             - "!checkarchive"
             - "!configure"
-            - "!createdatabase"
+            - "!loadquery"
             - "!loadvectors"
             - "!normalize"

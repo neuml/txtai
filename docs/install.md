@@ -5,7 +5,9 @@
 
 The easiest way to install is via pip and PyPI
 
-    pip install txtai
+```
+pip install txtai
+```
 
 Python 3.7+ is supported. Using a Python [virtual environment](https://docs.python.org/3/library/venv.html) is recommended.
 
@@ -16,7 +18,7 @@ in setup.py install_requires sections.
 
 ### All
 
-Install all dependencies (mirrors txtai < 3.2)
+Install all dependencies (mirrors txtai < 3.2).
 
 ```
 pip install txtai[all]
@@ -38,17 +40,33 @@ Interface with cloud compute.
 pip install txtai[cloud]
 ```
 
+### Console
+
+Command line index query console.
+
+```
+pip install txtai[console]
+```
+
 ### Database
 
-Additional content storage options
+Additional content storage options.
 
 ```
 pip install txtai[database]
 ```
 
+### Graph
+
+Topic modeling, data connectivity and network analysis.
+
+```
+pip install txtai[graph]
+```
+
 ### Model
 
-Additional non-standard models
+Additional non-standard models.
 
 ```
 pip install txtai[model]

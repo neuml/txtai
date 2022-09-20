@@ -43,7 +43,7 @@ Compressed indexes are also supported.
 embeddings.save("/path/to/save/index.tar.gz")
 ```
 
-In addition to saving indexes locally, they can also be persisted to [cloud storage](../configuration#cloud).
+In addition to saving indexes locally, they can also be persisted to [cloud storage](../configuration/cloud).
 
 ```python
 embeddings.save("/path/to/save/index.tar.gz", cloud={...})
@@ -72,6 +72,30 @@ When [content storage](../configuration#content) is enabled, [reindex](../method
 ```python
 embeddings.reindex({"path": "sentence-transformers/all-MiniLM-L6-v2", "backend": "hnsw"})
 ```
+
+## Graph
+
+Enabling a [graph network](../configuration#graph) adds the ability to run topic modeling and analyze data connectivity. Graphs are synchronized with the main embeddings index.
+
+Get a mapping of discovered topics to associated ids.
+
+```python
+embeddings.graph.topics
+```
+
+Show the most central nodes in the index.
+
+```python
+embeddings.graph.centrality()
+```
+
+Show how node 1 and node 2 are connected in the graph.
+
+```python
+embeddings.graph.showpath(id1, id2)
+```
+
+Graphs are persisted alongside an embeddings index. Each save and load will also save and load the graph.
 
 ## Scoring
 

@@ -51,7 +51,9 @@ nav:
     - Examples: examples.md
     - Embeddings:
         - embeddings/index.md
-        - Configuration: embeddings/configuration.md
+        - Configuration:
+            - embeddings/configuration/index.md
+            - Cloud: embeddings/configuration/cloud.md
         - Index Guide: embeddings/indexing.md
         - Methods: embeddings/methods.md
         - Query Guide: embeddings/query.md

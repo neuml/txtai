@@ -106,7 +106,9 @@ curl -X GET "http://localhost:8000/search?query=positive"
 
 The easiest way to install is via pip and PyPI
 
-    pip install txtai
+```
+pip install txtai
+```
 
 Python 3.7+ is supported. Using a Python [virtual environment](https://docs.python.org/3/library/venv.html) is recommended.
 
