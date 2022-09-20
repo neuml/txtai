@@ -2,6 +2,8 @@
 Factory module
 """
 
+from ..util import Resolver
+
 from .sqlite import SQLite
 
 
@@ -35,8 +37,28 @@ class DatabaseFactory:
         # Create document database instance
         if content == "sqlite":
             database = SQLite(config)
+        elif content:
+            database = DatabaseFactory.resolve(content, config)
 
         # Store config back
         config["content"] = content
 
         return database
+
+    @staticmethod
+    def resolve(backend, config):
+        """
+        Attempt to resolve a custom backend.
+
+        Args:
+            backend: backend class
+            config: index configuration parameters
+
+        Returns:
+            Database
+        """
+
+        try:
+            return Resolver()(backend)(config)
+        except Exception as e:
+            raise ImportError(f"Unable to resolve database backend: '{backend}'") from e

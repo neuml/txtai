@@ -6,6 +6,8 @@ import inspect
 import sys
 import types
 
+from ..util import Resolver
+
 from .base import Pipeline
 
 
@@ -31,13 +33,7 @@ class PipelineFactory:
             return PipelineFactory.list()[pipeline]
 
         # Attempt to load custom pipeline
-        parts = pipeline.split(".")
-        module = ".".join(parts[:-1])
-        m = __import__(module)
-        for comp in parts[1:]:
-            m = getattr(m, comp)
-
-        return m
+        return Resolver()(pipeline)
 
     @staticmethod
     def create(config, pipeline):

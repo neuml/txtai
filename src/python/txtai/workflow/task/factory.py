@@ -4,6 +4,8 @@ Task factory module
 
 import functools
 
+from ...util import Resolver
+
 
 class TaskFactory:
     """
@@ -28,13 +30,7 @@ class TaskFactory:
             task = ".".join(__name__.split(".")[:-1]) + "." + task.capitalize() + "Task"
 
         # Attempt to load custom task
-        parts = task.split(".")
-        module = ".".join(parts[:-1])
-        m = __import__(module)
-        for comp in parts[1:]:
-            m = getattr(m, comp)
-
-        return m
+        return Resolver()(task)
 
     @staticmethod
     def create(config, task):

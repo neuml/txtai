@@ -87,6 +87,24 @@ class TestGraph(unittest.TestCase):
         graph.addtopics()
         self.assertEqual(sum((len(graph.topics[x]) for x in graph.topics)), 4)
 
+    def testCustomBackend(self):
+        """
+        Test resolving a custom backend
+        """
+
+        graph = GraphFactory.create({"backend": "txtai.graph.NetworkX"})
+        graph.initialize()
+        self.assertIsNotNone(graph)
+
+    def testCustomBackendNotFound(self):
+        """
+        Test resolving an unresolvable backend
+        """
+
+        with self.assertRaises(ImportError):
+            graph = GraphFactory.create({"backend": "notfound.graph"})
+            graph.initialize()
+
     def testDelete(self):
         """
         Test delete

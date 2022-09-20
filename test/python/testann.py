@@ -31,6 +31,21 @@ class TestANN(unittest.TestCase):
         # Test with custom settings
         self.runTests("annoy", {"annoy": {"ntrees": 2, "searchk": 1}}, False)
 
+    def testCustomBackend(self):
+        """
+        Test resolving a custom backend
+        """
+
+        self.runTests("txtai.ann.Faiss")
+
+    def testCustomBackendNotFound(self):
+        """
+        Test resolving an unresolvable backend
+        """
+
+        with self.assertRaises(ImportError):
+            ANNFactory.create({"backend": "notfound.ann"})
+
     def testFaiss(self):
         """
         Test Faiss backend

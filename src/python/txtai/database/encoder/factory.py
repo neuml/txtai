@@ -2,6 +2,8 @@
 Encoder factory module
 """
 
+from ...util import Resolver
+
 from .base import Encoder
 
 
@@ -27,13 +29,7 @@ class EncoderFactory:
             # Get parent package
             encoder = ".".join(__name__.split(".")[:-1]) + "." + encoder.capitalize() + "Encoder"
 
-        parts = encoder.split(".")
-        module = ".".join(parts[:-1])
-        m = __import__(module)
-        for comp in parts[1:]:
-            m = getattr(m, comp)
-
-        return m
+        return Resolver()(encoder)
 
     @staticmethod
     def create(encoder):

@@ -2,6 +2,8 @@
 Factory module
 """
 
+from ..util import Resolver
+
 from .networkx import NetworkX
 
 
@@ -27,9 +29,30 @@ class GraphFactory:
         backend = config.get("backend", "networkx")
 
         # Create graph instance
-        graph = NetworkX(config)
+        if backend == "networkx":
+            graph = NetworkX(config)
+        else:
+            graph = GraphFactory.resolve(backend, config)
 
         # Store config back
         config["backend"] = backend
 
         return graph
+
+    @staticmethod
+    def resolve(backend, config):
+        """
+        Attempt to resolve a custom backend.
+
+        Args:
+            backend: backend class
+            config: index configuration parameters
+
+        Returns:
+            Graph
+        """
+
+        try:
+            return Resolver()(backend)(config)
+        except Exception as e:
+            raise ImportError(f"Unable to resolve graph backend: '{backend}'") from e
