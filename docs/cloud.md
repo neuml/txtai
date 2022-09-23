@@ -16,7 +16,7 @@ The base txtai images have no models installed and models will be downloaded eac
 - Create a container with the [models cached](#container-image-model-caching)
 - Set the transformers cache environment variable and mount that volume when starting the image
     ```bash
-    docker run -v <local dir>:/models -e TRANSFORMERS_CACHE=/models --rm --it <docker image>
+    docker run -v <local dir>:/models -e TRANSFORMERS_CACHE=/models --rm -it <docker image>
     ```
 
 ## Build txtai images
