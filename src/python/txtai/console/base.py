@@ -99,24 +99,6 @@ class Console(Cmd):
 
         self.console.print(self.app.config)
 
-    def load(self, path):
-        """
-        Processes .load command.
-
-        Args:
-            path: path to configuration
-        """
-
-        if os.path.isfile(path):
-            self.console.print(f"Loading application {path}")
-            self.app = Application(path)
-        else:
-            self.console.print(f"Loading index {path}")
-
-            # Load embeddings index
-            self.app = Embeddings()
-            self.app.load(path)
-
     def highlight(self, command):
         """
         Processes .highlight command.
@@ -141,32 +123,23 @@ class Console(Cmd):
         self.vlimit = int(action)
         self.console.print(f"Set limit to {self.vlimit}")
 
-    def workflow(self, command):
+    def load(self, path):
         """
-        Processes .workflow command.
+        Processes .load command.
 
         Args:
-            command: command line
+            path: path to configuration
         """
 
-        command = shlex.split(command)
-        if isinstance(self.app, Application):
-            self.console.print(list(self.app.workflow(command[1], command[2:])))
+        if self.isyaml(path):
+            self.console.print(f"Loading application {path}")
+            self.app = Application(path)
+        else:
+            self.console.print(f"Loading index {path}")
 
-    def split(self, command, default=None):
-        """
-        Splits command by whitespace.
-
-        Args:
-            command: command line
-            default: default command action
-
-        Returns:
-            command action
-        """
-
-        values = command.split(" ", 1)
-        return values if len(values) > 1 else (command, default)
+            # Load embeddings index
+            self.app = Embeddings()
+            self.app.load(path)
 
     def search(self, query):
         """
@@ -204,6 +177,53 @@ class Console(Cmd):
 
         # Print table to console
         self.console.print(table)
+
+    def workflow(self, command):
+        """
+        Processes .workflow command.
+
+        Args:
+            command: command line
+        """
+
+        command = shlex.split(command)
+        if isinstance(self.app, Application):
+            self.console.print(list(self.app.workflow(command[1], command[2:])))
+
+    def isyaml(self, path):
+        """
+        Checks if file at path is a valid YAML file.
+
+        Args:
+            path: file to check
+
+        Returns:
+            True if file is valid YAML, False otherwise
+        """
+
+        if os.path.exists(path) and os.path.isfile(path):
+            try:
+                return Application.read(path)
+            # pylint: disable=W0702
+            except:
+                pass
+
+        return False
+
+    def split(self, command, default=None):
+        """
+        Splits command by whitespace.
+
+        Args:
+            command: command line
+            default: default command action
+
+        Returns:
+            command action
+        """
+
+        values = command.split(" ", 1)
+        return values if len(values) > 1 else (command, default)
 
     def render(self, result, column, value):
         """

@@ -55,8 +55,9 @@ class TestConsole(unittest.TestCase):
         with open(cls.apppath, "w", encoding="utf-8") as out:
             out.write(APPLICATION % cls.embedpath)
 
-        # Save index
+        # Save index as uncompressed and compressed
         cls.embeddings.save(cls.embedpath)
+        cls.embeddings.save(f"{cls.embedpath}.tar.gz")
 
         # Create console
         cls.console = Console(cls.embedpath)
@@ -66,7 +67,7 @@ class TestConsole(unittest.TestCase):
         Test application
         """
 
-        self.assertIn("console.yml", self.command(f".load {self.apppath}"))
+        self.assertNotIn("Traceback", self.command(f".load {self.apppath}"))
         self.assertIn("1", self.command(".limit 1"))
         self.assertIn("Maine man wins", self.command("feel good story"))
 
@@ -82,7 +83,8 @@ class TestConsole(unittest.TestCase):
         Test embeddings index
         """
 
-        self.assertIn("embeddings", self.command(f".load {self.embedpath}"))
+        self.assertNotIn("Traceback", self.command(f".load {self.embedpath}.tar.gz"))
+        self.assertNotIn("Traceback", self.command(f".load {self.embedpath}"))
         self.assertIn("1", self.command(".limit 1"))
         self.assertIn("Maine man wins", self.command("feel good story"))
 
