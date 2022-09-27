@@ -16,6 +16,8 @@ Python 3.7+ is supported. Using a Python [virtual environment](https://docs.pyth
 txtai has the following optional dependencies that can be installed as extras. The patterns below are supported
 in setup.py install_requires sections.
 
+_Note: Extras are provided for convenience. Alternatively, individual packages can be installed to limit dependencies._
+
 ### All
 
 Install all dependencies (mirrors txtai < 3.2).
