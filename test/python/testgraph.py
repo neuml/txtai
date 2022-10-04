@@ -40,7 +40,7 @@ class TestGraph(unittest.TestCase):
                 {"name": "topic", "expression": "graph(indexid, 'topic')"},
                 {"name": "topicrank", "expression": "graph(indexid, 'topicrank')"},
             ],
-            "graph": {"limit": 5, "minscore": 0.2, "batchsize": 4, "approximate": False, "topics": {"categories": ["News"]}},
+            "graph": {"limit": 5, "minscore": 0.2, "batchsize": 4, "approximate": False, "topics": {"categories": ["News"], "stopwords": ["the"]}},
         }
 
         # Create embeddings instance

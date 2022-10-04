@@ -25,6 +25,11 @@ class Topics:
         self.pattern = re.compile(r"(?u)\b\w\w+\b")
         self.tokenizer = Tokenizer()
 
+        # Additional stopwords to ignore when building topic names
+        self.stopwords = set()
+        if "stopwords" in self.config:
+            self.stopwords.update(self.config["stopwords"])
+
     def __call__(self, graph):
         """
         Runs topic modeling for input graph.
@@ -122,7 +127,7 @@ class Topics:
 
         for term in terms:
             # Add terms that pass tokenization rules
-            if self.tokenizer(term):
+            if self.tokenizer(term) and term not in self.stopwords:
                 topn.append(term)
 
             # Break once topn terms collected
