@@ -12,12 +12,25 @@ jobs:
 
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Python - Linux
+        uses: actions/setup-python@v4
         with:
           python-version: 3.7
-      - uses: actions/setup-java@v1
+        if: matrix.os == 'ubuntu-latest'
+
+      - name: Install Python - Windows/macOS
+        uses: actions/setup-python@v4
         with:
+          python-version: 3.9
+        if: matrix.os != 'ubuntu-latest'
+
+      - name: Install Java
+        uses: actions/setup-java@v2
+        with:
+          distribution: "zulu"
           java-version: 1.8
 
       - name: Install dependencies - Linux
@@ -27,7 +40,6 @@ jobs:
       - name: Install dependencies - MacOS
         run: |
           brew install libomp
-          pip install torch==1.11.0 torchvision==0.12.0
         if: matrix.os == 'macos-latest'
 
       - name: Install dependencies - Windows
@@ -43,7 +55,7 @@ jobs:
           python --version
           make data coverage
 
-      - uses: pre-commit/action@v2.0.0
+      - uses: pre-commit/action@v3.0.0
         if: matrix.os == 'ubuntu-latest'
 
       - name: Test Coverage
