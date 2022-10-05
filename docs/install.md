@@ -20,7 +20,7 @@ _Note: Extras are provided for convenience. Alternatively, individual packages c
 
 ### All
 
-Install all dependencies (mirrors txtai < 3.2).
+Install all dependencies.
 
 ```
 pip install txtai[all]
@@ -116,9 +116,15 @@ Optional audio transcription requires a [system library to be installed](https:/
 
 Run `brew install libomp` see [this link](https://github.com/kyamagu/faiss-wheels#prerequisite)
 
+_Note: Older versions of Python had issues with PyTorch 1.12+. If issues are encountered, either upgrade Python or downgrade PyTorch._
+
 ### Windows
 
 Optional dependencies require [C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
+
+_Note: Older versions of Python did not have SQLite JSON support. If issues are encountered, upgrade to a later version of Python._
+
+The [txtai build workflow](https://github.com/neuml/txtai/blob/master/.github/workflows/build.yml) occasionally has work arounds for other known but temporary dependency issues.
 
 ## Install from source
 
