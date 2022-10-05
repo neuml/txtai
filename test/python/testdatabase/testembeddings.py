@@ -434,7 +434,7 @@ class TestEmbeddings(unittest.TestCase):
         """
 
         # Create an index for the list of text
-        self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+        self.embeddings.index([(uid, {"text": text, "length": len(text)}, None) for uid, text in enumerate(self.data)])
 
         # Test similar
         result = self.embeddings.search(
@@ -459,8 +459,8 @@ class TestEmbeddings(unittest.TestCase):
         self.assertEqual(list(result.values())[0], len(self.data))
 
         # Test columns
-        result = self.embeddings.search("select id, text, data, entry from txtai")[0]
-        self.assertEqual(sorted(result.keys()), ["data", "entry", "id", "text"])
+        result = self.embeddings.search("select id, text, length, data, entry from txtai")[0]
+        self.assertEqual(sorted(result.keys()), ["data", "entry", "id", "length", "text"])
 
         # Test SQL parse error
         with self.assertRaises(SQLError):
