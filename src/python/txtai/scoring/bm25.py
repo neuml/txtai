@@ -16,7 +16,7 @@ class BM25(Scoring):
         super().__init__(config)
 
         # BM25 configurable parameters
-        self.k1 = self.config.get("k1", 0.1)
+        self.k1 = self.config.get("k1", 1.2)
         self.b = self.config.get("b", 0.75)
 
     def computeidf(self, freq):

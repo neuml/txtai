@@ -232,12 +232,11 @@ class Scoring:
         if self.documents:
             results = []
             for x, score in topn:
-                if self.documents:
-                    data = self.documents[x]
-                    if isinstance(data, dict):
-                        results.append({"id": x, "text": data.get("text"), "score": score, "data": data})
-                    else:
-                        results.append({"id": x, "text": data, "score": score})
+                data = self.documents[x]
+                if isinstance(data, dict):
+                    results.append({"id": x, "text": data.get("text"), "score": score, "data": data})
+                else:
+                    results.append({"id": x, "text": data, "score": score})
 
             return results
 
@@ -275,19 +274,6 @@ class Scoring:
         with open(path, "wb") as handle:
             pickle.dump(self.__dict__, handle, protocol=__pickle__)
 
-    def computeidf(self, freq):
-        """
-        Computes an idf score for word frequency.
-
-        Args:
-            freq: word frequency
-
-        Returns:
-            idf score
-        """
-
-        return math.log(self.total / (1 + freq))
-
     def computefreq(self, tokens):
         """
         Computes token frequency.
@@ -300,6 +286,19 @@ class Scoring:
         """
 
         return Counter(tokens)
+
+    def computeidf(self, freq):
+        """
+        Computes an idf score for word frequency.
+
+        Args:
+            freq: word frequency
+
+        Returns:
+            idf score
+        """
+
+        return math.log((self.total + 1) / (freq + 1)) + 1
 
     # pylint: disable=W0613
     def score(self, freq, idf, length):
@@ -315,4 +314,4 @@ class Scoring:
             token score
         """
 
-        return (freq / length) * idf
+        return idf * math.sqrt(freq) * (1 / math.sqrt(length))

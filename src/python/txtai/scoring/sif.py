@@ -14,7 +14,7 @@ class SIF(Scoring):
         super().__init__(config)
 
         # SIF configurable parameters
-        self.a = self.config.get("a", 0.001)
+        self.a = self.config.get("a", 1e-3)
 
     def computefreq(self, tokens):
         # Default method computes frequency for a single entry
