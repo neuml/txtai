@@ -21,7 +21,7 @@ jobs:
           python-version: 3.7
         if: matrix.os == 'ubuntu-latest'
 
-      - name: Install Python - Windows/macOS
+      - name: Install Python - macOS/Windows
         uses: actions/setup-python@v4
         with:
           python-version: 3.9
@@ -37,7 +37,7 @@ jobs:
         run: sudo apt-get install libsndfile1
         if: matrix.os == 'ubuntu-latest'
 
-      - name: Install dependencies - MacOS
+      - name: Install dependencies - macOS
         run: brew install libomp
         if: matrix.os == 'macos-latest'
 
