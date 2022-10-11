@@ -54,7 +54,7 @@ def add(documents: List[dict] = Body(...)):
     Adds a batch of documents for indexing.
 
     Args:
-        documents: list of {id: value, text: value}
+        documents: list of {id: value, text: value, tags: value}
     """
 
     try:

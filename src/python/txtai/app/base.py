@@ -312,7 +312,7 @@ class Application:
         Downstream applications can override this method to also store full documents in an external system.
 
         Args:
-            documents: list of {id: value, text: value}
+            documents: list of {id: value, text: value, tags: value}
 
         Returns:
             unmodified input documents
@@ -333,7 +333,7 @@ class Application:
                 for document in documents:
                     if isinstance(document, dict):
                         # Create (id, data, tags) tuple from dictionary
-                        document = (document["id"], document, None)
+                        document = (document["id"], document, document.get("tags"))
                     elif isinstance(document, tuple):
                         # Create (id, data, tags) tuple
                         document = (document[0], document[1], None) if len(document) < 3 else document[:3]
