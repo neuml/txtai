@@ -25,13 +25,29 @@ class StorageTask(Task):
     PREFIX = r"(\w+):\/\/.*"
     PATH = r"\w+:\/\/(.*)"
 
-    def register(self):
+    def register(self, key=None, secret=None, host=None, port=None, token=None, region=None):
         """
-        Checks if required dependencies are installed.
+        Checks if required dependencies are installed. Reads in cloud storage parameters.
+
+        Args:
+            key: provider-specific access key
+            secret: provider-specific access secret
+            host: server host name
+            port: server port
+            token: temporary session token
+            region: storage region
         """
 
         if not LIBCLOUD:
             raise ImportError('StorageTask is not available - install "workflow" extra to enable')
+
+        # pylint: disable=W0201
+        self.key = key
+        self.secret = secret
+        self.host = host
+        self.port = port
+        self.token = token
+        self.region = region
 
     def __call__(self, elements, executor=None):
         # Create aggregated directory listing for all elements
@@ -75,8 +91,18 @@ class StorageTask(Task):
 
         key, container = os.path.dirname(path), os.path.basename(path)
 
+        # Get driver for provider
         driver = get_driver(provider)
-        client = driver(key)
+
+        # Get client connection
+        client = driver(
+            key if key else self.key if self.key else os.environ.get("ACCESS_KEY"),
+            self.secret if self.secret else os.environ.get("ACCESS_SECRET"),
+            host=self.host,
+            port=self.port,
+            token=self.token,
+            region=self.region,
+        )
 
         container = client.get_container(container_name=container)
         return [client.get_object_cdn_url(obj) for obj in client.list_container_objects(container=container)]
