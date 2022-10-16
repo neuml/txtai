@@ -12,7 +12,7 @@ except ImportError:
 
 from huggingface_hub import cached_download
 from huggingface_hub.hf_api import HfApi
-from transformers import M2M100ForConditionalGeneration, M2M100Tokenizer, MarianMTModel, MarianTokenizer
+from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
 from ..hfmodel import HFModel
 
@@ -25,7 +25,7 @@ class Translation(HFModel):
     # Default language detection model
     DEFAULT_LANG_DETECT = "https://dl.fbaipublicfiles.com/fasttext/supervised-models/lid.176.ftz"
 
-    def __init__(self, path="facebook/m2m100_418M", quantize=False, gpu=True, batch=64, langdetect=DEFAULT_LANG_DETECT):
+    def __init__(self, path="facebook/m2m100_418M", quantize=False, gpu=True, batch=64, langdetect=DEFAULT_LANG_DETECT, findmodels=True):
         """
         Constructs a new language translation pipeline.
 
@@ -36,6 +36,7 @@ class Translation(HFModel):
             gpu: True/False if GPU should be enabled, also supports a GPU device id
             batch: batch size used to incrementally process content
             langdetect: path to language detection model, uses a default path if not provided
+            findmodels: True/False if the Hugging Face Hub will be searched for source-target translation models
         """
 
         # Call parent constructor
@@ -44,10 +45,11 @@ class Translation(HFModel):
         # Language detection
         self.detector = None
         self.langdetect = langdetect
+        self.findmodels = findmodels
 
         # Language models
         self.models = {}
-        self.ids = self.available()
+        self.ids = self.modelids()
 
     def __call__(self, texts, target="en", source=None):
         """
@@ -86,21 +88,22 @@ class Translation(HFModel):
 
             # Store output value
             for y, (x, _) in enumerate(inputs):
-                results[x] = outputs[y]
+                results[x] = outputs[y].strip()
 
         # Return results in same order as input
         results = [results[x] for x in sorted(results)]
         return results[0] if isinstance(texts, str) else results
 
-    def available(self):
+    def modelids(self):
         """
         Runs a query to get a list of available language models from the Hugging Face API.
 
         Returns:
-            list of available language name ids
+            list of source-target language model ids
         """
 
-        return set(x.modelId for x in HfApi().list_models() if x.modelId.startswith("Helsinki-NLP"))
+        ids = [x.modelId for x in HfApi().list_models() if x.modelId.startswith("Helsinki-NLP")] if self.findmodels else []
+        return set(ids)
 
     def detect(self, texts):
         """
@@ -153,7 +156,7 @@ class Translation(HFModel):
         indices = None
 
         with self.context():
-            if isinstance(model, M2M100ForConditionalGeneration):
+            if hasattr(tokenizer, "lang_code_to_id"):
                 source = self.langid(tokenizer.lang_code_to_id, source)
                 target = self.langid(tokenizer.lang_code_to_id, target)
 
@@ -218,7 +221,7 @@ class Translation(HFModel):
             return path
 
         # Use multi-language - english model
-        if target == "en":
+        if self.findmodels and target == "en":
             return template % ("mul", target)
 
         # Default model if no suitable model found
@@ -235,12 +238,8 @@ class Translation(HFModel):
             (model, tokenizer)
         """
 
-        if path.startswith("Helsinki-NLP"):
-            model = MarianMTModel.from_pretrained(path)
-            tokenizer = MarianTokenizer.from_pretrained(path)
-        else:
-            model = M2M100ForConditionalGeneration.from_pretrained(path)
-            tokenizer = M2M100Tokenizer.from_pretrained(path)
+        model = AutoModelForSeq2SeqLM.from_pretrained(path)
+        tokenizer = AutoTokenizer.from_pretrained(path)
 
         # Apply model initialization routines
         model = self.prepare(model)
