@@ -40,31 +40,6 @@ class Tensors(Pipeline):
         # pylint: disable=E1102
         return torch.tensor(data)
 
-    def tensortype(self):
-        """
-        Returns the tensor processing framework code.
-
-        Returns:
-            tensor processing framework code
-        """
-
-        return "pt"
-
-    def argmax(self, data, dimension):
-        """
-        Calls argmax on data using the tensor processing framework.
-
-        Args:
-            data: input data
-            dimension: dimension to derive argmax
-
-        Returns:
-            argmax
-        """
-
-        # pylint: disable=E1101
-        return torch.argmax(data, dim=dimension)
-
     def context(self):
         """
         Defines a context used to wrap processing with the tensor processing framework.
