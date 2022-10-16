@@ -23,4 +23,4 @@ class TestCaption(unittest.TestCase):
         """
 
         caption = Caption()
-        self.assertEqual(caption(Image.open(Utils.PATH + "/books.jpg")), "a book shelf filled with many books")
+        self.assertEqual(caption(Image.open(Utils.PATH + "/books.jpg")), "a book shelf filled with books and a stack of books")

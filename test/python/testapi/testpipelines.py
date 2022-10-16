@@ -113,7 +113,7 @@ class TestPipelines(unittest.TestCase):
 
         caption = self.client.get(f"caption?file={Utils.PATH}/books.jpg").json()
 
-        self.assertEqual(caption, "a book shelf filled with many books")
+        self.assertEqual(caption, "a book shelf filled with books and a stack of books")
 
     def testCaptionBatch(self):
         """
@@ -123,7 +123,7 @@ class TestPipelines(unittest.TestCase):
         path = Utils.PATH + "/books.jpg"
 
         captions = self.client.post("batchcaption", json=[path, path]).json()
-        self.assertEqual(captions, ["a book shelf filled with many books"] * 2)
+        self.assertEqual(captions, ["a book shelf filled with books and a stack of books"] * 2)
 
     def testEntity(self):
         """
