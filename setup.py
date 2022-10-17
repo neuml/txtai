@@ -11,7 +11,8 @@ install = ["faiss-cpu>=1.7.1.post2", "numpy>=1.18.4", "pyyaml>=5.3", "torch>=1.6
 # Optional dependencies
 extras = {}
 
-extras["dev"] = ["black", "coverage", "pre-commit", "pylint"]
+# Development dependencies - not included in "all" install
+extras["dev"] = ["black", "coverage", "mkdocs-material", "mkdocstrings[python-legacy]", "pre-commit", "pylint"]
 
 extras["api"] = [
     "aiohttp>=3.8.1",
