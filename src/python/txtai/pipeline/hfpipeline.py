@@ -41,7 +41,7 @@ class HFPipeline(Tensors):
 
                 self.pipeline = pipeline(task, model=Models.load(path[0], config, task), tokenizer=path[1], device=deviceid)
             else:
-                self.pipeline = pipeline(task, model=path, tokenizer=path, device=deviceid)
+                self.pipeline = pipeline(task, model=path, device=deviceid)
 
             # Model quantization. Compresses model to int8 precision, improves runtime performance. Only supported on CPU.
             if deviceid == -1 and quantize:
