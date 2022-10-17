@@ -329,7 +329,7 @@ class Application:
                     self.documents = Documents()
 
                 batch = []
-                index = self.count() + len(self.documents)
+                index = self.embeddings.config.get("offset", 0) + len(self.documents)
                 for document in documents:
                     if isinstance(document, dict):
                         # Create (id, data, tags) tuple from dictionary
