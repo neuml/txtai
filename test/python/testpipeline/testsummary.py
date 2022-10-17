@@ -36,13 +36,6 @@ class TestSummary(unittest.TestCase):
 
         self.assertEqual(self.summary(self.text, minlength=15, maxlength=15), "txtai is an AI-powered search engine that")
 
-    def testSummaryShort(self):
-        """
-        Test that summarization is skipped
-        """
-
-        self.assertEqual(self.summary("Text", maxlength=15), "Text")
-
     def testSummaryBatch(self):
         """
         Test batch summarization of text
@@ -50,3 +43,22 @@ class TestSummary(unittest.TestCase):
 
         summaries = self.summary([self.text, self.text], maxlength=15)
         self.assertEqual(len(summaries), 2)
+
+    def testSummaryNoLength(self):
+        """
+        Test summary with no max length set
+        """
+
+        self.assertEqual(
+            self.summary(self.text + self.text),
+            "search is the base of many applications. Once data starts to pile up, users want to be able to find it. "
+            + "Large-scale general language models are an exciting new capability allowing us to add amazing functionality quickly "
+            + "with limited compute and people.",
+        )
+
+    def testSummaryShort(self):
+        """
+        Test that summarization is skipped
+        """
+
+        self.assertEqual(self.summary("Text", maxlength=15), "Text")

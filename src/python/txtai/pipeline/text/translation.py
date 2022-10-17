@@ -14,6 +14,7 @@ from huggingface_hub import cached_download
 from huggingface_hub.hf_api import HfApi
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
+from ...models import Models
 from ..hfmodel import HFModel
 
 
@@ -154,6 +155,7 @@ class Translation(HFModel):
 
         model.to(self.device)
         indices = None
+        maxlength = Models.maxlength(model, tokenizer)
 
         with self.context():
             if hasattr(tokenizer, "lang_code_to_id"):
@@ -163,10 +165,10 @@ class Translation(HFModel):
                 tokenizer.src_lang = source
                 tokens, indices = self.tokenize(tokenizer, texts)
 
-                translated = model.generate(**tokens, forced_bos_token_id=tokenizer.lang_code_to_id[target], max_length=model.config.max_length)
+                translated = model.generate(**tokens, forced_bos_token_id=tokenizer.lang_code_to_id[target], max_length=maxlength)
             else:
                 tokens, indices = self.tokenize(tokenizer, texts)
-                translated = model.generate(**tokens, max_length=model.config.max_length)
+                translated = model.generate(**tokens, max_length=maxlength)
 
         # Decode translations
         translated = tokenizer.batch_decode(translated, skip_special_tokens=True)

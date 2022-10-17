@@ -24,8 +24,8 @@ class Models:
         with older tokenizers.
 
         Args:
-            config: Transformers config
-            tokenizer: Transformers tokenizer
+            config: transformers config
+            tokenizer: transformers tokenizer
         """
 
         # Unpack nested config, handles passing model directly
@@ -39,6 +39,27 @@ class Models:
             and tokenizer.model_max_length == int(1e30)
         ):
             tokenizer.model_max_length = config.max_position_embeddings
+
+    @staticmethod
+    def maxlength(config, tokenizer):
+        """
+        Gets the best max length to use for generate calls. This method will return config.max_length if it's set. Otherwise, it will return
+        tokenizer.model_max_length.
+
+        Args:
+            config: transformers config
+            tokenizer: transformers tokenizer
+        """
+
+        # Unpack nested config, handles passing model directly
+        if hasattr(config, "config"):
+            config = config.config
+
+        # Get non-defaulted fields
+        keys = config.to_diff_dict()
+
+        # Use config.max_length if not set to default value, else use tokenizer.model_max_length if available
+        return config.max_length if "max_length" in keys or not hasattr(tokenizer, "model_max_length") else tokenizer.model_max_length
 
     @staticmethod
     def deviceid(gpu):

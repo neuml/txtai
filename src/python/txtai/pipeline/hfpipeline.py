@@ -50,3 +50,13 @@ class HFPipeline(Tensors):
 
         # Detect unbounded tokenizer typically found in older models
         Models.checklength(self.pipeline.model, self.pipeline.tokenizer)
+
+    def maxlength(self):
+        """
+        Gets the max length to use for generate calls.
+
+        Returns:
+            max length
+        """
+
+        return Models.maxlength(self.pipeline.model, self.pipeline.tokenizer)

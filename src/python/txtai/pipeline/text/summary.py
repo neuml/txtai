@@ -33,7 +33,7 @@ class Summary(HFPipeline):
         """
 
         # Validate text length greater than max length
-        check = maxlength if maxlength else self.pipeline.model.config.max_length
+        check = maxlength if maxlength else self.maxlength()
 
         # Skip text shorter than max length
         texts = text if isinstance(text, list) else [text]
