@@ -9,7 +9,6 @@ from tempfile import NamedTemporaryFile
 
 # Conditional import
 try:
-    from onnxruntime import GraphOptimizationLevel, InferenceSession, SessionOptions
     from onnxruntime.quantization import quantize_dynamic
 
     ONNX_RUNTIME = True
@@ -106,14 +105,8 @@ class HFOnnx(Tensors):
 
             output = temp
 
-        # Optimize model - only need CPU provider
-        sess_option = SessionOptions()
-        sess_option.optimized_model_filepath = output
-        sess_option.graph_optimization_level = GraphOptimizationLevel.ORT_ENABLE_BASIC
-        _ = InferenceSession(output, sess_option, ["CPUExecutionProvider"])
-
         # Quantize optimized model
-        quantize_dynamic(output, output, optimize_model=False)
+        quantize_dynamic(output, output, optimize_model=False, extra_options={"MatMulConstBOnly": False})
 
         # Read file back to bytes if temp file was created
         if temp:

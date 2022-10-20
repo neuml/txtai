@@ -32,6 +32,7 @@ class TestOptional(unittest.TestCase):
             "networkx",
             "onnxmltools",
             "onnxruntime",
+            "onnxruntime.quantization",
             "pandas",
             "PIL",
             "rich",
