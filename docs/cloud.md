@@ -174,4 +174,4 @@ If successful, a local API instance is now running in a "serverless" fashion. Th
 
 txtai scales with container orchestration systems. This can be self-hosted or with a cloud provider such as [Amazon Elastic Kubernetes Service](https://aws.amazon.com/eks/), [Google Kubernetes Engine](https://cloud.google.com/kubernetes-engine) and [Azure Kubernetes Service](https://azure.microsoft.com/en-us/services/kubernetes-service/). There are also other smaller providers with a managed Kubernetes offering.
 
-A full example covering how to build a serverless txtai application on Kubernetes with Knative [can be found here](https://towardsdatascience.com/serverless-vector-search-with-txtai-96f6163ab972).
+A full example covering how to build a serverless txtai application on Kubernetes with Knative [can be found here](https://medium.com/neuml/serverless-vector-search-with-txtai-96f6163ab972).
