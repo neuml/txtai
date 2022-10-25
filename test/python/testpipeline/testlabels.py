@@ -30,6 +30,24 @@ class TestLabels(unittest.TestCase):
         cls.labels = Labels("prajjwal1/bert-medium-mnli")
         cls.similarity = Similarity(model=cls.labels)
 
+    def testCrossEncoder(self):
+        """
+        Test cross-encoder similarity model
+        """
+
+        similarity = Similarity("cross-encoder/ms-marco-MiniLM-L-2-v2", crossencode=True)
+        uid = similarity("Who won the lottery?", self.data)[0][0]
+        self.assertEqual(self.data[uid], self.data[4])
+
+    def testCrossEncoderBatch(self):
+        """
+        Test cross-encoder similarity model with multiple inputs
+        """
+
+        similarity = Similarity("cross-encoder/ms-marco-MiniLM-L-2-v2", crossencode=True)
+        results = [r[0][0] for r in similarity(["Who won the lottery?", "Where did an iceberg collapse?"], self.data)]
+        self.assertEqual(results, [4, 1])
+
     def testLabel(self):
         """
         Test labels with single text input
