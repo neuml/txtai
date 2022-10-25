@@ -14,6 +14,7 @@ class Similarity(Labels):
     """
 
     def __init__(self, path=None, quantize=False, gpu=True, model=None, dynamic=True, crossencode=False):
+        # Use zero-shot classification if dynamic is True and crossencode is False, otherwise use standard text classification
         super().__init__(path, quantize, gpu, model, False if crossencode else dynamic)
 
         # Load as a cross-encoder if crossencode set to True

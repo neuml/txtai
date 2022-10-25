@@ -7,6 +7,8 @@ The Similarity pipeline computes similarity between queries and list of text usi
 
 This pipeline supports both standard text classification models and zero-shot classification models. The pipeline uses the queries as labels for the input text. The results are transposed to get scores per query/label vs scores per input text. 
 
+Cross-encoder models are supported via the `crossencode=True` constructor parameter. These models are loaded with a CrossEncoder pipeline that can also be instantiated directly. The CrossEncoder pipeline has the same methods and functionality as described below.
+
 ## Example
 
 The following shows a simple example using this pipeline.
