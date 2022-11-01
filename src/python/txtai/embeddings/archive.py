@@ -3,10 +3,10 @@ Archive module
 """
 
 import os
-import tarfile
 
 from tempfile import TemporaryDirectory
-from zipfile import ZipFile, ZIP_DEFLATED
+
+from ..compress import CompressFactory
 
 from .cloud import Cloud
 
@@ -89,18 +89,9 @@ class Archive:
         if cloud:
             cloud.load(path)
 
-        # Get compression type
-        compression = self.compression(path)
-
-        # Zip files
-        if compression == "zip":
-            with ZipFile(path, "r") as zfile:
-                zfile.extractall(self.path())
-
-        # Tar files
-        else:
-            with tarfile.open(path, f"r:{compression}") as tar:
-                tar.extractall(self.path())
+        # Unpack compressed file
+        compress = CompressFactory().create(path)
+        compress.unpack(path, self.path())
 
     def save(self, path, config):
         """
@@ -111,43 +102,19 @@ class Archive:
             config: additional configuration
         """
 
-        # Get compression type
-        compression = self.compression(path)
-
         # Create output directory, if necessary
         output = os.path.dirname(path)
         if output:
             os.makedirs(output, exist_ok=True)
 
-        # Zip files
-        if compression == "zip":
-            with ZipFile(path, "w", ZIP_DEFLATED) as zfile:
-                for root, _, files in sorted(os.walk(self.path())):
-                    for f in files:
-                        zfile.write(os.path.join(root, f), arcname=f)
-
-        # Tar files
-        else:
-            with tarfile.open(path, f"w:{compression}") as tar:
-                tar.add(self.path(), arcname=".")
+        # Pack into compressed file
+        compress = CompressFactory().create(path)
+        compress.pack(self.path(), path)
 
         # Save file to cloud storage, if necessary
         cloud = self.cloud(config)
         if cloud:
             cloud.save(path)
-
-    def compression(self, path):
-        """
-        Gets compression type for path.
-
-        Args:
-            path: path to archive file
-
-        Returns:
-            compression type
-        """
-
-        return path.lower().split(".")[-1]
 
     def cloud(self, config):
         """

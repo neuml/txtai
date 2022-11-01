@@ -4,12 +4,12 @@ Graph module
 
 import os
 import pickle
-import tarfile
 
 from collections import Counter
 from tempfile import TemporaryDirectory
 
 from .. import __pickle__
+from ..compress import CompressFactory
 
 from .topics import Topics
 
@@ -289,9 +289,9 @@ class Graph:
 
         # Extract files to temporary directory and load content
         with TemporaryDirectory() as directory:
-            # Extract tar contents
-            with tarfile.open(path, "r") as tar:
-                tar.extractall(directory)
+            # Unpack files
+            compress = CompressFactory().create("tar")
+            compress.unpack(path, directory)
 
             # Load graph backend
             self.loadgraph(f"{directory}/graph")
@@ -331,9 +331,9 @@ class Graph:
                 with open(f"{directory}/topics", "wb") as handle:
                     pickle.dump(self.topics, handle, protocol=__pickle__)
 
-            # Combine output as TAR
-            with tarfile.open(path, "w") as tar:
-                tar.add(directory, arcname=".")
+            # Pack files
+            compress = CompressFactory().create("tar")
+            compress.pack(directory, path)
 
     def insert(self, documents, index=0):
         """
