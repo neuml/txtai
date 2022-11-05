@@ -75,7 +75,11 @@ embeddings.reindex({"path": "sentence-transformers/all-MiniLM-L6-v2", "backend":
 
 ## Graph
 
-Enabling a [graph network](../configuration#graph) adds the ability to run topic modeling and analyze data connectivity. Graphs are synchronized with the main embeddings index.
+Dimensionality reduction with UMAP combined with HDBSCAN is a popular topic modeling method found in a number of libraries. txtai takes a different approach with a semantic graph.
+
+Enabling a [graph network](../configuration#graph) adds a semantic graph at index time as data is being vectorized. Vector embeddings are used to create relationships in the graph. Finally, community detection algorithms build topic clusters. Semantic graphs can also be used to analyze data connectivity.
+
+This approach has the advantage of only having to vectorize data once. It also has the advantage of better topic precision given there isn't a dimensionality reduction operation (UMAP). Semantic graph examples are shown below.
 
 Get a mapping of discovered topics to associated ids.
 
