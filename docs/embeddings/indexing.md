@@ -112,4 +112,4 @@ embeddings.index([(uid, text, None) for uid, text in enumerate(data)])
 
 Two calls are required to support generator-backed iteration of data. The scoring index requires a separate full-pass of the data.
 
-Scoring instances can also create a standalone keyword-based index (BM25, TF-IDF). See the [examples at the bottom of this section](../examples/#semantic-search) to learn more.
+Scoring instances can also create a standalone keyword-based index (BM25, TF-IDF). See [this link](../../examples/#semantic-search) to learn more.
