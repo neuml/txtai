@@ -19,7 +19,7 @@ class TestSummary(unittest.TestCase):
         """
 
         cls.text = (
-            "Search is the base of many applications. Once data starts to pile up, users want to be able to find it. It’s the foundation "
+            "Search is the base of many applications. Once data starts to pile up, users want to be able to find it. It's the foundation "
             "of the internet and an ever-growing challenge that is never solved or done. The field of Natural Language Processing (NLP) is "
             "rapidly evolving with a number of new developments. Large-scale general language models are an exciting new capability "
             "allowing us to add amazing functionality quickly with limited compute and people. Innovation continues with new models "
@@ -34,7 +34,7 @@ class TestSummary(unittest.TestCase):
         Test summarization of text
         """
 
-        self.assertEqual(self.summary(self.text, minlength=15, maxlength=15), "txtai is an AI-powered search engine that")
+        self.assertEqual(self.summary(self.text, minlength=15, maxlength=15), "the field of natural language processing (NLP) is rapidly evolving")
 
     def testSummaryBatch(self):
         """

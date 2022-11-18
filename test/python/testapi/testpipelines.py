@@ -98,7 +98,7 @@ class TestPipelines(unittest.TestCase):
         ]
 
         cls.text = (
-            "Search is the base of many applications. Once data starts to pile up, users want to be able to find it. It’s the foundation "
+            "Search is the base of many applications. Once data starts to pile up, users want to be able to find it. It's the foundation "
             "of the internet and an ever-growing challenge that is never solved or done. The field of Natural Language Processing (NLP) is "
             "rapidly evolving with a number of new developments. Large-scale general language models are an exciting new capability "
             "allowing us to add amazing functionality quickly with limited compute and people. Innovation continues with new models "
@@ -238,7 +238,7 @@ class TestPipelines(unittest.TestCase):
         """
 
         summary = self.client.get(f"summary?text={urllib.parse.quote(self.text)}&minlength=15&maxlength=15").json()
-        self.assertEqual(summary, "txtai is an AI-powered search engine that")
+        self.assertEqual(summary, "the field of natural language processing (NLP) is rapidly evolving")
 
     def testSummaryBatch(self):
         """
@@ -246,7 +246,7 @@ class TestPipelines(unittest.TestCase):
         """
 
         summaries = self.client.post("batchsummary", json={"texts": [self.text, self.text], "minlength": 15, "maxlength": 15}).json()
-        self.assertEqual(summaries, ["txtai is an AI-powered search engine that"] * 2)
+        self.assertEqual(summaries, ["the field of natural language processing (NLP) is rapidly evolving"] * 2)
 
     def testTabular(self):
         """
