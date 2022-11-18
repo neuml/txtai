@@ -24,7 +24,7 @@ jobs:
       - name: Install Python - macOS/Windows
         uses: actions/setup-python@v4
         with:
-          python-version: "3.10"
+          python-version: 3.9
         if: matrix.os != 'ubuntu-latest'
 
       - name: Install Java
@@ -40,6 +40,7 @@ jobs:
       - name: Install dependencies - macOS
         run: |
           brew install libomp
+          pip install torch==1.12.1 torchvision==0.13.1
         if: matrix.os == 'macos-latest'
 
       - name: Install dependencies - Windows
