@@ -84,7 +84,7 @@ class Expression:
             # Check if token is a function
             elif Token.isfunction(tokens, x):
                 # Resolve function expression
-                self.function(iterator, tokens, token, aliases)
+                self.function(iterator, tokens, token, aliases, similar)
 
             # Check for alias expression
             elif Token.isalias(tokens, x, alias):
@@ -99,7 +99,7 @@ class Expression:
             # Check for compound expression
             elif Token.iscompound(tokens, x):
                 # Resolve compound expression
-                self.compound(iterator, tokens, x, aliases)
+                self.compound(iterator, tokens, x, aliases, similar)
 
         # Remove replaced tokens
         return [token for token in tokens if token]
@@ -277,7 +277,7 @@ class Expression:
         # Save parameters
         similar.append(params)
 
-    def function(self, iterator, tokens, token, aliases):
+    def function(self, iterator, tokens, token, aliases, similar):
         """
         Resolves column names within the function's parameters.
 
@@ -286,20 +286,37 @@ class Expression:
             tokens: input tokens
             token: current token
             aliases: dict of generated aliases, if present these tokens should NOT be resolved
+            similar: list where similar function call parameters are stored
         """
 
         # Consume function parameters
         while token and token != ")":
             x, token = next(iterator, (None, None))
-            if Token.isfunction(tokens, x):
+
+            # Check if token is a square bracket
+            if Token.isbracket(token):
+                # Resolve bracket expression
+                self.bracket(iterator, tokens, x)
+
+            # Check if token is a similar function
+            elif Token.issimilar(tokens, x, similar):
+                # Resolve similar expression
+                self.similar(iterator, tokens, x, similar)
+
+            # Check if token is a function
+            elif Token.isfunction(tokens, x):
                 # Resolve function parameters that are functions
-                self.function(iterator, tokens, token, aliases)
+                self.function(iterator, tokens, token, aliases, similar)
+
+            # Check for attribute expression
             elif Token.isattribute(tokens, x):
                 # Resolve attributes
                 self.attribute(tokens, x, aliases)
+
+            # Check for compound expression
             elif Token.iscompound(tokens, x):
                 # Resolve compound expressions
-                self.compound(iterator, tokens, x, aliases)
+                self.compound(iterator, tokens, x, aliases, similar)
 
     def alias(self, iterator, tokens, x, aliases, index):
         """
@@ -339,7 +356,7 @@ class Expression:
         # Resolve attribute expression
         tokens[x] = self.resolve(tokens[x], aliases)
 
-    def compound(self, iterator, tokens, x, aliases):
+    def compound(self, iterator, tokens, x, aliases, similar):
         """
         Resolves column names in a compound expression (left side <operator(s)> right side).
 
@@ -348,6 +365,7 @@ class Expression:
             tokens: input tokens
             x: current token position
             aliases: dict of generated aliases, if present these tokens should NOT be resolved
+            similar: list where similar function call parameters are stored
         """
 
         # Resolve left side (left side already had function processing applied through standard loop)
@@ -363,7 +381,7 @@ class Expression:
         if token and Token.iscolumn(token):
             # Need to process functions since it hasn't went through the standard loop yet
             if Token.isfunction(tokens, x):
-                self.function(iterator, tokens, token, aliases)
+                self.function(iterator, tokens, token, aliases, similar)
             else:
                 tokens[x] = self.resolve(token, aliases)
 

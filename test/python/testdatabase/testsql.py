@@ -83,6 +83,7 @@ class TestSQL(unittest.TestCase):
         self.assertSql("select", "select [a[0]] from txtai", 'json_extract(data, "$.a[0]") as "a[0]"')
         self.assertSql("select", "select [a[0].ab] from txtai", 'json_extract(data, "$.a[0].ab") as "a[0].ab"')
         self.assertSql("select", "select [a[0].c[0]] from txtai", 'json_extract(data, "$.a[0].c[0]") as "a[0].c[0]"')
+        self.assertSql("select", "select avg([a]) from txtai", 'avg(json_extract(data, "$.a")) as "avg([a])"')
 
         self.assertSql("where", "select * from txtai where [a b] < 1 or a > 1", 'json_extract(data, "$.a b") < 1 or json_extract(data, "$.a") > 1')
         self.assertSql("where", "select [a[0].c[0]] a from txtai where a < 1", "a < 1")
@@ -231,6 +232,9 @@ class TestSQL(unittest.TestCase):
 
         self.assertSql("where", prefix + "where similar('abc', 1000) and similar('def', 10)", "__SIMILAR__0 and __SIMILAR__1")
         self.assertSql("similar", prefix + "where similar('abc', 1000) and similar('def', 10)", [["abc", "1000"], ["def", "10"]])
+
+        self.assertSql("where", prefix + "where coalesce(similar('abc'), similar('abc'))", "coalesce(__SIMILAR__0, __SIMILAR__1)")
+        self.assertSql("similar", prefix + "where coalesce(similar('abc'), similar('abc'))", [["abc"], ["abc"]])
 
     def testWhereBasic(self):
         """
