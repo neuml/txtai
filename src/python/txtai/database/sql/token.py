@@ -11,14 +11,17 @@ class Token:
     # Similar token replacement
     SIMILAR_TOKEN = "__SIMILAR__"
 
+    # Default distinct token
+    DISTINCT = ["distinct"]
+
+    # Default alias token
+    ALIAS = ["as"]
+
     # Default list of comparison operators
     OPERATORS = ["=", "!=", "<>", ">", ">=", "<", "<=", "+", "-", "*", "/", "%", "||", "not", "between", "like", "is", "null"]
 
     # Default list of logic separators
     LOGIC_SEPARATORS = ["and", "or"]
-
-    # Default alias token
-    ALIAS = ["as"]
 
     # Default list of sort order operators
     SORT_ORDER = ["asc", "desc"]
@@ -58,8 +61,15 @@ class Token:
         prior = Token.get(tokens, x - 1)
         token = tokens[x]
 
-        # True if prior token is not a separator and not a grouping token and current token is either a column token or quoted token
-        return alias and x > 0 and not Token.isseparator(prior) and not Token.isgroupstart(prior) and (Token.iscolumn(token) or Token.isquoted(token))
+        # True if prior token is not a separator, grouping token or distinct token and current token is either a column token or quoted token
+        return (
+            alias
+            and x > 0
+            and not Token.isseparator(prior)
+            and not Token.isgroupstart(prior)
+            and not Token.isdistinct(prior)
+            and (Token.iscolumn(token) or Token.isquoted(token))
+        )
 
     @staticmethod
     def isattribute(tokens, x):
@@ -128,6 +138,21 @@ class Token:
 
         # Compound expression is defined as: <column> <operator(s)> <column>
         return Token.isoperator(tokens[x]) and (Token.iscolumn(Token.get(tokens, x - 1)) or Token.iscolumn(Token.get(tokens, x + 1)))
+
+    @staticmethod
+    def isdistinct(token):
+        """
+        Checks if token is the distinct keyword.
+
+        Args:
+            token: token to test
+
+        Returns:
+            True if this token is a distinct keyword, False otherwise
+        """
+
+        # Token is the distinct keyword
+        return token and token.lower() in Token.DISTINCT
 
     @staticmethod
     def isfunction(tokens, x):

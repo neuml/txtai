@@ -89,6 +89,33 @@ class TestSQL(unittest.TestCase):
         self.assertSql("groupby", "select * from txtai group by [a]", 'json_extract(data, "$.a")')
         self.assertSql("orderby", "select * from txtai where order by [a]", 'json_extract(data, "$.a")')
 
+    def testDistinct(self):
+        """
+        Test distinct expressions
+        """
+
+        # Attributes
+        self.assertSql("select", "select distinct id from txtai", "distinct s.id")
+        self.assertSql("select", "select distinct id as myid from txtai", "distinct s.id as myid")
+        self.assertSql("select", "select distinct a from txtai", 'distinct json_extract(data, "$.a") as "a"')
+        self.assertSql("select", "select distinct a.b from txtai", 'distinct json_extract(data, "$.a.b") as "a.b"')
+
+        # Bracket expression
+        self.assertSql("select", "select distinct [ab cd] from txtai", 'distinct json_extract(data, "$.ab cd") as "distinct[ab cd]"')
+
+        # Function expression
+        self.assertSql("select", "select distinct(id) from txtai", 'distinct(s.id) as "distinct(id)"')
+        self.assertSql("select", "select count(distinct id) from txtai", 'count(distinct s.id) as "count(distinct id)"')
+        self.assertSql("select", "select count(distinct a) from txtai", 'count(distinct json_extract(data, "$.a")) as "count(distinct a)"')
+        self.assertSql("select", "select count(distinct avg(id)) from txtai", 'count(distinct avg(s.id)) as "count(distinct avg(id))"')
+        self.assertSql(
+            "select", "select count(distinct avg(a)) from txtai", 'count(distinct avg(json_extract(data, "$.a"))) as "count(distinct avg(a))"'
+        )
+
+        # Compound expression
+        self.assertSql("select", "select distinct a/1 from txtai", 'distinct json_extract(data, "$.a") / 1 as "a / 1"')
+        self.assertSql("select", "select distinct(a/1) from txtai", 'distinct(json_extract(data, "$.a") / 1) as "distinct(a / 1)"')
+
     def testGroupby(self):
         """
         Test group by clauses

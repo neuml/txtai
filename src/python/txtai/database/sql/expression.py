@@ -64,8 +64,8 @@ class Expression:
             transformed tokens
         """
 
-        # Create clause index and token iterator
-        index, iterator = 0, enumerate(tokens)
+        # Create clause index and token iterator. Iterator skips distinct tokens.
+        index, iterator = 0, ((x, token) for x, token in enumerate(tokens) if not Token.isdistinct(token))
         for x, token in iterator:
             # Check if separator, increment clause index
             if Token.isseparator(token):
@@ -188,6 +188,11 @@ class Expression:
                 # Strip leading/trailing brackets from alias name that doesn't have operators
                 if not any(Token.isoperator(t) for t in alias) and alias[0] in ("[", "(") and alias[-1] in ("]", ")"):
                     alias = alias[1:-1]
+
+                # Strip leading distinct keyword
+                values = alias.split()
+                if len(values) > 0 and Token.isdistinct(values[0]):
+                    alias = " ".join(values[1:])
 
                 # Resolve alias
                 token = self.resolver(token, alias)
