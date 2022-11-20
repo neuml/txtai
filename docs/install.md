@@ -132,6 +132,12 @@ txtai can also be installed directly from GitHub to access the latest, unrelease
 
     pip install git+https://github.com/neuml/txtai
 
+## Conda
+
+A community-supported version of txtai is available via conda-forge.
+
+    conda install -c conda-forge txtai
+
 ## Run with containers
 
 Docker images are available for txtai. [See this section](../cloud) for more information on container-based installs.
