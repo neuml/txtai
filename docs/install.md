@@ -134,7 +134,7 @@ txtai can also be installed directly from GitHub to access the latest, unrelease
 
 ## Conda
 
-A [community-supported version of txtai](https://anaconda.org/conda-forge/txtai) is available via conda-forge.
+A [community-supported txtai package](https://anaconda.org/conda-forge/txtai) is available via conda-forge.
 
     conda install -c conda-forge txtai
 
