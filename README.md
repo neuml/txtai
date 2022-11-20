@@ -23,7 +23,7 @@
         <img src="https://github.com/neuml/txtai/workflows/build/badge.svg" alt="Build Status"/>
     </a>
     <a href="https://coveralls.io/github/neuml/txtai?branch=master">
-        <img src="https://img.shields.io/coveralls/github/neuml/txtai" alt="Coverage Status">
+        <img src="https://img.shields.io/coverallsCoverage/github/neuml/txtai" alt="Coverage Status">
     </a>
 </p>
 
