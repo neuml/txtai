@@ -1,5 +1,8 @@
 # Query guide
 
+![search](../images/query.png#only-light)
+![search](../images/query-dark.png#only-dark)
+
 This section covers how to query data with txtai. The simplest way to search for data is building a natural language string with the desired content to find. txtai also supports querying with SQL. We'll cover both methods here.
 
 ## Natural language queries
