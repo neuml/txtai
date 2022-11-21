@@ -1,7 +1,7 @@
 # Index guide
 
-![search](../images/indexing.png#only-light)
-![search](../images/indexing-dark.png#only-dark)
+![indexing](../images/indexing.png#only-light)
+![indexing](../images/indexing-dark.png#only-dark)
 
 This section gives an in-depth overview on how to index data with txtai. We'll cover vectorization, indexing, updating and deleting data.
 
