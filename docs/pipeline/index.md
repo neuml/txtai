@@ -12,6 +12,7 @@ Pipelines are run with Python or configuration. Pipelines can be instantiated in
 The following is a list of the default pipelines available in txtai.
 
 - Audio
+    - [TextToSpeech](audio/texttospeech)
     - [Transcription](audio/transcription)
 - Data Processing
     - [Segmentation](data/segmentation)

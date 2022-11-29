@@ -60,6 +60,7 @@ nav:
     - Pipeline:
         - pipeline/index.md
         - Audio:
+            - TextToSpeech: pipeline/audio/texttospeech.md
             - Transcription: pipeline/audio/transcription.md
         - Data:
             - Segmentation: pipeline/data/segmentation.md
