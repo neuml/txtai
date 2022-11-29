@@ -14,7 +14,7 @@ from ..hfpipeline import HFPipeline
 
 class Transcription(HFPipeline):
     """
-    Transcribes audio files to text.
+    Transcribes audio files or data to text.
     """
 
     def __init__(self, path=None, quantize=False, gpu=True, model=None):
@@ -24,27 +24,26 @@ class Transcription(HFPipeline):
         # Call parent constructor
         super().__init__("automatic-speech-recognition", path, quantize, gpu, model)
 
-    def __call__(self, files):
+    def __call__(self, audio, rate=None):
         """
-        Transcribes audio files to text.
+        Transcribes audio files or data to text.
 
-        This method supports files as a string or a list. If the input is a string,
-        the return type is string. If text is a list, the return type is a list.
+        This method supports a single audio element or a list of audio. If the input is audio, the return
+        type is a string. If text is a list, a list of strings is returned
 
         Args:
-            files: text|list
+            audio: audio|list
+            rate: sampling rate, only required with raw audio data
 
         Returns:
             list of transcribed text
         """
 
-        values = [files] if not isinstance(files, list) else files
+        # Convert single element to list
+        values = [audio] if not isinstance(audio, list) else audio
 
-        # Parse audio files
-        speech = [sf.read(f) for f in values]
-
-        # Format inputs
-        speech = [{"raw": s[0], "sampling_rate": s[1]} for s in speech]
+        # Parse audio
+        speech = self.parse(values, rate)
 
         # Apply transformation rules and store results
         results = []
@@ -59,4 +58,29 @@ class Transcription(HFPipeline):
             results.append(text)
 
         # Return single element if single element passed in
-        return results[0] if isinstance(files, str) else results
+        return results[0] if not isinstance(audio, list) else results
+
+    def parse(self, audio, rate):
+        """
+        Parses audio to raw waveforms and sampling rates.
+
+        Args:
+            audio: audio|list
+            rate: optional sampling rate
+
+        Returns:
+            List of dictionaries
+        """
+
+        speech = []
+        for x in audio:
+            if isinstance(x, str):
+                # Read file
+                raw, samplerate = sf.read(x)
+            else:
+                # Input is NumPy array
+                raw, samplerate = x, rate
+
+            speech.append({"raw": raw, "sampling_rate": samplerate})
+
+        return speech
