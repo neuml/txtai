@@ -40,6 +40,7 @@ class TestOptional(unittest.TestCase):
             "sentence_transformers",
             "soundfile",
             "tika",
+            "ttstokenizer",
             "xmltodict",
         ]
 
@@ -139,7 +140,19 @@ class TestOptional(unittest.TestCase):
         Test missing pipeline dependencies
         """
 
-        from txtai.pipeline import Caption, HFOnnx, ImageHash, MLOnnx, Objects, Segmentation, Tabular, Textractor, Transcription, Translation
+        from txtai.pipeline import (
+            Caption,
+            HFOnnx,
+            ImageHash,
+            MLOnnx,
+            Objects,
+            Segmentation,
+            Tabular,
+            Textractor,
+            TextToSpeech,
+            Transcription,
+            Translation,
+        )
 
         with self.assertRaises(ImportError):
             Caption()
@@ -164,6 +177,9 @@ class TestOptional(unittest.TestCase):
 
         with self.assertRaises(ImportError):
             Textractor()
+
+        with self.assertRaises(ImportError):
+            TextToSpeech()
 
         with self.assertRaises(ImportError):
             Transcription()
