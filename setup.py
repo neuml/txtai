@@ -28,23 +28,21 @@ extras["database"] = ["pillow>=7.1.2"]
 
 extras["graph"] = ["networkx>=2.6.3", "python-louvain>=0.16"]
 
-extras["model"] = ["onnxruntime>=1.8.1"]
+extras["model"] = ["onnx>=1.11.0", "onnxruntime>=1.11.0"]
 
-extras["pipeline"] = [
-    "beautifulsoup4>=4.9.3",
-    "fasttext>=0.9.2",
-    "imagehash>=4.2.1",
-    "nltk>=3.5",
-    "onnx>=1.10.1",
-    "onnxmltools>=1.9.1",
-    "onnxruntime>=1.8.1",
-    "pandas>=1.1.0",
-    "pillow>=7.1.2",
-    "sentencepiece>=0.1.91",
-    "soundfile>=0.10.3.post1",
-    "tika>=1.24",
-    "timm>=0.4.12",
-]
+extras["pipeline-audio"] = ["onnx>=1.11.0", "onnxruntime>=1.11.0", "soundfile>=0.10.3.post1", "ttstokenizer>=1.0.0"]
+
+extras["pipeline-data"] = ["beautifulsoup4>=4.9.3", "nltk>=3.5", "pandas>=1.1.0", "tika>=1.24"]
+
+extras["pipeline-image"] = ["imagehash>=4.2.1", "pillow>=7.1.2", "timm>=0.4.12"]
+
+extras["pipeline-text"] = ["fasttext>=0.9.2", "sentencepiece>=0.1.91"]
+
+extras["pipeline-train"] = ["onnx>=1.11.0", "onnxmltools>=1.9.1", "onnxruntime>=1.11.0"]
+
+extras["pipeline"] = (
+    extras["pipeline-audio"] + extras["pipeline-data"] + extras["pipeline-image"] + extras["pipeline-text"] + extras["pipeline-train"]
+)
 
 extras["similarity"] = [
     "annoy>=1.16.3",

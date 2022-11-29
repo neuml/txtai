@@ -82,6 +82,8 @@ All pipelines - default install comes with most common pipelines.
 pip install txtai[pipeline]
 ```
 
+More granular extras are available for pipeline categories: `pipeline-audio`, `pipeline-data`, `pipeline-image`, `pipeline-text`, and `pipeline-train`.
+
 ### Similarity
 
 Word vectors, support for sentence-transformers models not on the HF Hub and additional ANN libraries.
@@ -97,6 +99,8 @@ All workflow tasks - default install comes with most common workflow tasks.
 ```
 pip install txtai[workflow]
 ```
+
+### Combining dependencies
 
 Multiple dependencies can be specified at the same time.
 
