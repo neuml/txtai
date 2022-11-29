@@ -54,18 +54,20 @@ class Data:
             # Hugging Face dataset
             tokens = data.map(fn, batched=True, remove_columns=data.column_names)
         else:
-            # pandas DataFrame
-            if hasattr(data, "to_dict"):
-                data = data.to_dict("records")
-
             # Re-orient data into columns for efficient batch tokenization
             columns = {}
-            for row in data:
-                for column in row.keys():
-                    if column not in columns:
-                        columns[column] = []
+            if hasattr(data, "columns"):
+                # Polars/pandas DataFrame
+                for column in data.columns:
+                    columns[column] = list(data[column])
+            else:
+                # List of dicts
+                for row in data:
+                    for column in row.keys():
+                        if column not in columns:
+                            columns[column] = []
 
-                    columns[column].append(row[column])
+                        columns[column].append(row[column])
 
             # Process column-oriented data
             tokens = Tokens(fn(columns))
@@ -83,19 +85,28 @@ class Data:
             list of unique labels
         """
 
+        # Last column is label
+        column = self.columns[-1]
+
+        # Return length of labels if it's an array
+        length = self.length(data[column][0] if hasattr(data, "columns") else data[0][column])
+        if length:
+            return length
+
         if hasattr(data, "map"):
             # Hugging Face dataset
             labels = sorted(data.unique(self.columns[-1]))
+        elif hasattr(data, "columns"):
+            # Polars/pandas DataFrame
+            labels = sorted(data[self.columns[-1]].unique())
         else:
-            # pandas DataFrame
-            if hasattr(data, "to_dict"):
-                data = data.to_dict("records")
-
-            # Process list of dicts
+            # List of dicts
             labels = sorted({row[self.columns[-1]] for row in data})
 
-        # Determine number of labels, account for regression tasks
-        return 1 if [x for x in labels if isinstance(x, float)] else len(labels)
+        # Labels are single numeric values per entry
+        #   - Consider a regression task if at least one label isn't an integer
+        #   - Otherwise use number of labels for a classification task
+        return 1 if [x for x in labels if float(x) != int(x)] else len(labels)
 
     def process(self, data):
         """
@@ -109,3 +120,17 @@ class Data:
         """
 
         return data
+
+    def length(self, value):
+        """
+        Returns the length of value if value has a len function defined. Otherwise,
+        None is returned.
+
+        Args:
+            value: value to check
+
+        Returns:
+            length of value if available, otherwise returns None
+        """
+
+        return len(value) if hasattr(value, "__len__") else None

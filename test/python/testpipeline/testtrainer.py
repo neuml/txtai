@@ -60,17 +60,51 @@ class TestTrainer(unittest.TestCase):
         labels = Labels((model, tokenizer), dynamic=False)
         self.assertEqual(labels("cat")[0][0], 1)
 
-    def testDataframe(self):
+    def testDataFrame(self):
         """
         Test training a model with a mock pandas DataFrame
         """
 
-        # pylint: disable=W0613
-        def to_dict(orient):
-            return self.data
+        class TestDataFrame:
+            """
+            Test DataFrame
+            """
 
-        df = unittest.mock.Mock(spec=["to_dict"])
-        df.to_dict = to_dict
+            def __init__(self, data):
+                # Get list of columns
+                self.columns = list(data[0].keys())
+
+                # Build columnar data view
+                self.data = {}
+                for column in self.columns:
+                    self.data[column] = Values([row[column] for row in data])
+
+            def __getitem__(self, column):
+                return self.data[column]
+
+        class Values:
+            """
+            Test values list
+            """
+
+            def __init__(self, values):
+                self.values = list(values)
+
+            def __getitem__(self, index):
+                return self.values[index]
+
+            def unique(self):
+                """
+                Returns a list of unique values.
+
+                Returns:
+                    unique list of values
+                """
+
+                return set(self.values)
+
+        # Mock DataFrame
+        df = TestDataFrame(self.data)
 
         trainer = HFTrainer()
         model, tokenizer = trainer("google/bert_uncased_L-2_H-128_A-2", df)
@@ -139,6 +173,21 @@ class TestTrainer(unittest.TestCase):
 
         self.assertIsNone(Data(None, None, None).process(None))
 
+    def testMultiLabel(self):
+        """
+        Tests training model with labels provided as a list
+        """
+
+        data = []
+        for x in self.data:
+            data.append({"text": x["text"], "label": [float(x["label"])] * 2})
+
+        trainer = HFTrainer()
+        model, tokenizer = trainer("google/bert_uncased_L-2_H-128_A-2", data)
+
+        labels = Labels((model, tokenizer), dynamic=False)
+        self.assertEqual(labels("cat")[0][0], 1)
+
     def testQA(self):
         """
         Tests training a QA model
@@ -168,8 +217,7 @@ class TestTrainer(unittest.TestCase):
 
         data = []
         for x in self.data:
-            x["label"] = float(x["label"])
-            data.append(x)
+            data.append({"text": x["text"], "label": x["label"] + 0.1})
 
         trainer = HFTrainer()
         model, tokenizer = trainer("google/bert_uncased_L-2_H-128_A-2", data)
