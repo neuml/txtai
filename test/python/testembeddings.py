@@ -46,6 +46,17 @@ class TestEmbeddings(unittest.TestCase):
         if cls.embeddings:
             cls.embeddings.close()
 
+    def testDefaults(self):
+        """
+        Test default configuration
+        """
+
+        # Run index with no config which will fall back to default configuration
+        embeddings = Embeddings()
+        embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        self.assertEqual(embeddings.count(), 6)
+
     def testDelete(self):
         """
         Test delete

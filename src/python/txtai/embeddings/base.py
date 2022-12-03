@@ -93,6 +93,10 @@ class Embeddings:
             reindex: if this is a reindex operation in which case database creation is skipped, defaults to False
         """
 
+        # Set configuration to default configuration, if empty
+        if not self.config:
+            self.configure(self.defaults())
+
         # Create document database, if necessary
         if not reindex:
             self.database = self.createdatabase()
@@ -570,6 +574,16 @@ class Embeddings:
 
         # Query model
         self.query = self.loadquery() if self.config else None
+
+    def defaults(self):
+        """
+        Builds a default configuration.
+
+        Returns:
+            default configuration
+        """
+
+        return {"path": "sentence-transformers/all-MiniLM-L6-v2"}
 
     def loadvectors(self):
         """
