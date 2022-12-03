@@ -30,6 +30,7 @@ class TestTranscription(unittest.TestCase):
         # Read audio data
         raw, samplerate = sf.read(Utils.PATH + "/Make_huge_profits.wav")
 
+        self.assertEqual(transcribe((raw, samplerate)), "Make huge profits without working make up to one hundred thousand dollars a day")
         self.assertEqual(transcribe(raw, samplerate), "Make huge profits without working make up to one hundred thousand dollars a day")
 
     def testChunks(self):

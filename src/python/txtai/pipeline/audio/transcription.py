@@ -35,7 +35,7 @@ class Transcription(HFPipeline):
 
         Args:
             audio: audio|list
-            rate: sampling rate, only required with raw audio data
+            rate: sample rate, only required with raw audio data
             chunk: process audio in chunk second sized segments
             join: if True (default), combine each chunk back together into a single text output.
                   When False, chunks are returned as a list of dicts, each having raw associated audio and
@@ -59,11 +59,11 @@ class Transcription(HFPipeline):
 
     def read(self, audio, rate):
         """
-        Read audio to raw waveforms and sampling rates.
+        Read audio to raw waveforms and sample rates.
 
         Args:
             audio: audio|list
-            rate: optional sampling rate
+            rate: optional sample rate
 
         Returns:
             List of (audio data, sample rate)
@@ -74,6 +74,9 @@ class Transcription(HFPipeline):
             if isinstance(x, str):
                 # Read file
                 raw, samplerate = sf.read(x)
+            elif isinstance(x, tuple):
+                # Input is NumPy array and sample rate
+                raw, samplerate = x
             else:
                 # Input is NumPy array
                 raw, samplerate = x, rate
@@ -88,7 +91,7 @@ class Transcription(HFPipeline):
         with the chunk size. Returns text for each input.
 
         Args:
-            speech: list of dicts with raw data and sample rates
+            speech: list of (audio data, sample rate)
             chunk: split audio into chunk seconds sized segments for processing
 
         Returns:
@@ -109,11 +112,11 @@ class Transcription(HFPipeline):
         the raw wav snippets.
 
         Args:
-            speech: list of dicts with raw data and sample rates
+            speech: list of (audio data, sample rate)
             chunk: split audio into chunk seconds sized segments for processing
 
         Returns:
-            list of lists of dicts. each dict has text, raw wav data and sample rate
+            list of lists of dicts - each dict has text, raw wav data for text and sample rate
         """
 
         results = []
