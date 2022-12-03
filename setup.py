@@ -30,7 +30,7 @@ extras["graph"] = ["networkx>=2.6.3", "python-louvain>=0.16"]
 
 extras["model"] = ["onnx>=1.11.0", "onnxruntime>=1.11.0"]
 
-extras["pipeline-audio"] = ["onnx>=1.11.0", "onnxruntime>=1.11.0", "soundfile>=0.10.3.post1", "ttstokenizer>=1.0.0"]
+extras["pipeline-audio"] = ["onnx>=1.11.0", "onnxruntime>=1.11.0", "soundfile>=0.10.3.post1", "scipy>=1.4.1", "ttstokenizer>=1.0.0"]
 
 extras["pipeline-data"] = ["beautifulsoup4>=4.9.3", "nltk>=3.5", "pandas>=1.1.0", "tika>=1.24"]
 

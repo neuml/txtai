@@ -127,17 +127,3 @@ class TextToSpeech(Pipeline):
 
         # Concatenate results and return
         return np.concatenate(results)
-
-    def batch(self, texts, size):
-        """
-        Splits texts into separate batch sizes specified by size.
-
-        Args:
-            texts: text elements
-            size: batch size
-
-        Returns:
-            list of evenly sized batches with the last batch having the remaining elements
-        """
-
-        return [texts[x : x + size] for x in range(0, len(texts), size)]
