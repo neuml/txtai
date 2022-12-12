@@ -54,6 +54,8 @@ embeddings:
         - name: length
           argcount: 1
           function: testapi.testembeddings.length
+        - name: ann
+          function: ann
     transform: testapi.testembeddings.transform
 """
 

@@ -159,11 +159,19 @@ class Application:
                 # Resolve callable functions
                 functions = []
                 for fn in config["functions"]:
-                    if isinstance(fn, dict):
-                        fn = fn.copy()
-                        fn["function"] = self.function(fn["function"])
-                    else:
-                        fn = self.function(fn)
+                    original = fn
+                    try:
+                        if isinstance(fn, dict):
+                            fn = fn.copy()
+                            fn["function"] = self.function(fn["function"])
+                        else:
+                            fn = self.function(fn)
+
+                    # pylint: disable=W0703
+                    except Exception:
+                        # Not a resolvable function, pipeline or workflow - further resolution will happen in embeddings
+                        fn = original
+
                     functions.append(fn)
 
                 config["functions"] = functions
