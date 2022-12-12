@@ -4,8 +4,9 @@ Version string
 
 import logging
 
-# Set default logging format
-logging.basicConfig(format="%(asctime)s [%(levelname)s] %(funcName)s: %(message)s")
+# Configure logging per standard Python library recommendations
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
 
 # Current version tag
 __version__ = "5.2.0"
