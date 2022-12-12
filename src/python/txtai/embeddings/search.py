@@ -4,8 +4,6 @@ Search module
 
 import logging
 
-import numpy as np
-
 # Logging configuration
 logger = logging.getLogger(__name__)
 
@@ -31,7 +29,7 @@ class Search:
         self.config = embeddings.config
         self.ann = embeddings.ann
         self.database = embeddings.database
-        self.transform = embeddings.transform
+        self.batchtransform = embeddings.batchtransform
         self.query = embeddings.query
 
     def __call__(self, queries, limit):
@@ -70,7 +68,7 @@ class Search:
         """
 
         # Convert queries to embedding vectors
-        embeddings = np.array([self.transform((None, query, None)) for query in queries])
+        embeddings = self.batchtransform((None, query, None) for query in queries)
 
         # Search approximate nearest neighbor index
         results = self.ann.search(embeddings, limit)

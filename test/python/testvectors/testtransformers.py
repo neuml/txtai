@@ -49,7 +49,7 @@ class TestTransformersVectors(unittest.TestCase):
         """
 
         model = VectorsFactory.create({"method": "sentence-transformers", "path": "paraphrase-MiniLM-L3-v2"}, None)
-        self.assertEqual(model.transform("This is a test").shape, (384,))
+        self.assertEqual(model.transform((0, "This is a test", None)).shape, (384,))
 
     def testText(self):
         """
@@ -82,6 +82,18 @@ class TestTransformersVectors(unittest.TestCase):
 
         self.assertFalse(np.array_equal(embeddings1[0], embeddings2[0]))
         self.assertTrue(np.array_equal(embeddings1[1], embeddings2[1]))
+
+    def testTransformArray(self):
+        """
+        Test transformers skips transforming NumPy arrays
+        """
+
+        # Generate data and run through vector model
+        data1 = np.random.rand(5, 5).astype(np.float32)
+        data2 = self.model.transform((0, data1, None))
+
+        # Test transform method returns original data
+        self.assertTrue(np.array_equal(data1, data2))
 
     def testTransformLong(self):
         """

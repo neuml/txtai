@@ -161,6 +161,10 @@ class Embeddings:
             # Load documents into database and transform to vectors
             ids, _, embeddings = transform(documents, buffer)
             if ids:
+                # Remove principal components from embeddings, if necessary
+                if self.reducer:
+                    self.reducer(embeddings)
+
                 # Normalize embeddings
                 self.normalize(embeddings)
 
@@ -263,18 +267,7 @@ class Embeddings:
             embeddings vector
         """
 
-        # Convert document into sentence embedding
-        embedding = self.model.transform(document)
-
-        # Reduce the dimensionality of the embeddings. Scale the embeddings using this
-        # model to reduce the noise of common but less relevant terms.
-        if self.reducer:
-            self.reducer(embedding)
-
-        # Normalize embeddings
-        self.normalize(embedding)
-
-        return embedding
+        return self.batchtransform([document])[0]
 
     def batchtransform(self, documents):
         """
@@ -287,7 +280,18 @@ class Embeddings:
             embeddings vectors
         """
 
-        return [self.transform(document) for document in documents]
+        # Convert documents into sentence embeddings
+        embeddings = self.model.batchtransform(documents)
+
+        # Reduce the dimensionality of the embeddings. Scale the embeddings using this
+        # model to reduce the noise of common but less relevant terms.
+        if self.reducer:
+            self.reducer(embeddings)
+
+        # Normalize embeddings
+        self.normalize(embeddings)
+
+        return embeddings
 
     def count(self):
         """
@@ -361,8 +365,8 @@ class Embeddings:
         """
 
         # Convert queries to embedding vectors
-        queries = np.array([self.transform((None, query, None)) for query in queries])
-        data = np.array([self.transform((None, row, None)) for row in data])
+        queries = self.batchtransform((None, query, None) for query in queries)
+        data = self.batchtransform((None, row, None) for row in data)
 
         # Dot product on normalized vectors is equal to cosine similarity
         scores = np.dot(queries, data.T).tolist()

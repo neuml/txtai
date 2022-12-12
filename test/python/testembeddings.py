@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 import numpy as np
 
-from txtai.embeddings import Embeddings
+from txtai.embeddings import Embeddings, Reducer
 from txtai.vectors import WordVectors
 
 
@@ -120,7 +120,7 @@ class TestEmbeddings(unittest.TestCase):
         """
 
         # Test with no transform function
-        data = np.random.rand(5, 10)
+        data = np.random.rand(5, 10).astype(np.float32)
 
         embeddings = Embeddings({"method": "external"})
         embeddings.index([(uid, row, None) for uid, row in enumerate(data)])
@@ -141,6 +141,55 @@ class TestEmbeddings(unittest.TestCase):
         uid = self.embeddings.search("feel good story", 1)[0][0]
 
         self.assertEqual(uid, 4)
+
+    def testNormalize(self):
+        """
+        Test batch normalize and single input normalize are equal
+        """
+
+        # Generate data
+        data1 = np.random.rand(5, 5).astype(np.float32)
+        data2 = data1.copy()
+
+        # Keep original data to ensure it changed
+        original = data1.copy()
+
+        # Normalize data
+        self.embeddings.normalize(data1)
+        for x in data2:
+            self.embeddings.normalize(x)
+
+        # Test both data arrays are the same and changed from original
+        self.assertTrue(np.array_equal(data1, data2))
+        self.assertFalse(np.array_equal(data1, original))
+
+    def testReducer(self):
+        """
+        Test reducer model
+        """
+
+        # Test model with single PCA component
+        data = np.random.rand(5, 5).astype(np.float32)
+        reducer = Reducer(data, 1)
+
+        # Generate query and keep original data to ensure it changes
+        query = np.random.rand(1, 5).astype(np.float32)
+        original = query.copy()
+
+        # Run test
+        reducer(query)
+        self.assertFalse(np.array_equal(query, original))
+
+        # Test model with multiple PCA components
+        reducer = Reducer(data, 3)
+
+        # Generate query and keep original data to ensure it changes
+        query = np.random.rand(5).astype(np.float32)
+        original = query.copy()
+
+        # Run test
+        reducer(query)
+        self.assertFalse(np.array_equal(query, original))
 
     def testSave(self):
         """
@@ -234,7 +283,8 @@ class TestEmbeddings(unittest.TestCase):
         embeddings.index(data)
 
         # Test search
-        self.assertIsNotNone(embeddings.search("win", 1))
+        uid = embeddings.search("bear", 1)[0][0]
+        self.assertEqual(uid, 3)
 
         # Generate temp file path
         index = os.path.join(tempfile.gettempdir(), "wembeddings")
@@ -244,4 +294,41 @@ class TestEmbeddings(unittest.TestCase):
         embeddings.load(index)
 
         # Test search
-        self.assertIsNotNone(embeddings.search("win", 1))
+        uid = embeddings.search("bear", 1)[0][0]
+        self.assertEqual(uid, 3)
+
+    @patch("os.cpu_count")
+    def testWordsUpsert(self, cpucount):
+        """
+        Test embeddings backed by word vectors with upserts
+        """
+
+        # Mock CPU count
+        cpucount.return_value = 1
+
+        # Initialize model path
+        path = os.path.join(tempfile.gettempdir(), "model")
+
+        # Word vectors path
+        vectors = os.path.join(path, "test-10d")
+
+        # Create dataset
+        data = [(x, row.split(), None) for x, row in enumerate(self.data)]
+
+        # Create embeddings model, backed by word vectors
+        embeddings = Embeddings({"path": vectors + ".magnitude", "storevectors": True, "scoring": "bm25", "pca": 3})
+
+        # Call scoring and index methods
+        embeddings.score(data)
+        embeddings.index(data)
+
+        # Now upsert and override record
+        data = [(0, "win win", None)]
+
+        # Update scoring and run upsert
+        embeddings.score(data)
+        embeddings.upsert(data)
+
+        # Test search after upsert
+        uid = embeddings.search("win", 1)[0][0]
+        self.assertEqual(uid, 0)

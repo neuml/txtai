@@ -30,7 +30,7 @@ class TestExternalVectors(unittest.TestCase):
         """
 
         # Generate dummy data
-        data = np.random.rand(1000, 768)
+        data = np.random.rand(1000, 768).astype(np.float32)
 
         # Generate enough volume to test batching
         documents = [(x, data[x], None) for x in range(1000)]

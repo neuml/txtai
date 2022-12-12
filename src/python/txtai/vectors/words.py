@@ -2,6 +2,7 @@
 Word Vectors module
 """
 
+import logging
 import os
 import pickle
 import tempfile
@@ -24,6 +25,9 @@ from .. import __pickle__
 
 from .base import Vectors
 from ..pipeline import Tokenizer
+
+# Logging configuration
+logger = logging.getLogger(__name__)
 
 # Multiprocessing helper methods
 # pylint: disable=W0603
@@ -183,7 +187,7 @@ class WordVectors(Vectors):
         model = fasttext.train_unsupervised(data, dim=size, minCount=mincount)
 
         # Output file path
-        print(f"Building {size} dimension model")
+        logging.info("Building %d dimension model", size)
 
         # Output vectors in vec/txt format
         with open(path + ".txt", "w", encoding="utf-8") as output:
@@ -201,5 +205,5 @@ class WordVectors(Vectors):
                     output.write(word + data + "\n")
 
         # Build magnitude vectors database
-        print("Converting vectors to magnitude format")
+        logging.info("Converting vectors to magnitude format")
         converter.convert(path + ".txt", path + ".magnitude", subword=True)

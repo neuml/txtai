@@ -5,6 +5,8 @@ Vectors module
 import pickle
 import tempfile
 
+import numpy as np
+
 from .. import __pickle__
 
 
@@ -107,7 +109,27 @@ class Vectors:
         """
 
         # Prepare input document for transformers model and build embeddings
-        return self.encode([self.prepare(document[1])])[0]
+        return self.batchtransform([document])[0]
+
+    def batchtransform(self, documents):
+        """
+        Transforms batch of documents into embeddings vectors.
+
+        Args:
+            documents: list of documents used to build embeddings
+
+        Returns:
+            embeddings vectors
+        """
+
+        # Prepare input documents for transformers model
+        documents = [self.prepare(data) for _, data, _ in documents]
+
+        # Skip encoding data if it's already an array
+        if documents and isinstance(documents[0], np.ndarray):
+            return np.array(documents, dtype=np.float32)
+
+        return self.encode(documents)
 
     def batch(self, documents, output):
         """
