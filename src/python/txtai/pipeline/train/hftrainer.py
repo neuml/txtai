@@ -19,7 +19,9 @@ class HFTrainer(Tensors):
     Trains a new Hugging Face Transformer model using the Trainer framework.
     """
 
-    def __call__(self, base, train, validation=None, columns=None, maxlength=None, stride=128, task="text-classification", prefix=None, **args):
+    def __call__(
+        self, base, train, validation=None, columns=None, maxlength=None, stride=128, task="text-classification", prefix=None, metrics=None, **args
+    ):
         """
         Builds a new model using arguments.
 
@@ -32,6 +34,7 @@ class HFTrainer(Tensors):
             stride: chunk size for splitting data for QA tasks
             task: optional model task or category, determines the model type, defaults to "text-classification"
             prefix: optional source prefix
+            metrics: optional function that computes and returns a dict of evaluation metrics
             args: training arguments
 
         Returns:
@@ -72,7 +75,13 @@ class HFTrainer(Tensors):
 
         # Build trainer
         trainer = Trainer(
-            model=model, tokenizer=tokenizer, data_collator=collator, args=args, train_dataset=train, eval_dataset=validation if validation else None
+            model=model,
+            tokenizer=tokenizer,
+            data_collator=collator,
+            args=args,
+            train_dataset=train,
+            eval_dataset=validation if validation else None,
+            compute_metrics=metrics,
         )
 
         # Run training
