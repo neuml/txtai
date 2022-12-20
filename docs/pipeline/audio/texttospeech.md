@@ -23,7 +23,7 @@ See the link below for a more detailed example.
 |:----------|:-------------|------:|
 | [Text to speech generation](https://github.com/neuml/txtai/blob/master/examples/40_Text_to_Speech_Generation.ipynb) | Generate speech from text | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/40_Text_to_Speech_Generation.ipynb) |
 
-This pipeline is backed by ONNX models from the Hugging Face Hub. The following models are currently supported.
+This pipeline is backed by ONNX models from the Hugging Face Hub. The following models are currently available.
 
 - [ljspeech-jets-onnx](https://huggingface.co/NeuML/ljspeech-jets-onnx)
 - [ljspeech-vits-onnx](https://huggingface.co/NeuML/ljspeech-vits-onnx)
