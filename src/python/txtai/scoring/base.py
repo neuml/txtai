@@ -37,6 +37,9 @@ class Scoring:
         self.documents = {} if self.config.get("content") else None
         self.docterms = {} if self.config.get("terms") else None
 
+        # Normalize scores
+        self.normalize = self.config.get("normalize")
+
         # Word frequency
         self.docfreq = Counter()
         self.wordfreq = Counter()
@@ -209,6 +212,15 @@ class Scoring:
                             scores[x] = 0.0
 
                         scores[x] += self.docterms[token][x]
+
+            # Check if score normalization enabled
+            if self.normalize:
+                # Calculate max score = 4 * average score
+                maxscore = 4 * self.score(self.avgfreq, self.avgidf, self.avgdl)
+
+                # Normalize scores between 0 - 1 using maxscore
+                for x in scores:
+                    scores[x] = min(scores[x] / maxscore, 1.0)
 
             # Sort and get topn results
             topn = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:limit]

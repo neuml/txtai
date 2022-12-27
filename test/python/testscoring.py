@@ -73,6 +73,7 @@ class TestScoring(unittest.TestCase):
         self.index(config)
         self.weights(config)
         self.search(config)
+        self.normalize(config)
         self.content(config)
         self.empty(config)
 
@@ -171,6 +172,22 @@ class TestScoring(unittest.TestCase):
         # Run search and validate correct result returned
         index, _ = scoring.search("bear", 1)[0]
         self.assertEqual(index, 3)
+
+    def normalize(self, config):
+        """
+        Test scoring search with normalized scores.
+
+        Args:
+            method: scoring method
+        """
+
+        scoring = ScoringFactory.create({**config, **{"terms": True, "normalize": True}})
+        scoring.index(self.data)
+
+        # Run search and validate correct result returned
+        index, score = scoring.search(self.data[3][1], 1)[0]
+        self.assertEqual(index, 3)
+        self.assertEqual(score, 1.0)
 
     def content(self, config):
         """
