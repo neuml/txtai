@@ -213,22 +213,38 @@ class Scoring:
 
                         scores[x] += self.docterms[token][x]
 
-            # Check if score normalization enabled
-            if self.normalize:
-                # Calculate max score = 4 * average score
-                maxscore = 4 * self.score(self.avgfreq, self.avgidf, self.avgdl)
-
-                # Normalize scores between 0 - 1 using maxscore
-                for x in scores:
-                    scores[x] = min(scores[x] / maxscore, 1.0)
-
-            # Sort and get topn results
-            topn = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:limit]
+            # Get topn matching results
+            topn = self.topn(scores, limit)
 
             # Format results and add content if available
             return self.results(topn)
 
         return None
+
+    def topn(self, scores, limit):
+        """
+        Extracts topn search results.
+
+        Args:
+            scores: all scores
+            limit: maximum results
+
+        Returns:
+            topn results
+        """
+
+        # Sort and get topn results
+        scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:limit]
+
+        # Normalize scores, if enabled
+        if self.normalize:
+            # Calculate max score = 4 * average score
+            maxscore = 4 * self.score(self.avgfreq, self.avgidf, self.avgdl)
+
+            # Normalize scores between 0 - 1 using maxscore
+            scores = [(x, min(score / maxscore, 1.0)) for x, score in scores]
+
+        return scores
 
     def results(self, topn):
         """
