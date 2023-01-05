@@ -31,12 +31,12 @@
 
 txtai executes machine-learning workflows to transform data and build AI-powered semantic search applications.
 
-![demo](https://raw.githubusercontent.com/neuml/txtai/master/demo.gif)
+![demo](https://user-images.githubusercontent.com/90775147/210823424-413b2fe4-b5a5-4920-97e5-cbe5a9328889.gif)
 
 Traditional search systems use keywords to find data. Semantic search applications have an understanding of natural language and identify results that have the same meaning, not necessarily the same keywords.
 
-![search](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/search.png#gh-light-mode-only)
-![search](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/search-dark.png#gh-dark-mode-only)
+![search](https://user-images.githubusercontent.com/90775147/210824079-3a943c62-2cf8-4af3-b215-e3c6a131e1e8.png)
+![search-dark](https://user-images.githubusercontent.com/90775147/210824146-6656245b-606f-4ef5-abfd-2d227c089fe0.png)
 
 Backed by state-of-the-art machine learning models, data is transformed into vector representations for search (also known as embeddings). Innovation is happening at a rapid pace, models can understand concepts in documents, audio, images and more.
 
@@ -51,12 +51,12 @@ Summary of txtai features:
 
 Applications range from similarity search to complex NLP-driven data extractions to generate structured databases. Semantic workflows transform and find data driven by user intent.
 
-![flows](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/flows.png#gh-light-mode-only)
-![flows](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/flows-dark.png#gh-dark-mode-only)
+![flows](https://user-images.githubusercontent.com/90775147/210824496-35191d6b-abfd-4f88-b0f9-c209f1c50915.png)
+![flows-dark](https://user-images.githubusercontent.com/90775147/210824536-746e5eb6-4703-4e58-86e7-ed8220a5ba8a.png)
 
 The following applications are powered by txtai.
 
-![apps](https://raw.githubusercontent.com/neuml/txtai/master/apps.jpg)
+![apps](https://user-images.githubusercontent.com/90775147/210823588-e95e5038-d894-4234-bb07-67d10b79e26d.jpg)
 
 | Application  | Description  |
 |:----------|:-------------|
@@ -69,8 +69,8 @@ txtai is built with Python 3.7+, [Hugging Face Transformers](https://github.com/
 
 ## Why txtai?
 
-![why](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/why.png#gh-light-mode-only)
-![why](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/why-dark.png#gh-dark-mode-only)
+![why](https://user-images.githubusercontent.com/90775147/210824739-ce5f6762-1b42-4e0c-b867-b108cf29777b.png)
+![why-dark](https://user-images.githubusercontent.com/90775147/210824778-c21a6400-c764-43ea-ad37-78ec502e63ed.png)
 
 In addition to traditional search systems, a growing number of semantic search solutions are available, so why txtai?
 
@@ -101,8 +101,8 @@ curl -X GET "http://localhost:8000/search?query=positive"
 
 ## Installation
 
-![install](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/install.png#gh-light-mode-only)
-![install](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/install-dark.png#gh-dark-mode-only)
+![install](https://user-images.githubusercontent.com/90775147/210824924-9cedfe86-5992-426f-99c5-52911b80d4d7.png)
+![install-dark](https://user-images.githubusercontent.com/90775147/210824950-d77c197b-d137-45ca-8cba-32708285853c.png)
 
 The easiest way to install is via pip and PyPI
 
@@ -117,8 +117,8 @@ See the detailed [install instructions](https://neuml.github.io/txtai/install) f
 
 ## Examples
 
-![examples](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/examples.png#gh-light-mode-only)
-![examples](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/examples-dark.png#gh-dark-mode-only)
+![examples](https://user-images.githubusercontent.com/90775147/210825128-51ebdeac-e3fe-4896-b4b7-cb5102616039.png)
+![examples-dark](https://user-images.githubusercontent.com/90775147/210825079-1fdb31cc-01be-48f9-a960-a25548943068.png)
 
 The examples directory has a series of notebooks and applications giving an overview of txtai. See the sections below.
 
@@ -209,7 +209,7 @@ Series of example applications with txtai. Links to hosted versions on [Hugging 
 
 ### Further Reading
 
-![further](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/further.png)
+![further](https://user-images.githubusercontent.com/90775147/210825570-f1e36bb9-2ea1-4c8d-a595-5453425d555c.png)
 
 - [Introducing txtai, AI-powered semantic search built on Transformers](https://medium.com/neuml/introducing-txtai-an-ai-powered-search-engine-built-on-transformers-37674be252ec)
 - [Tutorial series on Hashnode](https://neuml.hashnode.dev/series/txtai-tutorial) | [dev.to](https://dev.to/neuml/tutorial-series-on-txtai-ibg)
