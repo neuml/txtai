@@ -2,14 +2,21 @@
 Hugging Face Transformers trainer wrapper module
 """
 
+import os
 import sys
 
-from transformers import AutoConfig, AutoModelForQuestionAnswering, AutoModelForSeq2SeqLM, AutoModelForSequenceClassification, AutoTokenizer
-from transformers import DataCollatorForSeq2Seq, Trainer, set_seed
-
+from transformers import (
+    AutoConfig,
+    AutoModelForMaskedLM,
+    AutoModelForQuestionAnswering,
+    AutoModelForSeq2SeqLM,
+    AutoModelForSequenceClassification,
+    AutoTokenizer,
+)
+from transformers import DataCollatorForLanguageModeling, DataCollatorForSeq2Seq, Trainer, set_seed
 from transformers import TrainingArguments as HFTrainingArguments
 
-from ...data import Labels, Questions, Sequences
+from ...data import Labels, Questions, Sequences, Texts
 from ...models import Models
 from ..tensors import Tensors
 
@@ -19,8 +26,21 @@ class HFTrainer(Tensors):
     Trains a new Hugging Face Transformer model using the Trainer framework.
     """
 
+    # pylint: disable=R0913
     def __call__(
-        self, base, train, validation=None, columns=None, maxlength=None, stride=128, task="text-classification", prefix=None, metrics=None, **args
+        self,
+        base,
+        train,
+        validation=None,
+        columns=None,
+        maxlength=None,
+        stride=128,
+        task="text-classification",
+        prefix=None,
+        metrics=None,
+        tokenizers=None,
+        checkpoint=None,
+        **args
     ):
         """
         Builds a new model using arguments.
@@ -35,6 +55,8 @@ class HFTrainer(Tensors):
             task: optional model task or category, determines the model type, defaults to "text-classification"
             prefix: optional source prefix
             metrics: optional function that computes and returns a dict of evaluation metrics
+            tokenizers: optional number of concurrent tokenizers, defaults to None
+            checkpoint: optional resume from checkpoint flag or path to checkpoint directory, defaults to None
             args: training arguments
 
         Returns:
@@ -54,7 +76,10 @@ class HFTrainer(Tensors):
         collator, labels = None, None
 
         # Prepare datasets
-        if task == "question-answering":
+        if task == "language-modeling":
+            process = Texts(tokenizer, columns, maxlength)
+            collator = DataCollatorForLanguageModeling(tokenizer, pad_to_multiple_of=8 if args.fp16 else None)
+        elif task == "question-answering":
             process = Questions(tokenizer, columns, maxlength, stride)
         elif task == "sequence-sequence":
             process = Sequences(tokenizer, columns, maxlength, prefix)
@@ -64,7 +89,7 @@ class HFTrainer(Tensors):
             labels = process.labels(train)
 
         # Tokenize training and validation data
-        train, validation = process(train, validation)
+        train, validation = process(train, validation, os.cpu_count() if tokenizers and isinstance(tokenizers, bool) else tokenizers)
 
         # Create model to train
         model = self.model(task, base, config, labels)
@@ -85,7 +110,7 @@ class HFTrainer(Tensors):
         )
 
         # Run training
-        trainer.train()
+        trainer.train(resume_from_checkpoint=checkpoint)
 
         # Run evaluation
         if validation:
@@ -171,6 +196,8 @@ class HFTrainer(Tensors):
         # Unpack existing model or create new model from config
         if isinstance(base, (list, tuple)):
             return base[0]
+        if task == "language-modeling":
+            return AutoModelForMaskedLM.from_pretrained(base, config=config)
         if task == "question-answering":
             return AutoModelForQuestionAnswering.from_pretrained(base, config=config)
         if task == "sequence-sequence":

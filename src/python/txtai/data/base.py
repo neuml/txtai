@@ -24,27 +24,29 @@ class Data:
         self.columns = columns
         self.maxlength = maxlength
 
-    def __call__(self, train, validation):
+    def __call__(self, train, validation, workers):
         """
         Tokenizes training and validation data and returns processed datasets.
 
         Args:
             train: training data
             validation: validation data
+            workers: number of concurrent tokenizers when processing datasets, only main process used when set to None
 
         Returns:
             (train, validation)
         """
 
-        return (self.prepare(train, self.process), self.prepare(validation, self.process) if validation else None)
+        return (self.prepare(train, self.process, workers), self.prepare(validation, self.process, workers) if validation else None)
 
-    def prepare(self, data, fn):
+    def prepare(self, data, fn, workers):
         """
         Prepares and tokenizes data for training.
 
         Args:
             data: input data
             fn: tokenize processing function to apply
+            workers: number of concurrent tokenizers when processing datasets, only main process used when set to None
 
         Returns:
             tokens
@@ -52,7 +54,7 @@ class Data:
 
         if hasattr(data, "map"):
             # Hugging Face dataset
-            tokens = data.map(fn, batched=True, remove_columns=data.column_names)
+            tokens = data.map(fn, batched=True, num_proc=workers, remove_columns=data.column_names)
         else:
             # Re-orient data into columns for efficient batch tokenization
             columns = {}
@@ -61,7 +63,7 @@ class Data:
                 for column in data.columns:
                     columns[column] = list(data[column])
             else:
-                # List of dicts
+                # Iterable dicts
                 for row in data:
                     for column in row.keys():
                         if column not in columns:
@@ -100,7 +102,7 @@ class Data:
             # Polars/pandas DataFrame
             labels = sorted(data[self.columns[-1]].unique())
         else:
-            # List of dicts
+            # Iterable dicts
             labels = sorted({row[self.columns[-1]] for row in data})
 
         # Labels are single numeric values per entry

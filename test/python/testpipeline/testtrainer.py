@@ -143,7 +143,7 @@ class TestTrainer(unittest.TestCase):
                 return ["text", "label"]
 
             # pylint: disable=W0613
-            def map(self, fn, batched, remove_columns):
+            def map(self, fn, batched, num_proc, remove_columns):
                 """
                 Map each dataset row using fn.
 
@@ -172,6 +172,17 @@ class TestTrainer(unittest.TestCase):
         """
 
         self.assertIsNone(Data(None, None, None).process(None))
+
+    def testMLM(self):
+        """
+        Tests training a masked language model.
+        """
+
+        trainer = HFTrainer()
+        model, _ = trainer("google/bert_uncased_L-2_H-128_A-2", self.data, task="language-modeling")
+
+        # Test model completed successfully
+        self.assertIsNotNone(model)
 
     def testMultiLabel(self):
         """
