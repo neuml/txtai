@@ -236,6 +236,14 @@ class TestSQL(unittest.TestCase):
         self.assertSql("where", prefix + "where coalesce(similar('abc'), similar('abc'))", "coalesce(__SIMILAR__0, __SIMILAR__1)")
         self.assertSql("similar", prefix + "where coalesce(similar('abc'), similar('abc'))", [["abc"], ["abc"]])
 
+    def testUpper(self):
+        """
+        Tests SQL statements are case insensitive.
+        """
+
+        self.assertSql("groupby", "SELECT * FROM TXTAI WHERE a = 1 GROUP BY id", "s.id")
+        self.assertSql("orderby", "SELECT * FROM TXTAI WHERE a = 1 ORDER BY id", "s.id")
+
     def testWhereBasic(self):
         """
         Test basic where clauses

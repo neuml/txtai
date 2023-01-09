@@ -144,7 +144,7 @@ class SQL:
         # Get position of clause keywords. For multi-term clauses, validate next token matches as well
         for x, token in enumerate(tokens):
             t = token.lower()
-            if t not in positions and t in SQL.CLAUSES and (t not in ["group", "order"] or (x + 1 < len(tokens) and tokens[x + 1] == "by")):
+            if t not in positions and t in SQL.CLAUSES and (t not in ["group", "order"] or (x + 1 < len(tokens) and tokens[x + 1].lower() == "by")):
                 positions[t] = x
 
         return (tokens, positions)
