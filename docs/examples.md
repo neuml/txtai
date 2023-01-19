@@ -5,6 +5,13 @@
 
 The examples directory has a series of notebooks and applications giving an overview of txtai. See the sections below.
 
+---
+**NOTE**
+
+When running on Google Colab, you may encounter a `ContextualVersionConflict` exception when importing certain libraries. The reason for this is that some Colab packages need a restart after upgrading so simply restarting the kernel and rerunning the import will make the exception go away.
+
+---
+
 ## Semantic Search
 
 Build semantic/similarity/vector/neural search applications.
