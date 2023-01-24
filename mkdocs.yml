@@ -102,4 +102,5 @@ nav:
         - Configuration: api/configuration.md
         - Methods: api/methods.md
     - Cloud: cloud.md
+    - FAQ: faq.md
     - Further Reading: further.md
