@@ -38,9 +38,14 @@ class Application:
                 with open(data, "r", encoding="utf-8") as f:
                     # Read configuration
                     return yaml.safe_load(f)
-            else:
-                # Read yaml from string
-                return yaml.safe_load(data)
+
+            # Attempt to read yaml from input
+            data = yaml.safe_load(data)
+            if not isinstance(data, str):
+                return data
+
+            # File not found and input is not yaml, raise error
+            raise FileNotFoundError(f"Unable to load file '{data}'")
 
         # Return unmodified
         return data
