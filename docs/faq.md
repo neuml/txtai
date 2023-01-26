@@ -27,3 +27,13 @@ __Solution__
 Downgrade PyTorch to <= 1.12. See issue [#377](https://github.com/neuml/txtai/issues/377) for more on this issue. 
 
 ----------
+
+__Issue__
+
+`ContextualVersionConflict` exception when importing certain libraries while running one of the [examples](./examples.md) notebooks on Google Colab
+
+__Solution__
+
+Restart the kernel. See issue [#409](https://github.com/neuml/txtai/issues/409) for more on this issue. 
+
+----------
