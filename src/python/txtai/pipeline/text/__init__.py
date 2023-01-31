@@ -5,6 +5,7 @@ Text imports
 from .crossencoder import CrossEncoder
 from .entity import Entity
 from .extractor import Extractor
+from .generator import Generator
 from .labels import Labels
 from .questions import Questions
 from .sequences import Sequences
