@@ -35,16 +35,7 @@ model, tokenizer = trainer("bert-base-uncased", dt,
                             learning_rate=3e-5, num_train_epochs=5)
 ```
 
-All [TrainingArguments](https://huggingface.co/transformers/main_classes/trainer.html#transformers.TrainingArguments) are supported as function arguments to the trainer call. Supports building new models and/or fine-tuning for following training tasks.
-
-| Task | Description |
-|:-----|:------------|
-| language-generation | Causal language model for text generation (e.g. GPT) |
-| language-modeling | Masked language model for general tasks (e.g. BERT) |
-| question-answering | Extractive question-answering model, typically with the SQuAD dataset |
-| sequence-sequence  | Sequence-Sequence model (e.g. T5) |
-| text-classification | Classify text with a set of labels |
-| token-detection | ELECTRA-style pre-training with replaced token detection |
+All [TrainingArguments](https://huggingface.co/transformers/main_classes/trainer.html#transformers.TrainingArguments) are supported as function arguments to the trainer call.
 
 See the links below for more detailed examples.
 
@@ -54,6 +45,19 @@ See the links below for more detailed examples.
 | [Train without labels](https://github.com/neuml/txtai/blob/master/examples/17_Train_without_labels.ipynb) | Use zero-shot classifiers to train new models | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/17_Train_without_labels.ipynb) |
 | [Train a QA model](https://github.com/neuml/txtai/blob/master/examples/19_Train_a_QA_model.ipynb) | Build and fine-tune question-answering models | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/19_Train_a_QA_model.ipynb) |
 | [Train a language model from scratch](https://github.com/neuml/txtai/blob/master/examples/41_Train_a_language_model_from_scratch.ipynb) | Build new language models | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/41_Train_a_language_model_from_scratch.ipynb) |
+
+## Training tasks
+
+The HFTrainer pipeline builds and/or fine-tunes models for following training tasks.
+
+| Task | Description |
+|:-----|:------------|
+| language-generation | Causal language model for text generation (e.g. GPT) |
+| language-modeling | Masked language model for general tasks (e.g. BERT) |
+| question-answering | Extractive question-answering model, typically with the SQuAD dataset |
+| sequence-sequence  | Sequence-Sequence model (e.g. T5) |
+| text-classification | Classify text with a set of labels |
+| token-detection | ELECTRA-style pre-training with replaced token detection |
 
 ## Methods 
 
