@@ -35,7 +35,16 @@ model, tokenizer = trainer("bert-base-uncased", dt,
                             learning_rate=3e-5, num_train_epochs=5)
 ```
 
-All [TrainingArguments](https://huggingface.co/transformers/main_classes/trainer.html#transformers.TrainingArguments) are supported as function arguments to the trainer call.
+All [TrainingArguments](https://huggingface.co/transformers/main_classes/trainer.html#transformers.TrainingArguments) are supported as function arguments to the trainer call. Supports building new models and/or fine-tuning for following training tasks.
+
+| Task | Description |
+|:-----|:------------|
+| language-generation | Causal language model for text generation (e.g. GPT) |
+| language-modeling | Masked language model for general tasks (e.g. BERT) |
+| question-answering | Extractive question-answering model, typically with the SQuAD dataset |
+| sequence-sequence  | Sequence-Sequence model (e.g. T5) |
+| text-classification | Classify text with a set of labels |
+| token-detection | ELECTRA-style pre-training with replaced token detection |
 
 See the links below for more detailed examples.
 

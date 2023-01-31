@@ -38,6 +38,17 @@ class TestTrainer(unittest.TestCase):
         labels = Labels((model, tokenizer), dynamic=False)
         self.assertEqual(labels("cat")[0][0], 1)
 
+    def testCLM(self):
+        """
+        Tests training a model with causal language modeling.
+        """
+
+        trainer = HFTrainer()
+        model, _ = trainer("hf-internal-testing/tiny-random-gpt2", self.data, maxlength=16, task="language-generation")
+
+        # Test model completed successfully
+        self.assertIsNotNone(model)
+
     def testCustom(self):
         """
         Test training a model with custom parameters
@@ -175,11 +186,11 @@ class TestTrainer(unittest.TestCase):
 
     def testMLM(self):
         """
-        Tests training a masked language model.
+        Tests training a model with masked language modeling.
         """
 
         trainer = HFTrainer()
-        model, _ = trainer("google/bert_uncased_L-2_H-128_A-2", self.data, task="language-modeling")
+        model, _ = trainer("hf-internal-testing/tiny-random-bert", self.data, task="language-modeling")
 
         # Test model completed successfully
         self.assertIsNotNone(model)
@@ -237,6 +248,24 @@ class TestTrainer(unittest.TestCase):
 
         # Regression tasks return a single entry with the regression output
         self.assertGreater(labels("cat")[0][1], 0.5)
+
+    def testRTD(self):
+        """
+        Tests training a language model with replaced token detection
+        """
+
+        # Save directory
+        output = os.path.join(tempfile.gettempdir(), "trainer.rtd")
+
+        trainer = HFTrainer()
+        model, _ = trainer("hf-internal-testing/tiny-random-electra", self.data, task="token-detection", output_dir=output)
+
+        # Test model completed successfully
+        self.assertIsNotNone(model)
+
+        # Test output directories exist
+        self.assertTrue(os.path.exists(os.path.join(output, "generator")))
+        self.assertTrue(os.path.exists(os.path.join(output, "discriminator")))
 
     def testSeqSeq(self):
         """

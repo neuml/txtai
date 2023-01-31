@@ -7,8 +7,10 @@ import sys
 
 from transformers import (
     AutoConfig,
+    AutoModelForCausalLM,
     AutoModelForMaskedLM,
     AutoModelForQuestionAnswering,
+    AutoModelForPreTraining,
     AutoModelForSeq2SeqLM,
     AutoModelForSequenceClassification,
     AutoTokenizer,
@@ -17,7 +19,7 @@ from transformers import DataCollatorForLanguageModeling, DataCollatorForSeq2Seq
 from transformers import TrainingArguments as HFTrainingArguments
 
 from ...data import Labels, Questions, Sequences, Texts
-from ...models import Models
+from ...models import Models, TokenDetection
 from ..tensors import Tensors
 
 
@@ -76,7 +78,13 @@ class HFTrainer(Tensors):
         collator, labels = None, None
 
         # Prepare datasets
-        if task == "language-modeling":
+        if task == "language-generation":
+            # Default tokenizer pad token if it's not set
+            tokenizer.pad_token = tokenizer.pad_token if tokenizer.pad_token is not None else tokenizer.eos_token
+
+            process = Texts(tokenizer, columns, maxlength)
+            collator = DataCollatorForLanguageModeling(tokenizer, mlm=False, pad_to_multiple_of=8 if args.fp16 else None)
+        elif task in ("language-modeling", "token-detection"):
             process = Texts(tokenizer, columns, maxlength)
             collator = DataCollatorForLanguageModeling(tokenizer, pad_to_multiple_of=8 if args.fp16 else None)
         elif task == "question-answering":
@@ -92,7 +100,7 @@ class HFTrainer(Tensors):
         train, validation = process(train, validation, os.cpu_count() if tokenizers and isinstance(tokenizers, bool) else tokenizers)
 
         # Create model to train
-        model = self.model(task, base, config, labels)
+        model = self.model(task, base, config, labels, tokenizer)
 
         # Add model to collator
         if collator:
@@ -174,7 +182,7 @@ class HFTrainer(Tensors):
 
         return (config, tokenizer, maxlength)
 
-    def model(self, task, base, config, labels):
+    def model(self, task, base, config, labels, tokenizer):
         """
         Loads the base model to train.
 
@@ -183,6 +191,7 @@ class HFTrainer(Tensors):
             base: base model - supports a file path or (model, tokenizer) tuple
             config: model configuration
             labels: number of labels
+            tokenizer: model tokenizer
 
         Returns:
             model
@@ -194,15 +203,22 @@ class HFTrainer(Tensors):
 
         # pylint: disable=E1120
         # Unpack existing model or create new model from config
-        if isinstance(base, (list, tuple)):
+        if isinstance(base, (list, tuple)) and not isinstance(base[0], str):
             return base[0]
+        if task == "language-generation":
+            return AutoModelForCausalLM.from_pretrained(base, config=config)
         if task == "language-modeling":
             return AutoModelForMaskedLM.from_pretrained(base, config=config)
         if task == "question-answering":
             return AutoModelForQuestionAnswering.from_pretrained(base, config=config)
         if task == "sequence-sequence":
             return AutoModelForSeq2SeqLM.from_pretrained(base, config=config)
+        if task == "token-detection":
+            return TokenDetection(
+                AutoModelForMaskedLM.from_pretrained(base, config=config), AutoModelForPreTraining.from_pretrained(base, config=config), tokenizer
+            )
 
+        # Default task
         return AutoModelForSequenceClassification.from_pretrained(base, config=config)
 
 
