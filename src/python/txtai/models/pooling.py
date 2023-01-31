@@ -118,8 +118,7 @@ class MeanPooling(Pooling):
         Runs mean pooling on token embeddings taking the input mask into account.
 
         Args:
-            outputs: model outputs
-            mask: input attention mask
+            inputs: model inputs
 
         Returns:
             mean pooled embeddings using output token embeddings (i.e. last hidden state)
