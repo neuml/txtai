@@ -6,7 +6,7 @@ import platform
 import unittest
 
 from txtai.embeddings import Embeddings
-from txtai.pipeline import Extractor, Similarity
+from txtai.pipeline import Extractor, Questions, Similarity
 
 
 class TestExtractor(unittest.TestCase):
@@ -74,7 +74,19 @@ class TestExtractor(unittest.TestCase):
         Tests an empty extractor queries list
         """
 
-        self.assertEqual(self.extractor.query(None, None), [])
+        self.assertEqual(self.extractor.rank(None, None), [])
+
+    def testGeneration(self):
+        """
+        Tests support for generator models
+        """
+
+        extractor = Extractor(self.embeddings, "facebook/opt-125m")
+
+        question = "How many home runs?"
+
+        answers = extractor([(question, question, question, True)], self.data)
+        self.assertIsNotNone(answers)
 
     def testNoAnswer(self):
         """
@@ -103,13 +115,45 @@ class TestExtractor(unittest.TestCase):
         answers = extractor([(question, question, question, True)], self.data)
         self.assertTrue(answers[0][1].startswith("Giants hit 3 HRs"))
 
+    def testSearch(self):
+        """
+        Test qa extraction with an embeddings search for context
+        """
+
+        embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2", "content": True})
+        embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        extractor = Extractor(embeddings, "distilbert-base-cased-distilled-squad")
+
+        question = "How many home runs?"
+
+        answers = extractor([(question, question, question, True)])
+        self.assertTrue(answers[0][1].startswith("Giants hit 3 HRs"))
+
+    def testSequences(self):
+        """
+        Test extraction with prompts and a Seq2Seq model
+        """
+
+        extractor = Extractor(self.embeddings, "google/flan-t5-small")
+
+        # Prompt template, context appended by extractor
+        prompt = """
+            Answer the following question and return a number.
+            Question: How many HRs?
+            Context:
+        """
+
+        answers = extractor([("prompt", prompt, prompt, True)], self.data)
+        self.assertEqual(answers[0][1], "3")
+
     def testSimilarity(self):
         """
         Test qa extraction using a Similarity pipeline to build context
         """
 
         # Create extractor instance
-        extractor = Extractor(Similarity("prajjwal1/bert-medium-mnli"), "distilbert-base-cased-distilled-squad")
+        extractor = Extractor(Similarity("prajjwal1/bert-medium-mnli"), Questions("distilbert-base-cased-distilled-squad"))
 
         question = "How many home runs?"
 
@@ -132,3 +176,15 @@ class TestExtractor(unittest.TestCase):
         """
 
         self.assertEqual(self.extractor.snippet(None, None), None)
+
+    def testTasks(self):
+        """
+        Tests loading models with task parameter
+        """
+
+        for task, model in [
+            ("language-generation", "hf-internal-testing/tiny-random-gpt2"),
+            ("sequence-sequence", "hf-internal-testing/tiny-random-t5"),
+        ]:
+            extractor = Extractor(self.embeddings, model, task=task)
+            self.assertIsNotNone(extractor)
