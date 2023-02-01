@@ -3,7 +3,7 @@
 ![pipeline](../../images/pipeline.png#only-light)
 ![pipeline](../../images/pipeline-dark.png#only-dark)
 
-The Extractor pipeline is a combination of an embeddings query and an Extractive QA model. Filtering the context for a QA model helps maximize performance of the model.
+The Extractor pipeline is a combination of a similarity instance (embeddings or similarity pipeline) to build a question context and a model that answers questions. The model can be a prompt-driven large language model (LLM), an extractive question-answering model or a custom pipeline.
 
 ## Example
 

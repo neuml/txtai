@@ -16,8 +16,8 @@ from .similarity import Similarity
 class Extractor(Pipeline):
     """
     Finds answers for a set of queries/questions. The extractor is a combination of a similarity instance (embeddings or similarity pipeline)
-    to build question context and a model that answers questions. The model can be either a prompt-driven large language model (LLM) or
-    an extractive qa model.
+    to build a question context and a model that answers questions. The model can be either a prompt-driven large language model (LLM),
+    an extractive question-answering model or a custom pipeline.
     """
 
     # pylint: disable=R0913
