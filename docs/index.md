@@ -40,7 +40,7 @@ Traditional search systems use keywords to find data. Semantic search applicatio
 ![search](images/search.png#only-light)
 ![search](images/search-dark.png#only-dark)
 
-Backed by state-of-the-art machine learning models, data is transformed into vector representations for search (also known as embeddings). Innovation is happening at a rapid pace, models can understand concepts in documents, audio, images and video. Work with micromodels all the way up to large language models (LLMs).
+Backed by state-of-the-art machine learning models, data is transformed into vector representations for search (also known as embeddings). Innovation is happening at a rapid pace, models can understand concepts in documents, audio, images and video.
 
 Summary of txtai features:
 

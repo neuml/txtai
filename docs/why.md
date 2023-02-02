@@ -27,5 +27,6 @@ curl -X GET "http://localhost:8000/search?query=positive"
 ```
 - Connect machine learning models together to build intelligent data processing workflows
 - Works with both small and big data - scale when needed
+- Supports micromodels all the way up to large language models (LLMs)
 - Low footprint - install additional dependencies when you need them
 - [Learn by example](../examples) - notebooks cover all available functionality

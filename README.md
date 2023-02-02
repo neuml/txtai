@@ -38,7 +38,7 @@ Traditional search systems use keywords to find data. Semantic search applicatio
 ![search](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/search.png#gh-light-mode-only)
 ![search](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/search-dark.png#gh-dark-mode-only)
 
-Backed by state-of-the-art machine learning models, data is transformed into vector representations for search (also known as embeddings). Innovation is happening at a rapid pace, models can understand concepts in documents, audio, images and video. Work with micromodels all the way up to large language models (LLMs).
+Backed by state-of-the-art machine learning models, data is transformed into vector representations for search (also known as embeddings). Innovation is happening at a rapid pace, models can understand concepts in documents, audio, images and video.
 
 Summary of txtai features:
 
@@ -96,6 +96,7 @@ curl -X GET "http://localhost:8000/search?query=positive"
 ```
 - Connect machine learning models together to build intelligent data processing workflows
 - Works with both small and big data - scale when needed
+- Supports micromodels all the way up to large language models (LLMs)
 - Low footprint - install additional dependencies when you need them
 - [Learn by example](#examples) - notebooks cover all available functionality
 
