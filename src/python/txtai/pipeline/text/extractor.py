@@ -71,8 +71,8 @@ class Extractor(Pipeline):
             list of (name, answer)
         """
 
-        # Rank text by similarity for each query
-        results = self.rank([query for _, query, _, _ in queue], texts)
+        # Rank texts by similarity for each query
+        results = self.query([query for _, query, _, _ in queue], texts)
 
         # Build question-context pairs
         names, questions, contexts, topns, snippets = [], [], [], [], []
@@ -127,9 +127,9 @@ class Extractor(Pipeline):
         # Default to question-answering
         return Questions(path, quantize, gpu, model)
 
-    def rank(self, queries, texts):
+    def query(self, queries, texts):
         """
-        Rank texts against queries. If texts is not provided, an embeddings search will be executed.
+        Rank texts by similarity for each query. If texts is empty, an embeddings search will be executed.
         Returns results sorted by best match.
 
         Args:
@@ -153,10 +153,9 @@ class Extractor(Pipeline):
             must = [token.strip("+") for token in query.split() if token.startswith("+") and len(token) > 1]
             mnot = [token.strip("-") for token in query.split() if token.startswith("-") and len(token) > 1]
 
-            # Segment text is static when texts is passed in but different per query when an
-            # embeddings search is run
-            segment = segments[i] if isinstance(segments[i], list) else segments
-            tokens = tokenlist[i] if isinstance(segments[i], list) else tokenlist
+            # Segment text is static when texts is passed in but different per query when an embeddings search is run
+            segment = segments if texts else segments[i]
+            tokens = tokenlist if texts else tokenlist[i]
 
             # List of matches
             matches = []

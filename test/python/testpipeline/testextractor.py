@@ -74,7 +74,7 @@ class TestExtractor(unittest.TestCase):
         Tests an empty extractor queries list
         """
 
-        self.assertEqual(self.extractor.rank(None, None), [])
+        self.assertEqual(self.extractor.query(None, None), [])
 
     def testGeneration(self):
         """
