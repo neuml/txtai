@@ -10,3 +10,4 @@
 - [Semantic search on the cheap](https://medium.com/neuml/semantic-search-on-the-cheap-55940c0fcdab)
 - [Serverless vector search with txtai](https://medium.com/neuml/serverless-vector-search-with-txtai-96f6163ab972)
 - [Insights from the txtai console](https://medium.com/neuml/insights-from-the-txtai-console-d307c28e149e)
+- [The big and small of txtai](https://medium.com/neuml/the-big-and-small-of-txtai-4ca405c1b82)
