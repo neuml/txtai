@@ -561,13 +561,13 @@ class Application:
 
         return None
 
-    def extract(self, queue, texts):
+    def extract(self, queue, texts=None):
         """
         Extracts answers to input questions.
 
         Args:
             queue: list of {name: value, query: value, question: value, snippet: value}
-            texts: list of text
+            texts: optional list of text
 
         Returns:
             list of {name: value, answer: value}
