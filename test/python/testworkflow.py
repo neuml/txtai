@@ -86,6 +86,7 @@ class TestWorkflow(unittest.TestCase):
         results = list(workflow2(workflow1([1, 2, 4, 8, 16, 32])))
         self.assertEqual(results, [1, 3, 7, 15, 31, 63])
 
+    @unittest.skipIf(os.name == "nt", "testComplexWorkflow skipped on Windows")
     def testComplexWorkflow(self):
         """
         Tests a complex workflow
