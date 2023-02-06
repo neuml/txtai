@@ -23,7 +23,7 @@ class API(Application):
             self.cluster = Cluster(self.config["cluster"])
 
     # pylint: disable=W0221
-    def search(self, query, request=None, limit=None):
+    def search(self, query, limit=None, request=None):
         # When search is invoked via the API, limit is set from the request
         # When search is invoked directly, limit is set using the method parameter
         limit = self.limit(request.query_params.get("limit") if request and hasattr(request, "query_params") else limit)

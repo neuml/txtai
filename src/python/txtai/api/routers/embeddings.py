@@ -27,7 +27,7 @@ def search(query: str, request: Request):
         list of {id: value, score: value}
     """
 
-    return application.get().search(query, request)
+    return application.get().search(query, request=request)
 
 
 @router.post("/batchsearch")
