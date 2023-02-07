@@ -142,7 +142,7 @@ See [Annoy documentation](https://github.com/spotify/annoy#full-python-api) for 
 content: string|boolean
 ```
 
-Enables content storage. When true, the default content storage engine will be used. Otherwise, the string must specify the supported content storage engine to use.
+Enables content storage. When true, the default content storage engine will be used. `Defaults to sqlite`. Otherwise, the string must specify the supported content storage engine to use.
 
 ## functions
 ```yaml
