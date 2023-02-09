@@ -76,18 +76,15 @@ class Translation(HFModel):
         languages = self.detect(values) if not source else [source] * len(values)
         unique = set(languages)
 
-        # Build list of (index, language, text)
         # Build a dict from language to list of (index, text)
         langdict = defaultdict(list)
         for x, lang in enumerate(languages):
             langdict[lang].append((x, values[x]))
-        # [(x, lang, values[x]) for x, lang in enumerate(languages)]
 
         results = {}
         for language in unique:
-            # Get all text values for language
+            # Get all indices and text values for a language
             inputs = langdict[language]
-            # [(x, text) for x, lang, text in values if lang == language]
 
             # Translate text in batches
             outputs = []
