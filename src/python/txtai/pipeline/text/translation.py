@@ -54,7 +54,7 @@ class Translation(HFModel):
         self.models = {}
         self.ids = self.modelids()
 
-    def __call__(self, texts, target="en", source=None, debug=False):
+    def __call__(self, texts, target="en", source=None, showmodels=False):
         """
         Translates text from source language into target language.
 
@@ -89,13 +89,13 @@ class Translation(HFModel):
             # Translate text in batches
             outputs = []
             for chunk in self.batch([text for _, text in inputs], self.batchsize):
-                outputs.extend(self.translate(chunk, language, target, debug))
+                outputs.extend(self.translate(chunk, language, target, showmodels))
 
             # Store output value
             for y, (x, _) in enumerate(inputs):
-                if debug:
+                if showmodels:
                     model, op = outputs[y]
-                    results[x] = (language, model, op.strip())
+                    results[x] = (op.strip(), language, model)
                 else:
                     results[x] = outputs[y].strip()
 
@@ -141,7 +141,7 @@ class Translation(HFModel):
 
         return [x[0].split("__")[-1] for x in self.detector.predict(texts)[0]]
 
-    def translate(self, texts, source, target, debug=False):
+    def translate(self, texts, source, target, showmodels=False):
         """
         Translates text from source to target language.
 
@@ -159,7 +159,7 @@ class Translation(HFModel):
             return texts
 
         # Load model and tokenizer
-        model, tokenizer = self.lookup(source, target)
+        path, model, tokenizer = self.lookup(source, target)
 
         model.to(self.device)
         indices = None
@@ -184,7 +184,7 @@ class Translation(HFModel):
         # Combine translations - handle splits on large text from tokenizer
         results, last = [], -1
         for x, i in enumerate(indices):
-            v = (model, translated[x]) if debug else translated[x]
+            v = (path, translated[x]) if showmodels else translated[x]
             if i == last:
                 results[-1] += v
             else:
@@ -211,7 +211,7 @@ class Translation(HFModel):
         if path not in self.models:
             self.models[path] = self.load(path)
 
-        return self.models[path]
+        return (path,) + self.models[path]
 
     def modelpath(self, source, target):
         """
