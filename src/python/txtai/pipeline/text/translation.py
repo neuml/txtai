@@ -2,8 +2,6 @@
 Translation module
 """
 
-from collections import defaultdict
-
 # Conditional import
 try:
     import fasttext
@@ -77,8 +75,10 @@ class Translation(HFModel):
         unique = set(languages)
 
         # Build a dict from language to list of (index, text)
-        langdict = defaultdict(list)
+        langdict = {}
         for x, lang in enumerate(languages):
+            if lang not in langdict:
+                langdict[lang] = []
             langdict[lang].append((x, values[x]))
 
         results = {}
