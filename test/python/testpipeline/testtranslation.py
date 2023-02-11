@@ -84,3 +84,32 @@ class TestTranslation(unittest.TestCase):
 
         # Validate no translation
         self.assertEqual(text, translation)
+
+    def testTranslationWithShowmodels(self):
+        """
+        Tests a translation using Marian models and showmodels flag to return
+        model and language.
+        """
+
+        translate = Translation()
+
+        text = "This is a test translation into Spanish"
+        result = translate(text, "es", showmodels=True)
+
+        translation, language, modelpath = result
+        # Validate translation text
+        self.assertEqual(translation, "Esta es una traducción de prueba al español")
+        # Validate detected language
+        self.assertEqual(language, "en")
+        # Validate model
+        self.assertEqual(modelpath, "Helsinki-NLP/opus-mt-en-es")
+
+        # Validate translation back
+        result = translate(translation, "en", showmodels=True)
+
+        translation, language, modelpath = result
+        self.assertEqual(translation, text)
+        # Validate detected language
+        self.assertEqual(language, "es")
+        # Validate model
+        self.assertEqual(modelpath, "Helsinki-NLP/opus-mt-es-en")

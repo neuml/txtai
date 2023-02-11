@@ -52,7 +52,7 @@ class Translation(HFModel):
         self.models = {}
         self.ids = self.modelids()
 
-    def __call__(self, texts, target="en", source=None):
+    def __call__(self, texts, target="en", source=None, showmodels=False):
         """
         Translates text from source language into target language.
 
@@ -74,22 +74,30 @@ class Translation(HFModel):
         languages = self.detect(values) if not source else [source] * len(values)
         unique = set(languages)
 
-        # Build list of (index, language, text)
-        values = [(x, lang, values[x]) for x, lang in enumerate(languages)]
+        # Build a dict from language to list of (index, text)
+        langdict = {}
+        for x, lang in enumerate(languages):
+            if lang not in langdict:
+                langdict[lang] = []
+            langdict[lang].append((x, values[x]))
 
         results = {}
         for language in unique:
-            # Get all text values for language
-            inputs = [(x, text) for x, lang, text in values if lang == language]
+            # Get all indices and text values for a language
+            inputs = langdict[language]
 
             # Translate text in batches
             outputs = []
             for chunk in self.batch([text for _, text in inputs], self.batchsize):
-                outputs.extend(self.translate(chunk, language, target))
+                outputs.extend(self.translate(chunk, language, target, showmodels))
 
             # Store output value
             for y, (x, _) in enumerate(inputs):
-                results[x] = outputs[y].strip()
+                if showmodels:
+                    model, op = outputs[y]
+                    results[x] = (op.strip(), language, model)
+                else:
+                    results[x] = outputs[y].strip()
 
         # Return results in same order as input
         results = [results[x] for x in sorted(results)]
@@ -133,7 +141,7 @@ class Translation(HFModel):
 
         return [x[0].split("__")[-1] for x in self.detector.predict(texts)[0]]
 
-    def translate(self, texts, source, target):
+    def translate(self, texts, source, target, showmodels=False):
         """
         Translates text from source to target language.
 
@@ -151,7 +159,7 @@ class Translation(HFModel):
             return texts
 
         # Load model and tokenizer
-        model, tokenizer = self.lookup(source, target)
+        path, model, tokenizer = self.lookup(source, target)
 
         model.to(self.device)
         indices = None
@@ -176,10 +184,11 @@ class Translation(HFModel):
         # Combine translations - handle splits on large text from tokenizer
         results, last = [], -1
         for x, i in enumerate(indices):
+            v = (path, translated[x]) if showmodels else translated[x]
             if i == last:
-                results[-1] += translated[x]
+                results[-1] += v
             else:
-                results.append(translated[x])
+                results.append(v)
 
             last = i
 
@@ -202,7 +211,7 @@ class Translation(HFModel):
         if path not in self.models:
             self.models[path] = self.load(path)
 
-        return self.models[path]
+        return (path,) + self.models[path]
 
     def modelpath(self, source, target):
         """
