@@ -21,12 +21,18 @@ class Faiss(ANN):
         self.backend = read_index(path, IO_FLAG_MMAP if self.setting("mmap") is True else 0)
 
     def index(self, embeddings):
+        # Compute model training size
+        train, sample = embeddings, self.setting("sample")
+        if sample:
+            indices = sorted(np.random.choice(train.shape[0], int(sample * train.shape[0]), replace=False))
+            train = train[indices]
+
         # Configure embeddings index. Inner product is equal to cosine similarity on normalized vectors.
-        params = self.configure(embeddings.shape[0])
+        params = self.configure(embeddings.shape[0], train.shape[0])
         self.backend = index_factory(embeddings.shape[1], params, METRIC_INNER_PRODUCT)
 
         # Train model
-        self.backend.train(embeddings)
+        self.backend.train(train)
 
         # Add embeddings - position in embeddings is used as the id
         self.backend.add_with_ids(embeddings, np.arange(embeddings.shape[0], dtype=np.int64))
@@ -68,12 +74,13 @@ class Faiss(ANN):
         # Write index
         write_index(self.backend, path)
 
-    def configure(self, count):
+    def configure(self, count, train):
         """
         Configures settings for a new index.
 
         Args:
             count: initial number of embeddings rows
+            train: number of rows selected for model training
 
         Returns:
             user-specified or generated components setting
@@ -92,7 +99,7 @@ class Faiss(ANN):
         if count <= 5000:
             return f"IDMap,{storage}"
 
-        x = self.cells(count)
+        x = self.cells(train)
         components = f"IVF{x},{storage}"
 
         return components

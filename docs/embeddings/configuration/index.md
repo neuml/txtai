@@ -108,6 +108,8 @@ faiss:
               defaults to false
     mmap: load as on-disk index (boolean) - trade query response time for a
           smaller RAM footprint, defaults to false
+    sample: percent of data to use for model training (0.0 - 1.0)
+            reduces indexing time for larger (>1M+ row) indexes, defaults to 1.0
 ```
 
 See the following Faiss documentation links for more information.
