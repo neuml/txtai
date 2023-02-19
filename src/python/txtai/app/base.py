@@ -185,11 +185,11 @@ class Application:
                 # Resolve transform function
                 config["transform"] = self.function(config["transform"])
 
-        # Local embeddings index
-        if loaddata and self.config.get("path") and Embeddings().exists(self.config["path"], self.config.get("cloud")):
+        # Load embeddings index if loaddata and index exists
+        if loaddata and Embeddings().exists(self.config.get("path"), self.config.get("cloud")):
             # Load existing index if available
             self.embeddings = Embeddings()
-            self.embeddings.load(self.config["path"], self.config.get("cloud"))
+            self.embeddings.load(self.config.get("path"), self.config.get("cloud"))
         elif config:
             # Initialize empty embeddings
             self.embeddings = Embeddings(config)

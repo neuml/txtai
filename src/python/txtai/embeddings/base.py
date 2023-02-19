@@ -13,12 +13,13 @@ import numpy as np
 from .. import __pickle__
 
 from ..ann import ANNFactory
+from ..archive import ArchiveFactory
+from ..cloud import CloudFactory
 from ..database import DatabaseFactory
 from ..graph import GraphFactory
 from ..scoring import ScoringFactory
 from ..vectors import VectorsFactory
 
-from .archive import Archive
 from .explain import Explain
 from .functions import Functions
 from .reducer import Reducer
@@ -269,19 +270,20 @@ class Embeddings:
 
         return self.batchtransform([document])[0]
 
-    def batchtransform(self, documents):
+    def batchtransform(self, documents, category=None):
         """
         Transforms documents into embeddings vectors.
 
         Args:
             documents: list of (id, data, tags)
+            category: category for instruction-based embeddings
 
         Returns:
             embeddings vectors
         """
 
         # Convert documents into sentence embeddings
-        embeddings = self.model.batchtransform(documents)
+        embeddings = self.model.batchtransform(documents, category)
 
         # Reduce the dimensionality of the embeddings. Scale the embeddings using this
         # model to reduce the noise of common but less relevant terms.
@@ -365,8 +367,8 @@ class Embeddings:
         """
 
         # Convert queries to embedding vectors
-        queries = self.batchtransform((None, query, None) for query in queries)
-        data = self.batchtransform((None, row, None) for row in data)
+        queries = self.batchtransform(((None, query, None) for query in queries), "query")
+        data = self.batchtransform(((None, row, None) for row in data), "data")
 
         # Dot product on normalized vectors is equal to cosine similarity
         scores = np.dot(queries, data.T).tolist()
@@ -405,46 +407,54 @@ class Embeddings:
 
         return Explain(self)(queries, texts, limit)
 
-    def exists(self, path, cloud=None):
+    def exists(self, path=None, cloud=None, **kwargs):
         """
         Checks if an index exists at path.
 
         Args:
             path: input path
             cloud: cloud storage configuration
+            kwargs: additional configuration as keyword args
 
         Returns:
             True if index exists, False otherwise
         """
 
+        # Check if this exists in a cloud instance
+        cloud = self.createcloud(cloud=cloud, **kwargs)
+        if cloud:
+            return cloud.exists(path)
+
         # Check if this is an archive file and exists
         path, apath = self.checkarchive(path)
         if apath:
-            return self.archive.exists(apath, cloud)
+            return os.path.exists(apath)
 
-        return os.path.exists(f"{path}/config") and os.path.exists(f"{path}/embeddings")
+        # Return true if path has a config or config.json file and an embeddings file
+        return path and (os.path.exists(f"{path}/config") or os.path.exists(f"{path}/config.json")) and os.path.exists(f"{path}/embeddings")
 
-    def load(self, path, cloud=None):
+    def load(self, path=None, cloud=None, **kwargs):
         """
         Loads an existing index from path.
 
         Args:
             path: input path
             cloud: cloud storage configuration
+            kwargs: additional configuration as keyword args
         """
+
+        # Load from cloud, if configured
+        cloud = self.createcloud(cloud=cloud, **kwargs)
+        if cloud:
+            path = cloud.load(path)
 
         # Check if this is an archive file and extract
         path, apath = self.checkarchive(path)
         if apath:
-            self.archive.load(apath, cloud)
+            self.archive.load(apath)
 
-        # Index configuration
-        with open(f"{path}/config", "rb") as handle:
-            self.config = pickle.load(handle)
-
-            # Build full path to embedding vectors file
-            if self.config.get("storevectors"):
-                self.config["path"] = os.path.join(path, self.config["path"])
+        # Load index configuration
+        self.config = self.loadconfig(path)
 
         # Approximate nearest neighbor index - stores embeddings vectors
         self.ann = ANNFactory.create(self.config)
@@ -476,7 +486,7 @@ class Embeddings:
         if self.graph:
             self.graph.load(f"{path}/graph")
 
-    def save(self, path, cloud=None):
+    def save(self, path, cloud=None, **kwargs):
         """
         Saves an index in a directory at path unless path ends with tar.gz, tar.bz2, tar.xz or zip.
         In those cases, the index is stored as a compressed file.
@@ -484,6 +494,7 @@ class Embeddings:
         Args:
             path: output path
             cloud: cloud storage configuration
+            kwargs: additional configuration as keyword args
         """
 
         if self.config:
@@ -499,9 +510,8 @@ class Embeddings:
 
                 self.config["path"] = os.path.basename(self.config["path"])
 
-            # Write index configuration
-            with open(f"{path}/config", "wb") as handle:
-                pickle.dump(self.config, handle, protocol=__pickle__)
+            # Save index configuration
+            self.saveconfig(path)
 
             # Save approximate nearest neighbor index
             self.ann.save(f"{path}/embeddings")
@@ -524,7 +534,12 @@ class Embeddings:
 
             # If this is an archive, save it
             if apath:
-                self.archive.save(apath, cloud)
+                self.archive.save(apath)
+
+            # Save to cloud, if configured
+            cloud = self.createcloud(cloud=cloud, **kwargs)
+            if cloud:
+                cloud.save(apath if apath else path)
 
     def close(self):
         """
@@ -589,6 +604,62 @@ class Embeddings:
 
         return {"path": "sentence-transformers/all-MiniLM-L6-v2"}
 
+    def loadconfig(self, path):
+        """
+        Loads index configuration. This method supports both config pickle files and config.json files.
+
+        Args:
+            path: path to directory
+
+        Returns:
+            dict
+        """
+
+        # Configuration
+        config = None
+
+        # Determine if config is json or pickle
+        jsonconfig = os.path.exists(f"{path}/config.json")
+
+        # Set config file name
+        name = "config.json" if jsonconfig else "config"
+
+        # Load configuration
+        with open(f"{path}/{name}", "r" if jsonconfig else "rb") as handle:
+            config = json.load(handle) if jsonconfig else pickle.load(handle)
+
+        # Build full path to embedding vectors file
+        if config.get("storevectors"):
+            config["path"] = os.path.join(path, config["path"])
+
+        return config
+
+    def saveconfig(self, path):
+        """
+        Saves index configuration. This method saves to JSON if possible, otherwise it falls back to pickle.
+
+        Args:
+            path: path to directory
+
+        Returns:
+            dict
+        """
+
+        # Default to pickle config
+        jsonconfig = self.config.get("format", "pickle") == "json"
+
+        # Set config file name
+        name = "config.json" if jsonconfig else "config"
+
+        # Write configuration
+        with open(f"{path}/{name}", "w" if jsonconfig else "wb", encoding="utf-8" if jsonconfig else None) as handle:
+            if jsonconfig:
+                # Write config as JSON
+                json.dump(self.config, handle, default=str, indent=2)
+            else:
+                # Write config as pickle format
+                pickle.dump(self.config, handle, protocol=__pickle__)
+
     def loadvectors(self):
         """
         Loads a vector model set in config.
@@ -624,7 +695,7 @@ class Embeddings:
         """
 
         # Create archive instance, if necessary
-        self.archive = self.archive if self.archive else Archive()
+        self.archive = ArchiveFactory.create()
 
         # Check if path is an archive file
         if self.archive.isarchive(path):
@@ -632,6 +703,22 @@ class Embeddings:
             return self.archive.path(), path
 
         return path, None
+
+    def createcloud(self, **cloud):
+        """
+        Creates a cloud instance from config.
+
+        Args:
+            cloud: cloud configuration
+        """
+
+        # Merge keyword args and keys under the cloud parameter
+        config = cloud
+        if "cloud" in config and config["cloud"]:
+            config.update(config.pop("cloud"))
+
+        # Create cloud instance from config and return
+        return CloudFactory.create(config) if config else None
 
     def createdatabase(self):
         """
