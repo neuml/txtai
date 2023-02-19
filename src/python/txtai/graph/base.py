@@ -9,7 +9,8 @@ from collections import Counter
 from tempfile import TemporaryDirectory
 
 from .. import __pickle__
-from ..compress import CompressFactory
+
+from ..archive import ArchiveFactory
 
 from .topics import Topics
 
@@ -290,8 +291,8 @@ class Graph:
         # Extract files to temporary directory and load content
         with TemporaryDirectory() as directory:
             # Unpack files
-            compress = CompressFactory().create("tar")
-            compress.unpack(path, directory)
+            archive = ArchiveFactory.create(directory)
+            archive.load(path, "tar")
 
             # Load graph backend
             self.loadgraph(f"{directory}/graph")
@@ -332,8 +333,8 @@ class Graph:
                     pickle.dump(self.topics, handle, protocol=__pickle__)
 
             # Pack files
-            compress = CompressFactory().create("tar")
-            compress.pack(directory, path)
+            archive = ArchiveFactory.create(directory)
+            archive.save(path, "tar")
 
     def insert(self, documents, index=0):
         """
