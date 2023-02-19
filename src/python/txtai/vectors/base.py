@@ -33,6 +33,9 @@ class Vectors:
             # Encode batch size - controls underlying model batch size when encoding vectors
             self.encodebatch = config.get("encodebatch", 32)
 
+            # Embeddings instructions
+            self.instructions = config.get("instructions")
+
     def load(self, path):
         """
         Loads vector model at path.
@@ -111,19 +114,20 @@ class Vectors:
         # Prepare input document for transformers model and build embeddings
         return self.batchtransform([document])[0]
 
-    def batchtransform(self, documents):
+    def batchtransform(self, documents, category=None):
         """
         Transforms batch of documents into embeddings vectors.
 
         Args:
             documents: list of documents used to build embeddings
+            category: category for instruction-based embeddings
 
         Returns:
             embeddings vectors
         """
 
         # Prepare input documents for transformers model
-        documents = [self.prepare(data) for _, data, _ in documents]
+        documents = [self.prepare(data, category) for _, data, _ in documents]
 
         # Skip encoding data if it's already an array
         if documents and isinstance(documents[0], np.ndarray):
@@ -145,7 +149,7 @@ class Vectors:
 
         # Extract ids and prepare input documents for transformers model
         ids = [uid for uid, _, _ in documents]
-        documents = [self.prepare(data) for _, data, _ in documents]
+        documents = [self.prepare(data, "data") for _, data, _ in documents]
         dimensions = None
 
         # Build embeddings
@@ -156,15 +160,24 @@ class Vectors:
 
         return (ids, dimensions)
 
-    def prepare(self, data):
+    def prepare(self, data, category=None):
         """
         Prepares input data for vector model.
 
         Args:
             data: input data
+            category: category for instruction-based embeddings
 
         Returns:
             data formatted for vector model
         """
+
+        # Default instruction category
+        category = category if category else "query"
+
+        # Prepend instructions, if applicable
+        if self.instructions and category in self.instructions and isinstance(data, str):
+            # Prepend category instruction
+            data = f"{self.instructions[category]}{data}"
 
         return data

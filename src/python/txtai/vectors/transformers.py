@@ -47,7 +47,7 @@ class TransformersVectors(Vectors):
         # Encode data using vectors model
         return self.model.encode(data, self.encodebatch)
 
-    def prepare(self, data):
+    def prepare(self, data, category=None):
         # Optional string tokenization
         if self.tokenize and isinstance(data, str):
             data = Tokenizer.tokenize(data)
@@ -56,4 +56,5 @@ class TransformersVectors(Vectors):
         if isinstance(data, list):
             data = " ".join(data)
 
-        return data
+        # Add parent prepare logic
+        return super().prepare(data, category)
