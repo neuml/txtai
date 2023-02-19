@@ -11,7 +11,7 @@ from .compress import Compress
 
 class Zip(Compress):
     """
-    Zip archival with compression
+    Zip compression
     """
 
     def pack(self, path, output):
