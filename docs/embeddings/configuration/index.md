@@ -2,13 +2,20 @@
 
 This following describes available embeddings configuration. These parameters are set via the [Embeddings constructor](../methods#txtai.embeddings.base.Embeddings.__init__).
 
+## format
+```yaml
+format: pickle|json
+```
+
+Sets the configuration storage format. Defaults to pickle.
+
 ## path
 ```yaml
 path: string
 ```
 
 Sets the path for a vectors model. When using a transformers/sentence-transformers model, this can be any model on the
-[Hugging Face Model Hub](https://huggingface.co/models) or a local file path. Otherwise, it must be a local file path to a word embeddings model.
+[Hugging Face Hub](https://huggingface.co/models) or a local file path. Otherwise, it must be a local file path to a word embeddings model.
 
 ## method
 ```yaml
@@ -85,6 +92,17 @@ tokenize: boolean
 
 Enables string tokenization (defaults to false). This method applies tokenization rules that only work with English language text and may increase the quality of
 English language sentence embeddings in some situations.
+
+## instructions
+```yaml
+instructions:
+    query: prefix for queries
+    data: prefix for indexing
+```
+
+Instruction-based models use prefixes to modify how embeddings are computed. This is especially useful with asymmetric search, which is when the query and indexed data are of vastly different lengths. In other words, short queries with long documents.
+
+[E5-base](https://huggingface.co/intfloat/e5-base) is an example of a model that accepts instructions. It takes `query: ` and `passage: ` prefixes and uses those to generate embeddings that work well for asymmetric search.
 
 ## backend
 ```yaml
