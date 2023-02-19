@@ -175,6 +175,7 @@ class TestEmbeddings(unittest.TestCase):
 
         questions = ["What team won the game?", "What was score?"]
 
+        # pylint: disable=C3001
         execute = lambda query: self.client.post(
             "extract",
             json={"queue": [{"name": question, "query": query, "question": question, "snippet": False} for question in questions], "texts": data},

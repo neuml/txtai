@@ -15,6 +15,3 @@ min-public-methods=0
 
 [FORMAT]
 max-line-length=150
-
-[MESSAGES CONTROL]
-disable=R0201

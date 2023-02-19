@@ -183,6 +183,8 @@ class TestWorkflow(unittest.TestCase):
 
         api = API({})
         api.pool = ThreadPool()
+
+        # pylint: disable=C2801
         api.__del__()
 
         self.assertIsNone(api.pool)

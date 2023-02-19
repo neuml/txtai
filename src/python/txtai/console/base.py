@@ -249,7 +249,7 @@ class Console(Cmd):
                 spans.append((token, score, color))
 
             if result["score"] >= 0.05 and not [color for _, _, color in spans if color]:
-                mscore = max([score for _, score, _ in spans])
+                mscore = max(score for _, score, _ in spans)
                 spans = [(token, score, f"b {self.vhighlight}" if score == mscore else color) for token, score, color in spans]
 
             output = ""

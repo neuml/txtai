@@ -57,6 +57,7 @@ class TestExtractor(unittest.TestCase):
 
         questions = ["What team won the game?", "What was score?"]
 
+        # pylint: disable=C3001
         execute = lambda query: self.extractor([(question, query, question, False) for question in questions], self.data)
 
         answers = execute("Red Sox - Blue Jays")

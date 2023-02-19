@@ -105,7 +105,7 @@ class TestCloud(unittest.TestCase):
 
         def filedownload(**kwargs):
             if "Invalid" in kwargs["repo_id"]:
-                raise Exception
+                raise FileNotFoundError
 
             return index
 
@@ -143,6 +143,7 @@ class TestCloud(unittest.TestCase):
         self.assertFalse(self.embeddings.exists(index, invalid))
 
         # Test exception raised when trying to load index and doesn't exist in cloud storage
+        # pylint: disable=W0719
         with self.assertRaises(Exception):
             self.embeddings.load(index, invalid)
 

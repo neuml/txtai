@@ -14,6 +14,7 @@ from ..archive import ArchiveFactory
 
 from .topics import Topics
 
+
 # pylint: disable=R0904
 class Graph:
     """

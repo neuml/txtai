@@ -60,6 +60,7 @@ class CrossEncoder(HFPipeline):
         """
 
         # Output functions
+        # pylint: disable=C3001
         identity = lambda x: x
         sigmoid = lambda x: 1.0 / (1.0 + np.exp(-x))
         softmax = lambda x: np.exp(x) / np.sum(np.exp(x))

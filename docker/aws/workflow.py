@@ -8,6 +8,7 @@ from txtai.api import API
 
 APP = None
 
+
 # pylint: disable=W0603,W0613
 def handler(event, context):
     """

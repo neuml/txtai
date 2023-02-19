@@ -20,6 +20,7 @@ from transformers.modeling_utils import PreTrainedModel
 
 from .registry import Registry
 
+
 # pylint: disable=W0223
 class OnnxModel(PreTrainedModel):
     """

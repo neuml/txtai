@@ -586,7 +586,7 @@ class Application:
                 tasks.append({"action": wtype})
 
             elif wtype == "service":
-                config = dict(**component)
+                config = {**component}
                 config["task"] = wtype
                 tasks.append(config)
 
