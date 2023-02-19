@@ -16,7 +16,7 @@ class TestTextToSpeech(unittest.TestCase):
 
     def testTextToSpeech(self):
         """
-        Tests generating speech for text
+        Test generating speech for text
         """
 
         tts = TextToSpeech()

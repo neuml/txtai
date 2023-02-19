@@ -9,15 +9,15 @@ import unittest
 
 from zipfile import ZipFile, ZIP_DEFLATED
 
-from txtai.compress import Compress, CompressFactory
+from txtai.archive import ArchiveFactory, Compress
 
 # pylint: disable = C0411
 from utils import Utils
 
 
-class TestCompress(unittest.TestCase):
+class TestArchive(unittest.TestCase):
     """
-    Compress tests.
+    Archive tests.
     """
 
     def testInvalidTar(self):
@@ -29,11 +29,11 @@ class TestCompress(unittest.TestCase):
         with tarfile.open(path, "w") as tar:
             tar.add(Utils.PATH, arcname="..")
 
-        compress = CompressFactory.create("tar")
+        archive = ArchiveFactory.create(path)
 
         # Validate error is thrown for file
         with self.assertRaises(IOError):
-            compress.unpack(path, path)
+            archive.load(path, "tar")
 
     def testInvalidZip(self):
         """
@@ -44,11 +44,11 @@ class TestCompress(unittest.TestCase):
         with ZipFile(path, "w", ZIP_DEFLATED) as zfile:
             zfile.write(Utils.PATH + "/article.pdf", arcname="../article.pdf")
 
-        compress = CompressFactory.create("zip")
+        archive = ArchiveFactory.create(path)
 
         # Validate error is thrown for file
         with self.assertRaises(IOError):
-            compress.unpack(path, path)
+            archive.load(path, "zip")
 
     def testNotImplemented(self):
         """

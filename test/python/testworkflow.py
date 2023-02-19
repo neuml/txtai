@@ -63,7 +63,7 @@ class TestWorkflow(unittest.TestCase):
 
     def testBaseWorkflow(self):
         """
-        Tests a basic workflow
+        Test a basic workflow
         """
 
         translate = Translation()
@@ -77,7 +77,7 @@ class TestWorkflow(unittest.TestCase):
 
     def testChainWorkflow(self):
         """
-        Tests a chain of workflows
+        Test a chain of workflows
         """
 
         workflow1 = Workflow([Task(lambda x: [y * 2 for y in x])])
@@ -89,7 +89,7 @@ class TestWorkflow(unittest.TestCase):
     @unittest.skipIf(os.name == "nt", "testComplexWorkflow skipped on Windows")
     def testComplexWorkflow(self):
         """
-        Tests a complex workflow
+        Test a complex workflow
         """
 
         textractor = Textractor(paragraphs=True, minlength=150, join=True)
@@ -130,7 +130,7 @@ class TestWorkflow(unittest.TestCase):
 
     def testConcurrentWorkflow(self):
         """
-        Tests running concurrent task actions
+        Test running concurrent task actions
         """
 
         nop = Nop()
@@ -149,7 +149,7 @@ class TestWorkflow(unittest.TestCase):
 
     def testConsoleWorkflow(self):
         """
-        Tests a console task
+        Test a console task
         """
 
         # Excel export
@@ -163,7 +163,7 @@ class TestWorkflow(unittest.TestCase):
 
     def testExportWorkflow(self):
         """
-        Tests an export task
+        Test an export task
         """
 
         # Excel export
@@ -189,7 +189,7 @@ class TestWorkflow(unittest.TestCase):
 
     def testExtractWorkflow(self):
         """
-        Tests column extraction tasks
+        Test column extraction tasks
         """
 
         workflow = Workflow([Task(lambda x: x, unpack=False, column=0)], batch=1)
@@ -205,7 +205,7 @@ class TestWorkflow(unittest.TestCase):
 
     def testImageWorkflow(self):
         """
-        Tests an image task
+        Test an image task
         """
 
         workflow = Workflow([ImageTask()])
@@ -216,7 +216,7 @@ class TestWorkflow(unittest.TestCase):
 
     def testInvalidWorkflow(self):
         """
-        Tests task with invalid parameters
+        Test task with invalid parameters
         """
 
         with self.assertRaises(TypeError):
@@ -224,7 +224,7 @@ class TestWorkflow(unittest.TestCase):
 
     def testMergeWorkflow(self):
         """
-        Tests merge tasks
+        Test merge tasks
         """
 
         task = Task([lambda x: [pow(y, 2) for y in x], lambda x: [pow(y, 3) for y in x]], merge="hstack")
@@ -281,7 +281,7 @@ class TestWorkflow(unittest.TestCase):
 
     def testNumpyWorkflow(self):
         """
-        Tests a numpy workflow
+        Test a numpy workflow
         """
 
         task = Task([lambda x: np.power(x, 2), lambda x: np.power(x, 3)], merge="hstack")
@@ -303,7 +303,7 @@ class TestWorkflow(unittest.TestCase):
 
     def testRetrieveWorkflow(self):
         """
-        Tests a retrieve task
+        Test a retrieve task
         """
 
         # Test retrieve with generated temporary directory
@@ -318,7 +318,7 @@ class TestWorkflow(unittest.TestCase):
 
     def testScheduleWorkflow(self):
         """
-        Tests workflow schedules
+        Test workflow schedules
         """
 
         # Test workflow schedule with Python
@@ -351,7 +351,7 @@ class TestWorkflow(unittest.TestCase):
 
     def testScheduleErrorWorkflow(self):
         """
-        Tests workflow schedules with errors
+        Test workflow schedules with errors
         """
 
         def action(elements):
@@ -366,7 +366,7 @@ class TestWorkflow(unittest.TestCase):
 
     def testStorageWorkflow(self):
         """
-        Tests a storage task
+        Test a storage task
         """
 
         workflow = Workflow([StorageTask()])
@@ -377,7 +377,7 @@ class TestWorkflow(unittest.TestCase):
 
     def testTensorTransformWorkflow(self):
         """
-        Tests a tensor workflow with list transformations
+        Test a tensor workflow with list transformations
         """
 
         # Test one-one list transformation
@@ -394,7 +394,7 @@ class TestWorkflow(unittest.TestCase):
 
     def testTorchWorkflow(self):
         """
-        Tests a torch workflow
+        Test a torch workflow
         """
 
         # pylint: disable=E1101,E1102
@@ -417,7 +417,7 @@ class TestWorkflow(unittest.TestCase):
 
     def testYamlFunctionWorkflow(self):
         """
-        Tests YAML workflow with a function action
+        Test YAML workflow with a function action
         """
 
         # Create function and add to module
@@ -438,7 +438,7 @@ class TestWorkflow(unittest.TestCase):
 
     def testYamlIndexWorkflow(self):
         """
-        Tests reading a YAML index workflow in Python.
+        Test reading a YAML index workflow in Python.
         """
 
         app = API(self.config)
@@ -480,7 +480,7 @@ class TestWorkflow(unittest.TestCase):
 
     def testYamlWorkflowTask(self):
         """
-        Tests YAML workflow with a workflow task
+        Test YAML workflow with a workflow task
         """
 
         # Create function and add to module
@@ -513,7 +513,7 @@ class TestWorkflow(unittest.TestCase):
 
     def testYamlError(self):
         """
-        Tests reading a YAML workflow with errors.
+        Test reading a YAML workflow with errors.
         """
 
         # Read from string

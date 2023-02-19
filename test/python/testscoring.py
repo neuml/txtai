@@ -218,7 +218,7 @@ class TestScoring(unittest.TestCase):
 
     def empty(self, config):
         """
-        Tests scoring index properly handles an index call when no data present.
+        Test scoring index properly handles an index call when no data present.
 
         Args:
             config: scoring config

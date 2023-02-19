@@ -6,10 +6,7 @@ import contextlib
 import io
 import os
 import tempfile
-import time
 import unittest
-
-from libcloud.storage.types import ContainerDoesNotExistError, ObjectDoesNotExistError
 
 from txtai.embeddings import Embeddings
 from txtai.database import Database, SQLError
@@ -50,7 +47,7 @@ class TestEmbeddings(unittest.TestCase):
 
     def testArchive(self):
         """
-        Tests embeddings index archiving
+        Test embeddings index archiving
         """
 
         for extension in ["tar.bz2", "tar.gz", "tar.xz", "zip"]:
@@ -72,46 +69,9 @@ class TestEmbeddings(unittest.TestCase):
             self.embeddings.upsert([(0, "Looking out into the dreadful abyss", None)])
             self.assertEqual(self.embeddings.count(), len(self.data))
 
-    def testArchiveCloud(self):
-        """
-        Tests embeddings index archiving with cloud storage
-        """
-
-        # Create an index for the list of text
-        self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
-
-        # Generate temp file path
-        index = os.path.join(tempfile.gettempdir(), "cloud.tar.gz")
-
-        # Test save with local cloud provider
-        cloud = {"provider": "local", "container": f"cloud.{time.time()}", "key": tempfile.gettempdir()}
-
-        # Test exists handles missing cloud storage object
-        self.assertFalse(self.embeddings.exists(index, cloud))
-
-        # Test exception raised when trying to load index and doesn't exist in cloud storage
-        with self.assertRaises((ContainerDoesNotExistError, ObjectDoesNotExistError)):
-            self.embeddings.load(index, cloud)
-
-        # Save index
-        self.embeddings.save(index, cloud)
-
-        # Test object exists in cloud storage
-        self.assertTrue(self.embeddings.exists(index, cloud))
-
-        # Test object exists locally
-        self.assertTrue(self.embeddings.exists(index))
-
-        # Test index can be reloaded
-        self.embeddings.load(index, cloud)
-
-        # Search for best match
-        result = self.embeddings.search("feel good story", 1)[0]
-        self.assertEqual(result["text"], self.data[4])
-
     def testClose(self):
         """
-        Tests embeddings close
+        Test embeddings close
         """
 
         embeddings = None
@@ -290,6 +250,22 @@ class TestEmbeddings(unittest.TestCase):
 
         self.assertIn("txtai", output.getvalue())
 
+    def testInstructions(self):
+        """
+        Test indexing with instruction prefixes.
+        """
+
+        embeddings = Embeddings(
+            {"path": "sentence-transformers/nli-mpnet-base-v2", "content": True, "instructions": {"query": "query: ", "data": "passage: "}}
+        )
+
+        embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        # Search for best match
+        result = embeddings.search("feel good story", 1)[0]
+
+        self.assertEqual(result["text"], self.data[4])
+
     def testInvalidData(self):
         """
         Test invalid JSON data
@@ -298,6 +274,33 @@ class TestEmbeddings(unittest.TestCase):
         # Test invalid JSON value
         with self.assertRaises(ValueError):
             self.embeddings.index([(0, {"text": "This is a test", "flag": float("NaN")}, None)])
+
+    def testJSON(self):
+        """
+        Test JSON configuration
+        """
+
+        embeddings = Embeddings(
+            {
+                "format": "json",
+                "path": "sentence-transformers/nli-mpnet-base-v2",
+                "content": True,
+            }
+        )
+
+        embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        # Generate temp file path
+        index = os.path.join(tempfile.gettempdir(), "embeddings.json")
+
+        embeddings.save(index)
+
+        # Check that config.json exists
+        self.assertTrue(os.path.exists(os.path.join(index, "config.json")))
+
+        # Check that index can be reloaded
+        embeddings.load(index)
+        self.assertEqual(embeddings.count(), 6)
 
     def testMultiData(self):
         """
@@ -321,7 +324,7 @@ class TestEmbeddings(unittest.TestCase):
 
     def testMultiSave(self):
         """
-        Tests multiple successive saves
+        Test multiple successive saves
         """
 
         # Create an index for the list of text
@@ -355,7 +358,7 @@ class TestEmbeddings(unittest.TestCase):
 
     def testNotImplemented(self):
         """
-        Tests exceptions for non-implemented methods
+        Test exceptions for non-implemented methods
         """
 
         database = Database({})
@@ -376,7 +379,7 @@ class TestEmbeddings(unittest.TestCase):
         Test index
         """
 
-        embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2", "content": True, "query": {"path": "NeuML/t5-small-txtsql"}})
+        embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2", "content": True, "query": {"path": "neuml/t5-small-txtsql"}})
 
         # Create an index for the list of text
         embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])

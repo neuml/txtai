@@ -25,7 +25,7 @@ class TestTabular(unittest.TestCase):
 
     def testContent(self):
         """
-        Tests parsing additional content
+        Test parsing additional content
         """
 
         tabular = Tabular("id", ["text"], True)
@@ -53,7 +53,7 @@ class TestTabular(unittest.TestCase):
 
     def testCSV(self):
         """
-        Tests parsing a CSV file
+        Test parsing a CSV file
         """
 
         rows = self.tabular([Utils.PATH + "/tabular.csv"])
@@ -64,7 +64,7 @@ class TestTabular(unittest.TestCase):
 
     def testDict(self):
         """
-        Tests parsing a dict
+        Test parsing a dict
         """
 
         rows = self.tabular([{"id": 0, "text": "This is a test"}])
@@ -75,7 +75,7 @@ class TestTabular(unittest.TestCase):
 
     def testList(self):
         """
-        Tests parsing a list
+        Test parsing a list
         """
 
         rows = self.tabular([[{"id": 0, "text": "This is a test"}]])
@@ -86,7 +86,7 @@ class TestTabular(unittest.TestCase):
 
     def testMissingColumns(self):
         """
-        Tests rows with uneven or missing columns
+        Test rows with uneven or missing columns
         """
 
         tabular = Tabular("id", ["text"], True)
@@ -101,7 +101,7 @@ class TestTabular(unittest.TestCase):
 
     def testNoColumns(self):
         """
-        Tests creating text without specifying columns
+        Test creating text without specifying columns
         """
 
         tabular = Tabular("id")

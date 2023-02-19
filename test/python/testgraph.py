@@ -156,7 +156,7 @@ class TestGraph(unittest.TestCase):
 
     def testNotImplemented(self):
         """
-        Tests exceptions for non-implemented methods
+        Test exceptions for non-implemented methods
         """
 
         graph = Graph({})
@@ -206,7 +206,7 @@ class TestGraph(unittest.TestCase):
 
     def testSimple(self):
         """
-        Tests creating a simple graph
+        Test creating a simple graph
         """
 
         graph = GraphFactory.create({"topics": {}})

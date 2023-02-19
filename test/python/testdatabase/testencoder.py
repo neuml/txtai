@@ -1,5 +1,5 @@
 """
-Tests encoding/decoding database objects
+Test encoding/decoding database objects
 """
 
 import glob
@@ -48,7 +48,7 @@ class TestEncoder(unittest.TestCase):
 
     def testDefault(self):
         """
-        Tests an index with default encoder
+        Test an index with default encoder
         """
 
         try:
@@ -67,7 +67,7 @@ class TestEncoder(unittest.TestCase):
 
     def testImages(self):
         """
-        Tests an index with image encoder
+        Test an index with image encoder
         """
 
         # Create an index for the list of images
@@ -80,7 +80,7 @@ class TestEncoder(unittest.TestCase):
 
     def testPickle(self):
         """
-        Tests an index with pickle encoder
+        Test an index with pickle encoder
         """
 
         try:
@@ -99,7 +99,7 @@ class TestEncoder(unittest.TestCase):
 
     def testReindex(self):
         """
-        Tests reindex with objects
+        Test reindex with objects
         """
 
         # Create an index for the list of images
@@ -115,7 +115,7 @@ class TestEncoder(unittest.TestCase):
 
     def testReindexFunction(self):
         """
-        Tests reindex with objects and a function
+        Test reindex with objects and a function
         """
 
         try:

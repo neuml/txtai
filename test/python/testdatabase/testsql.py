@@ -9,7 +9,7 @@ from txtai.database import SQL, SQLError, SQLite
 
 class TestSQL(unittest.TestCase):
     """
-    Tests SQL parsing and generation.
+    Test SQL parsing and generation.
     """
 
     @classmethod
@@ -140,7 +140,7 @@ class TestSQL(unittest.TestCase):
 
     def testIsSQL(self):
         """
-        Tests SQL detection method.
+        Test SQL detection method.
         """
 
         self.assertTrue(self.sql.issql("select text from txtai where id = 1"))
@@ -238,7 +238,7 @@ class TestSQL(unittest.TestCase):
 
     def testUpper(self):
         """
-        Tests SQL statements are case insensitive.
+        Test SQL statements are case insensitive.
         """
 
         self.assertSql("groupby", "SELECT * FROM TXTAI WHERE a = 1 GROUP BY id", "s.id")

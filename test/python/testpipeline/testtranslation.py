@@ -15,7 +15,7 @@ class TestTranslation(unittest.TestCase):
 
     def testLongTranslation(self):
         """
-        Tests a translation longer than max tokenization length
+        Test a translation longer than max tokenization length
         """
 
         translate = Translation()
@@ -29,7 +29,7 @@ class TestTranslation(unittest.TestCase):
     @unittest.skipIf(os.name == "nt", "M2M100 skipped on Windows")
     def testM2M100Translation(self):
         """
-        Tests a translation using M2M100 models
+        Test a translation using M2M100 models
         """
 
         translate = Translation()
@@ -41,7 +41,7 @@ class TestTranslation(unittest.TestCase):
 
     def testMarianTranslation(self):
         """
-        Tests a translation using Marian models
+        Test a translation using Marian models
         """
 
         translate = Translation()
@@ -66,7 +66,7 @@ class TestTranslation(unittest.TestCase):
 
     def testNoModel(self):
         """
-        Tests no known available model found
+        Test no known available model found
         """
 
         translate = Translation()
@@ -74,7 +74,7 @@ class TestTranslation(unittest.TestCase):
 
     def testNoTranslation(self):
         """
-        Tests translation skipped when text already in destination language
+        Test translation skipped when text already in destination language
         """
 
         translate = Translation()
@@ -87,7 +87,7 @@ class TestTranslation(unittest.TestCase):
 
     def testTranslationWithShowmodels(self):
         """
-        Tests a translation using Marian models and showmodels flag to return
+        Test a translation using Marian models and showmodels flag to return
         model and language.
         """
 

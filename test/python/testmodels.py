@@ -17,7 +17,7 @@ class TestModels(unittest.TestCase):
     @patch("torch.cuda.is_available")
     def testDeviceid(self, cuda):
         """
-        Tests the deviceid method
+        Test the deviceid method
         """
 
         cuda.return_value = True

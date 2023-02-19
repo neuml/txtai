@@ -17,7 +17,7 @@ class TestTextractor(unittest.TestCase):
 
     def testBeautifulSoup(self):
         """
-        Tests text extraction using Beautiful Soup
+        Test text extraction using Beautiful Soup
         """
 
         textractor = Textractor(tika=False)
@@ -26,7 +26,7 @@ class TestTextractor(unittest.TestCase):
 
     def testCheckJava(self):
         """
-        Tests the checkjava method
+        Test the checkjava method
         """
 
         textractor = Textractor()
@@ -34,7 +34,7 @@ class TestTextractor(unittest.TestCase):
 
     def testLines(self):
         """
-        Tests extraction to lines
+        Test extraction to lines
         """
 
         textractor = Textractor(lines=True)
@@ -47,7 +47,7 @@ class TestTextractor(unittest.TestCase):
 
     def testParagraphs(self):
         """
-        Tests extraction to paragraphs
+        Test extraction to paragraphs
         """
 
         textractor = Textractor(paragraphs=True)
@@ -60,7 +60,7 @@ class TestTextractor(unittest.TestCase):
 
     def testSentences(self):
         """
-        Tests extraction to sentences
+        Test extraction to sentences
         """
 
         textractor = Textractor(sentences=True)
@@ -73,7 +73,7 @@ class TestTextractor(unittest.TestCase):
 
     def testSingle(self):
         """
-        Tests a single extraction with no tokenization of the results
+        Test a single extraction with no tokenization of the results
         """
 
         textractor = Textractor()

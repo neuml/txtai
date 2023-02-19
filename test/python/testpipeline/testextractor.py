@@ -71,14 +71,14 @@ class TestExtractor(unittest.TestCase):
 
     def testEmptyQuery(self):
         """
-        Tests an empty extractor queries list
+        Test an empty extractor queries list
         """
 
         self.assertEqual(self.extractor.query(None, None), [])
 
     def testGeneration(self):
         """
-        Tests support for generator models
+        Test support for generator models
         """
 
         extractor = Extractor(self.embeddings, "facebook/opt-125m")
@@ -179,7 +179,7 @@ class TestExtractor(unittest.TestCase):
 
     def testTasks(self):
         """
-        Tests loading models with task parameter
+        Test loading models with task parameter
         """
 
         for task, model in [

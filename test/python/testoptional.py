@@ -96,10 +96,10 @@ class TestOptional(unittest.TestCase):
         Test missing cloud dependencies
         """
 
-        from txtai.embeddings import Cloud
+        from txtai.cloud import ObjectStorage
 
         with self.assertRaises(ImportError):
-            Cloud(None)
+            ObjectStorage(None)
 
     def testDatabase(self):
         """

@@ -18,7 +18,7 @@ class TestQuantization(unittest.TestCase):
     @unittest.skipIf(platform.system() == "Darwin", "Quantized models not supported on macOS")
     def testModel(self):
         """
-        Tests quantizing a model through HFModel.
+        Test quantizing a model through HFModel.
         """
 
         model = HFModel(quantize=True, gpu=False)
@@ -28,7 +28,7 @@ class TestQuantization(unittest.TestCase):
     @unittest.skipIf(platform.system() == "Darwin", "Quantized models not supported on macOS")
     def testPipeline(self):
         """
-        Tests quantizing a model through HFPipeline.
+        Test quantizing a model through HFPipeline.
         """
 
         pipeline = HFPipeline("text-classification", "google/bert_uncased_L-2_H-128_A-2", True, False)

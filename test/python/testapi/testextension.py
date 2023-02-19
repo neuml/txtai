@@ -100,7 +100,7 @@ class TestExtension(unittest.TestCase):
 
     def testEmpty(self):
         """
-        Tests an empty extension
+        Test an empty extension
         """
 
         extension = Extension()
@@ -108,7 +108,7 @@ class TestExtension(unittest.TestCase):
 
     def testExtension(self):
         """
-        Tests a pipeline extension
+        Test a pipeline extension
         """
 
         text = self.client.get("sample?text=Test%20String").json()

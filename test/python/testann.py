@@ -59,7 +59,7 @@ class TestANN(unittest.TestCase):
         """
 
         # Test with custom settings
-        self.runTests("faiss", {"faiss": {"nprobe": 2, "components": "PCA16,IDMap,SQ8"}}, False)
+        self.runTests("faiss", {"faiss": {"nprobe": 2, "components": "PCA16,IDMap,SQ8", "sample": 1.0}}, False)
 
     @unittest.skipIf(os.name == "nt", "mmap not supported on Windows")
     def testFaissMmap(self):
@@ -87,7 +87,7 @@ class TestANN(unittest.TestCase):
 
     def testNotImplemented(self):
         """
-        Tests exceptions for non-implemented methods
+        Test exceptions for non-implemented methods
         """
 
         ann = ANN({})

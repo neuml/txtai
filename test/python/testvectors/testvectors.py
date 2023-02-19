@@ -14,7 +14,7 @@ class TestVectors(unittest.TestCase):
 
     def testNotImplemented(self):
         """
-        Tests exceptions for non-implemented methods
+        Test exceptions for non-implemented methods
         """
 
         vectors = Vectors(None, None)

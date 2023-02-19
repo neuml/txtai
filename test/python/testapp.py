@@ -14,7 +14,7 @@ class TestApp(unittest.TestCase):
 
     def testConfig(self):
         """
-        Tests a file not found config exception
+        Test a file not found config exception
         """
 
         with self.assertRaises(FileNotFoundError):

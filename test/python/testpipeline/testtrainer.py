@@ -40,7 +40,7 @@ class TestTrainer(unittest.TestCase):
 
     def testCLM(self):
         """
-        Tests training a model with causal language modeling.
+        Test training a model with causal language modeling.
         """
 
         trainer = HFTrainer()
@@ -179,14 +179,14 @@ class TestTrainer(unittest.TestCase):
 
     def testEmpty(self):
         """
-        Tests an empty training data object
+        Test an empty training data object
         """
 
         self.assertIsNone(Data(None, None, None).process(None))
 
     def testMLM(self):
         """
-        Tests training a model with masked language modeling.
+        Test training a model with masked language modeling.
         """
 
         trainer = HFTrainer()
@@ -197,7 +197,7 @@ class TestTrainer(unittest.TestCase):
 
     def testMultiLabel(self):
         """
-        Tests training model with labels provided as a list
+        Test training model with labels provided as a list
         """
 
         data = []
@@ -212,7 +212,7 @@ class TestTrainer(unittest.TestCase):
 
     def testQA(self):
         """
-        Tests training a QA model
+        Test training a QA model
         """
 
         # Training data
@@ -234,7 +234,7 @@ class TestTrainer(unittest.TestCase):
 
     def testRegression(self):
         """
-        Tests training a model with a regression (continuous) output
+        Test training a model with a regression (continuous) output
         """
 
         data = []
@@ -251,7 +251,7 @@ class TestTrainer(unittest.TestCase):
 
     def testRTD(self):
         """
-        Tests training a language model with replaced token detection
+        Test training a language model with replaced token detection
         """
 
         # Save directory
@@ -269,7 +269,7 @@ class TestTrainer(unittest.TestCase):
 
     def testSeqSeq(self):
         """
-        Tests training a sequence-sequence model
+        Test training a sequence-sequence model
         """
 
         data = [
