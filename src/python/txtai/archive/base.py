@@ -6,14 +6,13 @@ import os
 
 from tempfile import TemporaryDirectory
 
-from ..compress import CompressFactory
-
-from .cloud import Cloud
+from .tar import Tar
+from .zip import Zip
 
 
 class Archive:
     """
-    Methods to load and save archive files.
+    Base class for archive instances.
     """
 
     def __init__(self, directory=None):
@@ -37,7 +36,7 @@ class Archive:
             True if the path ends with an archive extension, False otherwise
         """
 
-        return any(path.lower().endswith(extension) for extension in [".tar.bz2", ".tar.gz", ".tar.xz", ".zip"])
+        return path and any(path.lower().endswith(extension) for extension in [".tar.bz2", ".tar.gz", ".tar.xz", ".zip"])
 
     def path(self):
         """
@@ -53,53 +52,28 @@ class Archive:
             # pylint: disable=R1732
             self.directory = TemporaryDirectory()
 
-        return self.directory.name
+        return self.directory.name if isinstance(self.directory, TemporaryDirectory) else self.directory
 
-    def exists(self, path, config):
-        """
-        Checks if file at path exists.
-
-        Args:
-            path: path to archive file
-            config: additional configuration
-
-        Returns:
-            True if path exists, False otherwise
-        """
-
-        # Check if archive exists in cloud storage
-        cloud = self.cloud(config)
-        if cloud:
-            return cloud.exists(path)
-
-        # Check if archive exists locally
-        return os.path.exists(path)
-
-    def load(self, path, config):
+    def load(self, path, compression=None):
         """
         Extracts file at path to archive working directory.
 
         Args:
             path: path to archive file
-            config: additional configuration
+            compression: compression format, infers from path if not provided
         """
 
-        # Retrieve archive from cloud storage, if necessary
-        cloud = self.cloud(config)
-        if cloud:
-            cloud.load(path)
-
         # Unpack compressed file
-        compress = CompressFactory().create(path)
+        compress = self.create(path, compression)
         compress.unpack(path, self.path())
 
-    def save(self, path, config):
+    def save(self, path, compression=None):
         """
         Archives files in archive working directory to file at path.
 
         Args:
             path: path to archive file
-            config: additional configuration
+            compression: compression format, infers from path if not provided
         """
 
         # Create output directory, if necessary
@@ -108,24 +82,23 @@ class Archive:
             os.makedirs(output, exist_ok=True)
 
         # Pack into compressed file
-        compress = CompressFactory().create(path)
+        compress = self.create(path, compression)
         compress.pack(self.path(), path)
 
-        # Save file to cloud storage, if necessary
-        cloud = self.cloud(config)
-        if cloud:
-            cloud.save(path)
-
-    def cloud(self, config):
+    def create(self, path, compression):
         """
-        Gets a cloud storage instance, if specified in config.
+        Method to construct a Compress instance.
 
         Args:
-            config: cloud storage configuration
+            path: file path
+            compression: compression format, infers using file extension if not provided
 
         Returns:
-            Cloud storage instance
+            Compress
         """
 
-        # Create cloud storage connection, if necessary
-        return Cloud(config) if config and "provider" in config else None
+        # Infer compression format from path if not provided
+        compression = compression if compression else path.lower().split(".")[-1]
+
+        # Create compression instance
+        return Zip() if compression == "zip" else Tar()

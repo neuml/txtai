@@ -5,7 +5,7 @@ Tar module
 import os
 import tarfile
 
-from .base import Compress
+from .compress import Compress
 
 
 class Tar(Compress):

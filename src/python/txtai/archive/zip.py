@@ -6,12 +6,12 @@ import os
 
 from zipfile import ZipFile, ZIP_DEFLATED
 
-from .base import Compress
+from .compress import Compress
 
 
 class Zip(Compress):
     """
-    Zip compression
+    Zip archival with compression
     """
 
     def pack(self, path, output):
