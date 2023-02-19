@@ -27,7 +27,7 @@ class TextToSpeech(Pipeline):
     Generates speech from text
     """
 
-    def __init__(self, path="NeuML/ljspeech-jets-onnx", maxtokens=512):
+    def __init__(self, path="neuml/ljspeech-jets-onnx", maxtokens=512):
         """
         Creates a new TextToSpeech pipeline.
 
