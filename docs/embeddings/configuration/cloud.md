@@ -56,14 +56,14 @@ port: int
 
 Optional server port. Set when using a local cloud storage server.
 
-## token
+### token
 ```yaml
 token: string
 ```
 
 Optional temporary session token
 
-## region
+### region
 ```yaml
 region: string
 ```
