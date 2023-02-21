@@ -104,18 +104,32 @@ def delete(ids: List = Body(...)):
     except ReadOnlyError as e:
         raise HTTPException(status_code=403, detail=e.args[0]) from e
 
+@router.get("/save")
+def save(path: str, request: Request):
+    """
+    Saves the index to the given path.
+
+    Args:
+        path: path that the index content to be saved to
+
+    """
+
+    return application.get().save(path)
+
+@router.get("/load")
+def load(path: str, request: Request):
+    """
+    Loads the index from the given path.
+
+    Args:
+        path: path that the index content to be loaded from
+
+    """
+
+    return application.get().load(path)
 
 @router.get("/count")
 def count():
-    """
-    Deletes from an embeddings index. Returns list of ids deleted.
-
-    Args:
-        ids: list of ids to delete
-
-    Returns:
-        ids deleted
-    """
 
     return application.get().count()
 

@@ -121,3 +121,23 @@ class API(Application):
 
         # Return between 1 and 250 results, defaults to 10
         return max(1, min(250, int(limit) if limit else 10))
+
+    def save(self, path):
+        """
+        Saves the index to the given path.
+
+        Args:
+            path: path that the index content to be saved to
+
+        """
+        return super().save(path)
+
+    def load(self, path):
+        """
+        Loads the index from the given path.
+
+        Args:
+            path: path that the index content to be loaded from
+
+        """
+        return super().load(path)

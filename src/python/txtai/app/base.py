@@ -528,6 +528,32 @@ class Application:
 
         return None
 
+    def save(self, path):
+        """
+        Saves the index to the given path.
+
+        Args:
+            path: path that the index content to be saved to
+
+        """
+        if self.embeddings:
+                return self.embeddings.save(path)
+
+        return None
+
+    def load(self, path):
+        """
+        Loads the index from the given path.
+
+        Args:
+            path: path that the index content to be loaded from
+
+        """
+        if self.embeddings:
+                return self.embeddings.load(path)
+
+        return None
+
     def transform(self, text):
         """
         Transforms text into embeddings arrays.
