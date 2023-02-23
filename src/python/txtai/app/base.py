@@ -107,6 +107,10 @@ class Application:
             if pipeline in self.config:
                 config = self.config[pipeline] if self.config[pipeline] else {}
 
+                # Add application reference, if requested
+                if "application" in config:
+                    config["application"] = self
+
                 # Custom pipeline parameters
                 if pipeline == "extractor":
                     config["similarity"] = self.embeddings
@@ -273,8 +277,6 @@ class Application:
         a list of {id: value, score: value} sorted by highest score, where id is the
         document id in the embeddings model.
 
-        Downstream applications can override this method to provide enriched search results.
-
         Args:
             query: query text
             limit: maximum results, used if request is None
@@ -321,8 +323,6 @@ class Application:
     def add(self, documents):
         """
         Adds a batch of documents for indexing.
-
-        Downstream applications can override this method to also store full documents in an external system.
 
         Args:
             documents: list of {id: value, text: value, tags: value}
