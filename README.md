@@ -207,11 +207,11 @@ Series of example applications with txtai. Links to hosted versions on [Hugging 
 | [Wiki search](https://github.com/neuml/txtai/blob/master/examples/wiki.py) | Wikipedia search application. Queries Wikipedia API and summarizes the top result. |[🤗](https://hf.co/spaces/NeuML/wikisummary)|
 | [Workflow builder](https://github.com/neuml/txtai/blob/master/examples/workflows.py) | Build and execute txtai workflows. Connect summarization, text extraction, transcription, translation and similarity search pipelines together to run unified workflows. |[🤗](https://hf.co/spaces/NeuML/txtai)|
 
-### Documentation
+## Documentation
 
 [Full documentation on txtai](https://neuml.github.io/txtai) including configuration settings for pipelines, workflows, indexing and the API.
 
-### Further Reading
+## Further Reading
 
 ![further](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/further.png)
 
@@ -225,6 +225,6 @@ Series of example applications with txtai. Links to hosted versions on [Hugging 
 - [Insights from the txtai console](https://medium.com/neuml/insights-from-the-txtai-console-d307c28e149e)
 - [The big and small of txtai](https://medium.com/neuml/the-big-and-small-of-txtai-4ca405c1b82)
 
-### Contributing
+## Contributing
 
 For those who would like to contribute to txtai, please see [this guide](https://github.com/neuml/.github/blob/master/CONTRIBUTING.md).
