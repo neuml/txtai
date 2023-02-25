@@ -80,8 +80,6 @@ class Extractor(Pipeline):
             # Convert dict to tuple
             queue = [tuple(row.get(x) for x in ["name", "query", "question", "snippet"]) for row in queue]
 
-        print(queue)
-
         # Rank texts by similarity for each query
         results = self.query([query for _, query, _, _ in queue], texts)
 
