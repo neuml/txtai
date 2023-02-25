@@ -114,16 +114,20 @@ class Translation(HFModel):
         ids = [x.modelId for x in HfApi().list_models(author="Helsinki-NLP")] if self.findmodels else []
         return set(ids)
 
-    def detect(self, texts):
+    def detect(self, texts, custom_detect=None):
         """
         Detects the language for each element in texts.
 
         Args:
             texts: list of text
+            custom_detect: A function to use custom model to detect language
 
         Returns:
             list of languages
         """
+
+        if custom_detect is not None:
+            return custom_detect(texts)
 
         if not FASTTEXT:
             raise ImportError('Language detection is not available - install "pipeline" extra to enable')
