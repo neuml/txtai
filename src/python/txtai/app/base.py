@@ -112,8 +112,9 @@ class Application:
                     config["application"] = self
 
                 # Custom pipeline parameters
-                if pipeline == "extractor":
-                    config["similarity"] = self.embeddings
+                if pipeline == "extractor" and "similarity" not in config:
+                    # Add placeholder, will be set to embeddings index once initialized
+                    config["similarity"] = None
                 elif pipeline == "similarity" and "path" not in config and "labels" in self.pipelines:
                     config["model"] = self.pipelines["labels"]
 
@@ -197,6 +198,11 @@ class Application:
         elif config:
             # Initialize empty embeddings
             self.embeddings = Embeddings(config)
+
+        # If an extractor pipeline is defined and the similarity attribute is None, set to embeddings index
+        extractor = self.pipelines.get("extractor")
+        if extractor and not extractor.similarity:
+            extractor.similarity = self.embeddings
 
     def resolve(self, task):
         """
@@ -574,14 +580,11 @@ class Application:
         """
 
         if self.embeddings and "extractor" in self.pipelines:
-            # Set similarity function
+            # Get extractor instance
             extractor = self.pipelines["extractor"]
-            if not extractor.similarity:
-                extractor.similarity = self.embeddings
 
-            # Convert queue to tuples
-            queue = [(x["name"], x["query"], x.get("question"), x.get("snippet")) for x in queue]
-            return [{"name": name, "answer": answer} for name, answer in extractor(queue, texts)]
+            # Run extractor and return results as dicts
+            return [{"name": name, "answer": answer} for name, answer in extractor(queue, texts, False)]
 
         return None
 

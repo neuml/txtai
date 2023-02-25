@@ -58,18 +58,29 @@ class Extractor(Pipeline):
         # Top n context matches to include for context
         self.context = context if context else 3
 
-    def __call__(self, queue, texts=None):
+    def __call__(self, queue, texts=None, flatten=None):
         """
         Finds answers to input questions. This method runs queries to finds the top n best matches and uses that as the context.
         A model is then run against the context for each input question, with the answer returned.
 
         Args:
-            queue: input question queue (name, query, question, snippet)
+            queue: input question queue (name, query, question, snippet), can be list of tuples or dicts
             texts: optional list of text for context, otherwise runs embeddings search
+            flatten: flatten output to a list of answers, defaults to None
 
         Returns:
-            list of (name, answer)
+            list of (name, answer) or a list of answers depending on flatten
         """
+
+        # Convert dictionary inputs to tuples
+        if isinstance(queue[0], dict):
+            # Default flatten to True if name not provided, False otherwise
+            flatten = flatten if flatten is not None else "name" not in queue[0]
+
+            # Convert dict to tuple
+            queue = [tuple(row.get(x) for x in ["name", "query", "question", "snippet"]) for row in queue]
+
+        print(queue)
 
         # Rank texts by similarity for each query
         results = self.query([query for _, query, _, _ in queue], texts)
@@ -88,7 +99,8 @@ class Extractor(Pipeline):
             snippets.append(snippet)
 
         # Run pipeline and return answers
-        return self.answers(names, questions, contexts, topns, snippets)
+        answers = self.answers(names, questions, contexts, topns, snippets)
+        return [answer for _, answer in answers] if flatten else answers
 
     def load(self, path, quantize, gpu, model, task):
         """
