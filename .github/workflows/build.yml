@@ -40,7 +40,7 @@ jobs:
       - name: Install dependencies - macOS
         run: |
           brew install libomp
-          pip install torch==1.12.1 torchvision==0.13.1 onnxruntime==1.13.1
+          pip install torch==1.12.1 torchvision==0.13.1
         if: matrix.os == 'macos-latest'
 
       - name: Install dependencies - Windows
