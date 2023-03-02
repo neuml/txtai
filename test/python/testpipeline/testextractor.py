@@ -86,7 +86,7 @@ class TestExtractor(unittest.TestCase):
 
         question = "How many home runs?"
 
-        answers = extractor([(question, question, question, True)], self.data)
+        answers = extractor([(question, question, question, False)], self.data)
         self.assertIsNotNone(answers)
 
     def testNoAnswer(self):
@@ -115,6 +115,23 @@ class TestExtractor(unittest.TestCase):
 
         answers = extractor([(question, question, question, True)], self.data)
         self.assertTrue(answers[0][1].startswith("Giants hit 3 HRs"))
+
+    def testOutputs(self):
+        """
+        Test output formatting rules
+        """
+
+        question = "How many home runs?"
+
+        # Test flatten to list of answers
+        extractor = Extractor(self.embeddings, "distilbert-base-cased-distilled-squad", True, output="flatten")
+        answers = extractor([(question, question, question, True)], self.data)
+        self.assertTrue(answers[0].startswith("Giants hit 3 HRs"))
+
+        # Test reference field
+        extractor = Extractor(self.embeddings, "distilbert-base-cased-distilled-squad", True, output="reference")
+        answers = extractor([(question, question, question, True)], self.data)
+        self.assertTrue(self.data[answers[0][2]].startswith("Giants hit 3 HRs"))
 
     def testSearch(self):
         """
@@ -145,7 +162,7 @@ class TestExtractor(unittest.TestCase):
             Context:
         """
 
-        answers = extractor([("prompt", prompt, prompt, True)], self.data)
+        answers = extractor([("prompt", prompt, prompt, False)], self.data)
         self.assertEqual(answers[0][1], "3")
 
     def testSimilarity(self):

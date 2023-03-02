@@ -10,7 +10,7 @@ from .file import Task
 class TemplateTask(Task):
     """
     Task that generates text from a template and task inputs. Templates can be used to prepare data for a number of tasks
-    including generating large languge model (LLM) prompts.
+    including generating large language model (LLM) prompts.
     """
 
     def register(self, template=None, rules=None, strict=True):

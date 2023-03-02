@@ -16,7 +16,19 @@ import torch
 from txtai.api import API
 from txtai.embeddings import Documents, Embeddings
 from txtai.pipeline import Nop, Segmentation, Summary, Translation, Textractor
-from txtai.workflow import Workflow, Task, ConsoleTask, ExportTask, FileTask, ImageTask, RetrieveTask, StorageTask, WorkflowTask
+from txtai.workflow import (
+    Workflow,
+    Task,
+    ConsoleTask,
+    ExportTask,
+    ExtractorTask,
+    FileTask,
+    ImageTask,
+    RetrieveTask,
+    StorageTask,
+    TemplateTask,
+    WorkflowTask,
+)
 
 # pylint: disable = C0411
 from utils import Utils
@@ -374,6 +386,65 @@ class TestWorkflow(unittest.TestCase):
         results = list(workflow(["local://" + Utils.PATH, "test string"]))
 
         self.assertEqual(len(results), 19)
+
+    def testTemplateInput(self):
+        """
+        Test template task input
+        """
+
+        workflow = Workflow([TemplateTask(template="This is a {text}")])
+
+        # Test with string inputs
+        results = list(workflow(["prompt"]))
+        self.assertEqual(results[0], "This is a prompt")
+
+        # Test with dict inputs
+        results = list(workflow([{"text": "prompt"}]))
+        self.assertEqual(results[0], "This is a prompt")
+
+        # Test with tuple inputs
+        workflow = Workflow([TemplateTask(template="This is a {arg0}", unpack=False)])
+        results = list(workflow([("prompt",)]))
+        self.assertEqual(results[0], "This is a prompt")
+
+        # Test invalid inputs
+        with self.assertRaises(KeyError):
+            workflow = Workflow([TemplateTask(template="No variables")])
+            results = list(workflow([{"unused": "prompt"}]))
+
+        # Test no template
+        workflow = Workflow([TemplateTask()])
+        results = list(workflow(["prompt"]))
+        self.assertEqual(results[0], "prompt")
+
+    def testTemplateRules(self):
+        """
+        Test template task rules
+        """
+
+        # Test rule applied
+        workflow = Workflow([TemplateTask(template="This is a {text}", rules={"text": "Test skip"})])
+        results = list(workflow([{"text": "Test skip"}]))
+        self.assertEqual(results[0], "Test skip")
+
+        # Test rule not applied
+        results = list(workflow([{"text": "prompt"}]))
+        self.assertEqual(results[0], "This is a prompt")
+
+    def testTemplateExtractor(self):
+        """
+        Test extractor template task
+        """
+
+        # Test extractor outputs
+        workflow = Workflow([ExtractorTask(template="This is a {text}")])
+        results = list(workflow(["prompt"]))
+        self.assertEqual(results[0], {"query": "prompt", "question": "This is a prompt"})
+
+        # Test partial extractor outputs
+        workflow = Workflow([ExtractorTask(template="This is a {text}")])
+        results = list(workflow([{"query": "query", "question": "prompt"}]))
+        self.assertEqual(results[0], {"query": "query", "question": "This is a prompt"})
 
     def testTensorTransformWorkflow(self):
         """

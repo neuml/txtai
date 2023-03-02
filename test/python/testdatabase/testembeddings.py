@@ -469,6 +469,14 @@ class TestEmbeddings(unittest.TestCase):
         with self.assertRaises(SQLError):
             self.embeddings.search("select * from txtai where bad,query")
 
+    def testTerms(self):
+        """
+        Test extracting keyword terms from query
+        """
+
+        result = self.embeddings.terms("select * from txtai where similar('keyword terms')")
+        self.assertEqual(result, "keyword terms")
+
     def testUpsert(self):
         """
         Test upsert
