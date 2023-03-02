@@ -187,7 +187,7 @@ class WordVectors(Vectors):
         model = fasttext.train_unsupervised(data, dim=size, minCount=mincount)
 
         # Output file path
-        logging.info("Building %d dimension model", size)
+        logger.info("Building %d dimension model", size)
 
         # Output vectors in vec/txt format
         with open(path + ".txt", "w", encoding="utf-8") as output:
@@ -205,5 +205,5 @@ class WordVectors(Vectors):
                     output.write(word + data + "\n")
 
         # Build magnitude vectors database
-        logging.info("Converting vectors to magnitude format")
+        logger.info("Converting vectors to magnitude format")
         converter.convert(path + ".txt", path + ".magnitude", subword=True)
