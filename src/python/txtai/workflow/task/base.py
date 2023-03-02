@@ -2,11 +2,15 @@
 Task module
 """
 
+import logging
 import re
 import types
 
 import numpy as np
 import torch
+
+# Logging configuration
+logger = logging.getLogger(__name__)
 
 
 class Task:
@@ -207,7 +211,7 @@ class Task:
         """
 
         # Extract data from (id, data, tag) formatted elements
-        if (self.unpack or force) and isinstance(element, tuple):
+        if (self.unpack or force) and isinstance(element, tuple) and len(element) > 1:
             return element[1]
 
         return element
@@ -225,7 +229,7 @@ class Task:
         """
 
         # Pack data into (id, data, tag) formatted elements
-        if self.unpack and isinstance(element, tuple):
+        if self.unpack and isinstance(element, tuple) and len(element) > 1:
             # If new data is a (id, data, tag) tuple use that except for multi-action "hstack" merges which produce tuples
             if isinstance(data, tuple) and (len(self.action) <= 1 or self.merge != "hstack"):
                 return data
@@ -314,12 +318,18 @@ class Task:
             action outputs
         """
 
+        # Log inputs
+        logger.debug("Inputs: %s", inputs)
+
         # Execute action and get outputs
         outputs = action(inputs)
 
         # Consume generator output, if necessary
         if isinstance(outputs, types.GeneratorType):
             outputs = list(outputs)
+
+        # Log outputs
+        logger.debug("Outputs: %s", outputs)
 
         return outputs
 

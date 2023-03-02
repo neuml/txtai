@@ -20,7 +20,6 @@ from .execute import Execute
 
 # Logging configuration
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 
 class Workflow:
@@ -162,7 +161,8 @@ class Workflow:
         """
 
         # Run elements through each task
-        for task in self.tasks:
+        for x, task in enumerate(self.tasks):
+            logger.debug("Running Task #%d", x)
             elements = task(elements, executor)
 
         # Yield results processed by all tasks
