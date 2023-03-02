@@ -22,7 +22,18 @@ class Extractor(Pipeline):
 
     # pylint: disable=R0913
     def __init__(
-        self, similarity, path, quantize=False, gpu=True, model=None, tokenizer=None, minscore=None, mintokens=None, context=None, task=None
+        self,
+        similarity,
+        path,
+        quantize=False,
+        gpu=True,
+        model=None,
+        tokenizer=None,
+        minscore=None,
+        mintokens=None,
+        context=None,
+        task=None,
+        output="default",
     ):
         """
         Builds a new extractor.
@@ -38,6 +49,7 @@ class Extractor(Pipeline):
             mintokens: minimum number of tokens to include context match, defaults to None
             context: topn context matches to include, defaults to 3
             task: model task (language-generation, sequence-sequence or question-answering), defaults to auto-detect
+            output: output format, 'default' returns (name, answer), 'flatten' returns answers and 'reference' returns (name, answer, reference)
         """
 
         # Similarity instance
@@ -58,25 +70,27 @@ class Extractor(Pipeline):
         # Top n context matches to include for context
         self.context = context if context else 3
 
-    def __call__(self, queue, texts=None, flatten=None):
+        # Output format
+        self.output = output
+
+    def __call__(self, queue, texts=None):
         """
-        Finds answers to input questions. This method runs queries to finds the top n best matches and uses that as the context.
+        Finds answers to input questions. This method runs queries to find the top n best matches and uses that as the context.
         A model is then run against the context for each input question, with the answer returned.
 
         Args:
             queue: input question queue (name, query, question, snippet), can be list of tuples or dicts
             texts: optional list of text for context, otherwise runs embeddings search
-            flatten: flatten output to a list of answers, defaults to None
 
         Returns:
-            list of (name, answer) or a list of answers depending on flatten
+            list of answers matching input format (tuple or dict) containing fields as specified by output format
         """
+
+        # Save original queue format
+        inputs = queue
 
         # Convert dictionary inputs to tuples
         if isinstance(queue[0], dict):
-            # Default flatten to True if name not provided, False otherwise
-            flatten = flatten if flatten is not None else "name" not in queue[0]
-
             # Convert dict to tuple
             queue = [tuple(row.get(x) for x in ["name", "query", "question", "snippet"]) for row in queue]
 
@@ -84,21 +98,26 @@ class Extractor(Pipeline):
         results = self.query([query for _, query, _, _ in queue], texts)
 
         # Build question-context pairs
-        names, questions, contexts, topns, snippets = [], [], [], [], []
-        for x, (name, _, question, snippet) in enumerate(queue):
-            # Build context using top n best matching segments
+        names, queries, questions, contexts, topns, snippets = [], [], [], [], [], []
+        for x, (name, query, question, snippet) in enumerate(queue):
+            # Get top n best matching segments
             topn = sorted(results[x], key=lambda y: y[2], reverse=True)[: self.context]
-            context = " ".join([text for _, text, _ in sorted(topn, key=lambda y: y[0])])
+
+            # Generate context using ordering from texts, if available, otherwise order by score
+            context = " ".join(text for _, text, _ in (sorted(topn, key=lambda y: y[0]) if texts else topn))
 
             names.append(name)
+            queries.append(query)
             questions.append(question)
             contexts.append(context)
-            topns.append([text for _, text, _ in topn])
+            topns.append(topn)
             snippets.append(snippet)
 
         # Run pipeline and return answers
-        answers = self.answers(names, questions, contexts, topns, snippets)
-        return [answer for _, answer in answers] if flatten else answers
+        answers = self.answers(names, questions, contexts, [[text for _, text, _ in topn] for topn in topns], snippets)
+
+        # Apply output formatting to answers and return
+        return self.apply(inputs, queries, answers, topns)
 
     def load(self, path, quantize, gpu, model, task):
         """
@@ -147,7 +166,7 @@ class Extractor(Pipeline):
             texts: optional list of text
 
         Returns:
-            list of (id, text, score) per query
+            list of (id, data, score) per query
         """
 
         if not queries:
@@ -169,7 +188,11 @@ class Extractor(Pipeline):
 
             # List of matches
             matches = []
-            for x, score in scores[i]:
+            for y, (x, score) in enumerate(scores[i]):
+                # Segments and tokens are statically ordered when texts is passed in, need to resolve values with score id
+                # Scores, segments and tokens all share the same list ordering when an embeddings search is run
+                x = x if texts else y
+
                 # Get segment text
                 text = segment[x][1]
 
@@ -242,8 +265,8 @@ class Extractor(Pipeline):
         scores, segments, tokenlist = [], [], []
         for results in self.similarity.batchsearch([self.tokenize(x) for x in queries], self.context):
             # Assume embeddings content is enabled and results are dictionaries
-            scores.append([(x, result["score"]) for x, result in enumerate(results)])
-            segments.append([(x, result["text"]) for x, result in enumerate(results)])
+            scores.append([(result["id"], result["score"]) for result in results])
+            segments.append([(result["id"], result["text"]) for result in results])
             tokenlist.append([self.tokenize(result["text"]) for result in results])
 
         return scores, segments, tokenlist
@@ -315,3 +338,90 @@ class Extractor(Pipeline):
                     return x
 
         return answer
+
+    def apply(self, inputs, queries, answers, topns):
+        """
+        Applies the following formatting rules to answers.
+            - each answer row matches input format (tuple or dict)
+            - if output format is 'flatten' then this method flattens to a list of answers
+            - if output format is 'reference' then a list of (name, answer, reference) is returned
+            - otherwise, if output format is 'default' or anything else list of (name, answer) is returned
+
+        Args:
+            inputs: original inputs
+            queries: list of input queries
+            answers: list of generated answers
+            topns: top n records used for context
+
+        Returns:
+            list of answers matching input format (tuple or dict) containing fields as specified by output format
+        """
+
+        # Flatten to list of answers and return
+        if self.output == "flatten":
+            return [answer for _, answer in answers]
+
+        # Resolve id reference for each answer
+        if self.output == "reference":
+            answers = self.reference(queries, answers, topns)
+
+        # Ensure output format matches input format
+        if isinstance(inputs[0], dict):
+            # Add name if input queue had name field
+            fields = ["name", "answer", "reference"] if "name" in inputs[0] else [None, "answer", "reference"]
+            answers = [{fields[x]: column for x, column in enumerate(row) if fields[x]} for row in answers]
+
+        return answers
+
+    def reference(self, queries, answers, topns):
+        """
+        Reference each answer with the best matching context element id.
+
+        Args:
+            queries: list of input queries
+            answers: list of answers
+            topn: top n context elements as (id, data, tag)
+
+        Returns:
+            list of (name, answer, reference)
+        """
+
+        # Convert queries to terms
+        terms = self.terms(queries)
+
+        outputs = []
+        for x, (name, answer) in enumerate(answers):
+            # Get matching topn
+            topn, reference = topns[x], None
+
+            if topn:
+                # Build query from keyword terms and the answer text
+                query = f"{terms[x]} {answers[x][1]}"
+
+                # Compare answer to topns to find best match
+                scores, _, _ = self.score([query], [text for _, text, _ in topn])
+
+                # Get top score index
+                index = scores[0][0][0]
+
+                # Use matching topn id as reference
+                reference = topn[index][0]
+
+            # Append (name, answer, reference) tuple
+            outputs.append((name, answer, reference))
+
+        return outputs
+
+    def terms(self, queries):
+        """
+        Extracts keyword terms from a list of queries using underlying similarity model.
+
+        Args:
+            queries: list of queries
+
+        Returns:
+            list of queries reduced down to keyword term strings
+        """
+
+        # Extract keyword terms from queries if underlying similarity model supports it
+        return self.similarity.batchterms(queries) if hasattr(self.similarity, "batchterms") else queries

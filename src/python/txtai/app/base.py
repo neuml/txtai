@@ -584,7 +584,7 @@ class Application:
             extractor = self.pipelines["extractor"]
 
             # Run extractor and return results as dicts
-            return [{"name": name, "answer": answer} for name, answer in extractor(queue, texts, False)]
+            return extractor(queue, texts)
 
         return None
 
