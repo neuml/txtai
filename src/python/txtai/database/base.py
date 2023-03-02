@@ -122,10 +122,10 @@ class Database:
         """
         Runs a search against the database. Supports the following methods:
 
-           1. Standard similarity query. This mode retrieves content for the ids in the similarity results
-           2. Similarity query as SQL. This mode will combine similarity results and database results into
-              a single result set. Similarity queries are set via the SIMILAR() function.
-           3. SQL with no similarity query. This mode runs a SQL query and retrieves the results without similarity queries.
+            1. Standard similarity query. This mode retrieves content for the ids in the similarity results
+            2. Similarity query as SQL. This mode will combine similarity results and database results into
+               a single result set. Similarity queries are set via the SIMILAR() function.
+            3. SQL with no similarity query. This mode runs a SQL query and retrieves the results without similarity queries.
 
         Example queries:
             "natural language processing" - standard similarity only query
