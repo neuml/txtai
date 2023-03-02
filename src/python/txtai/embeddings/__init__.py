@@ -9,4 +9,5 @@ from .functions import *
 from .query import Query
 from .reducer import Reducer
 from .search import Search
+from .terms import Terms
 from .transform import Transform
