@@ -95,6 +95,7 @@ nav:
             - Retrieve: workflow/task/retrieve.md
             - Service: workflow/task/service.md
             - Storage: workflow/task/storage.md
+            - Template: workflow/task/template.md
             - Url: workflow/task/url.md
             - Workflow: workflow/task/workflow.md
     - API:
