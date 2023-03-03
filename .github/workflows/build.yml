@@ -50,7 +50,7 @@ jobs:
       - name: Build
         run: |
           pip install -U pip wheel
-          pip install .[all,dev]
+          pip install .[all,dev] onnxmltools==1.11.1
           python -c "import nltk; nltk.download('punkt')"
           python --version
           make data coverage
