@@ -3,6 +3,7 @@ Hugging Face Hub module
 """
 
 import os
+import tempfile
 
 import huggingface_hub
 
@@ -54,6 +55,9 @@ class HuggingFaceHub(Cloud):
             repo_id=self.config["container"], token=self.config.get("token"), private=self.config.get("private", True), exist_ok=True
         )
 
+        # Enable lfs-tracking of embeddings index files
+        self.lfstrack()
+
         # Upload files
         for f in self.listfiles(path):
             huggingface_hub.upload_file(
@@ -62,4 +66,32 @@ class HuggingFaceHub(Cloud):
                 token=self.config.get("token"),
                 path_or_fileobj=f,
                 path_in_repo=os.path.basename(f),
+            )
+
+    def lfstrack(self):
+        """
+        Adds lfs-tracking of embeddings index files. This method adds tracking for documents and embeddings to .gitattributes.
+        """
+
+        # Get and read .gitattributes file
+        path = huggingface_hub.hf_hub_download(
+            repo_id=self.config["container"], filename=os.path.basename(".gitattributes"), token=self.config.get("token")
+        )
+
+        with open(path, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        # Check if index files are lfs-tracked. Update .gitattributes, if necessary.
+        if "embeddings " not in content:
+            # Add documents and embeddings to lfs tracking
+            content += "documents filter=lfs diff=lfs merge=lfs -text\n"
+            content += "embeddings filter=lfs diff=lfs merge=lfs -text\n"
+
+            # pylint: disable=R1732
+            tmp = tempfile.NamedTemporaryFile()
+            with open(tmp.name, "w", encoding="utf-8") as f:
+                f.write(content)
+
+            huggingface_hub.upload_file(
+                repo_id=self.config["container"], token=self.config.get("token"), path_or_fileobj=tmp.name, path_in_repo=os.path.basename(path)
             )
