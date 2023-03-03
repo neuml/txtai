@@ -88,10 +88,14 @@ class HuggingFaceHub(Cloud):
             content += "embeddings filter=lfs diff=lfs merge=lfs -text\n"
 
             # pylint: disable=R1732
-            tmp = tempfile.NamedTemporaryFile()
-            with open(tmp.name, "w", encoding="utf-8") as f:
-                f.write(content)
+            with tempfile.NamedTemporaryFile(mode="w", delete=False) as tmp:
+                tmp.write(content)
+                attributes = tmp.name
 
+            # Upload file
             huggingface_hub.upload_file(
-                repo_id=self.config["container"], token=self.config.get("token"), path_or_fileobj=tmp.name, path_in_repo=os.path.basename(path)
+                repo_id=self.config["container"], token=self.config.get("token"), path_or_fileobj=attributes, path_in_repo=os.path.basename(path)
             )
+
+            # Remove temporary file
+            os.remove(attributes)

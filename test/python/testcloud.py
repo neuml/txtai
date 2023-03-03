@@ -125,10 +125,9 @@ class TestCloud(unittest.TestCase):
 
         # Initialize attributes file
         # pylint: disable=R1732
-        tmp = tempfile.NamedTemporaryFile()
-        with open(tmp.name, "w", encoding="utf-8") as f:
-            f.write("*.bin filter=lfs diff=lfs merge=lfs -text\n")
-        attributes = tmp.name
+        with tempfile.NamedTemporaryFile(mode="w", delete=False) as tmp:
+            tmp.write("*.bin filter=lfs diff=lfs merge=lfs -text\n")
+            attributes = tmp.name
 
         # Run tests with uncompressed and compressed index
         for path in [f"cloud.{provider}", f"cloud.{provider}.tar.gz"]:
