@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 # Current version tag
-__version__ = "5.4.0"
+__version__ = "5.5.0"
 
 # Current pickle protocol
 __pickle__ = 4
