@@ -218,6 +218,7 @@ topics:
     labels: scoring index method used to build topic labels (string)
             options are bm25 (default), tfidf, sif
     terms: number of frequent terms to use for topic labels (int), defaults to 4
+    stopwords: optional list of stop words to exclude from topic labels
     categories: optional list of categories used to group topics, allows
                 granular topics with broad categories grouping topics
 ```

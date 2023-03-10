@@ -20,6 +20,9 @@ class Functions:
 
         self.embeddings = embeddings
 
+        # Handle to all reference objects
+        self.references = None
+
     def __call__(self, config):
         """
         Resolves a list of functions to function references.
@@ -30,6 +33,9 @@ class Functions:
         Returns:
             list of function references
         """
+
+        # Initialize stored references array
+        self.references = []
 
         # Resolve callable functions
         functions = []
@@ -42,6 +48,15 @@ class Functions:
             functions.append(fn)
 
         return functions
+
+    def reset(self):
+        """
+        Clears all resolved references.
+        """
+
+        if self.references:
+            for reference in self.references:
+                reference.reset()
 
     def function(self, function):
         """
@@ -61,12 +76,14 @@ class Functions:
 
             if hasattr(self.embeddings, parts[0]):
                 m = Reference(self.embeddings, parts[0])
+                self.references.append(m)
             else:
                 module = ".".join(parts[:-1])
                 m = __import__(module)
 
             for comp in parts[1:]:
                 m = Reference(m, comp)
+                self.references.append(m)
 
             return m
 
@@ -91,6 +108,9 @@ class Reference:
         # Object handle and attribute
         self.obj = obj
         self.attribute = attribute
+
+        # Keep a handle to the original inputs
+        self.inputs = (obj, attribute)
 
         # True if the object and attribute have been resolved
         self.resolved = False
@@ -125,3 +145,11 @@ class Reference:
 
         # If attribute is a function, execute and return, otherwise return attribute
         return attribute(*args) if self.function else attribute
+
+    def reset(self):
+        """
+        Clears resolved references.
+        """
+
+        self.obj, self.attribute = self.inputs
+        self.resolved = False

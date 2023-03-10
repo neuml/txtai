@@ -131,7 +131,26 @@ class TestGraph(unittest.TestCase):
         # Create an index for the list of text
         self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
 
-        # Test similar
+        # Test function
+        result = self.embeddings.search("select category, topic, topicrank from txtai where id = 0", 1)[0]
+
+        # Check columns have a value
+        self.assertIsNotNone(result["category"])
+        self.assertIsNotNone(result["topic"])
+        self.assertIsNotNone(result["topicrank"])
+
+    def testFunctionReindex(self):
+        """
+        Test running graph functions with SQL after reindex
+        """
+
+        # Create an index for the list of text
+        self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        # Test functions reset with a reindex
+        self.embeddings.reindex(self.embeddings.config)
+
+        # Test function
         result = self.embeddings.search("select category, topic, topicrank from txtai where id = 0", 1)[0]
 
         # Check columns have a value
@@ -181,6 +200,16 @@ class TestGraph(unittest.TestCase):
         self.assertRaises(NotImplementedError, graph.communities, None)
         self.assertRaises(NotImplementedError, graph.loadgraph, None)
         self.assertRaises(NotImplementedError, graph.savegraph, None)
+
+    def testResetTopics(self):
+        """
+        Test resetting of topics
+        """
+
+        # Create an index for the list of text
+        self.embeddings.index([(1, "text", None)])
+        self.embeddings.upsert([(1, "graph", None)])
+        self.assertEqual(list(self.embeddings.graph.topics.keys()), ["graph"])
 
     def testSave(self):
         """

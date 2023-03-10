@@ -62,6 +62,9 @@ class Embeddings:
         # Document database
         self.database = None
 
+        # Resolvable functions
+        self.functions = None
+
         # Graph network
         self.graph = None
 
@@ -151,8 +154,8 @@ class Embeddings:
             documents: list of (id, data, tags)
         """
 
-        # Run standard insert if index doesn't exist
-        if not self.ann:
+        # Run standard insert if index doesn't exist or it has no records
+        if not self.count():
             self.index(documents)
             return
 
@@ -179,7 +182,7 @@ class Embeddings:
 
         # Graph upsert, if necessary
         if self.graph:
-            self.graph.upsert(Search(self, True))
+            self.graph.upsert(Search(self, True), self.batchsimilarity)
 
     def delete(self, ids):
         """
@@ -251,6 +254,10 @@ class Embeddings:
 
             # Reset configuration
             self.configure(config)
+
+            # Reset function references
+            if self.functions:
+                self.functions.reset()
 
             # Reindex
             if function:
@@ -579,7 +586,7 @@ class Embeddings:
         # Close database connection if open
         if self.database:
             self.database.close()
-            self.database = None
+            self.database, self.functions = None, None
 
     def info(self):
         """
@@ -761,9 +768,10 @@ class Embeddings:
 
         config = self.config.copy()
 
-        # Resolve callable functions
-        if "functions" in config:
-            config["functions"] = Functions(self)(config)
+        # Create references to callable functions
+        self.functions = Functions(self) if "functions" in config else None
+        if self.functions:
+            config["functions"] = self.functions(config)
 
         # Create database from config and return
         return DatabaseFactory.create(config)

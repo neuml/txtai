@@ -377,7 +377,12 @@ class Graph:
                 # Delete from topics
                 topic = self.attribute(uid, "topic")
                 if topic and self.topics:
+                    # Delete id from topic
                     self.topics[topic].remove(uid)
+
+                    # Also delete topic, if it's empty
+                    if not self.topics[topic]:
+                        self.topics.pop(topic)
 
                 # Delete node
                 self.removenode(uid)
@@ -398,12 +403,13 @@ class Graph:
         if "topics" in self.config:
             self.addtopics(similarity)
 
-    def upsert(self, search):
+    def upsert(self, search, similarity=None):
         """
         Adds relationships for new graph nodes using a score-based search function.
 
         Args:
             search: batch search function - takes a list of queries and returns lists of (id, scores) to use as edge weights
+            similarity: batch similarity function - takes a list of text and labels and returns best matches
         """
 
         # Detect if topics processing is enabled
@@ -414,7 +420,11 @@ class Graph:
 
         # Infer topics with topics of connected nodes
         if hastopics:
-            self.infertopics()
+            # Infer topics if there is at least one topic, otherwise rebuild
+            if self.topics:
+                self.infertopics()
+            else:
+                self.addtopics(similarity)
 
     def addedges(self, nodes, search, attributes=None):
         """
