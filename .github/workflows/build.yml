@@ -50,7 +50,7 @@ jobs:
       - name: Build
         run: |
           pip install -U pip wheel
-          pip install .[all,dev] skl2onnx==1.13
+          pip install .[all,dev]
           python -c "import nltk; nltk.download('punkt')"
           python --version
           make data coverage

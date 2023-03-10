@@ -51,7 +51,11 @@ class MLOnnx(Pipeline):
         # pylint: disable=E1101
         # Rename output to logits for consistency with other models
         model.graph.output[0].name = "logits"
-        model.graph.node[0].output[0] = "logits"
+
+        # Find probabilities output node and rename to logits
+        for node in model.graph.node:
+            if node.output[0] == "probabilities":
+                node.output[0] = "logits"
 
         # Save model to specified output path or return bytes
         model = save_onnx_model(model, output)
