@@ -28,13 +28,14 @@ class TestTranslation(unittest.TestCase):
         """
         Test language detection with custom function
         """
-        translate = Translation()
 
         def dummy_func(text):
             return ["en" for x in text]
 
+        translate = Translation(langdetect=dummy_func)
+
         test = ["This is a test language detection."]
-        language = translate.detect(test, dummy_func)
+        language = translate.detect(test)
 
         self.assertListEqual(language, ["en"])
 
