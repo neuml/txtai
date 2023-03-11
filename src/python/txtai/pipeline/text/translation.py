@@ -146,7 +146,7 @@ class Translation(HFModel):
 
         path = self.langdetect
         if not path:
-            path = self.DEFAULT_LANG_DETECT
+            path = Translation.DEFAULT_LANG_DETECT
 
         if not FASTTEXT:
             raise ImportError('Language detection is not available - install "pipeline" extra to enable')
