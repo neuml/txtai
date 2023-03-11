@@ -156,7 +156,7 @@ class Translation(HFModel):
             fasttext.FastText.eprint = lambda x: None
 
             # Load language detection model
-            path = cached_download(self.langdetect, legacy_cache_layout=True)
+            path = cached_download(path, legacy_cache_layout=True)
             self.detector = fasttext.load_model(path)
 
         # Transform texts to format expected by language detection model
