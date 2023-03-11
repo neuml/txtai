@@ -27,7 +27,7 @@ class TextToSpeech(Pipeline):
     Generates speech from text
     """
 
-    def __init__(self, path="neuml/ljspeech-jets-onnx", maxtokens=512):
+    def __init__(self, path=None, maxtokens=512):
         """
         Creates a new TextToSpeech pipeline.
 
@@ -38,6 +38,9 @@ class TextToSpeech(Pipeline):
 
         if not TTS:
             raise ImportError('TextToSpeech pipeline is not available - install "pipeline" extra to enable')
+
+        # Default path
+        path = path if path else "neuml/ljspeech-jets-onnx"
 
         # Get path to model and config
         config = hf_hub_download(path, filename="config.yaml")

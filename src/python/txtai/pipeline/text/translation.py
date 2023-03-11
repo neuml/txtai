@@ -26,7 +26,7 @@ class Translation(HFModel):
     # Default language detection model
     DEFAULT_LANG_DETECT = "https://dl.fbaipublicfiles.com/fasttext/supervised-models/lid.176.ftz"
 
-    def __init__(self, path="facebook/m2m100_418M", quantize=False, gpu=True, batch=64, langdetect=None, findmodels=True):
+    def __init__(self, path=None, quantize=False, gpu=True, batch=64, langdetect=None, findmodels=True):
         """
         Constructs a new language translation pipeline.
 
@@ -36,12 +36,13 @@ class Translation(HFModel):
             quantize: if model should be quantized, defaults to False
             gpu: True/False if GPU should be enabled, also supports a GPU device id
             batch: batch size used to incrementally process content
-            langdetect: path to language detection model, uses a default path if not provided
+            langdetect: set a custom language detection function, method must take a list of strings and return
+                        language codes for each, uses default language detector if not provided
             findmodels: True/False if the Hugging Face Hub will be searched for source-target translation models
         """
 
         # Call parent constructor
-        super().__init__(path, quantize, gpu, batch)
+        super().__init__(path if path else "facebook/m2m100_418M", quantize, gpu, batch)
 
         # Language detection
         self.detector = None
@@ -125,7 +126,7 @@ class Translation(HFModel):
             list of languages
         """
 
-        # Backwards compatible to load fasttext model
+        # Default detector
         if not self.langdetect or isinstance(self.langdetect, str):
             return self.defaultdetect(texts)
 
@@ -134,8 +135,7 @@ class Translation(HFModel):
 
     def defaultdetect(self, texts):
         """
-        Detects the language for each element in texts.
-        Default path that uses fasttext.
+        Default fasttext language detection model.
 
         Args:
             texts: list of text
@@ -144,16 +144,15 @@ class Translation(HFModel):
             list of languages
         """
 
-        path = self.langdetect
-        if not path:
-            path = Translation.DEFAULT_LANG_DETECT
-
-        if not FASTTEXT:
-            raise ImportError('Language detection is not available - install "pipeline" extra to enable')
-
         if not self.detector:
+            if not FASTTEXT:
+                raise ImportError('Language detection is not available - install "pipeline" extra to enable')
+
             # Suppress unnecessary warning
             fasttext.FastText.eprint = lambda x: None
+
+            # Get model path
+            path = self.langdetect if self.langdetect else Translation.DEFAULT_LANG_DETECT
 
             # Load language detection model
             path = cached_download(path, legacy_cache_layout=True)
