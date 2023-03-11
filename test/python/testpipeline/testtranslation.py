@@ -13,6 +13,32 @@ class TestTranslation(unittest.TestCase):
     Translation tests.
     """
 
+    def testDetect(self):
+        """
+        Test language detection
+        """
+        translate = Translation()
+
+        test = ["This is a test language detection."]
+        language = translate.detect(test)
+
+        self.assertListEqual(language, ["en"])
+
+    def testDetectWithCustomFunc(self):
+        """
+        Test language detection with custom function
+        """
+
+        def dummy_func(text):
+            return ["en" for x in text]
+
+        translate = Translation(langdetect=dummy_func)
+
+        test = ["This is a test language detection."]
+        language = translate.detect(test)
+
+        self.assertListEqual(language, ["en"])
+
     def testLongTranslation(self):
         """
         Test a translation longer than max tokenization length

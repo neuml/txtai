@@ -26,7 +26,7 @@ class Translation(HFModel):
     # Default language detection model
     DEFAULT_LANG_DETECT = "https://dl.fbaipublicfiles.com/fasttext/supervised-models/lid.176.ftz"
 
-    def __init__(self, path="facebook/m2m100_418M", quantize=False, gpu=True, batch=64, langdetect=DEFAULT_LANG_DETECT, findmodels=True):
+    def __init__(self, path="facebook/m2m100_418M", quantize=False, gpu=True, batch=64, langdetect=None, findmodels=True):
         """
         Constructs a new language translation pipeline.
 
@@ -125,6 +125,29 @@ class Translation(HFModel):
             list of languages
         """
 
+        # Backwards compatible to load fasttext model
+        if not self.langdetect or isinstance(self.langdetect, str):
+            return self.defaultdetect(texts)
+
+        # Call external language detector
+        return self.langdetect(texts)
+
+    def defaultdetect(self, texts):
+        """
+        Detects the language for each element in texts.
+        Default path that uses fasttext.
+
+        Args:
+            texts: list of text
+
+        Returns:
+            list of languages
+        """
+
+        path = self.langdetect
+        if not path:
+            path = self.DEFAULT_LANG_DETECT
+
         if not FASTTEXT:
             raise ImportError('Language detection is not available - install "pipeline" extra to enable')
 
@@ -133,7 +156,7 @@ class Translation(HFModel):
             fasttext.FastText.eprint = lambda x: None
 
             # Load language detection model
-            path = cached_download(self.langdetect, legacy_cache_layout=True)
+            path = cached_download(path, legacy_cache_layout=True)
             self.detector = fasttext.load_model(path)
 
         # Transform texts to format expected by language detection model
