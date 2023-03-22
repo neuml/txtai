@@ -6,6 +6,7 @@ Requires streamlit to be installed.
 """
 
 import contextlib
+import copy
 import os
 import re
 import tempfile
@@ -19,10 +20,7 @@ import pandas as pd
 import streamlit as st
 
 import txtai.api.application
-
-from txtai.embeddings import Documents, Embeddings
-from txtai.pipeline import Segmentation, Summary, Tabular, Textractor, Transcription, Translation
-from txtai.workflow import ServiceTask, Task, UrlTask, Workflow
+import txtai.app
 
 
 class Server(uvicorn.Server):
@@ -68,97 +66,55 @@ class Process:
     """
 
     @staticmethod
-    @st.cache(max_entries=1, allow_output_mutation=True, show_spinner=False)
-    def get(components, data):
+    @st.cache_resource(show_spinner=False)
+    def get(name, config):
         """
         Lookup or creates a new workflow process instance.
 
         Args:
-            components: input components
-            data: initial data, only passed when indexing
+            name: workflow name
+            config: application configuration
 
         Returns:
             Process
         """
 
-        process = Process(data)
+        process = Process()
 
         # Build workflow
         with st.spinner("Building workflow...."):
-            process.build(components)
+            process.build(name, config)
 
         return process
 
-    def __init__(self, data):
+    def __init__(self):
         """
         Creates a new Process.
+        """
+
+        # Application handle
+        self.application = None
+
+        # Workflow name
+        self.name = None
+
+        # Workflow data
+        self.data = None
+
+    def build(self, name, config):
+        """
+        Builds an application.
 
         Args:
-            data: initial data, only passed when indexing
+            name: workflow name
+            config: application configuration
         """
 
-        # Component options
-        self.components = {}
+        # Create application
+        self.application = txtai.app.Application(config)
 
-        # Defined pipelines
-        self.pipelines = {}
-
-        # Current workflow
-        self.workflow = []
-
-        # Embeddings index params
-        self.embeddings = None
-        self.documents = None
-        self.data = data
-
-    def build(self, components):
-        """
-        Builds a workflow using components.
-
-        Args:
-            components: list of components to add to workflow
-        """
-
-        # pylint: disable=W0108
-        tasks = []
-        for component in components:
-            component = dict(component)
-            wtype = component.pop("type")
-            self.components[wtype] = component
-
-            if wtype == "embeddings":
-                self.embeddings = Embeddings({**component})
-                self.documents = Documents()
-                tasks.append(Task(self.documents.add, unpack=False))
-
-            elif wtype == "segmentation":
-                self.pipelines[wtype] = Segmentation(**self.components[wtype])
-                tasks.append(Task(self.pipelines[wtype]))
-
-            elif wtype == "service":
-                tasks.append(ServiceTask(**self.components[wtype]))
-
-            elif wtype == "summary":
-                self.pipelines[wtype] = Summary(component.pop("path"))
-                tasks.append(Task(lambda x: self.pipelines["summary"](x, **self.components["summary"])))
-
-            elif wtype == "tabular":
-                self.pipelines[wtype] = Tabular(**self.components[wtype])
-                tasks.append(Task(self.pipelines[wtype]))
-
-            elif wtype == "textractor":
-                self.pipelines[wtype] = Textractor(**self.components[wtype])
-                tasks.append(UrlTask(self.pipelines[wtype]))
-
-            elif wtype == "transcription":
-                self.pipelines[wtype] = Transcription(component.pop("path"))
-                tasks.append(UrlTask(self.pipelines[wtype], r".\.wav$"))
-
-            elif wtype == "translation":
-                self.pipelines[wtype] = Translation()
-                tasks.append(Task(lambda x: self.pipelines["translation"](x, **self.components["translation"])))
-
-        self.workflow = Workflow(tasks)
+        # Workflow name
+        self.name = name
 
     def run(self, data):
         """
@@ -168,27 +124,24 @@ class Process:
             data: input data
         """
 
-        if data and self.workflow:
+        if data and self.application:
             # Build tuples for embedding index
-            if self.documents:
+            if self.application.embeddings:
                 data = [(x, element, None) for x, element in enumerate(data)]
 
             # Process workflow
-            for result in self.workflow(data):
-                if not self.documents:
-                    st.write(result)
+            with st.spinner("Running workflow...."):
+                results = []
+                for result in self.application.workflow(self.name, data):
+                    # Store result
+                    results.append(result)
 
-            # Build embeddings index
-            if self.documents:
-                # Cache data
-                self.data = list(self.documents)
+                    # Write result if this isn't an indexing workflow
+                    if not self.application.embeddings:
+                        st.write(result)
 
-                with st.spinner("Building embedding index...."):
-                    self.embeddings.index(self.documents)
-                    self.documents.close()
-
-                # Clear workflow
-                self.documents, self.pipelines, self.workflow = None, None, None
+                # Store workflow results
+                self.data = results
 
     def search(self, query):
         """
@@ -198,7 +151,7 @@ class Process:
             query: input query
         """
 
-        if self.embeddings and query:
+        if self.application and query:
             st.markdown(
                 """
             <style>
@@ -214,13 +167,11 @@ class Process:
                 unsafe_allow_html=True,
             )
 
-            limit = min(5, len(self.data))
-
             results = []
-            for result in self.embeddings.search(query, limit):
-                # Tuples are returned when an index doesn't have stored content
-                if isinstance(result, tuple):
-                    uid, score = result
+            for result in self.application.search(query, 5):
+                # Text is only present when content is stored
+                if "text" not in result:
+                    uid, score = result["id"], result["score"]
                     results.append({"text": self.find(uid), "score": f"{score:.2}"})
                 else:
                     if "id" in result and "text" in result:
@@ -260,7 +211,7 @@ class Process:
             content
         """
 
-        if uid and uid.lower().startswith("http"):
+        if uid and isinstance(uid, str) and uid.lower().startswith("http"):
             return f"<a href='{uid}' rel='noopener noreferrer' target='blank'>{text}</a>"
 
         return text
@@ -488,7 +439,7 @@ class Application:
                 config = workflow.get(component)
 
         if component == "embeddings":
-            st.markdown(f"** {index + 1}.) Embeddings Index**  \n*Index workflow output*")
+            st.markdown(f"**{index + 1}.) Embeddings Index**  \n*Index workflow output*")
             options["index"] = self.text("Embeddings storage path", component, config, "index")
             options["path"] = self.text("Embeddings model path", component, config, "path", "sentence-transformers/nli-mpnet-base-v2")
             options["upsert"] = self.boolean("Upsert", component, config, "upsert")
@@ -496,9 +447,9 @@ class Application:
 
         elif component in ("segmentation", "textractor"):
             if component == "segmentation":
-                st.markdown(f"** {index + 1}.) Segment**  \n*Split text into semantic units*")
+                st.markdown(f"**{index + 1}.) Segment**  \n*Split text into semantic units*")
             else:
-                st.markdown(f"** {index + 1}.) Textract**  \n*Extract text from documents*")
+                st.markdown(f"**{index + 1}.) Textract**  \n*Extract text from documents*")
 
             options["sentences"] = self.boolean("Split sentences", component, config, "sentences")
             options["lines"] = self.boolean("Split lines", component, config, "lines")
@@ -507,7 +458,7 @@ class Application:
             options["minlength"] = self.number("Min section length", component, config, "minlength")
 
         elif component == "service":
-            st.markdown(f"** {index + 1}.) Service**  \n*Extract data from an API*")
+            st.markdown(f"**{index + 1}.) Service**  \n*Extract data from an API*")
             options["url"] = self.text("URL", component, config, "url")
             options["method"] = self.select("Method", component, config, "method", ["get", "post"], 0)
             options["params"] = self.text("URL parameters", component, config, "params")
@@ -520,13 +471,13 @@ class Application:
                 options["extract"] = self.split(options["extract"])
 
         elif component == "summary":
-            st.markdown(f"** {index + 1}.) Summary**  \n*Abstractive text summarization*")
+            st.markdown(f"**{index + 1}.) Summary**  \n*Abstractive text summarization*")
             options["path"] = self.text("Model", component, config, "path", "sshleifer/distilbart-cnn-12-6")
             options["minlength"] = self.number("Min length", component, config, "minlength")
             options["maxlength"] = self.number("Max length", component, config, "maxlength")
 
         elif component == "tabular":
-            st.markdown(f"** {index + 1}.) Tabular**  \n*Split tabular data into rows and columns*")
+            st.markdown(f"**{index + 1}.) Tabular**  \n*Split tabular data into rows and columns*")
             options["idcolumn"] = self.text("Id columns", component, config, "idcolumn")
             options["textcolumns"] = self.text("Text columns", component, config, "textcolumns")
             options["content"] = self.text("Content", component, config, "content")
@@ -540,27 +491,27 @@ class Application:
                     options["content"] = options["content"][0]
 
         elif component == "transcription":
-            st.markdown(f"** {index + 1}.) Transcribe**  \n*Transcribe audio to text*")
+            st.markdown(f"**{index + 1}.) Transcribe**  \n*Transcribe audio to text*")
             options["path"] = self.text("Model", component, config, "path", "facebook/wav2vec2-base-960h")
 
         elif component == "translation":
-            st.markdown(f"** {index + 1}.) Translate**  \n*Machine translation*")
+            st.markdown(f"**{index + 1}.) Translate**  \n*Machine translation*")
             options["target"] = self.text("Target language code", component, config, "args", "en")
 
         return options
 
-    def yaml(self, components):
+    def config(self, components):
         """
-        Builds a yaml string for components.
+        Builds configuration for components
 
         Args:
-            components: list of components to export to YAML
+            components: list of components to add to configuration
 
         Returns:
-            (workflow name, YAML string)
+            (workflow name, configuration)
         """
 
-        data = {"app": {"data": self.state("data"), "query": self.state("query")}}
+        data = {}
         tasks = []
         name = None
 
@@ -613,7 +564,8 @@ class Application:
         # Add in workflow
         data["workflow"] = {name: {"tasks": tasks}}
 
-        return (name, yaml.dump(data))
+        # Return workflow name and application configuration
+        return (name, data)
 
     def api(self, config):
         """
@@ -706,18 +658,20 @@ class Application:
             index: True if this is an indexing workflow
         """
 
-        # Get data
-        data = self.data()
+        # Generate application configuration
+        name, config = self.config(components)
 
         # Get workflow process
-        process = Process.get(components, data if index else None)
+        process = Process.get(name, copy.deepcopy(config))
 
         # Run workflow process
-        process.run(data)
+        process.run(self.data())
 
         # Run search
         if index:
             process.search(self.state("query"))
+
+        return name, config
 
     def run(self):
         """
@@ -764,14 +718,16 @@ class Application:
         # Only execute if build button clicked, new workflow uploaded or inputs changed
         if build or upload or inputs:
             # Process current action
-            self.process(components, "embeddings" in selected)
+            name, config = self.process(components, "embeddings" in selected)
 
             with st.sidebar:
-                # Generate API configuration
-                name, config = self.yaml(components)
-
                 with st.expander("Other Actions", expanded=True):
                     col1, col2 = st.columns(2)
+
+                    # Add state information to configuration and export to YAML string
+                    config = config.copy()
+                    config.update({"app": {"data": self.state("data"), "query": self.state("query")}})
+                    config = yaml.dump(config)
 
                     api = col1.button("API", key="api", help="Start an API instance within this application")
                     if api:
