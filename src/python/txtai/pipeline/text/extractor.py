@@ -90,7 +90,7 @@ class Extractor(Pipeline):
         inputs = queue
 
         # Convert dictionary inputs to tuples
-        if isinstance(queue[0], dict):
+        if queue and isinstance(queue[0], dict):
             # Convert dict to tuple
             queue = [tuple(row.get(x) for x in ["name", "query", "question", "snippet"]) for row in queue]
 
@@ -366,7 +366,7 @@ class Extractor(Pipeline):
             answers = self.reference(queries, answers, topns)
 
         # Ensure output format matches input format
-        if isinstance(inputs[0], dict):
+        if inputs and isinstance(inputs[0], dict):
             # Add name if input queue had name field
             fields = ["name", "answer", "reference"] if "name" in inputs[0] else [None, "answer", "reference"]
             answers = [{fields[x]: column for x, column in enumerate(row) if fields[x]} for row in answers]
