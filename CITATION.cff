@@ -2,7 +2,7 @@ cff-version: 1.2.0
 date-released: 2020-08-11
 message: "If you use this software, please cite it as below."
 title: "txtai"
-abstract: "Build AI-powered semantic search applications"
+abstract: "Semantic search and workflows powered by language models"
 url: "https://github.com/neuml/txtai"
 authors:
 - family-names: "Mezzetti"

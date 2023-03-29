@@ -3,7 +3,7 @@
 ![why](images/why.png#only-light)
 ![why](images/why-dark.png#only-dark)
 
-In addition to traditional search systems, a growing number of "AI-powered" solutions are available, so why txtai?
+In addition to traditional search systems, a growing number of language model backed solutions are available, so why txtai?
 
 - Up and running in minutes with [pip](../install/) or [Docker](../cloud/)
 ```python

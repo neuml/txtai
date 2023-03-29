@@ -79,7 +79,7 @@ setup(
     name="txtai",
     version="5.5.0",
     author="NeuML",
-    description="Build AI-powered semantic search applications",
+    description="Semantic search and workflows powered by language models",
     long_description=DESCRIPTION,
     long_description_content_type="text/markdown",
     url="https://github.com/neuml/txtai",
