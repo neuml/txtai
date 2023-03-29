@@ -3,7 +3,7 @@
 ![why](images/why.png#only-light)
 ![why](images/why-dark.png#only-dark)
 
-In addition to traditional search systems, a growing number of semantic search solutions are available, so why txtai?
+In addition to traditional search systems, a growing number of "AI-powered" solutions are available, so why txtai?
 
 - Up and running in minutes with [pip](../install/) or [Docker](../cloud/)
 ```python
@@ -25,7 +25,7 @@ embeddings:
 CONFIG=app.yml uvicorn "txtai.api:app"
 curl -X GET "http://localhost:8000/search?query=positive"
 ```
-- Connect machine learning models together to build intelligent data processing workflows
+- Connect language models together to build intelligent data processing workflows
 - Works with both small and big data - scale when needed
 - Supports micromodels all the way up to large language models (LLMs)
 - Low footprint - install additional dependencies when you need them

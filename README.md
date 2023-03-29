@@ -3,7 +3,7 @@
 </p>
 
 <h3 align="center">
-    <p>Build AI-powered semantic search applications</p>
+    <p>Semantic search and workflows powered by language models</p>
 </h3>
 
 <p align="center">
@@ -29,30 +29,32 @@
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------
 
-txtai executes machine-learning workflows to transform data and build AI-powered semantic search applications.
+txtai is an open-source platform for semantic search and workflows powered by language models.
 
 ![demo](https://raw.githubusercontent.com/neuml/txtai/master/demo.gif)
 
-Traditional search systems use keywords to find data. Semantic search applications have an understanding of natural language and identify results that have the same meaning, not necessarily the same keywords.
+Traditional search systems use keywords to find data. Semantic search has an understanding of natural language and identifies results that have the same meaning, not necessarily the same keywords.
 
 ![search](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/search.png#gh-light-mode-only)
 ![search](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/search-dark.png#gh-dark-mode-only)
 
-Backed by state-of-the-art machine learning models, data is transformed into vector representations for search (also known as embeddings). Innovation is happening at a rapid pace, models can understand concepts in documents, audio, images and video.
+Data is transformed into embeddings and stored in vector indexes for search.
+
+Semantic workflows connect language models together to build intelligent applications.
+
+![flows](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/flows.png#gh-light-mode-only)
+![flows](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/flows-dark.png#gh-dark-mode-only)
+
+Integrate vector search, conversational search, automatic summarization, transcription, translation and more.
 
 Summary of txtai features:
 
 - 🔎 Large-scale similarity search with multiple index backends ([Faiss](https://github.com/facebookresearch/faiss), [Annoy](https://github.com/spotify/annoy), [Hnswlib](https://github.com/nmslib/hnswlib)) and support for external vector databases
-- 📄 Create embeddings for text snippets, documents, audio, images and video
-- 💡 Machine-learning pipelines that run question-answering, labeling, transcription, translation, summarization, LLM prompts and more
+- 📄 Create embeddings for text, documents, audio, images and video
+- 💡 Pipelines powered by language models that run question-answering, labeling, transcription, translation, summarization, LLM prompts and more
 - ↪️️ Workflows to join pipelines together and aggregate business logic. txtai processes can be microservices or full-fledged indexing workflows.
 - ⚙️ Build with Python or YAML. API bindings available for [JavaScript](https://github.com/neuml/txtai.js), [Java](https://github.com/neuml/txtai.java), [Rust](https://github.com/neuml/txtai.rs) and [Go](https://github.com/neuml/txtai.go).
 - ☁️ Cloud-native architecture that scales out with container orchestration systems (e.g. Kubernetes)
-
-Applications range from similarity search to NLP-driven data extractions that generate structured data. Semantic workflows transform and find data driven by user intent.
-
-![flows](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/flows.png#gh-light-mode-only)
-![flows](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/flows-dark.png#gh-dark-mode-only)
 
 The following applications are powered by txtai.
 
@@ -72,7 +74,7 @@ txtai is built with Python 3.7+, [Hugging Face Transformers](https://github.com/
 ![why](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/why.png#gh-light-mode-only)
 ![why](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/why-dark.png#gh-dark-mode-only)
 
-In addition to traditional search systems, a growing number of semantic search solutions are available, so why txtai?
+In addition to traditional search systems, a growing number of "AI-powered" solutions are available, so why txtai?
 
 - Up and running in minutes with [pip](https://neuml.github.io/txtai/install/) or [Docker](https://neuml.github.io/txtai/cloud/)
 ```python
@@ -94,7 +96,7 @@ embeddings:
 CONFIG=app.yml uvicorn "txtai.api:app"
 curl -X GET "http://localhost:8000/search?query=positive"
 ```
-- Connect machine learning models together to build intelligent data processing workflows
+- Connect language models together to build intelligent data processing workflows
 - Works with both small and big data - scale when needed
 - Supports micromodels all the way up to large language models (LLMs)
 - Low footprint - install additional dependencies when you need them
@@ -149,7 +151,7 @@ Build semantic/similarity/vector/neural search applications.
 
 ### Pipelines
 
-Transform data with NLP-backed pipelines.
+Transform data with language model backed pipelines.
 
 | Notebook  | Description  |       |
 |:----------|:-------------|------:|
@@ -216,11 +218,11 @@ Series of example applications with txtai. Links to hosted versions on [Hugging 
 
 ![further](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/further.png)
 
-- [Introducing txtai, AI-powered semantic search built on Transformers](https://medium.com/neuml/introducing-txtai-an-ai-powered-search-engine-built-on-transformers-37674be252ec)
+- [Introducing txtai, semantic search and workflows built on Transformers](https://medium.com/neuml/introducing-txtai-an-ai-powered-search-engine-built-on-transformers-37674be252ec)
 - [Tutorial series on Hashnode](https://neuml.hashnode.dev/series/txtai-tutorial) | [dev.to](https://dev.to/neuml/tutorial-series-on-txtai-ibg)
 - [What's new in txtai 5.0](https://medium.com/neuml/whats-new-in-txtai-5-0-e5c75a13b101) | [4.0](https://medium.com/neuml/whats-new-in-txtai-4-0-bbc3a65c3d1c)
 - [Getting started with semantic search](https://medium.com/neuml/getting-started-with-semantic-search-a9fd9d8a48cf) | [workflows](https://medium.com/neuml/getting-started-with-semantic-workflows-2fefda6165d9)
-- [Run machine-learning workflows to transform data and build AI-powered semantic search applications with txtai](https://medium.com/neuml/run-machine-learning-workflows-to-transform-data-and-build-ai-powered-text-indices-with-txtai-43d769b566a7)
+- [Run workflows to transform data and build semantic search applications with txtai](https://medium.com/neuml/run-machine-learning-workflows-to-transform-data-and-build-ai-powered-text-indices-with-txtai-43d769b566a7)
 - [Semantic search on the cheap](https://medium.com/neuml/semantic-search-on-the-cheap-55940c0fcdab)
 - [Serverless vector search with txtai](https://medium.com/neuml/serverless-vector-search-with-txtai-96f6163ab972)
 - [Insights from the txtai console](https://medium.com/neuml/insights-from-the-txtai-console-d307c28e149e)

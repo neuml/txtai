@@ -31,7 +31,7 @@ Build semantic/similarity/vector/neural search applications.
 
 ## Pipelines
 
-Transform data with NLP-backed pipelines.
+Transform data with language model backed pipelines.
 
 | Notebook  | Description  |       |
 |:----------|:-------------|------:|

@@ -5,7 +5,7 @@
 </p>
 
 <h3 align="center">
-    <p>Build AI-powered semantic search applications</p>
+    <p>Semantic search and workflows powered by language models</p>
 </h3>
 
 <p align="center">
@@ -31,30 +31,32 @@
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------
 
-txtai executes machine-learning workflows to transform data and build AI-powered semantic search applications.
+txtai is an open-source platform for semantic search and workflows powered by language models.
 
 ![demo](https://raw.githubusercontent.com/neuml/txtai/master/demo.gif)
 
-Traditional search systems use keywords to find data. Semantic search applications have an understanding of natural language and identify results that have the same meaning, not necessarily the same keywords.
+Traditional search systems use keywords to find data. Semantic search has an understanding of natural language and identifies results that have the same meaning, not necessarily the same keywords.
 
 ![search](images/search.png#only-light)
 ![search](images/search-dark.png#only-dark)
 
-Backed by state-of-the-art machine learning models, data is transformed into vector representations for search (also known as embeddings). Innovation is happening at a rapid pace, models can understand concepts in documents, audio, images and video.
+Data is transformed into embeddings and stored in vector indexes for search.
+
+Semantic workflows connect language models together to build intelligent applications.
+
+![flows](images/flows.png#only-light)
+![flows](images/flows-dark.png#only-dark)
+
+Integrate vector search, conversational search, automatic summarization, transcription, translation and more.
 
 Summary of txtai features:
 
 - 🔎 Large-scale similarity search with multiple index backends ([Faiss](https://github.com/facebookresearch/faiss), [Annoy](https://github.com/spotify/annoy), [Hnswlib](https://github.com/nmslib/hnswlib)) and support for external vector databases
-- 📄 Create embeddings for text snippets, documents, audio, images and video
-- 💡 Machine-learning pipelines that run question-answering, labeling, transcription, translation, summarization, LLM prompts and more
+- 📄 Create embeddings for text, documents, audio, images and video
+- 💡 Pipelines powered by language models that run question-answering, labeling, transcription, translation, summarization, LLM prompts and more
 - ↪️️ Workflows to join pipelines together and aggregate business logic. txtai processes can be microservices or full-fledged indexing workflows.
 - ⚙️ Build with Python or YAML. API bindings available for [JavaScript](https://github.com/neuml/txtai.js), [Java](https://github.com/neuml/txtai.java), [Rust](https://github.com/neuml/txtai.rs) and [Go](https://github.com/neuml/txtai.go).
 - ☁️ Cloud-native architecture that scales out with container orchestration systems (e.g. Kubernetes)
-
-Applications range from similarity search to NLP-driven data extractions that generate structured data. Semantic workflows transform and find data driven by user intent.
-
-![flows](images/flows.png#only-light)
-![flows](images/flows-dark.png#only-dark)
 
 The following applications are powered by txtai.
 
