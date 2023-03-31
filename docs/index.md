@@ -64,9 +64,9 @@ The following applications are powered by txtai.
 
 | Application  | Description  |
 |:----------|:-------------|
+| [txtchat](https://github.com/neuml/txtchat) | Conversational search and workflows for all |
 | [paperai](https://github.com/neuml/paperai) | Semantic search and workflows for medical/scientific papers |
 | [codequestion](https://github.com/neuml/codequestion) | Semantic search for developers |
 | [tldrstory](https://github.com/neuml/tldrstory) | Semantic search for headlines and story text |
-| [neuspo](https://neuspo.com) | Fact-driven, real-time sports event and news site |
 
 txtai is built with Python 3.7+, [Hugging Face Transformers](https://github.com/huggingface/transformers), [Sentence Transformers](https://github.com/UKPLab/sentence-transformers) and [FastAPI](https://github.com/tiangolo/fastapi)
