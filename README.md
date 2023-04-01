@@ -49,7 +49,7 @@ Integrate vector search, conversational search, automatic summarization, transcr
 
 Summary of txtai features:
 
-- 🔎 Similarity search with multiple vector index backends ([Faiss](https://github.com/facebookresearch/faiss), [Annoy](https://github.com/spotify/annoy), [Hnswlib](https://github.com/nmslib/hnswlib)), SQL filtering and support for external vector databases
+- 🔎 Similarity search with SQL, object storage, topic modeling, graph analysis, multiple vector index backends ([Faiss](https://github.com/facebookresearch/faiss), [Annoy](https://github.com/spotify/annoy), [Hnswlib](https://github.com/nmslib/hnswlib)) and support for external vector databases
 - 📄 Create embeddings for text, documents, audio, images and video
 - 💡 Pipelines powered by language models that run question-answering, labeling, transcription, translation, summarization, LLM prompts and more
 - ↪️️ Workflows to join pipelines together and aggregate business logic. txtai processes can be simple microservices or multi-model workflows.
