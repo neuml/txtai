@@ -38,7 +38,7 @@ Traditional search systems use keywords to find data. Semantic search has an und
 ![search](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/search.png#gh-light-mode-only)
 ![search](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/search-dark.png#gh-dark-mode-only)
 
-Data is transformed into embeddings and stored in vector indexes for search.
+txtai builds embeddings databases, which are a union of vector indexes and SQLite. This enables similarity search with SQL. Embeddings databases can stand on their own and/or serve as a powerful knowledge source for large language model (LLM) prompts.
 
 Semantic workflows connect language models together to build intelligent applications.
 
@@ -49,10 +49,10 @@ Integrate vector search, conversational search, automatic summarization, transcr
 
 Summary of txtai features:
 
-- 🔎 Large-scale similarity search with multiple index backends ([Faiss](https://github.com/facebookresearch/faiss), [Annoy](https://github.com/spotify/annoy), [Hnswlib](https://github.com/nmslib/hnswlib)) and support for external vector databases
+- 🔎 Similarity search with multiple vector index backends ([Faiss](https://github.com/facebookresearch/faiss), [Annoy](https://github.com/spotify/annoy), [Hnswlib](https://github.com/nmslib/hnswlib)), SQL filtering and support for external vector databases
 - 📄 Create embeddings for text, documents, audio, images and video
 - 💡 Pipelines powered by language models that run question-answering, labeling, transcription, translation, summarization, LLM prompts and more
-- ↪️️ Workflows to join pipelines together and aggregate business logic. txtai processes can be microservices or full-fledged indexing workflows.
+- ↪️️ Workflows to join pipelines together and aggregate business logic. txtai processes can be simple microservices or multi-model workflows.
 - ⚙️ Build with Python or YAML. API bindings available for [JavaScript](https://github.com/neuml/txtai.js), [Java](https://github.com/neuml/txtai.java), [Rust](https://github.com/neuml/txtai.rs) and [Go](https://github.com/neuml/txtai.go).
 - ☁️ Cloud-native architecture that scales out with container orchestration systems (e.g. Kubernetes)
 
@@ -86,7 +86,7 @@ embeddings.index([(0, "Correct", None), (1, "Not what we hoped", None)])
 embeddings.search("positive", 1)
 #[(0, 0.2986203730106354)]
 ```
-- Build applications in your programming language of choice via the API
+- Built-in API makes it easy to develop applications using your programming language of choice
 ```yaml
 # app.yml
 embeddings:
@@ -96,10 +96,9 @@ embeddings:
 CONFIG=app.yml uvicorn "txtai.api:app"
 curl -X GET "http://localhost:8000/search?query=positive"
 ```
-- Connect language models together to build intelligent data processing workflows
-- Works with both small and big data - scale when needed
-- Supports micromodels all the way up to large language models (LLMs)
-- Low footprint - install additional dependencies when you need them
+- Run local - no need to ship data off to disparate remote services
+- Work with micromodels all the way up to large language models (LLMs)
+- Low footprint - install additional dependencies and scale up when needed
 - [Learn by example](#examples) - notebooks cover all available functionality
 
 ## Installation
