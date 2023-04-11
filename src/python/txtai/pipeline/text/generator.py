@@ -13,7 +13,7 @@ class Generator(HFPipeline):
     def __init__(self, path=None, quantize=False, gpu=True, model=None):
         super().__init__(self.task(), path, quantize, gpu, model)
 
-    def __call__(self, text, prefix=None, maxlength=512, workers=0):
+    def __call__(self, text, prefix=None, maxlength=512, workers=0, **kwargs):
         """
         Generates text using input text
 
@@ -22,6 +22,7 @@ class Generator(HFPipeline):
             prefix: optional prefix to prepend to text elements
             maxlength: maximum sequence length
             workers: number of concurrent workers to use for processing data, defaults to None
+            kwargs: additional generation keyword arguments
 
         Returns:
             generated text
@@ -35,7 +36,7 @@ class Generator(HFPipeline):
             texts = [f"{prefix}{x}" for x in texts]
 
         # Run pipeline
-        results = self.pipeline(texts, max_length=maxlength, num_workers=workers)
+        results = self.pipeline(texts, max_length=maxlength, num_workers=workers, **kwargs)
 
         # Get generated text
         results = [self.clean(x) for x in results]
