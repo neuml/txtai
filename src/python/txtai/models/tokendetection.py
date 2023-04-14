@@ -98,17 +98,18 @@ class TokenDetection(PreTrainedModel):
         loss = goutputs[0] + self.weight * doutputs[0]
         return loss, goutputs[1], doutputs[1], dlabels
 
-    def save_pretrained(self, output, state_dict=None):
+    def save_pretrained(self, output, state_dict=None, **kwargs):
         """
         Saves current model to output directory.
 
         Args:
             output: output directory
             state_dict: model state
+            kwargs: additional keyword arguments
         """
 
         # Save combined model to support training from checkpoints
-        super().save_pretrained(output, state_dict)
+        super().save_pretrained(output, state_dict, **kwargs)
 
         # Save generator tokenizer and model
         gpath = os.path.join(output, "generator")
