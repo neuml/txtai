@@ -39,15 +39,16 @@ class Generator(HFPipeline):
         results = self.pipeline(texts, max_length=maxlength, num_workers=workers, **kwargs)
 
         # Get generated text
-        results = [self.clean(x) for x in results]
+        results = [self.clean(texts[x], result) for x, result in enumerate(results)]
 
         return results[0] if isinstance(text, str) else results
 
-    def clean(self, result):
+    def clean(self, prompt, result):
         """
         Applies a series of rules to clean generated text.
 
         Args:
+            prompt: original input prompt
             result: input result
 
         Returns:
@@ -60,7 +61,11 @@ class Generator(HFPipeline):
         # Get generated text field
         text = result["generated_text"]
 
-        return text.replace("$=", "<=")
+        # Replace input prompt
+        text = text.replace(prompt, "")
+
+        # Apply text cleaning rules
+        return text.replace("$=", "<=").strip()
 
     def task(self):
         """
