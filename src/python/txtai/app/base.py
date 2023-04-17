@@ -137,6 +137,10 @@ class Application:
                 # Resolve callable functions
                 config["tasks"] = [self.resolve(task) for task in config["tasks"]]
 
+                # Resolve stream functions
+                if "stream" in config:
+                    config["stream"] = self.resolve(config["stream"])
+
                 # Get scheduler config
                 schedule = config.pop("schedule", None)
 
@@ -640,8 +644,12 @@ class Application:
             processed elements
         """
 
-        # Convert lists to tuples
-        elements = [tuple(element) if isinstance(element, list) else element for element in elements]
+        if hasattr(elements, "__len__") and hasattr(elements, "__getitem__"):
+            # Convert to tuples and return as a list since input is sized
+            elements = [tuple(element) if isinstance(element, list) else element for element in elements]
+        else:
+            # Convert to tuples and return as a generator since input is not sized
+            elements = (tuple(element) if isinstance(element, list) else element for element in elements)
 
         # Execute workflow
         return self.workflows[name](elements)

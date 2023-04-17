@@ -27,7 +27,7 @@ class Workflow:
     Base class for all workflows.
     """
 
-    def __init__(self, tasks, batch=100, workers=None, name=None):
+    def __init__(self, tasks, batch=100, workers=None, name=None, stream=None):
         """
         Creates a new workflow. Workflows are lists of tasks to execute.
 
@@ -36,12 +36,14 @@ class Workflow:
             batch: how many items to process at a time, defaults to 100
             workers: number of concurrent workers
             name: workflow name
+            stream: workflow stream processor
         """
 
         self.tasks = tasks
         self.batch = batch
         self.workers = workers
         self.name = name
+        self.stream = stream
 
         # Set default number of executor workers to max number of actions in a task
         self.workers = max(len(task.action) for task in self.tasks) if not self.workers else self.workers
@@ -62,6 +64,9 @@ class Workflow:
         with Execute(self.workers) as executor:
             # Run task initializers
             self.initialize()
+
+            # Process elements with stream processor, if available
+            elements = self.stream(elements) if self.stream else elements
 
             # Process elements in batches
             for batch in self.chunk(elements):

@@ -32,5 +32,11 @@ class WorkflowFactory:
 
         config["tasks"] = tasks
 
+        if "stream" in config:
+            sconfig = config["stream"]
+            task = sconfig.pop("task") if "task" in sconfig else "stream"
+
+            config["stream"] = TaskFactory.create(sconfig, task)
+
         # Create workflow
         return Workflow(**config, name=name)
