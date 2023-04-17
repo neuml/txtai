@@ -62,8 +62,10 @@ class TestApp(unittest.TestCase):
         def generator():
             yield 10
 
+        # Test single stream
         self.assertEqual(list(app.workflow("stream", [10])), list(range(10)))
 
+        # Test batch stream
         self.assertEqual(list(app.workflow("batchstream", generator())), list(range(10)))
 
 
