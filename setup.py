@@ -24,7 +24,7 @@ extras["cloud"] = ["apache-libcloud>=3.3.1"]
 
 extras["console"] = ["rich>=12.0.1"]
 
-extras["database"] = ["pillow>=7.1.2"]
+extras["database"] = ["duckdb>=0.7.1", "pillow>=7.1.2"]
 
 extras["graph"] = ["networkx>=2.6.3", "python-louvain>=0.16"]
 

@@ -4,6 +4,7 @@ Factory module
 
 from ..util import Resolver
 
+from .duckdb import DuckDB
 from .sqlite import SQLite
 
 
@@ -37,6 +38,8 @@ class DatabaseFactory:
         # Create document database instance
         if content == "sqlite":
             database = SQLite(config)
+        elif content == "duckdb":
+            database = DuckDB(config)
         elif content:
             database = DatabaseFactory.resolve(content, config)
 
