@@ -40,7 +40,7 @@ Traditional search systems use keywords to find data. Semantic search has an und
 ![search](images/search.png#only-light)
 ![search](images/search-dark.png#only-dark)
 
-txtai builds embeddings databases, which are a union of vector indexes and SQLite. This enables similarity search with SQL. Embeddings databases can stand on their own and/or serve as a powerful knowledge source for large language model (LLM) prompts.
+txtai builds embeddings databases, which are a union of vector indexes and relational databases. This enables similarity search with SQL. Embeddings databases can stand on their own and/or serve as a powerful knowledge source for large language model (LLM) prompts.
 
 Semantic workflows connect language models together to build intelligent applications.
 
