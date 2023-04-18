@@ -28,7 +28,7 @@ class DuckDB(FileDB):
         return self.connection
 
     def rows(self):
-        # Yield rows from batches of query results
+        # Iteratively retrieve and yield rows
         batch = 256
         rows = self.cursor.fetchmany(batch)
         while rows:

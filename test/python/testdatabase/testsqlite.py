@@ -1,5 +1,5 @@
 """
-Embeddings+database module tests
+SQLite module tests
 """
 
 import contextlib

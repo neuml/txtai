@@ -1,5 +1,5 @@
 """
-Embeddings+database module tests
+DuckDB module tests
 """
 
 from txtai.embeddings import Embeddings
