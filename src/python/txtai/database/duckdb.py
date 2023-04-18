@@ -68,11 +68,6 @@ class DuckDB(FileDB):
             connection.execute(FileDB.CREATE_SECTIONS_INDEX)
             connection.execute("CHECKPOINT")
 
-            # Delete empty WAL files
-            wal = f"{path}.wal"
-            if os.path.exists(wal) and os.path.getsize(wal) == 0:
-                os.remove(wal)
-
         # Start transaction
         connection.begin()
 
