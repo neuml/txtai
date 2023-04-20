@@ -7,7 +7,7 @@ This following describes available embeddings configuration. These parameters ar
 format: pickle|json
 ```
 
-Sets the configuration storage format. Defaults to pickle.
+Sets the configuration storage format. Defaults to `pickle`.
 
 ## path
 ```yaml
