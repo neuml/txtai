@@ -36,10 +36,10 @@ class DatabaseFactory:
             content = "sqlite"
 
         # Create document database instance
-        if content == "sqlite":
-            database = SQLite(config)
-        elif content == "duckdb":
+        if content == "duckdb":
             database = DuckDB(config)
+        elif content == "sqlite":
+            database = SQLite(config)
         elif content:
             database = DatabaseFactory.resolve(content, config)
 

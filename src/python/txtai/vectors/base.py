@@ -12,7 +12,7 @@ from .. import __pickle__
 
 class Vectors:
     """
-    Base class for sentence embeddings/vector models.
+    Base class for sentence embeddings/vector models. Vector models transform input content into numeric vectors.
     """
 
     def __init__(self, config, scoring):

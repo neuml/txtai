@@ -14,8 +14,9 @@ logger = logging.getLogger(__name__)
 
 class Database:
     """
-    Base class for database instances. This class encapsulates a document-oriented database
-    used for storing key-value content stored as dicts.
+    Base class for database instances. This class encapsulates a content database used for
+    storing field content as dicts and objects. The database instance works in conjuction
+    with a vector index to execute SQL-driven similarity search.
     """
 
     def __init__(self, config):

@@ -10,7 +10,8 @@ from .. import __version__
 
 class ANN:
     """
-    Base class for ANN instances.
+    Base class for ANN instances. This class builds vector indexes to support similarity search.
+    The built-in ANN backends store ids and vectors. Content storage is supported via database instances.
     """
 
     def __init__(self, config):

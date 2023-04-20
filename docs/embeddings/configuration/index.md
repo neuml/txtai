@@ -106,11 +106,12 @@ Instruction-based models use prefixes to modify how embeddings are computed. Thi
 
 ## backend
 ```yaml
-backend: faiss|hnsw|annoy
+backend: faiss|hnsw|annoy|custom
 ```
 
 Approximate Nearest Neighbor (ANN) index backend for storing generated sentence embeddings. `Defaults to faiss`. Additional backends require the
-[similarity](../../install/#similarity) extras package to be installed.
+[similarity](../../install/#similarity) extras package to be installed. Add custom backends via setting this parameter to the fully resolvable
+class string.
 
 Backend-specific settings are set with a corresponding configuration object having the same name as the backend (i.e. annoy, faiss, or hnsw). None of these are required and are set to defaults if omitted.
 
@@ -159,10 +160,10 @@ See [Annoy documentation](https://github.com/spotify/annoy#full-python-api) for 
 
 ## content
 ```yaml
-content: string|boolean
+content: boolean|sqlite|duckdb|custom
 ```
 
-Enables content storage. When true, the default content storage engine will be used. `Defaults to sqlite`. Otherwise, the string must specify the supported content storage engine to use.
+Enables content storage. When true, the default storage engine, `sqlite` will be used. Also supports `duckdb`. Add custom storage engines via setting this parameter to the fully resolvable class string.
 
 ## functions
 ```yaml
@@ -204,6 +205,8 @@ graph:
 ```
 
 Enables graph storage. When set, a graph network is built using the embeddings index. Graph nodes are synced with each embeddings index operation (index/upsert/delete). Graph edges are created using the embeddings index upon completion of each index/upsert/delete embeddings index call.
+
+Add custom graph storage engines via setting the `graph.backend` parameter to the fully resolvable class string.
 
 Defaults are tuned so that in most cases these values don't need to be changed. 
 
