@@ -4,8 +4,6 @@ ImageEncoder module
 
 from io import BytesIO
 
-from .base import Encoder
-
 # Conditional import
 try:
     from PIL import Image
@@ -13,6 +11,8 @@ try:
     PIL = True
 except ImportError:
     PIL = False
+
+from .base import Encoder
 
 
 class ImageEncoder(Encoder):

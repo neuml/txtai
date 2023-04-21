@@ -23,6 +23,7 @@ class TestOptional(unittest.TestCase):
         modules = [
             "annoy",
             "croniter",
+            "duckdb",
             "fastapi",
             "fasttext",
             "hnswlib",
@@ -106,7 +107,11 @@ class TestOptional(unittest.TestCase):
         Test missing database dependencies
         """
 
+        from txtai.database import DuckDB
         from txtai.database import ImageEncoder
+
+        with self.assertRaises(ImportError):
+            DuckDB({})
 
         with self.assertRaises(ImportError):
             ImageEncoder()

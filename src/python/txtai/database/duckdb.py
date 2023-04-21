@@ -6,7 +6,13 @@ import os
 
 from tempfile import TemporaryDirectory
 
-import duckdb
+# Conditional import
+try:
+    import duckdb
+
+    DUCKDB = True
+except ImportError:
+    DUCKDB = False
 
 from .filedb import FileDB
 
@@ -15,6 +21,12 @@ class DuckDB(FileDB):
     """
     Database instance backed by DuckDB.
     """
+
+    def __init__(self, config):
+        super().__init__(config)
+
+        if not DUCKDB:
+            raise ImportError('DuckDB is not available - install "database" extra to enable')
 
     def connect(self, path=":memory:"):
         # Create connection and start a transaction
