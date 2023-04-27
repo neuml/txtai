@@ -44,14 +44,12 @@ jobs:
         if: matrix.os == 'macos-latest'
 
       - name: Install dependencies - Windows
-        run: |
-          choco install wget
-          pip install pybind11
+        run: choco install wget
         if: matrix.os == 'windows-latest'
 
       - name: Build
         run: |
-          pip install -U pip wheel
+          pip install -U wheel
           pip install .[all,dev]
           python -c "import nltk; nltk.download('punkt')"
           python --version
