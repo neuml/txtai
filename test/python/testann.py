@@ -100,6 +100,20 @@ class TestANN(unittest.TestCase):
         self.assertRaises(NotImplementedError, ann.count)
         self.assertRaises(NotImplementedError, ann.save, None)
 
+    def testNumPy(self):
+        """
+        Test NumPy backend
+        """
+
+        self.runTests("numpy")
+
+    def testTorch(self):
+        """
+        Test Torch backend
+        """
+
+        self.runTests("torch")
+
     def runTests(self, name, params=None, update=True):
         """
         Runs a series of standard backend tests.

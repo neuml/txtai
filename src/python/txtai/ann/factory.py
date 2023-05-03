@@ -7,6 +7,8 @@ from ..util import Resolver
 from .annoy import Annoy
 from .faiss import Faiss
 from .hnsw import HNSW
+from .numpy import NumPy
+from .torch import Torch
 
 
 class ANNFactory:
@@ -37,6 +39,10 @@ class ANNFactory:
             ann = Faiss(config)
         elif backend == "hnsw":
             ann = HNSW(config)
+        elif backend == "numpy":
+            ann = NumPy(config)
+        elif backend == "torch":
+            ann = Torch(config)
         else:
             ann = ANNFactory.resolve(backend, config)
 
