@@ -106,7 +106,7 @@ Instruction-based models use prefixes to modify how embeddings are computed. Thi
 
 ## backend
 ```yaml
-backend: faiss|hnsw|annoy|custom
+backend: faiss|hnsw|annoy|numpy|torch|custom
 ```
 
 Approximate Nearest Neighbor (ANN) index backend for storing generated sentence embeddings. `Defaults to faiss`. Additional backends require the

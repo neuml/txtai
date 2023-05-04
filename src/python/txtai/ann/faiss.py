@@ -49,7 +49,7 @@ class Faiss(ANN):
 
         # Update id offset and index metadata
         self.config["offset"] += new
-        self.metadata(None)
+        self.metadata()
 
     def delete(self, ids):
         # Remove specified ids

@@ -121,7 +121,7 @@ class ANN:
         setting = backend.get(name) if backend else None
         return setting if setting else default
 
-    def metadata(self, settings):
+    def metadata(self, settings=None):
         """
         Adds index build metadata.
 
