@@ -54,16 +54,22 @@ class TestEncoder(unittest.TestCase):
         try:
             # Set default encoder
             self.embeddings.config["objects"] = True
-            data = [(0, {"object": bytearray([1, 2, 3]), "text": "default test"}, None)]
 
-            # Create an index
-            self.embeddings.index(data)
+            # Test all database providers
+            for content in ["duckdb", "sqlite"]:
+                self.embeddings.config["content"] = content
 
-            result = self.embeddings.search("select object from txtai limit 1")[0]
+                data = [(0, {"object": bytearray([1, 2, 3]), "text": "default test"}, None)]
 
-            self.assertEqual(result["object"].getvalue(), bytearray([1, 2, 3]))
+                # Create an index
+                self.embeddings.index(data)
+
+                result = self.embeddings.search("select object from txtai limit 1")[0]
+
+                self.assertEqual(result["object"].getvalue(), bytearray([1, 2, 3]))
         finally:
             self.embeddings.config["objects"] = "image"
+            self.embeddings.config["content"] = True
 
     def testImages(self):
         """

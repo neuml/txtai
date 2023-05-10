@@ -22,11 +22,31 @@ class DuckDB(FileDB):
     Database instance backed by DuckDB.
     """
 
+    # Delete single document and object
+    DELETE_DOCUMENT = "DELETE FROM documents WHERE id = ?"
+    DELETE_OBJECT = "DELETE FROM objects WHERE id = ?"
+
     def __init__(self, config):
         super().__init__(config)
 
         if not DUCKDB:
             raise ImportError('DuckDB is not available - install "database" extra to enable')
+
+    def insertdocument(self, uid, document, tags, entry):
+        if document:
+            # Delete existing document
+            self.cursor.execute(DuckDB.DELETE_DOCUMENT, [uid])
+
+        # Call parent logic
+        return super().insertdocument(uid, document, tags, entry)
+
+    def insertobject(self, uid, obj, tags, entry):
+        if self.encoder:
+            # Delete existing object
+            self.cursor.execute(DuckDB.DELETE_OBJECT, [uid])
+
+        # Call parent logic
+        super().insertobject(uid, obj, tags, entry)
 
     def connect(self, path=":memory:"):
         # Create connection and start a transaction
