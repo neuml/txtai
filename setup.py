@@ -38,7 +38,7 @@ extras["pipeline-image"] = ["imagehash>=4.2.1", "pillow>=7.1.2", "timm>=0.4.12"]
 
 extras["pipeline-text"] = ["fasttext>=0.9.2", "sentencepiece>=0.1.91"]
 
-extras["pipeline-train"] = ["onnx>=1.11.0", "onnxmltools>=1.9.1", "onnxruntime>=1.11.0"]
+extras["pipeline-train"] = ["accelerate>=0.19.0", "onnx>=1.11.0", "onnxmltools>=1.9.1", "onnxruntime>=1.11.0"]
 
 extras["pipeline"] = (
     extras["pipeline-audio"] + extras["pipeline-data"] + extras["pipeline-image"] + extras["pipeline-text"] + extras["pipeline-train"]
