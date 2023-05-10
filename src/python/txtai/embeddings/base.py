@@ -98,9 +98,8 @@ class Embeddings:
             reindex: if this is a reindex operation in which case database creation is skipped, defaults to False
         """
 
-        # Set configuration to default configuration, if empty
-        if not self.config:
-            self.configure(self.defaults())
+        # Initialize default parameters, if necessary
+        self.defaults()
 
         # Create document database, if necessary
         if not reindex:
@@ -593,14 +592,15 @@ class Embeddings:
         Prints the current embeddings index configuration.
         """
 
-        # Copy and edit config
-        config = self.config.copy()
+        if self.config:
+            # Copy and edit config
+            config = self.config.copy()
 
-        # Remove ids array if present
-        config.pop("ids", None)
+            # Remove ids array if present
+            config.pop("ids", None)
 
-        # Print configuration
-        print(json.dumps(config, sort_keys=True, default=str, indent=2))
+            # Print configuration
+            print(json.dumps(config, sort_keys=True, default=str, indent=2))
 
     def configure(self, config):
         """
@@ -630,13 +630,20 @@ class Embeddings:
 
     def defaults(self):
         """
-        Builds a default configuration.
+        Apply default parameters to current configuration.
 
         Returns:
-            default configuration
+            configuration with default parameters set
         """
 
-        return {"path": "sentence-transformers/all-MiniLM-L6-v2"}
+        self.config = self.config if self.config else {}
+
+        # Add default path if configuration available
+        if not self.model:
+            self.config["path"] = "sentence-transformers/all-MiniLM-L6-v2"
+
+            # Configure instance
+            self.model = self.loadvectors()
 
     def loadconfig(self, path):
         """

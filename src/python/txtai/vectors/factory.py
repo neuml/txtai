@@ -40,7 +40,8 @@ class VectorsFactory:
 
             return WordVectors(config, scoring)
 
-        return TransformersVectors(config, scoring)
+        # Default to TransformersVectors when configuration available
+        return TransformersVectors(config, scoring) if config and "path" in config else None
 
     @staticmethod
     def method(config):
