@@ -82,7 +82,7 @@ class TestExtractor(unittest.TestCase):
         Test support for generator models
         """
 
-        extractor = Extractor(self.embeddings, "facebook/opt-125m")
+        extractor = Extractor(self.embeddings, "sshleifer/tiny-gpt2")
 
         question = "How many home runs?"
 
