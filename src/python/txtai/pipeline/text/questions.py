@@ -4,18 +4,18 @@ Questions module
 
 from ..hfpipeline import HFPipeline
 
-
 class Questions(HFPipeline):
     """
     Runs extractive QA for a series of questions and contexts.
     """
 
-    def __init__(self, path=None, quantize=False, gpu=True, model=None):
+    def __init__(self, path=None, quantize=False, gpu=True, model=None, top_k=1):
         super().__init__("question-answering", path, quantize, gpu, model)
+        self.top_k = top_k
 
     def __call__(self, questions, contexts, workers=0):
         """
-        Runs a extractive question-answering model against each question-context pair, finding the best answers.
+        Runs an extractive question-answering model against each question-context pair, finding the best answers.
 
         Args:
             questions: list of questions
@@ -31,18 +31,34 @@ class Questions(HFPipeline):
         for x, question in enumerate(questions):
             if question and contexts[x]:
                 # Run the QA pipeline
-                result = self.pipeline(question=question, context=contexts[x], num_workers=workers)
+                results = self.pipeline(question=question, context=contexts[x], num_workers=workers, top_k=self.top_k)
 
-                # Get answer and score
-                answer, score = result["answer"], result["score"]
+                if isinstance(results, list):
+                    answer = []
+                    for result in results:
+                        # Get answer and score
+                        single_answer, score = result["answer"], result["score"]
 
-                # Require score to be at least 0.05
-                if score < 0.05:
-                    answer = None
+                        # Require score to be at least 0.05
+                        if score >= 0.05:
+                            answer.append(single_answer)
 
-                # Add answer
+                    if not answer:
+                        answer = None
+                else:
+                    # Get answer and score
+                    answer, score = results["answer"], results["score"]
+                    
+                    # Require score to be at least 0.05
+                    if score < 0.05:
+                        answer = None
+
+                # Add result
                 answers.append(answer)
             else:
                 answers.append(None)
 
         return answers
+
+
+
