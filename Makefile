@@ -14,6 +14,12 @@ export TOKENIZERS_PARALLELISM := false
 # Default python executable if not provided
 PYTHON ?= python
 
+# Check for wget
+WGET := $(shell wget --version 2> /dev/null)
+ifndef WGET
+    $(error "Required binary `wget` not found, please install wget OS package")
+endif
+
 # Download test data
 data:
 	mkdir -p /tmp/txtai
