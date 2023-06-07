@@ -1,7 +1,7 @@
 """
 Baseball statistics application with txtai and Streamlit.
 
-Install txtai and streamlit to run:
+Install txtai and streamlit (>= 1.23) to run:
   pip install txtai streamlit
 """
 
