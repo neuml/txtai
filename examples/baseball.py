@@ -8,6 +8,7 @@ Install txtai and streamlit (>= 1.23) to run:
 import datetime
 import os
 
+import altair as alt
 import numpy as np
 import pandas as pd
 import streamlit as st
@@ -57,15 +58,12 @@ class Stats:
 
         raise NotImplementedError
 
-    def sort(self, rows):
+    def metric(self):
         """
-        Sorts rows stored as a DataFrame.
-
-        Args:
-            rows: input DataFrame
+        Primary metric column.
 
         Returns:
-            sorted DataFrame
+            metric column name
         """
 
         raise NotImplementedError
@@ -126,22 +124,31 @@ class Stats:
 
         return vectors, data, embeddings
 
-    def years(self, player):
+    def metrics(self, player):
         """
-        Looks up the years active for a player along with the player's best statistical year.
+        Looks up a player's active years, best statistical year and key metrics.
 
         Args:
             player: player name
 
         Returns:
-            start, end, best
+            active, best, metrics
         """
 
         if player in self.names:
-            df = self.sort(self.stats[self.stats["playerID"] == self.names[player]])
-            return int(df["yearID"].min()), int(df["yearID"].max()), int(df["yearID"].iloc[0])
+            # Get player stats
+            stats = self.stats[self.stats["playerID"] == self.names[player]]
 
-        return 1871, datetime.datetime.today().year, 1950
+            # Build key metrics
+            metrics = stats[["yearID", self.metric()]]
+
+            # Get best year, sort by primary metric
+            best = int(stats.sort_values(by=self.metric(), ascending=False)["yearID"].iloc[0])
+
+            # Get years active, best year, along with metric trends
+            return metrics["yearID"].tolist(), best, metrics
+
+        return range(1871, datetime.datetime.today().year), 1950, None
 
     def search(self, player=None, year=None, row=None, limit=10):
         """
@@ -204,10 +211,10 @@ class Batting(Stats):
     def loadcolumns(self):
         return [
             "birthMonth",
-            "age",
-            "weight",
-            "height",
             "yearID",
+            "age",
+            "height",
+            "weight",
             "G",
             "AB",
             "R",
@@ -263,8 +270,8 @@ class Batting(Stats):
 
         return batting
 
-    def sort(self, rows):
-        return rows.sort_values(by="OPS+", ascending=False)
+    def metric(self):
+        return "OPS+"
 
     def vector(self, row):
         row["TB"] = row["1B"] + 2 * row["2B"] + 3 * row["3B"] + 4 * row["HR"]
@@ -336,10 +343,10 @@ class Pitching(Stats):
     def loadcolumns(self):
         return [
             "birthMonth",
-            "age",
-            "weight",
-            "height",
             "yearID",
+            "age",
+            "height",
+            "weight",
             "W",
             "L",
             "G",
@@ -387,8 +394,8 @@ class Pitching(Stats):
 
         return pitching
 
-    def sort(self, rows):
-        return rows.sort_values(by="WADJ", ascending=False)
+    def metric(self):
+        return "WADJ"
 
     def vector(self, row):
         row["WHIP"] = (row["BB"] + row["H"]) / (row["IPouts"] / 3) if row["IPouts"] else None
@@ -450,15 +457,21 @@ class Application:
         names = sorted(stats.names)
         player = st.selectbox("Player", names, names.index(default))
 
+        # Player metrics
+        active, best, metrics = stats.metrics(player)
+
         # Player year
-        start, end, best = stats.years(player)
-        year = st.slider("Year", start, end, best) if start != end else start
+        year = int(st.select_slider("Year", active, best) if len(active) > 1 else active[0])
+
+        # Display metrics chart
+        if len(active) > 1:
+            self.chart(category, metrics)
 
         # Run search
         results = stats.search(player, year)
 
         # Display results
-        self.display(results, ["link", "nameFirst", "nameLast", "teamID"] + stats.columns[1:])
+        self.table(results, ["link", "nameFirst", "nameLast", "teamID"] + stats.columns[1:])
 
     def search(self):
         """
@@ -482,12 +495,46 @@ class Application:
                 # Run search
                 results = stats.search(row=inputs.to_dict(orient="records")[0])
 
-                # Display results
-                self.display(results, ["link", "nameFirst", "nameLast", "teamID"] + stats.columns[1:])
+                # Display table
+                self.table(results, ["link", "nameFirst", "nameLast", "teamID"] + stats.columns[1:])
 
-    def display(self, results, columns):
+    def chart(self, category, metrics):
         """
-        Displays a list of results.
+        Displays a metric chart.
+
+        Args:
+            category: Batting or Pitching
+            metrics: player metrics to plot
+        """
+
+        # Key metric
+        metric = self.batting.metric() if category == "Batting" else self.pitching.metric()
+
+        # Cast year to string
+        metrics["yearID"] = metrics["yearID"].astype(str)
+
+        # Metric over years
+        chart = (
+            alt.Chart(metrics)
+            .mark_line(interpolate="monotone", point=True, strokeWidth=2.5, opacity=0.75)
+            .encode(
+                x=alt.X("yearID", title="").scale(padding=0),
+                y=alt.Y(metric).scale(zero=False, padding=0),
+            )
+        )
+
+        # Create metric median rule line
+        rule = alt.Chart(metrics).mark_rule(color="gray", strokeDash=[3, 5], opacity=0.5).encode(y=f"median({metric})")
+
+        # Layered chart configuration
+        chart = (chart + rule).encode(y=alt.Y(title=metric)).properties(height=200).configure_axis(grid=False)
+
+        # Draw chart
+        st.altair_chart(chart + rule, theme="streamlit", use_container_width=True)
+
+    def table(self, results, columns):
+        """
+        Displays a list of results as a table.
 
         Args:
             results: list of results
