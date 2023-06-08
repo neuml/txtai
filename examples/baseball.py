@@ -517,10 +517,7 @@ class Application:
         chart = (
             alt.Chart(metrics)
             .mark_line(interpolate="monotone", point=True, strokeWidth=2.5, opacity=0.75)
-            .encode(
-                x=alt.X("yearID", title="").scale(padding=0),
-                y=alt.Y(metric).scale(zero=False, padding=0),
-            )
+            .encode(x=alt.X("yearID", title=""), y=alt.Y(metric, scale=alt.Scale(zero=False)))
         )
 
         # Create metric median rule line
