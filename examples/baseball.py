@@ -92,14 +92,18 @@ class Stats:
 
         # Get unique names
         names = {}
-        rows = self.stats[["nameFirst", "nameLast", "playerID"]].drop_duplicates()
+        rows = self.stats[["nameFirst", "nameLast", "playerID"]]
         for _, row in rows.iterrows():
             # Name key
             key = f"{row['nameFirst']} {row['nameLast']}"
-            suffix = f" ({row['playerID']})" if key in names else ""
+            key += f" ({row['playerID']})" if key in names and names[key][0] != row["playerID"] else ""
 
-            # Save name key - player id pair
-            names[f"{key}{suffix}"] = row["playerID"]
+            if key not in names:
+                # Get count of active seasons for player
+                count = len(rows[rows["playerID"] == row["playerID"]])
+
+                # Save name key - values pair
+                names[key] = (row["playerID"], count)
 
         return names
 
@@ -138,7 +142,7 @@ class Stats:
 
         if name in self.names:
             # Get player stats
-            stats = self.stats[self.stats["playerID"] == self.names[name]]
+            stats = self.stats[self.stats["playerID"] == self.names[name][0]]
 
             # Build key metrics
             metrics = stats[["yearID", self.metric()]]
@@ -169,7 +173,8 @@ class Stats:
             query = self.vector(row)
         else:
             # Lookup player key and build vector id
-            query = f"{year}{self.names.get(name)}"
+            name = self.names.get(name)
+            query = f"{year}{name[0] if name else name}"
             query = self.vectors.get(query)
 
         results, ids = [], set()
@@ -253,7 +258,7 @@ class Batting(Stats):
         batting = pd.merge(players, batting, how="inner", on=["playerID"])
 
         # Require player to have at least 350 plate appearances.
-        batting = batting[(batting["AB"] + batting["BB"]) >= 350]
+        batting = batting[((batting["AB"] + batting["BB"]) >= 350) & (batting["stint"] == 1)]
 
         # Derive primary player positions
         positions = self.positions(fielding)
@@ -386,7 +391,7 @@ class Pitching(Stats):
         pitching = pd.merge(players, pitching, how="inner", on=["playerID"])
 
         # Require player to have 20 appearances
-        pitching = pitching[pitching["G"] >= 20]
+        pitching = pitching[(pitching["G"] >= 20) & (pitching["stint"] == 1)]
 
         # Calculated columns
         pitching["age"] = pitching["yearID"] - pitching["birthYear"]
@@ -459,8 +464,7 @@ class Application:
         stats = self.batting if category == "Batting" else self.pitching
 
         # Player name
-        names = sorted(stats.names)
-        name = self.name(names, params.get("name"))
+        name = self.name(stats.names, params.get("name"))
 
         # Player metrics
         active, best, metrics = stats.metrics(name)
@@ -560,8 +564,11 @@ class Application:
             name component
         """
 
-        # Get name parameter, default to random value if not valid
-        name = name if name and name in names else random.choice(names)
+        # Get name parameter, default to random weighted value if not valid
+        name = name if name and name in names else random.choices(list(names.keys()), weights=[names[x][1] for x in names])[0]
+
+        # Sort names for display
+        names = sorted(names)
 
         # Select box component
         return st.selectbox("Name", names, names.index(name), key="name")
