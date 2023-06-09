@@ -6,6 +6,7 @@ Install txtai and streamlit (>= 1.23) to run:
 """
 
 import datetime
+import math
 import os
 import random
 
@@ -92,18 +93,21 @@ class Stats:
 
         # Get unique names
         names = {}
-        rows = self.stats[["nameFirst", "nameLast", "playerID"]]
-        for _, row in rows.iterrows():
+        rows = self.stats.sort_values(by=self.metric(), ascending=False)[["nameFirst", "nameLast", "playerID"]].drop_duplicates().reset_index()
+        for x, row in rows.iterrows():
             # Name key
             key = f"{row['nameFirst']} {row['nameLast']}"
-            key += f" ({row['playerID']})" if key in names and names[key][0] != row["playerID"] else ""
+            key += f" ({row['playerID']})" if key in names else ""
 
             if key not in names:
-                # Get count of active seasons for player
-                count = len(rows[rows["playerID"] == row["playerID"]])
+                # Scale scores of top n players
+                exponent = 2 if ((len(rows) - x) / len(rows)) >= 0.95 else 1
+
+                # score = num seasons ^ exponent
+                score = math.pow(len(self.stats[self.stats["playerID"] == row["playerID"]]), exponent)
 
                 # Save name key - values pair
-                names[key] = (row["playerID"], count)
+                names[key] = (row["playerID"], score)
 
         return names
 
@@ -524,8 +528,8 @@ class Application:
 
         # Sync parameters with session state
         if all(x in st.session_state for x in ["category", "name", "year"]):
-            # Only use session year if name is unchanged
-            params["year"] = str(st.session_state["year"]) if params["name"] == st.session_state["name"] else None
+            # Copy session year if category and name are unchanged
+            params["year"] = str(st.session_state["year"]) if all(params[x] == st.session_state[x] for x in ["category", "name"]) else None
 
             # Copy category and name from session state
             params["category"] = st.session_state["category"]
