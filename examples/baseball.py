@@ -7,6 +7,7 @@ Install txtai and streamlit (>= 1.23) to run:
 
 import datetime
 import os
+import random
 
 import altair as alt
 import numpy as np
@@ -124,20 +125,20 @@ class Stats:
 
         return vectors, data, embeddings
 
-    def metrics(self, player):
+    def metrics(self, name):
         """
         Looks up a player's active years, best statistical year and key metrics.
 
         Args:
-            player: player name
+            name: player name
 
         Returns:
             active, best, metrics
         """
 
-        if player in self.names:
+        if name in self.names:
             # Get player stats
-            stats = self.stats[self.stats["playerID"] == self.names[player]]
+            stats = self.stats[self.stats["playerID"] == self.names[name]]
 
             # Build key metrics
             metrics = stats[["yearID", self.metric()]]
@@ -150,12 +151,12 @@ class Stats:
 
         return range(1871, datetime.datetime.today().year), 1950, None
 
-    def search(self, player=None, year=None, row=None, limit=10):
+    def search(self, name=None, year=None, row=None, limit=10):
         """
         Runs an embeddings search. This method takes either a player-year or stats row as input.
 
         Args:
-            player: player name to search
+            name: player name to search
             year: year to search
             row: row of stats to search
             limit: max results to return
@@ -168,7 +169,7 @@ class Stats:
             query = self.vector(row)
         else:
             # Lookup player key and build vector id
-            query = f"{year}{self.names.get(player)}"
+            query = f"{year}{self.names.get(name)}"
             query = self.vectors.get(query)
 
         results, ids = [], set()
@@ -450,28 +451,35 @@ class Application:
 
         st.markdown("Match by player-season. Each player search defaults to the best season sorted by OPS or Wins Adjusted.")
 
-        category = st.radio("Stat", ["Batting", "Pitching"], horizontal=True, key="playerstat")
-        stats, default = (self.batting, "Babe Ruth") if category == "Batting" else (self.pitching, "Cy Young")
+        # Get parameters
+        params = self.params()
+
+        # Category and stats
+        category = self.category(params.get("category"))
+        stats = self.batting if category == "Batting" else self.pitching
 
         # Player name
         names = sorted(stats.names)
-        player = st.selectbox("Player", names, names.index(default))
+        name = self.name(names, params.get("name"))
 
         # Player metrics
-        active, best, metrics = stats.metrics(player)
+        active, best, metrics = stats.metrics(name)
 
         # Player year
-        year = int(st.select_slider("Year", active, best) if len(active) > 1 else active[0])
+        year = self.year(active, params.get("year"), best)
 
         # Display metrics chart
         if len(active) > 1:
             self.chart(category, metrics)
 
         # Run search
-        results = stats.search(player, year)
+        results = stats.search(name, year)
 
         # Display results
         self.table(results, ["link", "nameFirst", "nameLast", "teamID"] + stats.columns[1:])
+
+        # Save parameters
+        st.experimental_set_query_params(category=category, name=name, year=year)
 
     def search(self):
         """
@@ -480,7 +488,7 @@ class Application:
 
         st.markdown("Find players with similar statistics.")
 
-        category = st.radio("Stat", ["Batting", "Pitching"], horizontal=True, key="searchstat")
+        category = st.radio("Stat", ["Batting", "Pitching"], horizontal=True, key="stat")
         with st.form("search"):
             if category == "Batting":
                 stats, columns = self.batting, self.batting.columns[:-6]
@@ -497,6 +505,85 @@ class Application:
 
                 # Display table
                 self.table(results, ["link", "nameFirst", "nameLast", "teamID"] + stats.columns[1:])
+
+    def params(self):
+        """
+        Get application parameters. This method combines URL parameters with session parameters.
+
+        Returns:
+            parameters
+        """
+
+        # Get parameters
+        params = st.experimental_get_query_params()
+        params = {x: params[x][0] for x in params}
+
+        # Sync parameters with session state
+        if all(x in st.session_state for x in ["category", "name", "year"]):
+            # Only use session year if name is unchanged
+            params["year"] = str(st.session_state["year"]) if params["name"] == st.session_state["name"] else None
+
+            # Copy category and name from session state
+            params["category"] = st.session_state["category"]
+            params["name"] = st.session_state["name"]
+
+        return params
+
+    def category(self, category):
+        """
+        Builds category input widget.
+
+        Args:
+            category: category parameter
+
+        Returns:
+            category component
+        """
+
+        # List of stat categories
+        categories = ["Batting", "Pitching"]
+
+        # Get category parameter, default if not available or valid
+        default = categories.index(category) if category and category in categories else 0
+
+        # Radio box component
+        return st.radio("Stat", categories, index=default, horizontal=True, key="category")
+
+    def name(self, names, name):
+        """
+        Builds name input widget.
+
+        Args:
+            names: list of all allowable names
+
+        Returns:
+            name component
+        """
+
+        # Get name parameter, default to random value if not valid
+        name = name if name and name in names else random.choice(names)
+
+        # Select box component
+        return st.selectbox("Name", names, names.index(name), key="name")
+
+    def year(self, years, year, best):
+        """
+        Builds year input widget.
+
+        Args:
+            years: active years for a player
+            year: year parameter
+            best: default to best year if year is invalid
+
+        Returns:
+            year component
+        """
+
+        # Get year parameter, default if not available or valid
+        year = int(year) if year and year.isdigit() and int(year) in years else best
+
+        # Slider component
+        return int(st.select_slider("Year", years, year, key="year") if len(years) > 1 else years[0])
 
     def chart(self, category, metrics):
         """
