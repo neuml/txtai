@@ -439,7 +439,8 @@ class Application:
         st.markdown(
             """
             This application finds the best matching historical players using vector search with [txtai](https://github.com/neuml/txtai).
-            Raw data is from the [Baseball Databank](https://github.com/chadwickbureau/baseballdatabank) GitHub project. 
+            Raw data is from the [Baseball Databank](https://github.com/chadwickbureau/baseballdatabank) GitHub project. Read [this
+            article](https://medium.com/neuml/explore-baseball-history-with-vector-search-5778d98d6846) for more details.
         """
         )
 
@@ -464,7 +465,7 @@ class Application:
         params = self.params()
 
         # Category and stats
-        category = self.category(params.get("category"))
+        category = self.category(params.get("category"), "category")
         stats = self.batting if category == "Batting" else self.pitching
 
         # Player name
@@ -496,7 +497,7 @@ class Application:
 
         st.markdown("Find players with similar statistics.")
 
-        category = st.radio("Stat", ["Batting", "Pitching"], horizontal=True, key="stat")
+        category = self.category("Batting", "searchcategory")
         with st.form("search"):
             if category == "Batting":
                 stats, columns = self.batting, self.batting.columns[:-6]
@@ -529,7 +530,7 @@ class Application:
         # Sync parameters with session state
         if all(x in st.session_state for x in ["category", "name", "year"]):
             # Copy session year if category and name are unchanged
-            params["year"] = str(st.session_state["year"]) if all(params[x] == st.session_state[x] for x in ["category", "name"]) else None
+            params["year"] = str(st.session_state["year"]) if all(params.get(x) == st.session_state[x] for x in ["category", "name"]) else None
 
             # Copy category and name from session state
             params["category"] = st.session_state["category"]
@@ -537,12 +538,13 @@ class Application:
 
         return params
 
-    def category(self, category):
+    def category(self, category, key):
         """
         Builds category input widget.
 
         Args:
             category: category parameter
+            key: widget key
 
         Returns:
             category component
@@ -555,7 +557,7 @@ class Application:
         default = categories.index(category) if category and category in categories else 0
 
         # Radio box component
-        return st.radio("Stat", categories, index=default, horizontal=True, key="category")
+        return st.radio("Stat", categories, index=default, horizontal=True, key=key)
 
     def name(self, names, name):
         """
