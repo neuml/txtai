@@ -29,8 +29,8 @@ Examples build commands below.
 # Get Dockerfile
 wget https://raw.githubusercontent.com/neuml/txtai/master/docker/base/Dockerfile
 
-# Build Ubuntu 18.04 image running Python 3.7
-docker build -t txtai --build-arg BASE_IMAGE=ubuntu:18.04 --build-arg PYTHON_VERSION=3.7 .
+# Build Ubuntu 20.04 image running Python 3.8
+docker build -t txtai --build-arg BASE_IMAGE=ubuntu:20.04 --build-arg PYTHON_VERSION=3.8 .
 
 # Build image with GPU support
 docker build -t txtai --build-arg GPU=1 .

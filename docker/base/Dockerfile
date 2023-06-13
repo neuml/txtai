@@ -8,7 +8,7 @@ ARG GPU
 # Target CPU architecture
 ARG TARGETARCH
 
-# Set Python version (i.e. 3, 3.7, 3.8)
+# Set Python version (i.e. 3, 3.8)
 ARG PYTHON_VERSION=3
 
 # List of txtai components to install

@@ -69,4 +69,4 @@ The following applications are powered by txtai.
 | [codequestion](https://github.com/neuml/codequestion) | Semantic search for developers |
 | [tldrstory](https://github.com/neuml/tldrstory) | Semantic search for headlines and story text |
 
-txtai is built with Python 3.7+, [Hugging Face Transformers](https://github.com/huggingface/transformers), [Sentence Transformers](https://github.com/UKPLab/sentence-transformers) and [FastAPI](https://github.com/tiangolo/fastapi)
+txtai is built with Python 3.8+, [Hugging Face Transformers](https://github.com/huggingface/transformers), [Sentence Transformers](https://github.com/UKPLab/sentence-transformers) and [FastAPI](https://github.com/tiangolo/fastapi)

@@ -67,7 +67,7 @@ The following applications are powered by txtai.
 | [codequestion](https://github.com/neuml/codequestion) | Semantic search for developers |
 | [tldrstory](https://github.com/neuml/tldrstory) | Semantic search for headlines and story text |
 
-txtai is built with Python 3.7+, [Hugging Face Transformers](https://github.com/huggingface/transformers), [Sentence Transformers](https://github.com/UKPLab/sentence-transformers) and [FastAPI](https://github.com/tiangolo/fastapi)
+txtai is built with Python 3.8+, [Hugging Face Transformers](https://github.com/huggingface/transformers), [Sentence Transformers](https://github.com/UKPLab/sentence-transformers) and [FastAPI](https://github.com/tiangolo/fastapi)
 
 ## Why txtai?
 
@@ -112,7 +112,7 @@ The easiest way to install is via pip and PyPI
 pip install txtai
 ```
 
-Python 3.7+ is supported. Using a Python [virtual environment](https://docs.python.org/3/library/venv.html) is recommended.
+Python 3.8+ is supported. Using a Python [virtual environment](https://docs.python.org/3/library/venv.html) is recommended.
 
 See the detailed [install instructions](https://neuml.github.io/txtai/install) for more information covering
 [optional dependencies](https://neuml.github.io/txtai/install/#optional-dependencies), [environment specific prerequisites](https://neuml.github.io/txtai/install/#environment-specific-prerequisites), [installing from source](https://neuml.github.io/txtai/install/#install-from-source), [conda support](https://neuml.github.io/txtai/install/#conda) and how to [run with containers](https://neuml.github.io/txtai/cloud).
