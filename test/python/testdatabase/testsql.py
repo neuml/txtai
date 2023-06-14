@@ -4,7 +4,7 @@ SQL module tests
 
 import unittest
 
-from txtai.database import SQL, SQLError, SQLite
+from txtai.database import DatabaseFactory, SQL, SQLError
 
 
 class TestSQL(unittest.TestCase):
@@ -19,7 +19,7 @@ class TestSQL(unittest.TestCase):
         """
 
         # Create SQL parser for SQLite
-        cls.db = SQLite({})
+        cls.db = DatabaseFactory.create({"content": True})
         cls.db.initialize()
 
         cls.sql = SQL(cls.db)

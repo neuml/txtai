@@ -288,3 +288,22 @@ class Database:
             return function(*args)
         except Exception as ex:
             raise SQLError(ex) from None
+
+    def setting(self, name, default=None):
+        """
+        Looks up database specific setting.
+
+        Args:
+            name: setting name
+            default: default value when setting not found
+
+        Returns:
+            setting value
+        """
+
+        # Get the database-specific config object
+        database = self.config.get(self.config["content"])
+
+        # Get setting value, set default value if not found
+        setting = database.get(name) if database else None
+        return setting if setting else default

@@ -165,6 +165,15 @@ content: boolean|sqlite|duckdb|custom
 
 Enables content storage. When true, the default storage engine, `sqlite` will be used. Also supports `duckdb`. Add custom storage engines via setting this parameter to the fully resolvable class string.
 
+Content storage specific settings are set with a corresponding configuration object having the same name as the content storage engine (i.e. duckdb or sqlite). None of these are required and are set to defaults if omitted.
+
+### sqlite
+```yaml
+sqlite:
+    wal: enable write-ahead logging - allows concurrent read/write operations,
+         defaults to false
+```
+
 ## functions
 ```yaml
 functions: list

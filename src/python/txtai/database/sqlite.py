@@ -14,7 +14,14 @@ class SQLite(FileDB):
     """
 
     def connect(self, path=""):
-        return sqlite3.connect(path, check_same_thread=False)
+        # Create connection
+        connection = sqlite3.connect(path, check_same_thread=False)
+
+        # Enable WAL mode, if necessary
+        if self.setting("wal"):
+            connection.execute("PRAGMA journal_mode=WAL")
+
+        return connection
 
     def getcursor(self):
         return self.connection.cursor()

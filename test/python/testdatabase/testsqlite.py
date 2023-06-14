@@ -436,6 +436,22 @@ class TestSQLite(unittest.TestCase):
         self.embeddings.upsert([(0, "Looking out into the dreadful abyss", None)])
         self.assertEqual(self.embeddings.count(), len(self.data))
 
+    def testSettings(self):
+        """
+        Test custom SQLite settings
+        """
+
+        # Index with write-ahead logging enabled
+        embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2", "content": self.backend, "sqlite": {"wal": True}})
+
+        # Create an index for the list of text
+        embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        # Search for best match
+        result = embeddings.search("feel good story", 1)[0]
+
+        self.assertEqual(result["text"], self.data[4])
+
     def testSQL(self):
         """
         Test running a SQL query
