@@ -73,8 +73,8 @@ class Models:
             device id
         """
 
-        # Always return -1 if gpu is None or CUDA is unavailable
-        if gpu is None or not torch.cuda.is_available():
+        # Always return -1 if gpu is None or an accelerator device is unavailable
+        if gpu is None or not Models.hasaccelerator():
             return -1
 
         # Default to device 0 if gpu is True and not otherwise specified
@@ -112,7 +112,37 @@ class Models:
             device reference
         """
 
-        return "cpu" if deviceid < 0 else f"cuda:{deviceid}"
+        return (
+            "cpu"
+            if deviceid < 0
+            else f"cuda:{deviceid}"
+            if torch.cuda.is_available()
+            else "mps"
+            if torch.backends.mps.is_available()
+            else Models.finddevice()
+        )
+
+    @staticmethod
+    def hasaccelerator():
+        """
+        Checks if there is an accelerator device available.
+
+        Returns:
+            True if an accelerator device is available, False otherwise
+        """
+
+        return torch.cuda.is_available() or torch.backends.mps.is_available() or bool(Models.finddevice())
+
+    @staticmethod
+    def finddevice():
+        """
+        Attempts to find an alternative accelerator device.
+
+        Returns:
+            name of first alternative accelerator available or None if not found
+        """
+
+        return next((device for device in ["xpu"] if hasattr(torch, device) and getattr(torch, device).is_available()), None)
 
     @staticmethod
     def load(path, config=None, task="default"):
