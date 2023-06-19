@@ -64,14 +64,19 @@ class Models:
     @staticmethod
     def deviceid(gpu):
         """
-        Translates a gpu flag into a device id.
+        Translates input gpu argument into a device id.
 
         Args:
-            gpu: True/False if GPU should be enabled, also supports a GPU device id
+            gpu: True/False if GPU should be enabled, also supports a device id/string/instance
 
         Returns:
             device id
         """
+
+        # Return if this is already a torch device
+        # pylint: disable=E1101
+        if isinstance(gpu, torch.device):
+            return gpu
 
         # Always return -1 if gpu is None or an accelerator device is unavailable
         if gpu is None or not Models.hasaccelerator():
@@ -98,7 +103,7 @@ class Models:
 
         # Torch device
         # pylint: disable=E1101
-        return torch.device(Models.reference(deviceid))
+        return deviceid if isinstance(deviceid, torch.device) else torch.device(Models.reference(deviceid))
 
     @staticmethod
     def reference(deviceid):
@@ -113,7 +118,9 @@ class Models:
         """
 
         return (
-            "cpu"
+            deviceid
+            if isinstance(deviceid, str)
+            else "cpu"
             if deviceid < 0
             else f"cuda:{deviceid}"
             if torch.cuda.is_available()

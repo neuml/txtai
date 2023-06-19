@@ -71,6 +71,13 @@ transform: function
 
 When method is `external`, this function transforms input content into embeddings. The input to this function is a list of data. This method must return either a numpy array or list of numpy arrays.
 
+#### gpu
+```yaml
+gpu: boolean|int|string|device
+```
+
+Set the target device. Supports true/false, device id, device string and torch device instance. This is automatically derived if omitted.
+
 ## batch
 ```yaml
 batch: int
