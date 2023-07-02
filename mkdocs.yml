@@ -41,6 +41,11 @@ plugins:
                     show_root_full_path: false
                     show_root_heading: true
                     show_root_toc_entry: false
+    - redirects:
+        redirect_maps:
+            "pipeline/text/generator.md": "pipeline/text/llm.md"
+            "pipeline/text/sequences.md": "pipeline/text/llm.md"
+
 markdown_extensions:
     - pymdownx.highlight
     - pymdownx.superfences
@@ -49,6 +54,7 @@ nav:
     - Why txtai?: why.md
     - Installation: install.md
     - Examples: examples.md
+    - Model Guide: models.md
     - Embeddings:
         - embeddings/index.md
         - Configuration:
@@ -73,9 +79,8 @@ nav:
         - Text:
             - Entity: pipeline/text/entity.md
             - Extractor: pipeline/text/extractor.md
-            - Generator: pipeline/text/generator.md
             - Labels: pipeline/text/labels.md
-            - Sequences: pipeline/text/sequences.md
+            - LLM: pipeline/text/llm.md
             - Similarity: pipeline/text/similarity.md
             - Summary: pipeline/text/summary.md
             - Translation: pipeline/text/translation.md

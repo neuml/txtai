@@ -9,7 +9,7 @@ Pipelines are run with Python or configuration. Pipelines can be instantiated in
 
 ## List of pipelines
 
-The following is a list of the default pipelines available in txtai.
+The following is a list of the default pipelines available in txtai. All pipelines use default models when otherwise not specified. See the [model guide](../models.md) for the current model recommentations.
 
 - Audio
     - [TextToSpeech](audio/texttospeech)
@@ -25,9 +25,8 @@ The following is a list of the default pipelines available in txtai.
 - Text
     - [Entity](text/entity)
     - [Extractive QA](text/extractor)
-    - [Generator](text/generator)
     - [Labeling](text/labels)
-    - [Sequences](text/sequences)
+    - [LLM](text/llm)
     - [Similarity](text/similarity)
     - [Summary](text/summary)
     - [Translation](text/translation)

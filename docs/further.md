@@ -1,6 +1,7 @@
 # Further reading
 
-![further](images/further.png)
+![further](images/further.png#only-light)
+![further](images/further-dark.png#only-dark)
 
 - [Introducing txtai, semantic search and workflows built on Transformers](https://medium.com/neuml/introducing-txtai-an-ai-powered-search-engine-built-on-transformers-37674be252ec)
 - [Tutorial series on Hashnode](https://neuml.hashnode.dev/series/txtai-tutorial) | [dev.to](https://dev.to/neuml/tutorial-series-on-txtai-ibg)

@@ -5,7 +5,7 @@
 
 Workflows are a simple yet powerful construct that takes a callable and returns elements. Workflows operate well with pipelines but can work with any callable object. Workflows are streaming and work on data in batches, allowing large volumes of data to be processed efficiently.
 
-Given that pipelines are callable objects, workflows enable efficient processing of pipeline data. Transformers models typically work with smaller batches of data, workflows are well suited to feed a series of transformers pipelines. 
+Given that pipelines are callable objects, workflows enable efficient processing of pipeline data. Large language models typically work with smaller batches of data, workflows are well suited to feed a series of transformers pipelines. 
 
 An example of the most basic workflow:
 
@@ -81,7 +81,7 @@ embeddings.search("wildlife", 1)
 
 ## Configuration-driven example
 
-Workflows can be defined using Python as shown above but they can also run with YAML configuration.
+Workflows can also be defined with YAML configuration.
 
 ```yaml
 writable: true
@@ -125,7 +125,66 @@ list(app.workflow("index", [
 app.search("wildlife")
 ```
 
-The code above executes a workflow defined in the file `workflow.yml`. The API is used to run the workflow locally, there is minimal overhead running workflows in this manner. It's a matter of preference.
+The code above executes a workflow defined in the file `workflow.yml.
+
+## LLM workflow example
+
+Workflows can connect multiple LLM prompting tasks together.
+
+```yaml
+llm:
+  path: google/flan-t5-xl
+
+workflow:
+  llm:
+    tasks:
+      - task: template
+        template: |
+          Extract keywords for the following text.
+
+          {text}
+        action: llm
+      - task: template
+        template: |
+          Translate the following text into French.
+
+          {text}
+        action: llm
+```
+
+```python
+from txtai.app import Application
+
+app = Application("workflow.yml")
+list(app.workflow("llm", [
+  """
+  txtai is an open-source platform for semantic search
+  and workflows powered by language models.
+  """
+]))
+```
+
+Any txtai pipeline/workflow task can be connected in workflows with LLMs.
+
+```yaml
+llm:
+  path: google/flan-t5-xl
+
+translation:
+
+workflow:
+  llm:
+    tasks:
+      - task: template
+        template: |
+          Extract keywords for the following text.
+
+          {text}
+        action: llm
+      - action: translation
+        args:
+          - fr
+```
 
 See the following links for more information.
 

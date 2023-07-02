@@ -9,7 +9,7 @@ from ..hfpipeline import HFPipeline
 
 class LLM(HFPipeline):
     """
-    Runs prompt text through a large language model (LLM). This pipeline autodetects if the input path is a text generation or
+    Runs prompts through a large language model (LLM). This pipeline autodetects if the model path is a text generation or
     sequence to sequence model.
     """
 
