@@ -2,13 +2,13 @@
 Sequences module
 """
 
-from .generator import Generator
+from .llm import LLM
 
 
-class Sequences(Generator):
+class Sequences(LLM):
     """
     Runs text through a sequence-sequence model.
     """
 
-    def task(self):
-        return "text2text-generation"
+    def __init__(self, path=None, quantize=False, gpu=True, model=None):
+        super().__init__(path, quantize, gpu, model, "sequence-sequence")

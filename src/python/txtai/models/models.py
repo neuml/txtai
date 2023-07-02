@@ -6,7 +6,7 @@ import os
 
 import torch
 
-from transformers import AutoModel, AutoModelForQuestionAnswering, AutoModelForSeq2SeqLM, AutoModelForSequenceClassification
+from transformers import AutoConfig, AutoModel, AutoModelForQuestionAnswering, AutoModelForSeq2SeqLM, AutoModelForSequenceClassification
 
 from .onnx import OnnxModel
 
@@ -184,3 +184,36 @@ class Models:
 
         # Load model for supported tasks. Return path for unsupported tasks.
         return models[task](path) if task in models else path
+
+    @staticmethod
+    def task(path):
+        """
+        Attempts to detect the model task from path.
+
+        Args:
+            path: path to model
+
+        Returns:
+            inferred model task
+        """
+
+        # Get model configuration
+        config = None
+        if isinstance(path, (list, tuple)) and hasattr(path[0], "config"):
+            config = path[0].config
+        elif isinstance(path, str):
+            config = AutoConfig.from_pretrained(path)
+
+        # Attempt to resolve task using configuration
+        task = None
+        if config:
+            architecture = config.architectures[0] if config.architectures else None
+            if architecture:
+                if any(x for x in ["LMHead", "CausalLM"] if x in architecture):
+                    task = "language-generation"
+                elif "QuestionAnswering" in architecture:
+                    task = "question-answering"
+                elif "ConditionalGeneration" in architecture:
+                    task = "sequence-sequence"
+
+        return task

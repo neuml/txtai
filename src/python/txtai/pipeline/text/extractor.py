@@ -2,22 +2,22 @@
 Extractor module
 """
 
-from transformers import AutoConfig
+from ...models import Models
 
 from ..base import Pipeline
 from ..data import Tokenizer
 
-from .generator import Generator
+from .llm import LLM
 from .questions import Questions
-from .sequences import Sequences
 from .similarity import Similarity
 
 
 class Extractor(Pipeline):
     """
-    Finds answers for a set of queries/questions. The extractor is a combination of a similarity instance (embeddings or similarity pipeline)
-    to build a question context and a model that answers questions. The model can be either a prompt-driven large language model (LLM),
-    an extractive question-answering model or a custom pipeline.
+    Extracts knowledge from content by joining a prompt, context data store and generative model together. The data store can be
+    an embeddings database or a similarity instance with associated input text. The generative model can be a prompt-driven large
+    language model (LLM), an extractive question-answering model or a custom pipeline. This is known as prompt-driven search or
+    retrieval augmented generation (RAG).
     """
 
     # pylint: disable=R0913
@@ -134,27 +134,19 @@ class Extractor(Pipeline):
             Generator, Sequences, Questions or custom pipeline
         """
 
-        # If path is not a string, return input
-        if not isinstance(path, str):
+        # Check if path is already a pipeline
+        if isinstance(path, Pipeline):
             return path
 
-        # Autodetect task if not provided
-        if not task:
-            config = AutoConfig.from_pretrained(path)
-            architecture = config.architectures[0] if config.architectures else None
+        # Attempt to resolve task if not provided
+        task = task if task else Models.task(path)
 
-            if any(x for x in ["LMHead", "CausalLM"] if x in architecture):
-                task = "language-generation"
-            elif "ConditionalGeneration" in architecture:
-                task = "sequence-sequence"
+        # Load model as Question pipeline
+        if task == "question-answering":
+            return Questions(path, quantize, gpu, model)
 
-        if task == "language-generation":
-            return Generator(path, quantize, gpu, model)
-        if task == "sequence-sequence":
-            return Sequences(path, quantize, gpu, model)
-
-        # Default to question-answering
-        return Questions(path, quantize, gpu, model)
+        # Load model as LLM pipeline
+        return LLM(path, quantize, gpu, model, task)
 
     def query(self, queries, texts):
         """
