@@ -37,15 +37,15 @@ txtai is an open-source platform for semantic search and workflows powered by la
 
 Traditional search systems use keywords to find data. Semantic search has an understanding of natural language and identifies results that have the same meaning, not necessarily the same keywords.
 
-![search](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/search.png#gh-light-mode-only)
-![search](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/search-dark.png#gh-dark-mode-only)
+![search](images/search.png#gh-light-mode-only)
+![search](images/search-dark.png#gh-dark-mode-only)
 
 txtai builds embeddings databases, which are a union of vector indexes and relational databases. This enables vector search with SQL. Embeddings databases can stand on their own and/or serve as a powerful knowledge source for large language model (LLM) prompts.
 
 Semantic workflows connect language models together to build intelligent applications.
 
-![flows](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/flows.png#gh-light-mode-only)
-![flows](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/flows-dark.png#gh-dark-mode-only)
+![flows](images/flows.png#gh-light-mode-only)
+![flows](images/flows-dark.png#gh-dark-mode-only)
 
 Integrate conversational search, retrieval augmented generation (RAG), LLM chains, automatic summarization, transcription, translation and more.
 
