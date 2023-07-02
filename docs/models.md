@@ -17,7 +17,6 @@ See the table below for the current recommended models. These models all allow c
 | [Text-to-Speech](./pipeline/audio/texttospeech.md)   | [ESPnet JETS](https://hf.co/NeuML/ljspeech-jets-onnx)                    |
 | [Transcription](./pipeline/audio/transcription.md)   | [Whisper](https://hf.co/openai/whisper-base)                             | 
 | [Translation](./pipeline/text/translation.md)        | [OPUS Model Series](https://hf.co/Helsinki-NLP)                          |
-|                                                      | _Translation pipeline automatically downloads and uses these models_     |
 
 Models can be loaded as either a path from the Hugging Face Hub or a local directory. Model paths are optional, defaults are loaded when not specified. For tasks with no recommended model, txtai uses the default models as shown in the Hugging Face Tasks guide.
 

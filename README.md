@@ -209,14 +209,13 @@ See the table below for the current recommended models. These models all allow c
 |                                                                               | [E5-base-v2](https://hf.co/intfloat/e5-base-v2)                          |
 | [Image Captions](https://neuml.github.io/txtai/pipeline/image/caption)        | [BLIP](https://hf.co/Salesforce/blip-image-captioning-base)              |
 | [Labels - Zero Shot](https://neuml.github.io/txtai/pipeline/text/labels)      | [BART-Large-MNLI](https://hf.co/facebook/bart-large)                     |
-| [Labels - Fixed](https://neuml.github.io/txtai/pipeline/text/labels)          | Fine-tune with [training pipeline](./pipeline/train/trainer.md)          |
+| [Labels - Fixed](https://neuml.github.io/txtai/pipeline/text/labels)          | Fine-tune with [training pipeline](https://neuml.github.io/txtai/pipeline/train/trainer)          |
 | [Large Language Model (LLM)](https://neuml.github.io/txtai/pipeline/text/llm) | [Flan T5 XL](https://hf.co/google/flan-t5-xl)                            | 
 |                                                                               | [Falcon 7B Instruct](https://hf.co/tiiuae/falcon-7b-instruct)            |
 | [Summarization](https://neuml.github.io/txtai/pipeline/text/summary)          | [DistilBART](https://hf.co/sshleifer/distilbart-cnn-12-6)                |
 | [Text-to-Speech](https://neuml.github.io/txtai/pipeline/audio/texttospeech)   | [ESPnet JETS](https://hf.co/NeuML/ljspeech-jets-onnx)                    |
 | [Transcription](https://neuml.github.io/txtai/pipeline/audio/transcription)   | [Whisper](https://hf.co/openai/whisper-base)                             | 
 | [Translation](https://neuml.github.io/txtai/pipeline/text/translation)        | [OPUS Model Series](https://hf.co/Helsinki-NLP)                          |
-|                                                                               | _Translation pipeline automatically downloads and uses these models_     |
 
 Models can be loaded as either a path from the Hugging Face Hub or a local directory. Model paths are optional, defaults are loaded when not specified. For tasks with no recommended model, txtai uses the default models as shown in the Hugging Face Tasks guide.
 
