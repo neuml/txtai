@@ -233,7 +233,7 @@ See the following links to learn more.
 ## Further Reading
 
 ![further](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/further.png#gh-light-mode-only)
-![further](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/further-dark.png#gh-dark-mode-only)
+![further](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/further-ghdark.png#gh-dark-mode-only)
 
 - [Introducing txtai, semantic search and workflows built on Transformers](https://medium.com/neuml/introducing-txtai-an-ai-powered-search-engine-built-on-transformers-37674be252ec)
 - [Tutorial series on Hashnode](https://neuml.hashnode.dev/series/txtai-tutorial) | [dev.to](https://dev.to/neuml/tutorial-series-on-txtai-ibg)

@@ -78,7 +78,8 @@ Pipelines are run with Python or configuration. Pipelines can be instantiated in
 
 ### config.yml
 ```yaml
-# Create pipeline using lower case class name. Use `generator` or `sequences` to force model type.
+# Create pipeline using lower case class name
+# Use `generator` or `sequences` to force model type
 llm:
 
 # Run pipeline with workflow
