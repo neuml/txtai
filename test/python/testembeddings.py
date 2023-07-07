@@ -92,6 +92,19 @@ class TestEmbeddings(unittest.TestCase):
         embeddings.upsert([])
         self.assertIsNotNone(embeddings.ann)
 
+    def testEmptyString(self):
+        """
+        Test empty string indexing
+        """
+
+        # Test empty string
+        self.embeddings.index([(0, "", None)])
+        self.assertTrue(self.embeddings.search("test"))
+
+        # Test empty string with dict
+        self.embeddings.index([(0, {"text": ""}, None)])
+        self.assertTrue(self.embeddings.search("test"))
+
     def testExternal(self):
         """
         Test embeddings backed by external vectors

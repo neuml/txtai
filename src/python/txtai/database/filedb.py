@@ -377,15 +377,12 @@ class FileDB(Database):
         if document:
             self.cursor.execute(FileDB.INSERT_DOCUMENT, [uid, json.dumps(document, allow_nan=False), tags, entry])
 
-        # Get value of text field
-        text = document.get("text")
-
-        # If both text and object are set, insert object as it won't otherwise be used
-        if text and obj:
+        # If text and object are both available, insert object as it won't otherwise be used
+        if "text" in document and obj:
             self.insertobject(uid, obj, tags, entry)
 
         # Return value to use for section - use text if available otherwise use object
-        return text if text else obj
+        return document["text"] if "text" in document else obj
 
     def insertobject(self, uid, obj, tags, entry):
         """
