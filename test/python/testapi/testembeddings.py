@@ -21,13 +21,17 @@ path: %s
 # Allow indexing of documents
 writable: True
 
+# Questions settings
+questions:
+    path: distilbert-base-cased-distilled-squad
+
 # Embeddings settings
 embeddings:
     path: sentence-transformers/nli-mpnet-base-v2
 
 # Extractor settings
 extractor:
-    path: distilbert-base-cased-distilled-squad
+    path: questions
 """
 
 # Configuration for a read-only embeddings index

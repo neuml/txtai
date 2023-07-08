@@ -102,6 +102,9 @@ class Application:
             if "." in key:
                 pipelines.append(key)
 
+        # Move dependent pipelines to end of list
+        pipelines = sorted(pipelines, key=lambda x: x in ["similarity", "extractor"])
+
         # Create pipelines
         for pipeline in pipelines:
             if pipeline in self.config:
@@ -115,6 +118,11 @@ class Application:
                 if pipeline == "extractor" and "similarity" not in config:
                     # Add placeholder, will be set to embeddings index once initialized
                     config["similarity"] = None
+
+                    # Resolve reference pipeline, if necessary
+                    if config.get("path") in self.pipelines:
+                        config["path"] = self.pipelines[config["path"]]
+
                 elif pipeline == "similarity" and "path" not in config and "labels" in self.pipelines:
                     config["model"] = self.pipelines["labels"]
 
