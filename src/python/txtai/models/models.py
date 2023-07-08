@@ -6,7 +6,14 @@ import os
 
 import torch
 
-from transformers import AutoConfig, AutoModel, AutoModelForQuestionAnswering, AutoModelForSeq2SeqLM, AutoModelForSequenceClassification
+from transformers import (
+    AutoConfig,
+    AutoModel,
+    AutoModelForQuestionAnswering,
+    AutoModelForSeq2SeqLM,
+    AutoModelForSequenceClassification,
+    AutoTokenizer,
+)
 
 from .onnx import OnnxModel
 
@@ -186,12 +193,28 @@ class Models:
         return models[task](path) if task in models else path
 
     @staticmethod
-    def task(path):
+    def tokenizer(path, **kwargs):
+        """
+        Loads a tokenizer from path.
+
+        Args:
+            path: path to tokenizer
+            kwargs: optional additional keyword arguments
+
+        Returns:
+            tokenizer
+        """
+
+        return AutoTokenizer.from_pretrained(path, **kwargs) if isinstance(path, str) else path
+
+    @staticmethod
+    def task(path, **kwargs):
         """
         Attempts to detect the model task from path.
 
         Args:
             path: path to model
+            kwargs: optional additional keyword arguments
 
         Returns:
             inferred model task
@@ -202,7 +225,7 @@ class Models:
         if isinstance(path, (list, tuple)) and hasattr(path[0], "config"):
             config = path[0].config
         elif isinstance(path, str):
-            config = AutoConfig.from_pretrained(path)
+            config = AutoConfig.from_pretrained(path, **kwargs)
 
         # Attempt to resolve task using configuration
         task = None

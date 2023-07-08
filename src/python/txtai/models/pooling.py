@@ -7,8 +7,6 @@ import torch
 
 from torch import nn
 
-from transformers import AutoTokenizer
-
 from .models import Models
 
 
@@ -31,7 +29,7 @@ class Pooling(nn.Module):
         super().__init__()
 
         self.model = Models.load(path)
-        self.tokenizer = AutoTokenizer.from_pretrained(tokenizer if tokenizer else path)
+        self.tokenizer = Models.tokenizer(tokenizer if tokenizer else path)
         self.device = Models.device(device)
 
         # Detect unbounded tokenizer typically found in older models
@@ -60,7 +58,7 @@ class Pooling(nn.Module):
 
         # Sort document indices from largest to smallest to enable efficient batching
         # This performance tweak matches logic in sentence-transformers
-        lengths = np.argsort([-len(x) for x in documents])
+        lengths = np.argsort([-len(x) if x else 0 for x in documents])
         documents = [documents[x] for x in lengths]
 
         for chunk in self.chunk(documents, batch):
