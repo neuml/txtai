@@ -10,8 +10,8 @@ class Labels(HFPipeline):
     Applies a text classifier to text. Supports zero shot and standard text classification models
     """
 
-    def __init__(self, path=None, quantize=False, gpu=True, model=None, dynamic=True):
-        super().__init__("zero-shot-classification" if dynamic else "text-classification", path, quantize, gpu, model)
+    def __init__(self, path=None, quantize=False, gpu=True, model=None, dynamic=True, **kwargs):
+        super().__init__("zero-shot-classification" if dynamic else "text-classification", path, quantize, gpu, model, **kwargs)
 
         # Set if labels are dynamic (zero shot) or fixed (standard text classification)
         self.dynamic = dynamic

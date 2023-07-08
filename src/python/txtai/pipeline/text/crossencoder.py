@@ -12,8 +12,8 @@ class CrossEncoder(HFPipeline):
     Computes similarity between query and list of text using a cross-encoder model
     """
 
-    def __init__(self, path=None, quantize=False, gpu=True, model=None):
-        super().__init__("text-classification", path, quantize, gpu, model)
+    def __init__(self, path=None, quantize=False, gpu=True, model=None, **kwargs):
+        super().__init__("text-classification", path, quantize, gpu, model, **kwargs)
 
     def __call__(self, query, texts, multilabel=True, workers=0):
         """

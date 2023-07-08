@@ -18,11 +18,11 @@ class Objects(HFPipeline):
     Applies object detection models to images. Supports both object detection models and image classification models.
     """
 
-    def __init__(self, path=None, quantize=False, gpu=True, model=None, classification=False, threshold=0.9):
+    def __init__(self, path=None, quantize=False, gpu=True, model=None, classification=False, threshold=0.9, **kwargs):
         if not PIL:
             raise ImportError('Objects pipeline is not available - install "pipeline" extra to enable')
 
-        super().__init__("image-classification" if classification else "object-detection", path, quantize, gpu, model)
+        super().__init__("image-classification" if classification else "object-detection", path, quantize, gpu, model, **kwargs)
 
         self.classification = classification
         self.threshold = threshold

@@ -13,9 +13,9 @@ class Similarity(Labels):
     Computes similarity between query and list of text using a text classifier.
     """
 
-    def __init__(self, path=None, quantize=False, gpu=True, model=None, dynamic=True, crossencode=False):
+    def __init__(self, path=None, quantize=False, gpu=True, model=None, dynamic=True, crossencode=False, **kwargs):
         # Use zero-shot classification if dynamic is True and crossencode is False, otherwise use standard text classification
-        super().__init__(path, quantize, gpu, model, False if crossencode else dynamic)
+        super().__init__(path, quantize, gpu, model, False if crossencode else dynamic, **kwargs)
 
         # Load as a cross-encoder if crossencode set to True
         self.crossencoder = CrossEncoder(model=self.pipeline) if crossencode else None

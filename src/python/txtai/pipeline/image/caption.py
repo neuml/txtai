@@ -18,12 +18,12 @@ class Caption(HFPipeline):
     Constructs captions for images.
     """
 
-    def __init__(self, path=None, quantize=False, gpu=True, model=None):
+    def __init__(self, path=None, quantize=False, gpu=True, model=None, **kwargs):
         if not PIL:
             raise ImportError('Captions pipeline is not available - install "pipeline" extra to enable')
 
         # Call parent constructor
-        super().__init__("image-to-text", path, quantize, gpu, model)
+        super().__init__("image-to-text", path, quantize, gpu, model, **kwargs)
 
     def __call__(self, images):
         """

@@ -13,8 +13,11 @@ class LLM(HFPipeline):
     sequence to sequence model.
     """
 
-    def __init__(self, path=None, quantize=False, gpu=True, model=None, task=None):
-        super().__init__(self.task(path, task), path if path else "google/flan-t5-base", quantize, gpu, model)
+    def __init__(self, path=None, quantize=False, gpu=True, model=None, task=None, **kwargs):
+        super().__init__(self.task(path, task, **kwargs), path if path else "google/flan-t5-base", quantize, gpu, model, **kwargs)
+
+        # Load tokenizer, if necessary
+        self.pipeline.tokenizer = self.pipeline.tokenizer if self.pipeline.tokenizer else Models.tokenizer(path, **kwargs)
 
     def __call__(self, text, prefix=None, maxlength=512, workers=0, **kwargs):
         """
@@ -70,13 +73,14 @@ class LLM(HFPipeline):
         # Apply text cleaning rules
         return text.replace("$=", "<=").strip()
 
-    def task(self, path, task):
+    def task(self, path, task, **kwargs):
         """
         Get the pipeline task name.
 
         Args:
             path: model path input
             task: task name
+            kwargs: optional additional keyword arguments
 
         Returns:
             pipeline task name
@@ -87,7 +91,7 @@ class LLM(HFPipeline):
 
         # Attempt to resolve task
         if path and not task:
-            task = Models.task(path)
+            task = Models.task(path, **kwargs)
 
         # Map to Hugging Face task. Default to text2text-generation pipeline when task not resolved.
         return mapping.get(task, "text2text-generation")

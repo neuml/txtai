@@ -34,6 +34,7 @@ class Extractor(Pipeline):
         context=None,
         task=None,
         output="default",
+        **kwargs,
     ):
         """
         Builds a new extractor.
@@ -50,13 +51,14 @@ class Extractor(Pipeline):
             context: topn context matches to include, defaults to 3
             task: model task (language-generation, sequence-sequence or question-answering), defaults to auto-detect
             output: output format, 'default' returns (name, answer), 'flatten' returns answers and 'reference' returns (name, answer, reference)
+            kwargs: additional keyword arguments to pass to pipeline model
         """
 
         # Similarity instance
         self.similarity = similarity
 
         # Question-Answer model. Can be prompt-driven LLM or extractive qa
-        self.model = self.load(path, quantize, gpu, model, task)
+        self.model = self.load(path, quantize, gpu, model, task, **kwargs)
 
         # Tokenizer class use default method if not set
         self.tokenizer = tokenizer if tokenizer else Tokenizer() if hasattr(self.similarity, "scoring") and self.similarity.scoring else None
@@ -119,7 +121,7 @@ class Extractor(Pipeline):
         # Apply output formatting to answers and return
         return self.apply(inputs, queries, answers, topns)
 
-    def load(self, path, quantize, gpu, model, task):
+    def load(self, path, quantize, gpu, model, task, **kwargs):
         """
         Loads a question-answer model.
 
@@ -129,24 +131,25 @@ class Extractor(Pipeline):
             gpu: if gpu inference should be used (only works if GPUs are available)
             model: optional existing pipeline model to wrap
             task: model task (language-generation, sequence-sequence or question-answering), defaults to auto-detect
+            kwargs: additional keyword arguments to pass to pipeline model
 
         Returns:
             Generator, Sequences, Questions or custom pipeline
         """
 
-        # Check if path is already a pipeline
-        if isinstance(path, Pipeline):
+        # Only try to load if path is a string
+        if not isinstance(path, str):
             return path
 
         # Attempt to resolve task if not provided
-        task = task if task else Models.task(path)
+        task = task if task else Models.task(path, **kwargs)
 
         # Load model as Question pipeline
         if task == "question-answering":
-            return Questions(path, quantize, gpu, model)
+            return Questions(path, quantize, gpu, model, **kwargs)
 
         # Load model as LLM pipeline
-        return LLM(path, quantize, gpu, model, task)
+        return LLM(path, quantize, gpu, model, task, **kwargs)
 
     def query(self, queries, texts):
         """

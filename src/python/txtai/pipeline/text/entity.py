@@ -10,8 +10,8 @@ class Entity(HFPipeline):
     Applies a token classifier to text and extracts entity/label combinations.
     """
 
-    def __init__(self, path=None, quantize=False, gpu=True, model=None):
-        super().__init__("token-classification", path, quantize, gpu, model)
+    def __init__(self, path=None, quantize=False, gpu=True, model=None, **kwargs):
+        super().__init__("token-classification", path, quantize, gpu, model, **kwargs)
 
     def __call__(self, text, labels=None, aggregate="simple", flatten=None, join=False, workers=0):
         """

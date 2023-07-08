@@ -19,12 +19,12 @@ class Transcription(HFPipeline):
     Transcribes audio files or data to text.
     """
 
-    def __init__(self, path=None, quantize=False, gpu=True, model=None):
+    def __init__(self, path=None, quantize=False, gpu=True, model=None, **kwargs):
         if not SOUNDFILE:
             raise ImportError("SoundFile library not installed or libsndfile not found")
 
         # Call parent constructor
-        super().__init__("automatic-speech-recognition", path, quantize, gpu, model)
+        super().__init__("automatic-speech-recognition", path, quantize, gpu, model, **kwargs)
 
     def __call__(self, audio, rate=None, chunk=10, join=True):
         """

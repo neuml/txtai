@@ -12,8 +12,8 @@ class Summary(HFPipeline):
     Summarizes text.
     """
 
-    def __init__(self, path=None, quantize=False, gpu=True, model=None):
-        super().__init__("summarization", path, quantize, gpu, model)
+    def __init__(self, path=None, quantize=False, gpu=True, model=None, **kwargs):
+        super().__init__("summarization", path, quantize, gpu, model, **kwargs)
 
     def __call__(self, text, minlength=None, maxlength=None, workers=0):
         """

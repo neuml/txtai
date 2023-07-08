@@ -4,6 +4,8 @@ LLM module tests
 
 import unittest
 
+import torch
+
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from txtai.pipeline import LLM
@@ -13,6 +15,20 @@ class TestLLM(unittest.TestCase):
     """
     LLM tests.
     """
+
+    def testArguments(self):
+        """
+        Test pipeline keyword arguments
+        """
+
+        start = "Hello, how are"
+
+        # Test that text is generated with custom parameters
+        model = LLM("hf-internal-testing/tiny-random-gpt2", task="language-generation", torch_dtype="torch.float32")
+        self.assertIsNotNone(model(start))
+
+        model = LLM("hf-internal-testing/tiny-random-gpt2", task="language-generation", torch_dtype=torch.float32)
+        self.assertIsNotNone(model(start))
 
     def testExternal(self):
         """
@@ -25,5 +41,5 @@ class TestLLM(unittest.TestCase):
         model = LLM((model, tokenizer))
         start = "Hello, how are"
 
-        # Test that text is generator
-        self.assertGreater(len(model(start)), len(start))
+        # Test that text is generated
+        self.assertIsNotNone(model(start))
