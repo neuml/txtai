@@ -46,12 +46,13 @@ llm = LLM("openlm-research/open_llama_3b", task="language-generation")
 generator = Generator("openlm-research/open_llama_3b")
 ```
 
-As with other pipelines, models can be externally loaded and passed to pipelines. This is useful for models that are not yet supported by Transformers.
+Models can be externally loaded and passed to pipelines. This is useful for models that are not yet supported by Transformers and/or need special initialization.
 
 ```python
-from transformers import AutoModelForCausalLM, AutoTokenizer
-
 import torch
+
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from txtai.pipeline import LLM
 
 # Load Falcon-7B-Instruct
 path = "tiiuae/falcon-7b-instruct"
@@ -87,6 +88,15 @@ workflow:
   llm:
     tasks:
       - action: llm
+```
+
+Similar to the Python example above, the underlying [Hugging Face pipeline parameters](https://huggingface.co/docs/transformers/main/main_classes/pipelines#transformers.pipeline.model) and [model parameters](https://huggingface.co/docs/transformers/model_doc/auto#transformers.AutoModel.from_pretrained) can be set in pipeline configuration.
+
+```yaml
+llm:
+  path: tiiuae/falcon-7b-instruct
+  torch_dtype: torch.bfloat16
+  trust_remote_code: True
 ```
 
 ### Run with Workflows

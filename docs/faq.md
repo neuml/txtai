@@ -16,13 +16,57 @@ __Answer__
 
 See the [model guide](../models).
 
+----------
+
 __Question__
 
-How do you add a progress bar to `embeddings.index`?
+What is the best way to track the progress of an `embeddings.index` call?
 
 __Answer__
 
 Wrap the list or generator passed to the index call with tqdm. See [#478](https://github.com/neuml/txtai/issues/478) for more.
+
+----------
+
+__Question__
+
+How can models be externally loaded and passed to embeddings and pipelines?
+
+__Answer__
+
+Embeddings example.
+
+```python
+from transformers import AutoModel, AutoTokenizer
+from txtai.embeddings import Embeddings
+
+# Load model externally
+model = AutoModel.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+
+# Pass to embeddings instance
+embeddings = Embeddings({"path": model, "tokenizer": tokenizer})
+```
+
+LLM pipeline example.
+
+```python
+import torch
+
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from txtai.pipeline import LLM
+
+# Load Falcon-7B-Instruct
+path = "tiiuae/falcon-7b-instruct"
+model = AutoModelForCausalLM.from_pretrained(
+  path,
+  torch_dtype=torch.bfloat16,
+  trust_remote_code=True
+)
+tokenizer = AutoTokenizer.from_pretrained(path)
+
+llm = LLM((model, tokenizer))
+```
 
 ## Common issues
 
