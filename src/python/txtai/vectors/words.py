@@ -89,7 +89,7 @@ class WordVectors(Vectors):
 
             # pylint: disable=E1133
             if weights and [x for x in weights if x > 0]:
-                # Build weighted average embeddings vector. Create weights array os float32 to match embeddings precision.
+                # Build weighted average embeddings vector. Create weights array as float32 to match embeddings precision.
                 embedding = np.average(self.lookup(tokens), weights=np.array(weights, dtype=np.float32), axis=0)
             else:
                 # If no weights, use mean

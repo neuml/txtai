@@ -73,7 +73,7 @@ embeddings.delete(ids)
 When [content storage](../configuration#content) is enabled, [reindex](../methods#txtai.embeddings.base.Embeddings.reindex) can be called to rebuild the index with new settings. For example, the backend can be switched from faiss to hnsw or the vector model can be updated. This prevents having to go back to the original raw data. 
 
 ```python
-embeddings.reindex({"path": "sentence-transformers/all-MiniLM-L6-v2", "backend": "hnsw"})
+embeddings.reindex(path="sentence-transformers/all-MiniLM-L6-v2", backend="hnsw")
 ```
 
 ## Graph
@@ -109,8 +109,8 @@ Graphs are persisted alongside an embeddings index. Each save and load will also
 When using [word vector backed models](../configuration#words) with scoring set, a separate call is required before calling `index` as follows:
 
 ```python
-embeddings.score([(uid, text, None) for uid, text in enumerate(data)])
-embeddings.index([(uid, text, None) for uid, text in enumerate(data)])
+embeddings.score(rows)
+embeddings.index(rows)
 ```
 
 Two calls are required to support generator-backed iteration of data. The scoring index requires a separate full-pass of the data.

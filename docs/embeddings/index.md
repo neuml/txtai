@@ -11,7 +11,7 @@ The following code snippet shows how to build and search an embeddings index.
 from txtai.embeddings import Embeddings
 
 # Create embeddings model, backed by sentence-transformers & transformers
-embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2"})
+embeddings = Embeddings(path="sentence-transformers/nli-mpnet-base-v2")
 
 data = [
   "US tops 5 million confirmed virus cases",
@@ -24,10 +24,10 @@ data = [
   "Make huge profits without work, earn up to $100,000 a day"
 ]
 
-# Create an index for the list of text
-embeddings.index([(uid, text, None) for uid, text in enumerate(data)])
+# Index the list of text
+embeddings.index(data)
 
-print("%-20s %s" % ("Query", "Best Match"))
+print(f"{'Query':20} Best Match")
 print("-" * 50)
 
 # Run an embeddings search for each query
@@ -38,30 +38,32 @@ for query in ("feel good story", "climate change", "public health story", "war",
     uid = embeddings.search(query, 1)[0][0]
 
     # Print text
-    print("%-20s %s" % (query, data[uid]))
+    print(f"{query:20} {data[uid]}")
 ```
 
 ## Build
 
-An embeddings instance can be created as follows:
+An embeddings instance is [configuration-driven](configuration) based on what is passed in the constructor. Vectors are stored with the option to also [store content](configuration#content). Content storage enables additional filtering and data retrieval options.
+
+The example above sets a specific embeddings vector model via the [path](configuration#path) parameter. An embeddings instance with no configuration can also be created.
 
 ```python
-embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2"})
+embeddings = Embeddings()
 ```
 
-The example above builds a transformers-based embeddings instance. In this case, when loading and searching for data, a transformers model is used to vectorize data.
-
-The embeddings instance is [configuration-driven](configuration) based on what is passed in the constructor. Embeddings indexes store vectors and can optionally [store content](configuration#content). Content storage enables additional filtering and data retrieval options.
+In this case, when loading and searching for data, the [default transformers vector model](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2) is used to vectorize data. See the [model guide](../models) for current model recommentations.
 
 ## Index
 
 After creating a new embeddings instance, the next step is adding data to it.
 
 ```python
-embeddings.index([(uid, text, None) for uid, text in enumerate(data)])
+embeddings.index(rows)
 ```
 
-The index method takes an iterable collection of tuples with three values. 
+The index method takes an iterable and supports the following formats for each element.
+
+- `(id, data, tags)` - default processing format
 
 | Element     | Description                                                   |
 | ----------- | ------------------------------------------------------------- |
@@ -69,7 +71,15 @@ The index method takes an iterable collection of tuples with three values.
 | data        | input data to index, can be text, a dictionary or object      |
 | tags        | optional tags string, used to mark/label data as it's indexed |
 
-When the data element is a dictionary and it has a field named `text`, that will be used for indexing.
+- `(id, data)`
+
+  Same as above but without tags.
+
+- `data`
+
+Single element to index. In this case, unique id's will automatically be generated. Note that for generated id's, [upsert](methods/#txtai.embeddings.base.Embeddings.upsert) and [delete](methods/#txtai.embeddings.base.Embeddings.delete) calls require a separate search to get the target ids.
+
+When the data field is a dictionary, text is passed via the `text` key, binary objects via the `object` key. Note that [content](configuration#content) must be enabled to store metadata and [objects](configuration#objects) to store binary object data. The `id` and `tags` keys will be extracted, if provided.
 
 The input iterable can be a list or generator. [Generators](https://wiki.python.org/moin/Generators) help with indexing very large datasets as only portions of the data is in memory at any given time.
 

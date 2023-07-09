@@ -5,23 +5,23 @@ Transform module
 import os
 import pickle
 
-from enum import Enum
-
 import numpy as np
+
+from .action import Action
 
 
 class Transform:
     """
-    Executes a transform action. Processes a stream of documents, loads batches into a database and vectorizes documents.
+    Executes a transform. Processes a stream of documents, loads batches into a database and vectorizes documents.
     """
 
     def __init__(self, embeddings, action):
         """
-        Creates a new transform action.
+        Creates a new transform.
 
         Args:
             embeddings: embeddings instance
-            action: transform action
+            action: index action
         """
 
         self.embeddings = embeddings
@@ -47,7 +47,7 @@ class Transform:
         This method loads a stream of documents into a database (if applicable) and vectorizes documents into an embeddings array.
 
         Args:
-            documents: iterable collection of (id, data, tags)
+            documents: iterable of (id, data, tags)
             buffer: file path used for memmap buffer
 
         Returns:
@@ -147,13 +147,3 @@ class Transform:
 
         # Increment offset
         self.offset += offset
-
-
-class Action(Enum):
-    """
-    Transform action types
-    """
-
-    INDEX = 1
-    UPSERT = 2
-    REINDEX = 3

@@ -10,10 +10,10 @@ New vector databases, LLM frameworks and everything in between are sprouting up 
 # Get started in a couple lines
 from txtai.embeddings import Embeddings
 
-embeddings = Embeddings({"path": "sentence-transformers/all-MiniLM-L6-v2"})
-embeddings.index([(0, "Correct", None), (1, "Not what we hoped", None)])
+embeddings = Embeddings()
+embeddings.index(["Correct", "Not what we hoped"])
 embeddings.search("positive", 1)
-#[(0, 0.2986203730106354)]
+#[(0, 0.29862046241760254)]
 ```
 - Built-in API makes it easy to develop applications using your programming language of choice
 ```yaml

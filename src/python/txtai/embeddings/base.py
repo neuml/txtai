@@ -20,13 +20,15 @@ from ..graph import GraphFactory
 from ..scoring import ScoringFactory
 from ..vectors import VectorsFactory
 
+from .action import Action
 from .explain import Explain
 from .functions import Functions
 from .reducer import Reducer
 from .query import Query
 from .search import Search
+from .stream import Stream
 from .terms import Terms
-from .transform import Action, Transform
+from .transform import Transform
 
 
 # pylint: disable=R0904
@@ -38,13 +40,14 @@ class Embeddings:
     """
 
     # pylint: disable = W0231
-    def __init__(self, config=None):
+    def __init__(self, config=None, **kwargs):
         """
         Creates a new embeddings index. Embeddings indexes are thread-safe for read operations but writes must be
         synchronized.
 
         Args:
             config: embeddings configuration
+            kwargs: additional configuration as keyword args
         """
 
         # Index configuration
@@ -74,6 +77,9 @@ class Embeddings:
         # Index archive
         self.archive = None
 
+        # Merge configuration into single dictionary
+        config = {**config, **kwargs} if config and kwargs else kwargs if kwargs else config
+
         # Set initial configuration
         self.configure(config)
 
@@ -82,19 +88,19 @@ class Embeddings:
         Builds a scoring index. Only used by word vectors models.
 
         Args:
-            documents: list of (id, data, tags)
+            documents: iterable of (id, data, tags), (id, data) or data
         """
 
-        # Build scoring index over documents
+        # Build scoring index for word vectors term weighting
         if self.scoring:
-            self.scoring.index(documents)
+            self.scoring.index(Stream(self)(documents))
 
     def index(self, documents, reindex=False):
         """
         Builds an embeddings index. This method overwrites an existing index.
 
         Args:
-            documents: list of (id, data, tags)
+            documents: iterable of (id, data, tags), (id, data) or data
             reindex: if this is a reindex operation in which case database creation is skipped, defaults to False
         """
 
@@ -111,12 +117,13 @@ class Embeddings:
         # Create graph, if necessary
         self.graph = self.creategraph()
 
-        # Create transform action
+        # Create transform and stream
         transform = Transform(self, Action.REINDEX if reindex else Action.INDEX)
+        stream = Stream(self, Action.REINDEX if reindex else Action.INDEX)
 
         with tempfile.NamedTemporaryFile(mode="wb", suffix=".npy") as buffer:
             # Load documents into database and transform to vectors
-            ids, dimensions, embeddings = transform(documents, buffer)
+            ids, dimensions, embeddings = transform(stream(documents), buffer)
             if ids:
                 # Build LSA model (if enabled). Remove principal components from embeddings.
                 if self.config.get("pca"):
@@ -135,7 +142,7 @@ class Embeddings:
                 # Add embeddings to the index
                 self.ann.index(embeddings)
 
-                # Save indexids-ids mapping for indexes with no database, except when this is a reindex action
+                # Save indexids-ids mapping for indexes with no database, except when this is a reindex
                 if not reindex and not self.database:
                     self.config["ids"] = ids
 
@@ -150,7 +157,7 @@ class Embeddings:
         this method runs a standard index operation.
 
         Args:
-            documents: list of (id, data, tags)
+            documents: iterable of (id, data, tags), (id, data) or data
         """
 
         # Run standard insert if index doesn't exist or it has no records
@@ -158,12 +165,13 @@ class Embeddings:
             self.index(documents)
             return
 
-        # Create transform action
+        # Create transform and stream
         transform = Transform(self, Action.UPSERT)
+        stream = Stream(self, Action.UPSERT)
 
         with tempfile.NamedTemporaryFile(mode="wb", suffix=".npy") as buffer:
             # Load documents into database and transform to vectors
-            ids, _, embeddings = transform(documents, buffer)
+            ids, _, embeddings = transform(stream(documents), buffer)
             if ids:
                 # Remove principal components from embeddings, if necessary
                 if self.reducer:
@@ -269,7 +277,7 @@ class Embeddings:
         Transforms document into an embeddings vector.
 
         Args:
-            document: (id, data, tags)
+            documents: iterable of (id, data, tags), (id, data) or data
 
         Returns:
             embeddings vector
@@ -282,15 +290,18 @@ class Embeddings:
         Transforms documents into embeddings vectors.
 
         Args:
-            documents: list of (id, data, tags)
+            documents: iterable of (id, data, tags), (id, data) or data
             category: category for instruction-based embeddings
 
         Returns:
             embeddings vectors
         """
 
+        # Initialize default parameters, if necessary
+        self.defaults()
+
         # Convert documents into sentence embeddings
-        embeddings = self.model.batchtransform(documents, category)
+        embeddings = self.model.batchtransform(Stream(self)(documents), category)
 
         # Reduce the dimensionality of the embeddings. Scale the embeddings using this
         # model to reduce the noise of common but less relevant terms.

@@ -60,8 +60,8 @@ Content can be indexed in multiple ways when content storage is enabled. [Rememb
 For example:
 
 ```python
-embeddings.index([(0, {"text": "text to index", "flag": True,
-                       "entry": "2022-01-01"}, None)])
+embeddings.index([{"text": "text to index", "flag": True,
+                   "entry": "2022-01-01"}])
 ```
 
 With the above input data, queries can now have more complex filters.
@@ -76,12 +76,12 @@ txtai's query layer automatically detects columns and translates queries into a 
 Nested dictionaries/JSON is supported and can be escaped with bracket statements.
 
 ```python
-embeddings.index([(0, {"text": "text to index",
-                       "parent": {"child element": "abc"}}, None)])
+embeddings.index([{"text": "text to index",
+                   "parent": {"child element": "abc"}}])
 ```
 
 ```sql
-SELECT text FROM txtai WHERE [parent.child element] ='abc'
+SELECT text FROM txtai WHERE [parent.child element] = 'abc'
 ```
 
 Note the bracket statement escaping the nested column with spaces in the name.
@@ -104,12 +104,15 @@ SELECT count(*), flag FROM txtai GROUP BY flag ORDER BY count(*) DESC
 txtai has support for storing and retrieving binary objects. Binary objects can be retrieved as shown in the example below.
 
 ```python
+# Create embeddings index with content and object storage enabled
+embeddings = Embeddings(content=True, objects=True)
+
 # Get an image
-request = open("demo.gif")
+request = open("demo.gif", "rb")
 
 # Insert record
 embeddings.index([("txtai", {"text": "txtai executes machine-learning workflows.",
-                             "object": request.read()}, None)])
+                             "object": request.read()})])
 
 # Query txtai and get associated object
 query = "select object from txtai where similar('machine learning') limit 1"
@@ -125,9 +128,9 @@ Custom, user-defined SQL functions extend selection, filtering and ordering clau
 translate = Translation()
 
 # Create embeddings index
-embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2",
-                         "content": True,
-                         "functions": [translate]})
+embeddings = Embeddings(path="sentence-transformers/nli-mpnet-base-v2",
+                        content=True,
+                        functions=[translate]})
 
 # Run a search using a custom SQL function
 embeddings.search("""

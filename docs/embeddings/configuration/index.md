@@ -1,6 +1,6 @@
 # Configuration
 
-This following describes available embeddings configuration. These parameters are set via the [Embeddings constructor](../methods#txtai.embeddings.base.Embeddings.__init__).
+This following describes available embeddings configuration. These parameters are set in the [Embeddings constructor](../methods#txtai.embeddings.base.Embeddings.__init__) via either the `config` parameter or as keyword arguments.
 
 ## format
 ```yaml
@@ -170,7 +170,7 @@ See [Annoy documentation](https://github.com/spotify/annoy#full-python-api) for 
 content: boolean|sqlite|duckdb|custom
 ```
 
-Enables content storage. When true, the default storage engine, `sqlite` will be used. Also supports `duckdb`. Add custom storage engines via setting this parameter to the fully resolvable class string.
+Enables content storage. When true, the default storage engine, `sqlite` will be used to save metadata alongside embeddings vectors. Also supports `duckdb`. Add custom storage engines via setting this parameter to the fully resolvable class string.
 
 Content storage specific settings are set with a corresponding configuration object having the same name as the content storage engine (i.e. duckdb or sqlite). None of these are required and are set to defaults if omitted.
 
@@ -180,6 +180,13 @@ sqlite:
     wal: enable write-ahead logging - allows concurrent read/write operations,
          defaults to false
 ```
+
+## objects
+```yaml
+objects: boolean
+```
+
+Enables object storage. When content storage is enabled and this is true, support for storing binary content alongside embeddings vectors and metadata is enabled.
 
 ## functions
 ```yaml

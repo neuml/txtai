@@ -207,7 +207,7 @@ class Application:
             # Load existing index if available
             self.embeddings = Embeddings()
             self.embeddings.load(self.config.get("path"), self.config.get("cloud"))
-        elif config:
+        elif "embeddings" in self.config:
             # Initialize empty embeddings
             self.embeddings = Embeddings(config)
 
@@ -359,25 +359,8 @@ class Application:
                 if not self.documents:
                     self.documents = Documents()
 
-                batch = []
-                index = self.embeddings.config.get("offset", 0) + len(self.documents)
-                for document in documents:
-                    if isinstance(document, dict):
-                        # Create (id, data, tags) tuple from dictionary
-                        document = (document["id"], document, document.get("tags"))
-                    elif isinstance(document, tuple):
-                        # Create (id, data, tags) tuple
-                        document = (document[0], document[1], None) if len(document) < 3 else document[:3]
-                    else:
-                        # Create (id, data, tags) tuple using id autosequence
-                        document = (index, document, None)
-                        index += 1
-
-                    # Add document tuple (id, data, tags)
-                    batch.append(document)
-
-                # Add batch
-                self.documents.add(batch)
+                # Add documents
+                self.documents.add(documents)
 
         # Return unmodified input documents
         return documents
