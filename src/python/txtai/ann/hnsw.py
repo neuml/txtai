@@ -46,7 +46,7 @@ class HNSW(ANN):
         self.backend.init_index(max_elements=embeddings.shape[0], ef_construction=efconstruction, M=m, random_seed=seed)
 
         # Add items - position in embeddings is used as the id
-        self.backend.add_items(embeddings, np.arange(embeddings.shape[0]))
+        self.backend.add_items(embeddings, np.arange(embeddings.shape[0], dtype=np.int64))
 
         # Add id offset, delete counter and index build metadata
         self.config["offset"] = embeddings.shape[0]
@@ -60,7 +60,7 @@ class HNSW(ANN):
         self.backend.resize_index(self.config["offset"] + new)
 
         # Append new ids - position in embeddings + existing offset is used as the id
-        self.backend.add_items(embeddings, np.arange(self.config["offset"], self.config["offset"] + new))
+        self.backend.add_items(embeddings, np.arange(self.config["offset"], self.config["offset"] + new, dtype=np.int64))
 
         # Update id offset and index metadata
         self.config["offset"] += new
