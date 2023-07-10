@@ -53,8 +53,6 @@ jobs:
           python -c "import nltk; nltk.download('punkt')"
           python --version
           make data coverage
-        env:
-          OMP_NUM_THREADS: 1
 
       - uses: pre-commit/action@v3.0.0
         if: matrix.os == 'ubuntu-latest'
