@@ -2,6 +2,7 @@
 Embeddings imports
 """
 
+from .autoid import AutoId
 from .action import Action
 from .base import Embeddings
 from .documents import Documents

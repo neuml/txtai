@@ -72,6 +72,25 @@ class TestSQLite(unittest.TestCase):
             self.embeddings.upsert([(0, "Looking out into the dreadful abyss", None)])
             self.assertEqual(self.embeddings.count(), len(self.data))
 
+    def testAutoId(self):
+        """
+        Test auto id generation
+        """
+
+        # Default sequence id
+        embeddings = Embeddings()
+        embeddings.index(self.data)
+
+        uid = embeddings.search(self.data[4], 1)[0][0]
+        self.assertEqual(uid, 4)
+
+        # UUID
+        embeddings = Embeddings(autoid="uuid4")
+        embeddings.index(self.data)
+
+        uid = embeddings.search(self.data[4], 1)[0][0]
+        self.assertEqual(len(uid), 36)
+
     def testClose(self):
         """
         Test embeddings close

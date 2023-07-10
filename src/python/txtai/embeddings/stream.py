@@ -2,6 +2,7 @@
 Stream module
 """
 
+from .autoid import AutoId
 from .transform import Action
 
 
@@ -27,7 +28,11 @@ class Stream:
 
         # Get config parameters
         self.offset = self.config.get("offset", 0) if self.action == Action.UPSERT else 0
-        self.autoid = self.config.get("autoid", self.offset) if self.action == Action.UPSERT else 0
+        autoid = self.config.get("autoid", self.offset)
+
+        # Create autoid generator, reset int sequence if this isn't an UPSERT
+        autoid = 0 if isinstance(autoid, int) and self.action != Action.UPSERT else autoid
+        self.autoid = AutoId(autoid)
 
     def __call__(self, documents):
         """
@@ -51,12 +56,12 @@ class Stream:
 
             # Set autoid if the action is set
             if self.action and document[0] is None:
-                document = (self.autoid, document[1], document[2])
-                self.autoid += 1
+                document = (self.autoid(document[1]), document[1], document[2])
 
             # Yield (id, data, tags) tuple
             yield document
 
         # Save autoid sequence if used
-        if self.action and self.autoid:
-            self.config["autoid"] = self.autoid
+        current = self.autoid.current()
+        if self.action and current:
+            self.config["autoid"] = current

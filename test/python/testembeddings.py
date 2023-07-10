@@ -46,6 +46,25 @@ class TestEmbeddings(unittest.TestCase):
         if cls.embeddings:
             cls.embeddings.close()
 
+    def testAutoId(self):
+        """
+        Test auto id generation
+        """
+
+        # Default sequence id
+        embeddings = Embeddings()
+        embeddings.index(self.data)
+
+        uid = embeddings.search(self.data[4], 1)[0][0]
+        self.assertEqual(uid, 4)
+
+        # UUID
+        embeddings = Embeddings(autoid="uuid4")
+        embeddings.index(self.data)
+
+        uid = embeddings.search(self.data[4], 1)[0][0]
+        self.assertEqual(len(uid), 36)
+
     def testDefaults(self):
         """
         Test default configuration
