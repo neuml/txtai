@@ -59,7 +59,12 @@ nav:
         - embeddings/index.md
         - Configuration:
             - embeddings/configuration/index.md
+            - ANN: embeddings/configuration/ann.md
             - Cloud: embeddings/configuration/cloud.md
+            - Database: embeddings/configuration/database.md
+            - General: embeddings/configuration/general.md
+            - Graph: embeddings/configuration/graph.md
+            - Vectors: embeddings/configuration/vectors.md
         - Index Guide: embeddings/indexing.md
         - Methods: embeddings/methods.md
         - Query Guide: embeddings/query.md

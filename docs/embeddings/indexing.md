@@ -7,19 +7,19 @@ This section gives an in-depth overview on how to index data with txtai. We'll c
 
 ## Vectorization
 
-The most compute intensive step in building an index is vectorization. The [path](../configuration#path) parameter sets the path to the vector model. There is logic to automatically detect the vector model [method](../configuration#method) but it can also be set directly.
+The most compute intensive step in building an index is vectorization. The [path](../configuration/vectors#path) parameter sets the path to the vector model. There is logic to automatically detect the vector model [method](../configuration/vectors#method) but it can also be set directly.
 
-The [batch](../configuration#batch) and [encodebatch](../configuration#encodebatch) parameters control the vectorization process. Larger values for `batch` will pass larger batches to the vectorization method. Larger values for `encodebatch` will pass larger batches for each vector encode call. In the case of GPU vector models, larger values will consume more GPU memory.
+The [batch](../configuration/vectors#batch) and [encodebatch](../configuration/vectors#encodebatch) parameters control the vectorization process. Larger values for `batch` will pass larger batches to the vectorization method. Larger values for `encodebatch` will pass larger batches for each vector encode call. In the case of GPU vector models, larger values will consume more GPU memory.
 
-Data is buffered to temporary storage during indexing as embeddings vectors can be quite large (for example 768 dimensions of float32 is 768 * 4 = 3072 bytes per vector). Once vectorization is complete, a mmapped array is created with all vectors for [Approximate Nearest Neighbor (ANN)](../configuration#backend) indexing.
+Data is buffered to temporary storage during indexing as embeddings vectors can be quite large (for example 768 dimensions of float32 is 768 * 4 = 3072 bytes per vector). Once vectorization is complete, a mmapped array is created with all vectors for [Approximate Nearest Neighbor (ANN)](../configuration/vectors#backend) indexing.
 
 ## Setting a backend
 
-As mentioned above, computed vectors are stored in an ANN. There are various index [backends](../configuration#backend) that can be configured. Faiss is the default backend.
+As mentioned above, computed vectors are stored in an ANN. There are various index [backends](../configuration/ann#backend) that can be configured. Faiss is the default backend.
 
 ## Content storage
 
-Embeddings indexes can optionally [store content](../configuration#content). When this is enabled, the input content is saved in a database alongside the computed vectors. This enables filtering on additional fields and content retrieval.
+Embeddings indexes can optionally [store content](../configuration/database#content). When this is enabled, the input content is saved in a database alongside the computed vectors. This enables filtering on additional fields and content retrieval.
 
 ## Index vs Upsert
 
@@ -70,7 +70,7 @@ embeddings.delete(ids)
 
 ## Reindex
 
-When [content storage](../configuration#content) is enabled, [reindex](../methods#txtai.embeddings.base.Embeddings.reindex) can be called to rebuild the index with new settings. For example, the backend can be switched from faiss to hnsw or the vector model can be updated. This prevents having to go back to the original raw data. 
+When [content storage](../configuration/database#content) is enabled, [reindex](../methods#txtai.embeddings.base.Embeddings.reindex) can be called to rebuild the index with new settings. For example, the backend can be switched from faiss to hnsw or the vector model can be updated. This prevents having to go back to the original raw data. 
 
 ```python
 embeddings.reindex(path="sentence-transformers/all-MiniLM-L6-v2", backend="hnsw")
@@ -80,7 +80,7 @@ embeddings.reindex(path="sentence-transformers/all-MiniLM-L6-v2", backend="hnsw"
 
 Dimensionality reduction with UMAP combined with HDBSCAN is a popular topic modeling method found in a number of libraries. txtai takes a different approach with a semantic graph.
 
-Enabling a [graph network](../configuration#graph) adds a semantic graph at index time as data is being vectorized. Vector embeddings are used to create relationships in the graph. Finally, community detection algorithms build topic clusters. Semantic graphs can also be used to analyze data connectivity.
+Enabling a [graph network](../configuration/graph) adds a semantic graph at index time as data is being vectorized. Vector embeddings are used to create relationships in the graph. Finally, community detection algorithms build topic clusters. Semantic graphs can also be used to analyze data connectivity.
 
 This approach has the advantage of only having to vectorize data once. It also has the advantage of better topic precision given there isn't a dimensionality reduction operation (UMAP). Semantic graph examples are shown below.
 
@@ -106,7 +106,7 @@ Graphs are persisted alongside an embeddings index. Each save and load will also
 
 ## Scoring
 
-When using [word vector backed models](../configuration#words) with scoring set, a separate call is required before calling `index` as follows:
+When using [word vector backed models](../configuration/vectors#words) with scoring set, a separate call is required before calling `index` as follows:
 
 ```python
 embeddings.score(rows)

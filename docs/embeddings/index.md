@@ -43,9 +43,9 @@ for query in ("feel good story", "climate change", "public health story", "war",
 
 ## Build
 
-An embeddings instance is [configuration-driven](configuration) based on what is passed in the constructor. Vectors are stored with the option to also [store content](configuration#content). Content storage enables additional filtering and data retrieval options.
+An embeddings instance is [configuration-driven](configuration) based on what is passed in the constructor. Vectors are stored with the option to also [store content](configuration/database#content). Content storage enables additional filtering and data retrieval options.
 
-The example above sets a specific embeddings vector model via the [path](configuration#path) parameter. An embeddings instance with no configuration can also be created.
+The example above sets a specific embeddings vector model via the [path](configuration/vectors/#path) parameter. An embeddings instance with no configuration can also be created.
 
 ```python
 embeddings = Embeddings()
@@ -79,7 +79,7 @@ The index method takes an iterable and supports the following formats for each e
 
 Single element to index. In this case, unique id's will automatically be generated. Note that for generated id's, [upsert](methods/#txtai.embeddings.base.Embeddings.upsert) and [delete](methods/#txtai.embeddings.base.Embeddings.delete) calls require a separate search to get the target ids.
 
-When the data field is a dictionary, text is passed via the `text` key, binary objects via the `object` key. Note that [content](configuration#content) must be enabled to store metadata and [objects](configuration#objects) to store binary object data. The `id` and `tags` keys will be extracted, if provided.
+When the data field is a dictionary, text is passed via the `text` key, binary objects via the `object` key. Note that [content](configuration/database#content) must be enabled to store metadata and [objects](configuration/database#objects) to store binary object data. The `id` and `tags` keys will be extracted, if provided.
 
 The input iterable can be a list or generator. [Generators](https://wiki.python.org/moin/Generators) help with indexing very large datasets as only portions of the data is in memory at any given time.
 
@@ -93,7 +93,7 @@ Once data is indexed, it is ready for search.
 embeddings.search(query, limit)
 ```
 
-The search method takes two parameters, the query and query limit. The results format is different based on whether [content](configuration/#content) is stored or not.
+The search method takes two parameters, the query and query limit. The results format is different based on whether [content](configuration/database#content) is stored or not.
 
 - List of `(id, score)` when content is _not_ stored
 - List of `{**query columns}` when content is stored

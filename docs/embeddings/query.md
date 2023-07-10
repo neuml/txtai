@@ -18,7 +18,7 @@ The queries above [search](../methods#txtai.embeddings.base.Embeddings.search) t
 
 ## SQL
 
-txtai supports more complex queries with SQL. This is only supported if [content storage](../configuration/#content) is enabled. txtai has a translation layer that analyzes input SQL statements and combines similarity results with content stored in a relational database.
+txtai supports more complex queries with SQL. This is only supported if [content storage](../configuration/database#content) is enabled. txtai has a translation layer that analyzes input SQL statements and combines similarity results with content stored in a relational database.
 
 SQL queries are run through `embeddings.search` like natural language queries but the examples below only show the SQL query for conciseness.
 
@@ -159,7 +159,7 @@ select id, text, score from txtai where similar('feel good story') and
 entry >= date('now', '-1 day')
 ```
 
-This requires setting a [query translation model](../configuration#query). The default query translation model is [t5-small-txtsql](https://huggingface.co/NeuML/t5-small-txtsql) but this can easily be finetuned to handle different use cases.
+This requires setting a [query translation model](../configuration/database#query). The default query translation model is [t5-small-txtsql](https://huggingface.co/NeuML/t5-small-txtsql) but this can easily be finetuned to handle different use cases.
 
 ## Combined index architecture
 
