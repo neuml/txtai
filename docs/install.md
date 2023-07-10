@@ -118,7 +118,7 @@ Optional audio transcription requires a [system library to be installed](https:/
 
 ### macOS
 
-Run `brew install libomp` see [this link](https://github.com/kyamagu/faiss-wheels#prerequisite)
+Older versions of Faiss have a runtime dependency on `libomp` for macOS. Run `brew install libomp` in this case.
 
 ### Windows
 

@@ -39,7 +39,6 @@ jobs:
 
       - name: Install dependencies - macOS
         run: |
-          brew install libomp
           echo "OMP_NUM_THREADS=1" >> $GITHUB_ENV
         if: matrix.os == 'macos-latest'
 

@@ -92,7 +92,7 @@ Segmentation faults and similar errors on macOS
 
 __Solution__
 
-Downgrade PyTorch to <= 1.12. See issue [#377](https://github.com/neuml/txtai/issues/377) for more on this issue. 
+Disable OpenMP threading via the environment variable `export OMP_NUM_THREADS=1` or downgrade PyTorch to <= 1.12. See issue [#377](https://github.com/neuml/txtai/issues/377) for more.
 
 ----------
 
