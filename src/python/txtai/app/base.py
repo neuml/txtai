@@ -343,7 +343,7 @@ class Application:
         Adds a batch of documents for indexing.
 
         Args:
-            documents: list of {id: value, text: value, tags: value}
+            documents: list of {id: value, data: value, tags: value}
 
         Returns:
             unmodified input documents
