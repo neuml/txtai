@@ -6,7 +6,10 @@ with open("README.md", "r", encoding="utf-8") as f:
     DESCRIPTION = "".join([line for line in f if "gh-dark-mode-only" not in line])
 
 # Required dependencies
-install = ["faiss-cpu>=1.7.1.post2", "numpy>=1.18.4", "pyyaml>=5.3", "torch>=1.12.1", "transformers>=4.22.0"]
+install = ["faiss-cpu>=1.7.1.post2", "torch>=1.12.1", "transformers>=4.22.0"]
+
+# Required dependencies that are also transformers dependencies
+install += ["huggingface-hub>=0.9.0", "numpy>=1.18.4", "pyyaml>=5.3", "regex>=2022.8.17"]
 
 # Optional dependencies
 extras = {}
@@ -87,7 +90,7 @@ extras["all"] = (
 
 setup(
     name="txtai",
-    version="5.6.0",
+    version="6.0.0",
     author="NeuML",
     description="Semantic search and workflows powered by language models",
     long_description=DESCRIPTION,
