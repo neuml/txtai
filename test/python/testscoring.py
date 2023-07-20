@@ -320,7 +320,7 @@ class TestScoring(unittest.TestCase):
         self.save(scoring, config, f"scoring.{config['method']}.settings")
 
         # Save to different path
-        self.save(scoring, config, "scoring.move")
+        self.save(scoring, config, f"scoring.{config['method']}.move")
 
         # Validate counts
         self.assertEqual(scoring.count(), len(self.data))
