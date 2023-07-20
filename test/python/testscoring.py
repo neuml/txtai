@@ -109,7 +109,7 @@ class TestScoring(unittest.TestCase):
         self.assertEqual(keys[0], "wins")
 
         # Test save/load
-        self.assertIsNotNone(self.save(scoring, config))
+        self.assertIsNotNone(self.save(scoring, config, f"scoring.{config['method']}.index"))
 
         # Test search returns none when terms disabled (default)
         self.assertIsNone(scoring.search("query"))
@@ -130,7 +130,7 @@ class TestScoring(unittest.TestCase):
         # Test stop word is removed
         self.assertFalse("and" in scoring.idf)
 
-    def save(self, scoring, config, name="scoring"):
+    def save(self, scoring, config, name):
         """
         Test scoring index save/load.
 
@@ -188,7 +188,7 @@ class TestScoring(unittest.TestCase):
         Test scoring search.
 
         Args:
-            method: scoring method
+            config: scoring config
         """
 
         # Create combined config
@@ -207,7 +207,7 @@ class TestScoring(unittest.TestCase):
         self.assertEqual(index, 3)
 
         # Test save/reload
-        self.save(scoring, config)
+        self.save(scoring, config, f"scoring.{config['method']}.search")
 
         # Re-run search and validate correct result returned
         index, _ = scoring.search("bear", 1)[0]
@@ -233,7 +233,7 @@ class TestScoring(unittest.TestCase):
         self.assertFalse(scoring.search("bear", 1))
 
         # Save and validate count
-        self.save(scoring, config)
+        self.save(scoring, config, f"scoring.{config['method']}.delete")
         self.assertEqual(scoring.count(), len(self.data) - 1)
 
     def normalize(self, config):
@@ -311,13 +311,13 @@ class TestScoring(unittest.TestCase):
         scoring.index(self.data)
 
         # Save/load index
-        self.save(scoring, config)
+        self.save(scoring, config, f"scoring.{config['method']}.settings")
 
         index, _ = scoring.search("bear bear bear wins", 1)[0]
         self.assertEqual(index, 3)
 
         # Save to same path
-        self.save(scoring, config)
+        self.save(scoring, config, f"scoring.{config['method']}.settings")
 
         # Save to different path
         self.save(scoring, config, "scoring.move")

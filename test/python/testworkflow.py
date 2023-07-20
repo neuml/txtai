@@ -73,6 +73,7 @@ class TestWorkflow(unittest.TestCase):
                     - transform
         """
 
+    @unittest.skipIf(os.name == "nt", "testBaseWorkflow skipped on Windows")
     def testBaseWorkflow(self):
         """
         Test a basic workflow
@@ -140,7 +141,7 @@ class TestWorkflow(unittest.TestCase):
         self.assertEqual(index, 0)
         self.assertEqual(data[0][1], "txtai builds an AI-powered index over sections")
 
-    @unittest.skipIf(os.name == "nt", "testComplexWorkflow skipped on Windows")
+    @unittest.skipIf(os.name == "nt", "testConcurrentWorkflow skipped on Windows")
     def testConcurrentWorkflow(self):
         """
         Test running concurrent task actions
