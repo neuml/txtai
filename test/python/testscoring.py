@@ -147,6 +147,10 @@ class TestScoring(unittest.TestCase):
         index = os.path.join(tempfile.gettempdir(), "scoring")
         os.makedirs(index, exist_ok=True)
 
+        # Create file to test replacing existing file
+        with open(f"{index}.terms", "w", encoding="utf-8") as f:
+            f.write("TEST")
+
         # Save scoring instance
         scoring.save(f"{index}/{name}")
 
