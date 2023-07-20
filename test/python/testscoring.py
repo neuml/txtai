@@ -191,7 +191,11 @@ class TestScoring(unittest.TestCase):
             method: scoring method
         """
 
-        scoring = ScoringFactory.create({**config, **{"terms": True}})
+        # Create combined config
+        config = {**config, **{"terms": True}}
+
+        # Create scoring instance
+        scoring = ScoringFactory.create(config)
         scoring.index(self.data)
 
         # Run search and validate correct result returned
@@ -214,7 +218,11 @@ class TestScoring(unittest.TestCase):
         Test delete.
         """
 
-        scoring = ScoringFactory.create({**config, **{"terms": True, "content": True}})
+        # Create combined config
+        config = {**config, **{"terms": True, "content": True}}
+
+        # Create scoring instance
+        scoring = ScoringFactory.create(config)
         scoring.index(self.data)
 
         # Run search and validate correct result returned
@@ -295,7 +303,11 @@ class TestScoring(unittest.TestCase):
             config: scoring config
         """
 
-        scoring = ScoringFactory.create({**config, **{"terms": {"cachelimit": 0, "cutoff": 0.25, "wal": True}}})
+        # Create combined config
+        config = {**config, **{"terms": {"cachelimit": 0, "cutoff": 0.25, "wal": True}}}
+
+        # Create scoring instance
+        scoring = ScoringFactory.create(config)
         scoring.index(self.data)
 
         # Save/load index

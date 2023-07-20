@@ -2,7 +2,6 @@
 TextToSpeech module tests
 """
 
-import os
 import unittest
 
 from unittest.mock import patch
@@ -15,7 +14,6 @@ class TestTextToSpeech(unittest.TestCase):
     TextToSpeech tests.
     """
 
-    @unittest.skipIf(os.name == "nt", "testTextToSpeech skipped on Windows")
     def testTextToSpeech(self):
         """
         Test generating speech for text
@@ -26,7 +24,6 @@ class TestTextToSpeech(unittest.TestCase):
         # Check that data is generated
         self.assertGreater(len(tts("This is a test")), 0)
 
-    @unittest.skipIf(os.name == "nt", "testProviders skipped on Windows")
     @patch("onnxruntime.get_available_providers")
     @patch("torch.cuda.is_available")
     def testProviders(self, cuda, providers):

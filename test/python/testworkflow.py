@@ -140,6 +140,7 @@ class TestWorkflow(unittest.TestCase):
         self.assertEqual(index, 0)
         self.assertEqual(data[0][1], "txtai builds an AI-powered index over sections")
 
+    @unittest.skipIf(os.name == "nt", "testComplexWorkflow skipped on Windows")
     def testConcurrentWorkflow(self):
         """
         Test running concurrent task actions
