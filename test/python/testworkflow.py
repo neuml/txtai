@@ -73,7 +73,6 @@ class TestWorkflow(unittest.TestCase):
                     - transform
         """
 
-    @unittest.skipIf(os.name == "nt", "testBaseWorkflow skipped on Windows")
     def testBaseWorkflow(self):
         """
         Test a basic workflow
