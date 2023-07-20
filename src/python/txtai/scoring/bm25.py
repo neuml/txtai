@@ -2,7 +2,7 @@
 BM25 module
 """
 
-import math
+import numpy as np
 
 from .base import Scoring
 
@@ -21,7 +21,7 @@ class BM25(Scoring):
 
     def computeidf(self, freq):
         # Calculate BM25 IDF score
-        return math.log(1 + (self.total - freq + 0.5) / (freq + 0.5))
+        return np.log(1 + (self.total - freq + 0.5) / (freq + 0.5))
 
     def score(self, freq, idf, length):
         # Calculate BM25 score

@@ -2,6 +2,8 @@
 SIF module
 """
 
+import numpy as np
+
 from .base import Scoring
 
 
@@ -18,9 +20,13 @@ class SIF(Scoring):
 
     def computefreq(self, tokens):
         # Default method computes frequency for a single entry
-        # SIF uses word probabilities across entire index
-        return self.wordfreq
+        # SIF uses word frequencies across entire index
+        return {token: self.wordfreq[token] for token in tokens}
 
     def score(self, freq, idf, length):
+        # Set freq to word frequencies across entire index when freq and idf shape don't match
+        if isinstance(freq, np.ndarray) and freq.shape != idf.shape:
+            freq.fill(freq.sum())
+
         # Calculate SIF score
         return self.a / (self.a + freq / self.tokens)

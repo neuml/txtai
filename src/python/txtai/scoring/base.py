@@ -3,13 +3,19 @@ Scoring module
 """
 
 import math
+import os
 import pickle
 
 from collections import Counter
+from multiprocessing.pool import ThreadPool
+
+import numpy as np
 
 from .. import __pickle__
 
 from ..pipeline import Tokenizer
+
+from .terms import Terms
 
 
 class Scoring:
@@ -33,13 +39,6 @@ class Scoring:
         self.tokens = 0
         self.avgdl = 0
 
-        # Document data
-        self.documents = {} if self.config.get("content") else None
-        self.docterms = {} if self.config.get("terms") else None
-
-        # Normalize scores
-        self.normalize = self.config.get("normalize")
-
         # Word frequency
         self.docfreq = Counter()
         self.wordfreq = Counter()
@@ -52,7 +51,70 @@ class Scoring:
         # Tag boosting
         self.tags = Counter()
 
-    def index(self, documents):
+        # Tokenizer, lazily loaded as needed
+        self.tokenizer = None
+
+        # Term index
+        self.terms = Terms(self.config["terms"], self.score, self.idf) if self.config.get("terms") else None
+
+        # Document data
+        self.documents = {} if self.config.get("content") else None
+
+        # Normalize scores
+        self.normalize = self.config.get("normalize")
+
+    def insert(self, documents, index=None):
+        """
+        Inserts documents into the scoring index.
+
+        Args:
+            documents: list of (id, dict|text|tokens, tags)
+            index: indexid offset
+        """
+
+        # Calculate word frequency, total tokens and total documents
+        for uid, data, tags in documents:
+            # If index is passed, use indexid, otherwise use id
+            uid = index if index is not None else uid
+
+            if self.documents is not None:
+                self.documents[uid] = data
+
+            # Extract text, if necessary
+            if isinstance(data, dict):
+                data = data.get("text")
+
+            # Convert to tokens, if necessary
+            tokens = self.tokenize(data) if isinstance(data, str) else data
+
+            # Add tokens for id to term index
+            if self.terms is not None:
+                self.terms.insert(uid, tokens)
+
+            # Add tokens and tags to stats
+            self.addstats(tokens, tags)
+
+            # Increment index
+            index = index + 1 if index is not None else None
+
+    def delete(self, ids):
+        """
+        Deletes documents from scoring index.
+
+        Args:
+            ids: list of ids to delete
+        """
+
+        # Delete from terms index
+        if self.terms:
+            self.terms.delete(ids)
+
+        # Delete content
+        if self.documents:
+            for uid in ids:
+                self.documents.pop(uid)
+
+    def index(self, documents=None):
         """
         Indexes a collection of documents using a scoring method.
 
@@ -60,8 +122,9 @@ class Scoring:
             documents: list of (id, dict|text|tokens, tags)
         """
 
-        # Parse documents
-        tokenlists = self.parse(documents)
+        # Insert documents
+        if documents:
+            self.insert(documents)
 
         # Build index if tokens parsed
         if self.wordfreq:
@@ -75,80 +138,29 @@ class Scoring:
             self.avgdl = self.tokens / self.total
 
             # Compute IDF scores
-            for word, freq in self.docfreq.items():
-                self.idf[word] = self.computeidf(freq)
+            idfs = self.computeidf(np.array(list(self.docfreq.values())))
+            for x, word in enumerate(self.docfreq):
+                self.idf[word] = idfs[x]
 
             # Average IDF score per token
-            self.avgidf = sum(self.idf.values()) / len(self.idf)
+            self.avgidf = np.mean(idfs)
 
             # Filter for tags that appear in at least 1% of the documents
             self.tags = {tag: number for tag, number in self.tags.items() if number >= self.total * 0.005}
 
-            # Process document terms, if necessary
-            self.terms(tokenlists)
+        # Index terms, if available
+        if self.terms:
+            self.terms.index()
 
-    def parse(self, documents):
+    def upsert(self, documents=None):
         """
-        Parses document stats, word frequencies and data from documents.
+        Convience method for API clarity. Calls index method.
 
         Args:
-            docments: list of (id, dict|text|tokens, tags)
-
-        Returns:
-            tokenlists: list of parsed documents when term parsing is enabled, empty dict otherwise
+            documents: list of (id, dict|text|tokens, tags)
         """
 
-        # Store tokenlists when term indexing enabled
-        tokenlists = {}
-
-        # Calculate word frequency, total tokens and total documents
-        for uid, data, tags in documents:
-            if self.documents is not None:
-                self.documents[uid] = data
-
-            # Extract text, if necessary
-            if isinstance(data, dict):
-                data = data.get("text")
-
-            # Convert to tokens, if necessary
-            tokens = Tokenizer.tokenize(data) if isinstance(data, str) else data
-
-            # Save tokens for term indexing
-            if self.docterms is not None:
-                tokenlists[uid] = tokens
-
-            # Total number of times token appears, count all tokens
-            self.wordfreq.update(tokens)
-
-            # Total number of documents a token is in, count unique tokens
-            self.docfreq.update(set(tokens))
-
-            # Get list of unique tags
-            if tags:
-                self.tags.update(tags.split())
-
-            # Total document count
-            self.total += 1
-
-        return tokenlists
-
-    def terms(self, tokenlist):
-        """
-        Add term weights for each tokenized document in tokenlist.
-
-        Args:
-            tokenlist: list of tokenized documents
-        """
-
-        for uid in tokenlist:
-            tokens = tokenlist[uid]
-            weights = self.weights(tokens)
-
-            for x, token in enumerate(tokens):
-                if token not in self.docterms:
-                    self.docterms[token] = {}
-
-                self.docterms[token][uid] = weights[x]
+        self.index(documents)
 
     def weights(self, tokens):
         """
@@ -161,21 +173,18 @@ class Scoring:
             list of weights for each token
         """
 
-        # Weights array
-        weights = []
-
         # Document length
         length = len(tokens)
 
         # Calculate token counts
         freq = self.computefreq(tokens)
+        freq = np.array([freq[token] for token in tokens])
 
-        for token in tokens:
-            # Lookup idf score
-            idf = self.idf[token] if token in self.idf else self.avgidf
+        # Get idf scores
+        idf = np.array([self.idf[token] if token in self.idf else self.avgidf for token in tokens])
 
-            # Calculate score for each token, use as weight
-            weights.append(self.score(freq[token], idf, length))
+        # Calculate score for each token, use as weight
+        weights = self.score(freq, idf, length).tolist()
 
         # Boost weights of tag tokens to match the largest weight in the list
         if self.tags:
@@ -190,7 +199,7 @@ class Scoring:
 
     def search(self, query, limit=3):
         """
-        Search index for documents matching query. Request terms config parameter to be enabled.
+        Search index for documents matching query.
 
         Args:
             query: input query
@@ -200,75 +209,44 @@ class Scoring:
             list of (id, score) or (data, score) if content is enabled
         """
 
-        # Check if document terms available
-        if self.docterms:
-            query = Tokenizer.tokenize(query) if isinstance(query, str) else query
+        # Check if term index available
+        if self.terms:
+            # Parse query into terms
+            query = self.tokenize(query) if isinstance(query, str) else query
 
-            scores = {}
-            for token in query:
-                if token in self.docterms:
-                    for x in self.docterms[token]:
-                        if x not in scores:
-                            scores[x] = 0.0
+            # Get topn term query matches
+            scores = self.terms.search(query, limit)
 
-                        scores[x] += self.docterms[token][x]
+            # Normalize scores, if enabled
+            if self.normalize:
+                # Calculate max score = 4 * average score
+                maxscore = 4 * self.score(self.avgfreq, self.avgidf, self.avgdl)
 
-            # Get topn matching results
-            topn = self.topn(scores, limit)
+                # Normalize scores between 0 - 1 using maxscore
+                scores = [(x, min(score / maxscore, 1.0)) for x, score in scores]
 
-            # Format results and add content if available
-            return self.results(topn)
+            # Add content, if available
+            return self.results(scores)
 
         return None
 
-    def topn(self, scores, limit):
+    def batchsearch(self, queries, limit=3, threads=True):
         """
-        Extracts topn search results.
-
-        Args:
-            scores: all scores
-            limit: maximum results
-
-        Returns:
-            topn results
+        Search index for documents matching queries. This method is able to run as multiple threads due to
+        a number of regex and numpy method calls that drop the GIL.
         """
 
-        # Sort and get topn results
-        scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:limit]
+        # Calculate number of threads using a thread per 25k records in index
+        threads = math.ceil(self.count() / 25000) if isinstance(threads, bool) and threads else int(threads)
+        threads = min(max(threads, 1), os.cpu_count())
 
-        # Normalize scores, if enabled
-        if self.normalize:
-            # Calculate max score = 4 * average score
-            maxscore = 4 * self.score(self.avgfreq, self.avgidf, self.avgdl)
+        # Run threaded queries
+        results = []
+        with ThreadPool(threads) as pool:
+            for result in pool.starmap(self.search, [(x, limit) for x in queries]):
+                results.append(result)
 
-            # Normalize scores between 0 - 1 using maxscore
-            scores = [(x, min(score / maxscore, 1.0)) for x, score in scores]
-
-        return scores
-
-    def results(self, topn):
-        """
-        Resolves a list of (id, score) with document content, if available. Otherwise, the original input is returned.
-
-        Args:
-            topn: list of (id, score)
-
-        Returns:
-            resolved results
-        """
-
-        if self.documents:
-            results = []
-            for x, score in topn:
-                data = self.documents[x]
-                if isinstance(data, dict):
-                    results.append({"id": x, "text": data.get("text"), "score": score, "data": data})
-                else:
-                    results.append({"id": x, "text": data, "score": score})
-
-            return results
-
-        return topn
+        return results
 
     def count(self):
         """
@@ -278,7 +256,7 @@ class Scoring:
             total number of documents indexed
         """
 
-        return self.total
+        return self.terms.count() if self.terms else self.total
 
     def load(self, path):
         """
@@ -289,7 +267,13 @@ class Scoring:
         """
 
         with open(path, "rb") as handle:
+            # Load scoring
             self.__dict__.update(pickle.load(handle))
+
+            # Load terms
+            if self.config.get("terms"):
+                self.terms = Terms(self.config["terms"], self.score, self.idf)
+                self.terms.load(path + ".terms")
 
     def save(self, path):
         """
@@ -300,11 +284,20 @@ class Scoring:
         """
 
         with open(path, "wb") as handle:
-            pickle.dump(self.__dict__, handle, protocol=__pickle__)
+            # Don't serialize following fields
+            skipfields = ("config", "terms", "tokenizer")
+
+            # Save scoring
+            state = {key: value for key, value in self.__dict__.items() if key not in skipfields}
+            pickle.dump(state, handle, protocol=__pickle__)
+
+            # Save terms
+            if self.terms:
+                self.terms.save(path + ".terms")
 
     def computefreq(self, tokens):
         """
-        Computes token frequency.
+        Computes token frequency. Used for token weighting.
 
         Args:
             tokens: input tokens
@@ -326,7 +319,7 @@ class Scoring:
             idf score
         """
 
-        return math.log((self.total + 1) / (freq + 1)) + 1
+        return np.log((self.total + 1) / (freq + 1)) + 1
 
     # pylint: disable=W0613
     def score(self, freq, idf, length):
@@ -342,4 +335,86 @@ class Scoring:
             token score
         """
 
-        return idf * math.sqrt(freq) * (1 / math.sqrt(length))
+        return idf * np.sqrt(freq) * (1 / np.sqrt(length))
+
+    def addstats(self, tokens, tags):
+        """
+        Add tokens and tags to stats.
+
+        Args:
+            tokens: list of tokens
+            tags: list of tags
+        """
+
+        # Total number of times token appears, count all tokens
+        self.wordfreq.update(tokens)
+
+        # Total number of documents a token is in, count unique tokens
+        self.docfreq.update(set(tokens))
+
+        # Get list of unique tags
+        if tags:
+            self.tags.update(tags.split())
+
+        # Total document count
+        self.total += 1
+
+    def tokenize(self, text):
+        """
+        Tokenizes text using default tokenizer.
+
+        Args:
+            text: input text
+
+        Returns:
+            tokens
+        """
+
+        # Load tokenizer
+        if not self.tokenizer:
+            self.tokenizer = self.loadtokenizer()
+
+        return self.tokenizer(text)
+
+    def loadtokenizer(self):
+        """
+        Load default tokenizer.
+
+        Returns:
+            tokenize method
+        """
+
+        # Custom tokenizer settings
+        if self.config.get("tokenizer"):
+            return Tokenizer(**self.config.get("tokenizer"))
+
+        # Terms index use a standard tokenizer
+        if self.config.get("terms"):
+            return Tokenizer()
+
+        # Standard scoring index without a terms index uses backwards compatible static tokenize method
+        return Tokenizer.tokenize
+
+    def results(self, scores):
+        """
+        Resolves a list of (id, score) with document content, if available. Otherwise, the original input is returned.
+
+        Args:
+            scores: list of (id, score)
+
+        Returns:
+            resolved results
+        """
+
+        if self.documents:
+            results = []
+            for x, score in scores:
+                data = self.documents[x]
+                if isinstance(data, dict):
+                    results.append({"id": x, "text": data.get("text"), "score": score, "data": data})
+                else:
+                    results.append({"id": x, "text": data, "score": score})
+
+            return results
+
+        return scores

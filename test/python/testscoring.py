@@ -6,6 +6,8 @@ import os
 import tempfile
 import unittest
 
+from unittest.mock import patch
+
 from txtai.scoring import ScoringFactory
 
 
@@ -71,11 +73,14 @@ class TestScoring(unittest.TestCase):
         config = {"method": method}
 
         self.index(config)
+        self.upsert(config)
         self.weights(config)
         self.search(config)
+        self.delete(config)
         self.normalize(config)
         self.content(config)
         self.empty(config)
+        self.settings(config)
 
     def index(self, config, data=None):
         """
@@ -86,50 +91,70 @@ class TestScoring(unittest.TestCase):
             data: data to index with scoring method
 
         Returns:
-            Scoring model
+            scoring
         """
 
         # Derive input data
         data = data if data else self.data
 
-        model = ScoringFactory.create(config)
-        model.index(data)
+        scoring = ScoringFactory.create(config)
+        scoring.index(data)
 
-        keys = [k for k, v in sorted(model.idf.items(), key=lambda x: x[1])]
+        keys = [k for k, v in sorted(scoring.idf.items(), key=lambda x: x[1])]
 
         # Test count
-        self.assertEqual(model.count(), len(data))
+        self.assertEqual(scoring.count(), len(data))
 
-        # Win should be lowest score for all models
+        # Win should be lowest score
         self.assertEqual(keys[0], "wins")
 
         # Test save/load
-        self.assertIsNotNone(self.save(model))
+        self.assertIsNotNone(self.save(scoring, config))
 
         # Test search returns none when terms disabled (default)
-        self.assertIsNone(model.search("query"))
+        self.assertIsNone(scoring.search("query"))
 
-        return model
+        return scoring
 
-    def save(self, model):
+    def upsert(self, config):
+        """
+        Test scoring upsert method
+        """
+
+        scoring = ScoringFactory.create({**config, **{"tokenizer": {"alphanum": True, "stopwords": True}}})
+        scoring.upsert(self.data)
+
+        # Test count
+        self.assertEqual(scoring.count(), len(self.data))
+
+        # Test stop word is removed
+        self.assertFalse("and" in scoring.idf)
+
+    def save(self, scoring, config, name="scoring"):
         """
         Test scoring index save/load.
 
         Args:
-            model: Scoring model
+            scoring: scoring index
+            config: scoring config
+            name: output file name
 
         Returns:
-            Scoring model
+            scoring
         """
 
         # Generate temp file path
         index = os.path.join(tempfile.gettempdir(), "scoring")
         os.makedirs(index, exist_ok=True)
 
-        model.save(f"{index}/scoring")
-        model.load(f"{index}/scoring")
+        # Save scoring instance
+        scoring.save(f"{index}/{name}")
 
-        return model
+        # Reload scoring instance
+        scoring = ScoringFactory.create(config)
+        scoring.load(f"{index}/{name}")
+
+        return scoring
 
     def weights(self, config):
         """
@@ -172,6 +197,36 @@ class TestScoring(unittest.TestCase):
         # Run search and validate correct result returned
         index, _ = scoring.search("bear", 1)[0]
         self.assertEqual(index, 3)
+
+        # Run batch search
+        index, _ = scoring.batchsearch(["bear"], 1)[0][0]
+        self.assertEqual(index, 3)
+
+        # Test save/reload
+        self.save(scoring, config)
+
+        # Re-run search and validate correct result returned
+        index, _ = scoring.search("bear", 1)[0]
+        self.assertEqual(index, 3)
+
+    def delete(self, config):
+        """
+        Test delete.
+        """
+
+        scoring = ScoringFactory.create({**config, **{"terms": True, "content": True}})
+        scoring.index(self.data)
+
+        # Run search and validate correct result returned
+        index = scoring.search("bear", 1)[0]["id"]
+
+        # Delete result and validate the query no longer returns results
+        scoring.delete([index])
+        self.assertFalse(scoring.search("bear", 1))
+
+        # Save and validate count
+        self.save(scoring, config)
+        self.assertEqual(scoring.count(), len(self.data) - 1)
 
     def normalize(self, config):
         """
@@ -230,3 +285,30 @@ class TestScoring(unittest.TestCase):
 
         # Assert index call returns and index has a count of 0
         self.assertEqual(scoring.total, 0)
+
+    @patch("sys.byteorder", "big")
+    def settings(self, config):
+        """
+        Tests various settings.
+
+        Args:
+            config: scoring config
+        """
+
+        scoring = ScoringFactory.create({**config, **{"terms": {"cachelimit": 0, "cutoff": 0.25, "wal": True}}})
+        scoring.index(self.data)
+
+        # Save/load index
+        self.save(scoring, config)
+
+        index, _ = scoring.search("bear bear bear wins", 1)[0]
+        self.assertEqual(index, 3)
+
+        # Save to same path
+        self.save(scoring, config)
+
+        # Save to different path
+        self.save(scoring, config, "scoring.move")
+
+        # Validate counts
+        self.assertEqual(scoring.count(), len(self.data))
