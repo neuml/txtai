@@ -16,6 +16,14 @@ class Vectors:
     """
 
     def __init__(self, config, scoring):
+        """
+        Creates a new vectors instance.
+
+        Args:
+            config: vector configuration
+            scoring: optional scoring instance for term weighting
+        """
+
         # Store parameters
         self.config = config
         self.scoring = scoring
