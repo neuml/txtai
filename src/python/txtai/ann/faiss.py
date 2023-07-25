@@ -24,7 +24,9 @@ class Faiss(ANN):
         # Compute model training size
         train, sample = embeddings, self.setting("sample")
         if sample:
-            indices = sorted(np.random.choice(train.shape[0], int(sample * train.shape[0]), replace=False))
+            # Get sample for training
+            rng = np.random.default_rng(0)
+            indices = sorted(rng.choice(train.shape[0], int(sample * train.shape[0]), replace=False, shuffle=False))
             train = train[indices]
 
         # Configure embeddings index. Inner product is equal to cosine similarity on normalized vectors.

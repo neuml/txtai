@@ -89,7 +89,7 @@ class HNSW(ANN):
         results = []
         for x, distance in enumerate(distances):
             # Convert distances to similarity scores
-            scores = [1 - d for d in distance]
+            scores = [1 - d for d in distance.tolist()]
 
             # Build (id, score) tuples, convert np.int64 to python int
             results.append(list(zip(ids[x].tolist(), scores)))
