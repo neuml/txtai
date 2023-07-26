@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 class Search:
     """
-    Executes a batch search action. A search can be both approximate nearest neighbor and/or database driven.
+    Executes a batch search action. A search can be both index and/or database driven.
     """
 
     def __init__(self, embeddings, indexids=False):
@@ -26,38 +26,92 @@ class Search:
         self.indexids = indexids
 
         # Alias embeddings attributes
-        self.config = embeddings.config
         self.ann = embeddings.ann
-        self.database = embeddings.database
         self.batchtransform = embeddings.batchtransform
+        self.config = embeddings.config
+        self.database = embeddings.database
         self.query = embeddings.query
+        self.scoring = embeddings.scoring if embeddings.issparse() else None
 
-    def __call__(self, queries, limit):
+    def __call__(self, queries, limit=None, weights=None):
         """
-        Executes a batch search for queries. This method will run either an approximate nearest neighbor (ann) search
-        or an approximate nearest neighbor + database search depending on if a database is available.
+        Executes a batch search for queries. This method will run either an index search or an index + database search
+        depending on if a database is available.
 
         Args:
             queries: list of queries
             limit: maximum results
+            weights: hybrid score weights
 
         Returns:
-            list of (id, score) per query for ann search, list of dict per query for an ann+database search
+            list of (id, score) per query for index search, list of dict per query for an index+database search
         """
 
-        # Return empty results if ANN is not set
-        if not self.ann:
+        # Default input parameters
+        limit = limit if limit else 3
+        weights = weights if weights is not None else 0.5
+
+        # Return empty results when indexes are not available
+        if not self.ann and not self.scoring:
             return [[]] * len(queries)
 
         if not self.indexids and self.database:
-            return self.dbsearch(queries, limit)
+            return self.dbsearch(queries, limit, weights)
 
-        # Default: execute an approximate nearest neighbor search
-        return self.search(queries, limit)
+        # Default is vector index query (sparse, dense or hybrid)
+        return self.search(queries, limit, weights)
 
-    def search(self, queries, limit):
+    def search(self, queries, limit, weights):
         """
-        Executes an approximate nearest neighbor search.
+        Executes an index search. When only a sparse index is enabled, this is a a keyword search. When only
+        a dense index is enabled, this is an ann search. When both are enabled, this is a hybrid search.
+
+        Args:
+            queries: list of queries
+            limit: maximum results
+            weights: hybrid score weights
+
+        Returns:
+            list of (id, score) per query
+        """
+
+        dense = self.dense(queries, limit) if self.ann else None
+        sparse = self.sparse(queries, limit) if self.scoring else None
+
+        # Combine scores together
+        if dense and sparse:
+            # Create weights array if single number passed
+            if isinstance(weights, (int, float)):
+                weights = [weights, 1 - weights]
+
+            # Create weighted scores
+            results = []
+            for vectors in zip(dense, sparse):
+                uids = {}
+                for v, scores in enumerate(vectors):
+                    for r, (uid, score) in enumerate(scores if weights[v] > 0 else []):
+                        # Initialize score
+                        if uid not in uids:
+                            uids[uid] = 0.0
+
+                        # Create hybrid score
+                        #  - Convex Combination when sparse scores are normalized
+                        #  - Reciprocal Rank Fusion (RRF) when sparse scores aren't normalized
+                        if self.scoring.isnormalized():
+                            uids[uid] += score * weights[v]
+                        else:
+                            uids[uid] += (1.0 / (r + 1)) * weights[v]
+
+                results.append(sorted(uids.items(), key=lambda x: x[1], reverse=True)[:limit])
+
+            return results
+
+        # Return single query results
+        return dense if dense else sparse
+
+    def dense(self, queries, limit):
+        """
+        Executes an dense vector search with an approximate nearest neighbor index.
 
         Args:
             queries: list of queries
@@ -76,6 +130,34 @@ class Search:
         # Require scores to be greater than 0
         results = [[(i, score) for i, score in r if score > 0] for r in results]
 
+        return self.resolve(results)
+
+    def sparse(self, queries, limit):
+        """
+        Executes a sparse vector search with a term frequency sparse array.
+
+        Args:
+            queries: list of queries
+            limit: maximum results
+
+        Returns:
+            list of (id, score) per query
+        """
+
+        # Search term frequency sparse index
+        return self.resolve(self.scoring.batchsearch(queries, limit))
+
+    def resolve(self, results):
+        """
+        Resolves index ids. This is only executed when content is disabled.
+
+        Args:
+            results: results
+
+        Returns:
+            results with resolved ids
+        """
+
         # Map indexids to ids if "ids" available
         if not self.indexids and "ids" in self.config:
             lookup = self.config["ids"]
@@ -83,13 +165,14 @@ class Search:
 
         return results
 
-    def dbsearch(self, queries, limit):
+    def dbsearch(self, queries, limit, weights):
         """
-        Executes an approximate nearest neighbor + database search.
+        Executes an index + database search.
 
         Args:
             queries: list of queries
             limit: maximum results
+            weights: hybrid score weights
 
         Returns:
             list of dict per query
@@ -104,10 +187,10 @@ class Search:
         # Extract embeddings queries as single batch across all queries
         equeries, candidates = self.extract(queries, limit)
 
-        # Bulk approximate nearest neighbor search
-        search = self.search([query for _, query in equeries], candidates) if equeries else []
+        # Bulk index search
+        search = self.search([query for _, query in equeries], candidates, weights) if equeries else []
 
-        # Combine approximate nearest neighbor search results with database search results
+        # Combine index search results with database search results
         results = []
         for x, query in enumerate(queries):
             # Get search indices for this query within bulk query
@@ -177,10 +260,10 @@ class Search:
         """
         Extract embeddings queries text and number of candidates from a list of parsed queries.
 
-        The number of candidates are the number of results to bring back from ANN queries. This is an optional
+        The number of candidates are the number of results to bring back from index queries. This is an optional
         second argument to similar() clauses. For a single query filter clause, the default is the query limit.
         With multiple filtering clauses, the default is 10x the query limit. This ensures that limit results
-        are still returned with additional filtering after an ANN query.
+        are still returned with additional filtering after an index query.
 
         Args:
             queries: list of parsed queries

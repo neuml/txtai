@@ -12,7 +12,7 @@ from .action import Action
 
 class Transform:
     """
-    Executes a transform. Processes a stream of documents, loads batches into a database and vectorizes documents.
+    Executes a transform. Processes a stream of documents, loads batches into enabled data stores and vectorizes documents.
     """
 
     def __init__(self, embeddings, action):
@@ -28,14 +28,15 @@ class Transform:
         self.action = action
 
         # Alias embeddings attributes
-        self.delete = self.embeddings.delete
-        self.model = self.embeddings.model
-        self.database = self.embeddings.database
-        self.graph = self.embeddings.graph
+        self.delete = embeddings.delete
+        self.model = embeddings.model
+        self.database = embeddings.database
+        self.graph = embeddings.graph
+        self.scoring = embeddings.scoring if embeddings.issparse() else None
 
         # Get config parameters
-        self.offset = self.embeddings.config.get("offset", 0) if self.action == Action.UPSERT else 0
-        self.batch = self.embeddings.config.get("batch", 1024)
+        self.offset = embeddings.config.get("offset", 0) if action == Action.UPSERT else 0
+        self.batch = embeddings.config.get("batch", 1024)
 
         # List of deleted ids with this action
         self.deletes = set()
@@ -44,7 +45,7 @@ class Transform:
         """
         Processes an iterable collection of documents, handles any iterable including generators.
 
-        This method loads a stream of documents into a database (if applicable) and vectorizes documents into an embeddings array.
+        This method loads a stream of documents into enabled data stores and vectorizes documents into an embeddings array.
 
         Args:
             documents: iterable of (id, data, tags)
@@ -54,7 +55,29 @@ class Transform:
             (document ids, dimensions, embeddings)
         """
 
-        # Transform documents to vectors and load into database
+        # Return parameters
+        ids, dimensions, embeddings = None, None, None
+
+        if self.model:
+            ids, dimensions, embeddings = self.vectors(documents, buffer)
+        else:
+            ids = self.ids(documents)
+
+        return (ids, dimensions, embeddings)
+
+    def vectors(self, documents, buffer):
+        """
+        Runs a vectors transform operation when dense indexing is enabled.
+
+        Args:
+            documents: iterable of (id, data, tags)
+            buffer: file path used for memmap buffer
+
+        Returns:
+            (document ids, dimensions, embeddings)
+        """
+
+        # Consume stream and transform documents to vectors
         ids, dimensions, batches, stream = self.model.index(self.stream(documents), self.batch)
 
         # Check that embeddings are available and load as a memmap
@@ -73,18 +96,36 @@ class Transform:
 
         return (ids, dimensions, embeddings)
 
+    def ids(self, documents):
+        """
+        Runs an ids transform operation when dense indexing is disabled.
+
+        Args:
+            documents: iterable of (id, data, tags)
+
+        Returns:
+            document ids
+        """
+
+        # Consume stream and build extract ids
+        ids = []
+        for uid, _, _ in self.stream(documents):
+            ids.append(uid)
+
+        return ids
+
     def stream(self, documents):
         """
         This method does two things:
 
         1. Filter and yield data to vectorize
-        2. Batch and load original documents into a database (if applicable)
+        2. Batch and load original documents into enabled data stores (database, graph, scoring)
 
         Documents are yielded for vectorization if one of the following is True:
             - dict with the field "text" or "object"
             - not a dict
 
-        Otherwise, documents are only batched and inserted into a database
+        Otherwise, documents are only batched and inserted into data stores
 
         Args:
             documents: iterable collection (id, data, tags)
@@ -119,14 +160,14 @@ class Transform:
     def load(self, batch, offset):
         """
         Loads a document batch. This method deletes existing ids from an embeddings index and
-        load into a database, if applicable.
+        loads into enabled data stores (database, graph, scoring).
 
         Args:
             batch: list of (id, data, tags)
             offset: index offset for batch
         """
 
-        # Delete from embeddings index first (which deletes from underlying ANN index and database) if this is an upsert
+        # Delete from embeddings index first (which deletes from underlying indexes and datastores) if this is an upsert
         if self.action == Action.UPSERT:
             # Get list of ids not yet seen and delete
             deletes = [uid for uid, _, _ in batch if uid not in self.deletes]
@@ -144,6 +185,10 @@ class Transform:
         # Load batch into graph
         if self.graph:
             self.graph.insert(batch, self.offset)
+
+        # Load batch into scoring
+        if self.scoring:
+            self.scoring.insert(batch, self.offset)
 
         # Increment offset
         self.offset += offset

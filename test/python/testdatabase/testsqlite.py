@@ -100,7 +100,9 @@ class TestSQLite(unittest.TestCase):
 
         # Create index twice to test open/close and ensure resources are freed
         for _ in range(2):
-            embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2", "content": self.backend})
+            embeddings = Embeddings(
+                {"path": "sentence-transformers/nli-mpnet-base-v2", "scoring": {"method": "bm25", "terms": True}, "content": self.backend}
+            )
 
             # Add record to index
             embeddings.index([(0, "Close test", None)])
@@ -245,6 +247,41 @@ class TestSQLite(unittest.TestCase):
 
         self.assertEqual(result["text"], self.data[4])
 
+    def testHybrid(self):
+        """
+        Test hybrid search
+        """
+
+        # Build data array
+        data = [(uid, text, None) for uid, text in enumerate(self.data)]
+
+        # Index data with sparse + dense vectors.
+        embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2", "hybrid": True, "content": True})
+
+        embeddings.index(data)
+
+        # Run search
+        result = embeddings.search("feel good story", 1)[0]
+        self.assertEqual(result["text"], data[4][1])
+
+        # Index data with sparse + dense vectors. Normalize scores.
+        embeddings = Embeddings(
+            {"path": "sentence-transformers/nli-mpnet-base-v2", "scoring": {"method": "bm25", "terms": True, "normalize": True}, "content": True}
+        )
+
+        embeddings.index(data)
+
+        # Run search
+        result = embeddings.search("feel good story", 1)[0]
+        self.assertEqual(result["text"], data[4][1])
+
+        # Test upsert
+        data[0] = (0, "Feel good story: baby panda born", None)
+        embeddings.upsert([data[0]])
+
+        result = embeddings.search("feel good story", 1)[0]
+        self.assertEqual(result["text"], data[0][1])
+
     def testIndex(self):
         """
         Test index
@@ -336,6 +373,19 @@ class TestSQLite(unittest.TestCase):
         # Check that index can be reloaded
         embeddings.load(index)
         self.assertEqual(embeddings.count(), 6)
+
+    def testKeyword(self):
+        """
+        Test keyword only (sparse) search
+        """
+
+        # Index data with sparse + dense vectors
+        embeddings = Embeddings({"keyword": True, "content": True})
+        embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        # Run search
+        result = embeddings.search("lottery ticket", 1)[0]
+        self.assertEqual(result["text"], self.data[4])
 
     def testMultiData(self):
         """

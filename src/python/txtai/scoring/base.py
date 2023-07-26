@@ -62,6 +62,7 @@ class Scoring:
 
         # Normalize scores
         self.normalize = self.config.get("normalize")
+        self.avgscore = None
 
     def insert(self, documents, index=None):
         """
@@ -72,30 +73,34 @@ class Scoring:
             index: indexid offset
         """
 
-        # Calculate word frequency, total tokens and total documents
-        for uid, data, tags in documents:
-            # If index is passed, use indexid, otherwise use id
-            uid = index if index is not None else uid
-
-            if self.documents is not None:
-                self.documents[uid] = data
-
+        # Insert documents, calculate word frequency, total tokens and total documents
+        for uid, document, tags in documents:
             # Extract text, if necessary
-            if isinstance(data, dict):
-                data = data.get("text")
+            if isinstance(document, dict):
+                document = document.get("text", document.get("object"))
 
-            # Convert to tokens, if necessary
-            tokens = self.tokenize(data) if isinstance(data, str) else data
+            if document is not None:
+                # If index is passed, use indexid, otherwise use id
+                uid = index if index is not None else uid
 
-            # Add tokens for id to term index
-            if self.terms is not None:
-                self.terms.insert(uid, tokens)
+                # Add entry to index if the data type is accepted
+                if isinstance(document, (str, list)):
+                    # Store content
+                    if self.documents is not None:
+                        self.documents[uid] = document
 
-            # Add tokens and tags to stats
-            self.addstats(tokens, tags)
+                    # Convert to tokens, if necessary
+                    tokens = self.tokenize(document) if isinstance(document, str) else document
 
-            # Increment index
-            index = index + 1 if index is not None else None
+                    # Add tokens for id to term index
+                    if self.terms is not None:
+                        self.terms.insert(uid, tokens)
+
+                    # Add tokens and tags to stats
+                    self.addstats(tokens, tags)
+
+                # Increment index
+                index = index + 1 if index is not None else None
 
     def delete(self, ids):
         """
@@ -145,6 +150,9 @@ class Scoring:
             # Average IDF score per token
             self.avgidf = np.mean(idfs)
 
+            # Calculate average score across index
+            self.avgscore = self.score(self.avgfreq, self.avgidf, self.avgdl)
+
             # Filter for tags that appear in at least 1% of the documents
             self.tags = {tag: number for tag, number in self.tags.items() if number >= self.total * 0.005}
 
@@ -164,7 +172,7 @@ class Scoring:
 
     def weights(self, tokens):
         """
-        Builds weight vector for each token in the input token.
+        Builds a weights vector for each token in input tokens.
 
         Args:
             tokens: input tokens
@@ -218,9 +226,10 @@ class Scoring:
             scores = self.terms.search(query, limit)
 
             # Normalize scores, if enabled
-            if self.normalize:
-                # Calculate max score = 4 * average score
-                maxscore = 4 * self.score(self.avgfreq, self.avgidf, self.avgdl)
+            if self.normalize and scores:
+                # Calculate max score = best score for this query + average index score
+                # Limit max to 6 * average index score
+                maxscore = min(scores[0][1] + self.avgscore, 6 * self.avgscore)
 
                 # Normalize scores between 0 - 1 using maxscore
                 scores = [(x, min(score / maxscore, 1.0)) for x, score in scores]
@@ -294,6 +303,34 @@ class Scoring:
             # Save terms
             if self.terms:
                 self.terms.save(path + ".terms")
+
+    def close(self):
+        """
+        Close and free resources used by this instance.
+        """
+
+        if self.terms:
+            self.terms.close()
+
+    def hasterms(self):
+        """
+        Check if this scoring instance has an associated terms index.
+
+        Returns:
+            True if this scoring instance has an associated terms index.
+        """
+
+        return self.terms is not None
+
+    def isnormalized(self):
+        """
+        Check if this scoring instance returns normalized scores.
+
+        Returns:
+            True if normalize is enabled, False otherwise
+        """
+
+        return self.normalize
 
     def computefreq(self, tokens):
         """
@@ -407,14 +444,6 @@ class Scoring:
         """
 
         if self.documents:
-            results = []
-            for x, score in scores:
-                data = self.documents[x]
-                if isinstance(data, dict):
-                    results.append({"id": x, "text": data.get("text"), "score": score, "data": data})
-                else:
-                    results.append({"id": x, "text": data, "score": score})
-
-            return results
+            return [{"id": x, "text": self.documents[x], "score": score} for x, score in scores]
 
         return scores

@@ -20,10 +20,10 @@ class Explain:
         """
 
         self.embeddings = embeddings
-        self.content = self.embeddings.config.get("content")
+        self.content = embeddings.config.get("content")
 
         # Alias embeddings attributes
-        self.database = self.embeddings.database
+        self.database = embeddings.database
 
     def __call__(self, queries, texts, limit):
         """

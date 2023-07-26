@@ -161,6 +161,39 @@ class TestEmbeddings(unittest.TestCase):
         uid = embeddings.search(data[4], 1)[0][0]
         self.assertEqual(uid, 4)
 
+    def testHybrid(self):
+        """
+        Test hybrid search
+        """
+
+        # Build data array
+        data = [(uid, text, None) for uid, text in enumerate(self.data)]
+
+        # Index data with sparse + dense vectors
+        embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2", "hybrid": True})
+
+        embeddings.index(data)
+
+        # Run search
+        uid = embeddings.search("feel good story", 1)[0][0]
+        self.assertEqual(uid, 4)
+
+        # Index data with sparse + dense vectors. Normalize scores.
+        embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2", "scoring": {"method": "bm25", "terms": True, "normalize": True}})
+
+        embeddings.index(data)
+
+        # Run search
+        uid = embeddings.search("feel good story", 1)[0][0]
+        self.assertEqual(uid, 4)
+
+        # Test upsert
+        data[0] = (0, "Feel good story: baby panda born", None)
+        embeddings.upsert([data[0]])
+
+        uid = embeddings.search("feel good story", 1)[0][0]
+        self.assertEqual(uid, 0)
+
     def testIndex(self):
         """
         Test index
@@ -172,6 +205,19 @@ class TestEmbeddings(unittest.TestCase):
         # Search for best match
         uid = self.embeddings.search("feel good story", 1)[0][0]
 
+        self.assertEqual(uid, 4)
+
+    def testKeyword(self):
+        """
+        Test keyword only (sparse) search
+        """
+
+        # Index data with sparse + dense vectors
+        embeddings = Embeddings({"keyword": True})
+        embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        # Run search
+        uid = embeddings.search("lottery ticket", 1)[0][0]
         self.assertEqual(uid, 4)
 
     def testNormalize(self):

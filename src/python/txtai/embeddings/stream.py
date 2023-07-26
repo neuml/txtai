@@ -24,14 +24,14 @@ class Stream:
         self.action = action
 
         # Alias embeddings attributes
-        self.config = self.embeddings.config
+        self.config = embeddings.config
 
         # Get config parameters
-        self.offset = self.config.get("offset", 0) if self.action == Action.UPSERT else 0
+        self.offset = self.config.get("offset", 0) if action == Action.UPSERT else 0
         autoid = self.config.get("autoid", self.offset)
 
         # Create autoid generator, reset int sequence if this isn't an UPSERT
-        autoid = 0 if isinstance(autoid, int) and self.action != Action.UPSERT else autoid
+        autoid = 0 if isinstance(autoid, int) and action != Action.UPSERT else autoid
         self.autoid = AutoId(autoid)
 
     def __call__(self, documents):

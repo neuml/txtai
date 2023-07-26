@@ -80,6 +80,7 @@ class TestScoring(unittest.TestCase):
         self.normalize(config)
         self.content(config)
         self.empty(config)
+        self.copy(config)
         self.settings(config)
 
     def index(self, config, data=None):
@@ -146,10 +147,6 @@ class TestScoring(unittest.TestCase):
         # Generate temp file path
         index = os.path.join(tempfile.gettempdir(), "scoring")
         os.makedirs(index, exist_ok=True)
-
-        # Create file to test replacing existing file
-        with open(f"{index}.terms", "w", encoding="utf-8") as f:
-            f.write("TEST")
 
         # Save scoring instance
         scoring.save(f"{index}/{name}")
@@ -297,6 +294,28 @@ class TestScoring(unittest.TestCase):
 
         # Assert index call returns and index has a count of 0
         self.assertEqual(scoring.total, 0)
+
+    def copy(self, config):
+        """
+        Test scoring index copy method.
+        """
+
+        # Create scoring instance
+        scoring = ScoringFactory.create({**config, **{"terms": True}})
+        scoring.index(self.data)
+
+        # Generate temp file path
+        index = os.path.join(tempfile.gettempdir(), "scoring")
+        os.makedirs(index, exist_ok=True)
+
+        # Create file to test replacing existing file
+        path = f"{index}/scoring.{config['method']}.copy"
+        with open(f"{index}.terms", "w", encoding="utf-8") as f:
+            f.write("TEST")
+
+        # Save scoring instance
+        scoring.save(path)
+        self.assertTrue(os.path.exists(path))
 
     @patch("sys.byteorder", "big")
     def settings(self, config):

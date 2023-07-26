@@ -376,8 +376,8 @@ class Application:
 
         if self.embeddings and self.documents:
             with self.lock:
-                # Build scoring index if scoring method provided
-                if self.embeddings.scoring:
+                # Build scoring index if term weighting is enabled
+                if self.embeddings.isweighted():
                     self.embeddings.score(self.documents)
 
                 # Build embeddings index

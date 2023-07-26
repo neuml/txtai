@@ -42,8 +42,7 @@ class Embeddings:
     # pylint: disable = W0231
     def __init__(self, config=None, **kwargs):
         """
-        Creates a new embeddings index. Embeddings indexes are thread-safe for read operations but writes must be
-        synchronized.
+        Creates a new embeddings index. Embeddings indexes are thread-safe for read operations but writes must be synchronized.
 
         Args:
             config: embeddings configuration
@@ -53,10 +52,10 @@ class Embeddings:
         # Index configuration
         self.config = None
 
-        # Dimensionality reduction and scoring index - word vectors only
-        self.reducer, self.scoring = None, None
+        # Dimensionality reduction - word vectors only
+        self.reducer = None
 
-        # Embeddings vector model - transforms data into similarity vectors
+        # Dense vector model - transforms data into similarity vectors
         self.model = None
 
         # Approximate nearest neighbor index
@@ -70,6 +69,9 @@ class Embeddings:
 
         # Graph network
         self.graph = None
+
+        # Sparse vectors
+        self.scoring = None
 
         # Query model
         self.query = None
@@ -85,14 +87,14 @@ class Embeddings:
 
     def score(self, documents):
         """
-        Builds a scoring index. Only used by word vectors models.
+        Builds a term weighting scoring index. Only used by word vectors models.
 
         Args:
             documents: iterable of (id, data, tags), (id, data) or data
         """
 
         # Build scoring index for word vectors term weighting
-        if self.scoring:
+        if self.isweighted():
             self.scoring.index(Stream(self)(documents))
 
     def index(self, documents, reindex=False):
@@ -104,18 +106,8 @@ class Embeddings:
             reindex: if this is a reindex operation in which case database creation is skipped, defaults to False
         """
 
-        # Initialize default parameters, if necessary
-        self.defaults()
-
-        # Create document database, if necessary
-        if not reindex:
-            self.database = self.createdatabase()
-
-            # Reset archive since this is a new index
-            self.archive = None
-
-        # Create graph, if necessary
-        self.graph = self.creategraph()
+        # Initialize index
+        self.initindex(reindex)
 
         # Create transform and stream
         transform = Transform(self, Action.REINDEX if reindex else Action.INDEX)
@@ -124,7 +116,7 @@ class Embeddings:
         with tempfile.NamedTemporaryFile(mode="wb", suffix=".npy") as buffer:
             # Load documents into database and transform to vectors
             ids, dimensions, embeddings = transform(stream(documents), buffer)
-            if ids:
+            if embeddings is not None:
                 # Build LSA model (if enabled). Remove principal components from embeddings.
                 if self.config.get("pca"):
                     self.reducer = Reducer(embeddings, self.config["pca"])
@@ -137,18 +129,22 @@ class Embeddings:
                 self.config["dimensions"] = dimensions
 
                 # Create approximate nearest neighbor index
-                self.ann = ANNFactory.create(self.config)
+                self.ann = self.createann()
 
                 # Add embeddings to the index
                 self.ann.index(embeddings)
 
-                # Save indexids-ids mapping for indexes with no database, except when this is a reindex
-                if not reindex and not self.database:
-                    self.config["ids"] = ids
+            # Save indexids-ids mapping for indexes with no database, except when this is a reindex
+            if ids and not reindex and not self.database:
+                self.config["ids"] = ids
 
         # Index graph, if necessary
         if self.graph:
             self.graph.index(Search(self, True), self.batchsimilarity)
+
+        # Index scoring, if necessary
+        if self.issparse():
+            self.scoring.index()
 
     def upsert(self, documents):
         """
@@ -172,7 +168,7 @@ class Embeddings:
         with tempfile.NamedTemporaryFile(mode="wb", suffix=".npy") as buffer:
             # Load documents into database and transform to vectors
             ids, _, embeddings = transform(stream(documents), buffer)
-            if ids:
+            if embeddings is not None:
                 # Remove principal components from embeddings, if necessary
                 if self.reducer:
                     self.reducer(embeddings)
@@ -183,13 +179,17 @@ class Embeddings:
                 # Append embeddings to the index
                 self.ann.append(embeddings)
 
-                # Save indexids-ids mapping for indexes with no database
-                if not self.database:
-                    self.config["ids"] = self.config["ids"] + ids
+            # Save indexids-ids mapping for indexes with no database
+            if ids and not self.database:
+                self.config["ids"] = self.config["ids"] + ids
 
         # Graph upsert, if necessary
         if self.graph:
             self.graph.upsert(Search(self, True), self.batchsimilarity)
+
+        # Scoring upsert, if necessary
+        if self.issparse():
+            self.scoring.upsert()
 
     def delete(self, ids):
         """
@@ -218,7 +218,7 @@ class Embeddings:
 
             # Delete ids from database
             self.database.delete(deletes)
-        elif self.ann:
+        elif self.ann or self.scoring:
             # Lookup indexids from config for indexes with no database
             indexids = self.config["ids"]
 
@@ -233,12 +233,17 @@ class Embeddings:
 
         # Delete indices from ann embeddings
         if indices:
-            # Delete ids from index
-            self.ann.delete(indices)
+            if self.isdense():
+                # Delete ids from ANN
+                self.ann.delete(indices)
 
             # Delete ids from graph
             if self.graph:
                 self.graph.delete(indices)
+
+            # Delete ids from scoring
+            if self.issparse():
+                self.scoring.delete(indices)
 
         return deletes
 
@@ -321,40 +326,40 @@ class Embeddings:
             number of elements in this embeddings index
         """
 
-        return self.ann.count() if self.ann else 0
+        return self.ann.count() if self.ann else self.scoring.count() if self.scoring else 0
 
-    def search(self, query, limit=None):
+    def search(self, query, limit=None, weights=None):
         """
-        Finds documents most similar to the input queries. This method will run either an approximate
-        nearest neighbor (ann) search or an approximate nearest neighbor + database search depending
-        on if a database is available.
+        Finds documents most similar to the input queries. This method will run either an index search
+        or an index + database search depending on if a database is available.
 
         Args:
             query: input query
             limit: maximum results
+            weights: hybrid score weights, if applicable
 
         Returns:
-            list of (id, score) for ann search, list of dict for an ann+database search
+            list of (id, score) for index search, list of dict for an index+database search
         """
 
-        results = self.batchsearch([query], limit)
+        results = self.batchsearch([query], limit, weights)
         return results[0] if results else results
 
-    def batchsearch(self, queries, limit=None):
+    def batchsearch(self, queries, limit=None, weights=None):
         """
-        Finds documents most similar to the input queries. This method will run either an approximate
-        nearest neighbor (ann) search or an approximate nearest neighbor + database search depending
-        on if a database is available.
+        Finds documents most similar to the input queries. This method will run either an index search
+        or an index + database search depending on if a database is available.
 
         Args:
             queries: input queries
             limit: maximum results
+            weights: hybrid score weights, if applicable
 
         Returns:
-            list of (id, score) per query for ann search, list of dict per query for an ann+database search
+            list of (id, score) per query for index search, list of dict per query for an index+database search
         """
 
-        return Search(self)(queries, limit if limit else 3)
+        return Search(self)(queries, limit, weights)
 
     def similarity(self, query, data):
         """
@@ -474,8 +479,12 @@ class Embeddings:
         if apath:
             return os.path.exists(apath)
 
-        # Return true if path has a config or config.json file and an embeddings file
-        return path and (os.path.exists(f"{path}/config") or os.path.exists(f"{path}/config.json")) and os.path.exists(f"{path}/embeddings")
+        # Return true if path has a config or config.json file and an embeddings (dense) or scoring (sparse) file
+        return (
+            path
+            and (os.path.exists(f"{path}/config") or os.path.exists(f"{path}/config.json"))
+            and (os.path.exists(f"{path}/embeddings") or os.path.exists(f"{path}/scoring"))
+        )
 
     def load(self, path=None, cloud=None, **kwargs):
         """
@@ -500,25 +509,15 @@ class Embeddings:
         # Load index configuration
         self.config = self.loadconfig(path)
 
-        # Approximate nearest neighbor index - stores embeddings vectors
-        self.ann = ANNFactory.create(self.config)
-        self.ann.load(f"{path}/embeddings")
+        # Approximate nearest neighbor index - stores dense vectors
+        self.ann = self.createann()
+        if self.ann:
+            self.ann.load(f"{path}/embeddings")
 
         # Dimensionality reduction model - word vectors only
         if self.config.get("pca"):
             self.reducer = Reducer()
             self.reducer.load(f"{path}/lsa")
-
-        # Embedding scoring index - word vectors only
-        if self.config.get("scoring"):
-            self.scoring = ScoringFactory.create(self.config["scoring"])
-            self.scoring.load(f"{path}/scoring")
-
-        # Sentence vectors model - transforms data to embeddings vectors
-        self.model = self.loadvectors()
-
-        # Query model
-        self.query = self.loadquery()
 
         # Document database - stores document content
         self.database = self.createdatabase()
@@ -529,6 +528,17 @@ class Embeddings:
         self.graph = self.creategraph()
         if self.graph:
             self.graph.load(f"{path}/graph")
+
+        # Sparse vectors - stores term sparse arrays
+        self.scoring = self.createscoring()
+        if self.scoring:
+            self.scoring.load(f"{path}/scoring")
+
+        # Dense vectors - transforms data to embeddings vectors
+        self.model = self.loadvectors()
+
+        # Query model
+        self.query = self.loadquery()
 
     def save(self, path, cloud=None, **kwargs):
         """
@@ -558,15 +568,12 @@ class Embeddings:
             self.saveconfig(path)
 
             # Save approximate nearest neighbor index
-            self.ann.save(f"{path}/embeddings")
+            if self.ann:
+                self.ann.save(f"{path}/embeddings")
 
             # Save dimensionality reduction model (word vectors only)
             if self.reducer:
                 self.reducer.save(f"{path}/lsa")
-
-            # Save embedding scoring index (word vectors only)
-            if self.scoring:
-                self.scoring.save(f"{path}/scoring")
 
             # Save document database
             if self.database:
@@ -575,6 +582,10 @@ class Embeddings:
             # Save graph
             if self.graph:
                 self.graph.save(f"{path}/graph")
+
+            # Save scoring index
+            if self.scoring:
+                self.scoring.save(f"{path}/scoring")
 
             # If this is an archive, save it
             if apath:
@@ -590,13 +601,18 @@ class Embeddings:
         Closes this embeddings index and frees all resources.
         """
 
-        self.config, self.reducer, self.scoring, self.model = None, None, None, None
-        self.ann, self.graph, self.query, self.archive = None, None, None, None
+        self.config, self.reducer, self.query, self.model = None, None, None, None
+        self.ann, self.graph, self.archive = None, None, None
 
         # Close database connection if open
         if self.database:
             self.database.close()
             self.database, self.functions = None, None
+
+        # Close scoring instance if open
+        if self.scoring:
+            self.scoring.close()
+            self.scoring = None
 
     def info(self):
         """
@@ -613,6 +629,36 @@ class Embeddings:
             # Print configuration
             print(json.dumps(config, sort_keys=True, default=str, indent=2))
 
+    def issparse(self):
+        """
+        Checks if this instance has an associated scoring instance with term indexing enabled.
+
+        Returns:
+            True if term index is enabled, False otherwise
+        """
+
+        return self.scoring and self.scoring.hasterms()
+
+    def isdense(self):
+        """
+        Checks if this instance has an associated ANN instance.
+
+        Returns:
+            True if this instance has an associated ANN, False otherwise
+        """
+
+        return self.ann is not None
+
+    def isweighted(self):
+        """
+        Checks if this instance has an associated scoring instance with term weighting enabled.
+
+        Returns:
+            True if term weighting is enabled, False otherwise
+        """
+
+        return self.scoring and not self.scoring.hasterms()
+
     def configure(self, config):
         """
         Sets the configuration for this embeddings index and loads config-driven models.
@@ -624,20 +670,44 @@ class Embeddings:
         # Configuration
         self.config = config
 
-        if self.config and self.config.get("method") != "transformers":
-            # Dimensionality reduction model
-            self.reducer = None
+        # Dimensionality reduction model
+        self.reducer = None
 
-            # Embedding scoring method - weighs each word in a sentence
-            self.scoring = ScoringFactory.create(self.config["scoring"]) if self.config and self.config.get("scoring") else None
-        else:
-            self.reducer, self.scoring = None, None
+        # Create scoring instance for word vectors term weighting
+        scoring = self.config.get("scoring") if self.config else None
+        self.scoring = self.createscoring() if scoring and (not isinstance(scoring, dict) or not scoring.get("terms")) else None
 
-        # Sentence vectors model - transforms data to embeddings vectors
+        # Dense vectors - transforms data to embeddings vectors
         self.model = self.loadvectors() if self.config else None
 
         # Query model
         self.query = self.loadquery() if self.config else None
+
+    def initindex(self, reindex):
+        """
+        Initialize new index.
+
+        Args:
+            reindex: if this is a reindex operation in which case database creation is skipped, defaults to False
+        """
+
+        # Initialize default parameters, if necessary
+        self.defaults()
+
+        # Create document database, if necessary
+        if not reindex:
+            self.database = self.createdatabase()
+
+            # Reset archive since this is a new index
+            self.archive = None
+
+        # Create graph, if necessary
+        self.graph = self.creategraph()
+
+        # Create scoring only if term indexing is enabled
+        scoring = self.config.get("scoring")
+        if scoring and isinstance(scoring, dict) and self.config["scoring"].get("terms"):
+            self.scoring = self.createscoring()
 
     def defaults(self):
         """
@@ -649,11 +719,15 @@ class Embeddings:
 
         self.config = self.config if self.config else {}
 
-        # Add default path if configuration available
-        if not self.model:
+        # Expand sparse index shortcuts
+        if not self.config.get("scoring") and any(self.config.get(key) for key in ["keyword", "hybrid"]):
+            self.config["scoring"] = {"method": "bm25", "terms": True}
+
+        # Add default path if configuration available and this isn't a keyword index
+        if not self.model and not self.config.get("keyword"):
             self.config["path"] = "sentence-transformers/all-MiniLM-L6-v2"
 
-            # Configure instance
+            # Load dense vectors model
             self.model = self.loadvectors()
 
     def loadconfig(self, path):
@@ -772,6 +846,16 @@ class Embeddings:
         # Create cloud instance from config and return
         return CloudFactory.create(config) if config else None
 
+    def createann(self):
+        """
+        Creates an ANN from config.
+
+        Returns:
+            new ANN, if enabled in config
+        """
+
+        return ANNFactory.create(self.config) if self.config.get("path") or not self.config.get("keyword") else None
+
     def createdatabase(self):
         """
         Creates a database from config. This method will also close any existing database connection.
@@ -803,6 +887,20 @@ class Embeddings:
         """
 
         return GraphFactory.create(self.config["graph"]) if "graph" in self.config else None
+
+    def createscoring(self):
+        """
+        Creates a scoring from config.
+
+        Returns:
+            new scoring, if enabled in config
+        """
+
+        # Free existing resources
+        if self.scoring:
+            self.scoring.close()
+
+        return ScoringFactory.create(self.config["scoring"]) if "scoring" in self.config else None
 
     def normalize(self, embeddings):
         """

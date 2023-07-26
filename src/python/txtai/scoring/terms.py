@@ -276,6 +276,15 @@ class Terms:
         else:
             self.copy(path).close()
 
+    def close(self):
+        """
+        Close and free resources used by this instance.
+        """
+
+        # Close connection
+        if self.connection:
+            self.connection.close()
+
     def initialize(self):
         """
         Creates connection and initial database schema if no connection exists.
@@ -440,7 +449,7 @@ class Terms:
         matches = matches[np.argsort(-scores[matches])]
 
         # Combine ids with scores. Require score > 0.
-        return [(self.ids[x], scores[x]) for x in matches[:limit] if scores[x] > 0]
+        return [(self.ids[x], float(scores[x])) for x in matches[:limit] if scores[x] > 0]
 
     def merge(self, scores, matches, hasscores, terms):
         """
