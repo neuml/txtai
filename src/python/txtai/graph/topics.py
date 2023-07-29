@@ -2,8 +2,6 @@
 Topics module
 """
 
-import re
-
 from ..pipeline import Tokenizer
 from ..scoring import ScoringFactory
 
@@ -22,8 +20,7 @@ class Topics:
         """
 
         self.config = config
-        self.pattern = re.compile(r"(?u)\b\w\w+\b")
-        self.tokenizer = Tokenizer()
+        self.tokenizer = Tokenizer(stopwords=True)
 
         # Additional stopwords to ignore when building topic names
         self.stopwords = set()
@@ -109,7 +106,7 @@ class Topics:
         """
 
         text = graph.attribute(node, "text")
-        return self.pattern.findall(text.lower()) if text else []
+        return self.tokenizer(text) if text else []
 
     def topn(self, terms, n):
         """
