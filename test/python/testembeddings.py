@@ -65,6 +65,19 @@ class TestEmbeddings(unittest.TestCase):
         uid = embeddings.search(self.data[4], 1)[0][0]
         self.assertEqual(len(uid), 36)
 
+    def testColumns(self):
+        """
+        Test custom text/object columns
+        """
+
+        embeddings = Embeddings({"keyword": True, "columns": {"text": "value"}})
+        data = [{"value": x} for x in self.data]
+        embeddings.index([(uid, text, None) for uid, text in enumerate(data)])
+
+        # Run search
+        uid = embeddings.search("lottery", 1)[0][0]
+        self.assertEqual(uid, 4)
+
     def testDefaults(self):
         """
         Test default configuration

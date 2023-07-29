@@ -138,13 +138,14 @@ class Embeddings:
             if ids and not reindex and not self.database:
                 self.config["ids"] = ids
 
+        # Index scoring, if necessary
+        # This must occur before graph index in order to be available to the graph
+        if self.issparse():
+            self.scoring.index()
+
         # Index graph, if necessary
         if self.graph:
             self.graph.index(Search(self, True), self.batchsimilarity)
-
-        # Index scoring, if necessary
-        if self.issparse():
-            self.scoring.index()
 
     def upsert(self, documents):
         """
@@ -183,13 +184,14 @@ class Embeddings:
             if ids and not self.database:
                 self.config["ids"] = self.config["ids"] + ids
 
+        # Scoring upsert, if necessary
+        # This must occur before graph upsert in order to be available to the graph
+        if self.issparse():
+            self.scoring.upsert()
+
         # Graph upsert, if necessary
         if self.graph:
             self.graph.upsert(Search(self, True), self.batchsimilarity)
-
-        # Scoring upsert, if necessary
-        if self.issparse():
-            self.scoring.upsert()
 
     def delete(self, ids):
         """
@@ -231,19 +233,19 @@ class Embeddings:
                 deletes.append(indexids[index])
                 indexids[index] = None
 
-        # Delete indices from ann embeddings
+        # Delete indices for all indexes and data stores
         if indices:
+            # Delete ids from ann
             if self.isdense():
-                # Delete ids from ANN
                 self.ann.delete(indices)
-
-            # Delete ids from graph
-            if self.graph:
-                self.graph.delete(indices)
 
             # Delete ids from scoring
             if self.issparse():
                 self.scoring.delete(indices)
+
+            # Delete ids from graph
+            if self.graph:
+                self.graph.delete(indices)
 
         return deletes
 
@@ -886,7 +888,12 @@ class Embeddings:
             new graph, if enabled in config
         """
 
-        return GraphFactory.create(self.config["graph"]) if "graph" in self.config else None
+        if "graph" in self.config:
+            # Create configuration with custom columns, if necessary
+            config = self.columns(self.config["graph"])
+            return GraphFactory.create(config)
+
+        return None
 
     def createscoring(self):
         """
@@ -900,7 +907,37 @@ class Embeddings:
         if self.scoring:
             self.scoring.close()
 
-        return ScoringFactory.create(self.config["scoring"]) if "scoring" in self.config else None
+        if "scoring" in self.config:
+            # Expand scoring to a dictionary, if necessary
+            config = self.config["scoring"]
+            config = config if isinstance(config, dict) else {"method": config}
+
+            # Create configuration with custom columns, if necessary
+            config = self.columns(config)
+            return ScoringFactory.create(config)
+
+        return None
+
+    def columns(self, config):
+        """
+        Adds custom text/object column information if it's provided.
+
+        Args:
+            config: input configuration
+
+        Returns:
+            config with column information added
+        """
+
+        # Add text/object columns if custom
+        if "columns" in self.config:
+            # Work on copy of configuration
+            config = config.copy()
+
+            # Copy columns to config
+            config["columns"] = self.config["columns"]
+
+        return config
 
     def normalize(self, embeddings):
         """

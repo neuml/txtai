@@ -37,6 +37,11 @@ class Database:
         encoder = self.config.get("objects")
         self.encoder = EncoderFactory.create(encoder) if encoder else None
 
+        # Transform columns
+        columns = config.get("columns", {})
+        self.text = columns.get("text", "text")
+        self.object = columns.get("object", "object")
+
         # Custom functions and expressions
         self.functions, self.expressions = None, None
 

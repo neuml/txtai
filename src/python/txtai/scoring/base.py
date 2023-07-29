@@ -54,6 +54,11 @@ class Scoring:
         # Tokenizer, lazily loaded as needed
         self.tokenizer = None
 
+        # Transform columns
+        columns = config.get("columns", {})
+        self.text = columns.get("text", "text")
+        self.object = columns.get("object", "object")
+
         # Term index
         self.terms = Terms(self.config["terms"], self.score, self.idf) if self.config.get("terms") else None
 
@@ -77,7 +82,7 @@ class Scoring:
         for uid, document, tags in documents:
             # Extract text, if necessary
             if isinstance(document, dict):
-                document = document.get("text", document.get("object"))
+                document = document.get(self.text, document.get(self.object))
 
             if document is not None:
                 # If index is passed, use indexid, otherwise use id

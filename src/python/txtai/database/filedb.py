@@ -371,18 +371,18 @@ class FileDB(Database):
         document = document.copy()
 
         # Get and remove object field from document
-        obj = document.pop("object") if "object" in document else None
+        obj = document.pop(self.object) if self.object in document else None
 
         # Insert document as JSON
         if document:
             self.cursor.execute(FileDB.INSERT_DOCUMENT, [uid, json.dumps(document, allow_nan=False), tags, entry])
 
         # If text and object are both available, insert object as it won't otherwise be used
-        if "text" in document and obj:
+        if self.text in document and obj:
             self.insertobject(uid, obj, tags, entry)
 
         # Return value to use for section - use text if available otherwise use object
-        return document["text"] if "text" in document else obj
+        return document[self.text] if self.text in document else obj
 
     def insertobject(self, uid, obj, tags, entry):
         """

@@ -40,6 +40,11 @@ class Graph:
         self.categories = None
         self.topics = None
 
+        # Transform columns
+        columns = config.get("columns", {})
+        self.text = columns.get("text", "text")
+        self.object = columns.get("object", "object")
+
     def create(self):
         """
         Creates the graph network.
@@ -353,7 +358,7 @@ class Graph:
         for _, document, _ in documents:
             if isinstance(document, dict):
                 # Require text or object field
-                document = document.get("text", document.get("object"))
+                document = document.get(self.text, document.get(self.object))
 
             if document is not None:
                 if isinstance(document, list):

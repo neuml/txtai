@@ -78,18 +78,31 @@ class TestSQLite(unittest.TestCase):
         """
 
         # Default sequence id
-        embeddings = Embeddings()
+        embeddings = Embeddings(path="sentence-transformers/nli-mpnet-base-v2", content=True)
         embeddings.index(self.data)
 
-        uid = embeddings.search(self.data[4], 1)[0][0]
-        self.assertEqual(uid, 4)
+        result = embeddings.search("feel good story", 1)[0]
+        self.assertEqual(result["text"], self.data[4])
 
         # UUID
-        embeddings = Embeddings(autoid="uuid4")
+        embeddings = Embeddings(autoid="uuid4", path="sentence-transformers/nli-mpnet-base-v2", content=True)
         embeddings.index(self.data)
 
-        uid = embeddings.search(self.data[4], 1)[0][0]
-        self.assertEqual(len(uid), 36)
+        result = embeddings.search(self.data[4], 1)[0]
+        self.assertEqual(len(result["id"]), 36)
+
+    def testColumns(self):
+        """
+        Test custom text/object columns
+        """
+
+        embeddings = Embeddings({"keyword": True, "content": self.backend, "columns": {"text": "value"}})
+        data = [{"value": x} for x in self.data]
+        embeddings.index([(uid, text, None) for uid, text in enumerate(data)])
+
+        # Run search
+        result = embeddings.search("lottery", 1)[0]
+        self.assertEqual(result["text"], self.data[4])
 
     def testClose(self):
         """

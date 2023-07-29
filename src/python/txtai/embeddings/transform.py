@@ -38,6 +38,11 @@ class Transform:
         self.offset = embeddings.config.get("offset", 0) if action == Action.UPSERT else 0
         self.batch = embeddings.config.get("batch", 1024)
 
+        # Transform columns
+        columns = embeddings.config.get("columns", {})
+        self.text = columns.get("text", "text")
+        self.object = columns.get("object", "object")
+
         # List of deleted ids with this action
         self.deletes = set()
 
@@ -122,7 +127,7 @@ class Transform:
         2. Batch and load original documents into enabled data stores (database, graph, scoring)
 
         Documents are yielded for vectorization if one of the following is True:
-            - dict with the field "text" or "object"
+            - dict with a text or object field
             - not a dict
 
         Otherwise, documents are only batched and inserted into data stores
@@ -137,11 +142,11 @@ class Transform:
         # Iterate and process documents stream
         for document in documents:
             if isinstance(document[1], dict):
-                if "text" in document[1]:
-                    yield (document[0], document[1]["text"], document[2])
+                if self.text in document[1]:
+                    yield (document[0], document[1][self.text], document[2])
                     offset += 1
-                elif "object" in document[1]:
-                    yield (document[0], document[1]["object"], document[2])
+                elif self.object in document[1]:
+                    yield (document[0], document[1][self.object], document[2])
                     offset += 1
             else:
                 yield document
