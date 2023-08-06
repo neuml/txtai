@@ -27,9 +27,7 @@
     </a>
 </p>
 
--------------------------------------------------------------------------------------------------------------------------------------------------------
-
-txtai is an all-in-one open-source embeddings database for semantic search, LLM orchestration and language model workflows.
+txtai is an all-in-one embeddings database for semantic search, LLM orchestration and language model workflows.
 
 ![architecture](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/architecture.png#gh-light-mode-only)
 ![architecture](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/architecture-dark.png#gh-dark-mode-only)
@@ -40,14 +38,14 @@ Embeddings databases can stand on their own and/or serve as a powerful knowledge
 
 Summary of txtai features:
 
-- 🔎 Vector search with SQL, object storage, topic modeling, graph analysis and multiple vector index backends (sparse, dense, hybrid, external)
+- 🔎 Vector search with SQL, object storage, topic modeling, graph analysis and multimodal indexing
 - 📄 Create embeddings for text, documents, audio, images and video
 - 💡 Pipelines powered by language models that run LLM prompts, question-answering, labeling, transcription, translation, summarizations and more
 - ↪️️ Workflows to join pipelines together and aggregate business logic. txtai processes can be simple microservices or multi-model workflows.
 - ⚙️ Build with Python or YAML. API bindings available for [JavaScript](https://github.com/neuml/txtai.js), [Java](https://github.com/neuml/txtai.java), [Rust](https://github.com/neuml/txtai.rs) and [Go](https://github.com/neuml/txtai.go).
 - ☁️ Cloud-native architecture that scales out with container orchestration systems (e.g. Kubernetes)
 
-txtai is built with Python 3.8+, [Hugging Face Transformers](https://github.com/huggingface/transformers), [Sentence Transformers](https://github.com/UKPLab/sentence-transformers) and [FastAPI](https://github.com/tiangolo/fastapi)
+txtai is built with Python 3.8+, [Hugging Face Transformers](https://github.com/huggingface/transformers), [Sentence Transformers](https://github.com/UKPLab/sentence-transformers) and [FastAPI](https://github.com/tiangolo/fastapi). txtai is open-source under an Apache 2.0 license.
 
 ## Why txtai?
 
