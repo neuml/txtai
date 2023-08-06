@@ -8,9 +8,9 @@ New vector databases, LLM frameworks and everything in between are sprouting up 
 - Up and running in minutes with [pip](../install/) or [Docker](../cloud/)
 ```python
 # Get started in a couple lines
-from txtai.embeddings import Embeddings
+import txtai
 
-embeddings = Embeddings()
+embeddings = txtai.Embeddings()
 embeddings.index(["Correct", "Not what we hoped"])
 embeddings.search("positive", 1)
 #[(0, 0.29862046241760254)]

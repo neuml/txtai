@@ -52,8 +52,8 @@ markdown_extensions:
 nav:
     - Home: index.md
     - Why txtai?: why.md
+    - Use Cases: usecases.md
     - Installation: install.md
-    - Examples: examples.md
     - Model Guide: models.md
     - Embeddings:
         - embeddings/index.md
@@ -114,5 +114,7 @@ nav:
         - Configuration: api/configuration.md
         - Methods: api/methods.md
     - Cloud: cloud.md
+    - Examples: examples.md
     - FAQ: faq.md
+    - Powered by txtai: poweredby.md
     - Further Reading: further.md

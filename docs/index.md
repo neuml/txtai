@@ -4,9 +4,9 @@
     <img src="https://raw.githubusercontent.com/neuml/txtai/master/logo.png"/>
 </p>
 
-<h3 align="center">
-    <p>Semantic search and workflows powered by language models</p>
-</h3>
+<p align="center">
+    <b>All-in-one embeddings database</b>
+</p>
 
 <p align="center">
     <a href="https://github.com/neuml/txtai/releases">
@@ -31,27 +31,18 @@
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------
 
-txtai is an open-source platform for semantic search and workflows powered by language models.
+txtai is an all-in-one open-source embeddings database for semantic search, LLM orchestration and language model workflows.
 
-![demo](https://raw.githubusercontent.com/neuml/txtai/master/demo.gif)
+![architecture](images/architecture.png#gh-light-mode-only)
+![architecture](images/architecture-dark.png#gh-dark-mode-only)
 
-Traditional search systems use keywords to find data. Semantic search has an understanding of natural language and identifies results that have the same meaning, not necessarily the same keywords.
+Embeddings databases are a union of vector indexes (sparse and dense), graph networks and relational databases. This enables vector search with SQL, topic modeling, retrieval augmented generation and more.
 
-![search](images/search.png#only-light)
-![search](images/search-dark.png#only-dark)
-
-txtai builds embeddings databases, which are a union of vector indexes and relational databases. This enables vector search with SQL. Embeddings databases can stand on their own and/or serve as a powerful knowledge source for large language model (LLM) prompts.
-
-Semantic workflows connect language models together to build intelligent applications.
-
-![flows](images/flows.png#only-light)
-![flows](images/flows-dark.png#only-dark)
-
-Integrate conversational search, retrieval augmented generation (RAG), LLM chains, automatic summarization, transcription, translation and more.
+Embeddings databases can stand on their own and/or serve as a powerful knowledge source for large language model (LLM) prompts.
 
 Summary of txtai features:
 
-- 🔎 Vector search with SQL, object storage, topic modeling, graph analysis, multiple vector index backends ([Faiss](https://github.com/facebookresearch/faiss), [Annoy](https://github.com/spotify/annoy), [Hnswlib](https://github.com/nmslib/hnswlib)) and support for external vector databases
+- 🔎 Vector search with SQL, object storage, topic modeling, graph analysis and multiple vector index backends (sparse, dense, hybrid, external)
 - 📄 Create embeddings for text, documents, audio, images and video
 - 💡 Pipelines powered by language models that run LLM prompts, question-answering, labeling, transcription, translation, summarizations and more
 - ↪️️ Workflows to join pipelines together and aggregate business logic. txtai processes can be simple microservices or multi-model workflows.
@@ -59,16 +50,3 @@ Summary of txtai features:
 - ☁️ Cloud-native architecture that scales out with container orchestration systems (e.g. Kubernetes)
 
 txtai is built with Python 3.8+, [Hugging Face Transformers](https://github.com/huggingface/transformers), [Sentence Transformers](https://github.com/UKPLab/sentence-transformers) and [FastAPI](https://github.com/tiangolo/fastapi)
-
-The following applications are powered by txtai. 
-
-![apps](https://raw.githubusercontent.com/neuml/txtai/master/apps.jpg)
-
-| Application  | Description  |
-|:----------|:-------------|
-| [txtchat](https://github.com/neuml/txtchat) | Conversational search and workflows for all |
-| [paperai](https://github.com/neuml/paperai) | Semantic search and workflows for medical/scientific papers |
-| [codequestion](https://github.com/neuml/codequestion) | Semantic search for developers |
-| [tldrstory](https://github.com/neuml/tldrstory) | Semantic search for headlines and story text |
-
-In addition to this list, there are also many other [open-source projects](https://github.com/neuml/txtai/network/dependents), [published research](https://scholar.google.com/scholar?q=txtai&hl=en&as_ylo=2022) and closed proprietary/commercial projects that have built on txtai in production.
