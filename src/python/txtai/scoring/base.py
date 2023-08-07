@@ -11,9 +11,8 @@ from multiprocessing.pool import ThreadPool
 
 import numpy as np
 
-from .. import __pickle__
-
 from ..pipeline import Tokenizer
+from ..version import __pickle__
 
 from .terms import Terms
 

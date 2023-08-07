@@ -15,7 +15,7 @@ try:
 except ImportError:
     NETWORKX = False
 
-from .. import __pickle__
+from ..version import __pickle__
 
 from .base import Graph
 

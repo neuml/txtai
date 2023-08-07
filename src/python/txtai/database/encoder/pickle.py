@@ -4,7 +4,7 @@ PickleEncoder module
 
 import pickle
 
-from ... import __pickle__
+from ...version import __pickle__
 
 from .base import Encoder
 

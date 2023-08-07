@@ -5,7 +5,7 @@ PyTorch module
 import numpy as np
 import torch
 
-from .. import __pickle__
+from ..version import __pickle__
 
 from .numpy import NumPy
 

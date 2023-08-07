@@ -7,7 +7,7 @@ import tempfile
 
 import numpy as np
 
-from .. import __pickle__
+from ..version import __pickle__
 
 
 class Vectors:

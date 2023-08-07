@@ -5,7 +5,7 @@ ANN (Approximate Nearest Neighbor) module
 import datetime
 import platform
 
-from .. import __version__
+from ..version import __version__
 
 
 class ANN:

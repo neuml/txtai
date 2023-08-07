@@ -6,7 +6,7 @@ import os
 import pickle
 import tempfile
 
-from .. import __pickle__
+from ..version import __pickle__
 
 
 class Documents:

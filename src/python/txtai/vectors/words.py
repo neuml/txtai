@@ -21,10 +21,10 @@ try:
 except ImportError:
     WORDS = False
 
-from .. import __pickle__
+from ..pipeline import Tokenizer
+from ..version import __pickle__
 
 from .base import Vectors
-from ..pipeline import Tokenizer
 
 # Logging configuration
 logger = logging.getLogger(__name__)

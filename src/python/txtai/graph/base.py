@@ -8,9 +8,8 @@ import pickle
 from collections import Counter
 from tempfile import TemporaryDirectory
 
-from .. import __pickle__
-
 from ..archive import ArchiveFactory
+from ..version import __pickle__
 
 from .topics import Topics
 

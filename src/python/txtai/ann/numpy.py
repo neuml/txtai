@@ -6,7 +6,7 @@ import pickle
 
 import numpy as np
 
-from .. import __pickle__
+from ..version import __pickle__
 
 from .base import ANN
 

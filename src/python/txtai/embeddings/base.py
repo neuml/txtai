@@ -10,8 +10,6 @@ import tempfile
 
 import numpy as np
 
-from .. import __pickle__
-
 from ..ann import ANNFactory
 from ..archive import ArchiveFactory
 from ..cloud import CloudFactory
@@ -19,6 +17,7 @@ from ..database import DatabaseFactory
 from ..graph import GraphFactory
 from ..scoring import ScoringFactory
 from ..vectors import VectorsFactory
+from ..version import __pickle__
 
 from .action import Action
 from .explain import Explain
