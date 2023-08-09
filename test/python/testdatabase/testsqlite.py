@@ -287,7 +287,7 @@ class TestSQLite(unittest.TestCase):
         result = embeddings.search("feel good story", 1)[0]
         self.assertEqual(result["text"], data[4][1])
 
-        # Index data with sparse + dense vectors. Normalize scores.
+        # Index data with sparse + dense vectors and unnormalized scores.
         embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2", "scoring": {"method": "bm25", "terms": True}, "content": True})
         embeddings.index(data)
 

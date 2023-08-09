@@ -142,7 +142,7 @@ class Embeddings:
         if self.issparse():
             self.scoring.index()
 
-        # Index subindexes
+        # Index subindexes, if necessary
         if self.indexes:
             self.indexes.index()
 
