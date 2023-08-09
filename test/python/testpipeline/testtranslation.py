@@ -8,26 +8,20 @@ import unittest
 from txtai.pipeline import Translation
 
 
+@unittest.skipIf(os.name == "nt", "Translation tests skipped on Windows")
 class TestTranslation(unittest.TestCase):
     """
     Translation tests.
     """
 
-    @classmethod
-    def setUpClass(cls):
-        """
-        Create single translation instance.
-        """
-
-        cls.translate = Translation()
-
     def testDetect(self):
         """
         Test language detection
         """
+        translate = Translation()
 
         test = ["This is a test language detection."]
-        language = self.translate.detect(test)
+        language = translate.detect(test)
 
         self.assertListEqual(language, ["en"])
 
@@ -46,14 +40,15 @@ class TestTranslation(unittest.TestCase):
 
         self.assertListEqual(language, ["en"])
 
-    @unittest.skipIf(os.name == "nt", "testLongTranslation skipped on Windows")
     def testLongTranslation(self):
         """
         Test a translation longer than max tokenization length
         """
 
+        translate = Translation()
+
         text = "This is a test translation to Spanish. " * 100
-        translation = self.translate(text, "es")
+        translation = translate(text, "es")
 
         # Validate translation text
         self.assertIsNotNone(translation)
@@ -64,25 +59,28 @@ class TestTranslation(unittest.TestCase):
         Test a translation using M2M100 models
         """
 
-        text = self.translate("This is a test translation to Croatian", "hr")
+        translate = Translation()
+
+        text = translate("This is a test translation to Croatian", "hr")
 
         # Validate translation text
         self.assertEqual(text, "Ovo je testni prijevod na hrvatski")
 
-    @unittest.skipIf(os.name == "nt", "testMarianTranslation skipped on Windows")
     def testMarianTranslation(self):
         """
         Test a translation using Marian models
         """
 
+        translate = Translation()
+
         text = "This is a test translation into Spanish"
-        translation = self.translate(text, "es")
+        translation = translate(text, "es")
 
         # Validate translation text
         self.assertEqual(translation, "Esta es una traducción de prueba al español")
 
         # Validate translation back
-        translation = self.translate(translation, "en")
+        translation = translate(translation, "en")
         self.assertEqual(translation, text)
 
     def testNoLang(self):
@@ -90,35 +88,40 @@ class TestTranslation(unittest.TestCase):
         Test no matching language id
         """
 
-        self.assertIsNone(self.translate.langid([], "zz"))
+        translate = Translation()
+        self.assertIsNone(translate.langid([], "zz"))
 
     def testNoModel(self):
         """
         Test no known available model found
         """
 
-        self.assertEqual(self.translate.modelpath("zz", "en"), "Helsinki-NLP/opus-mt-mul-en")
+        translate = Translation()
+        self.assertEqual(translate.modelpath("zz", "en"), "Helsinki-NLP/opus-mt-mul-en")
 
     def testNoTranslation(self):
         """
         Test translation skipped when text already in destination language
         """
 
+        translate = Translation()
+
         text = "This is a test translation to English"
-        translation = self.translate(text, "en")
+        translation = translate(text, "en")
 
         # Validate no translation
         self.assertEqual(text, translation)
 
-    @unittest.skipIf(os.name == "nt", "testTranslationWithShowModels skipped on Windows")
     def testTranslationWithShowmodels(self):
         """
         Test a translation using Marian models and showmodels flag to return
         model and language.
         """
 
+        translate = Translation()
+
         text = "This is a test translation into Spanish"
-        result = self.translate(text, "es", showmodels=True)
+        result = translate(text, "es", showmodels=True)
 
         translation, language, modelpath = result
         # Validate translation text
@@ -129,7 +132,7 @@ class TestTranslation(unittest.TestCase):
         self.assertEqual(modelpath, "Helsinki-NLP/opus-mt-en-es")
 
         # Validate translation back
-        result = self.translate(translation, "en", showmodels=True)
+        result = translate(translation, "en", showmodels=True)
 
         translation, language, modelpath = result
         self.assertEqual(translation, text)
