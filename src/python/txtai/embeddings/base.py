@@ -19,18 +19,11 @@ from ..scoring import ScoringFactory
 from ..vectors import VectorsFactory
 from ..version import __pickle__
 
-from .action import Action
-from .explain import Explain
-from .functions import Functions
-from .reducer import Reducer
-from .query import Query
-from .search import Search
-from .stream import Stream
-from .terms import Terms
-from .transform import Transform
+from .index import Action, Functions, Indexes, Reducer, Stream, Transform
+from .search import Explain, Query, Search, Terms
 
 
-# pylint: disable=R0904
+# pylint: disable=C0302,R0904
 class Embeddings:
     """
     Embeddings is the engine that delivers semantic search. Data is transformed into embeddings vectors where similar concepts
@@ -39,12 +32,13 @@ class Embeddings:
     """
 
     # pylint: disable = W0231
-    def __init__(self, config=None, **kwargs):
+    def __init__(self, config=None, models=None, **kwargs):
         """
         Creates a new embeddings index. Embeddings indexes are thread-safe for read operations but writes must be synchronized.
 
         Args:
             config: embeddings configuration
+            models: models cache, used for model sharing between embeddings
             kwargs: additional configuration as keyword args
         """
 
@@ -77,6 +71,12 @@ class Embeddings:
 
         # Index archive
         self.archive = None
+
+        # Subindexes for this embeddings instance
+        self.indexes = None
+
+        # Models cache
+        self.models = models
 
         # Merge configuration into single dictionary
         config = {**config, **kwargs} if config and kwargs else kwargs if kwargs else config
@@ -142,6 +142,10 @@ class Embeddings:
         if self.issparse():
             self.scoring.index()
 
+        # Index subindexes
+        if self.indexes:
+            self.indexes.index()
+
         # Index graph, if necessary
         if self.graph:
             self.graph.index(Search(self, True), self.batchsimilarity)
@@ -187,6 +191,10 @@ class Embeddings:
         # This must occur before graph upsert in order to be available to the graph
         if self.issparse():
             self.scoring.upsert()
+
+        # Subindexes upsert, if necessary
+        if self.indexes:
+            self.indexes.upsert()
 
         # Graph upsert, if necessary
         if self.graph:
@@ -241,6 +249,10 @@ class Embeddings:
             # Delete ids from scoring
             if self.issparse():
                 self.scoring.delete(indices)
+
+            # Delete ids from subindexes
+            if self.indexes:
+                self.indexes.delete(indices)
 
             # Delete ids from graph
             if self.graph:
@@ -327,9 +339,19 @@ class Embeddings:
             number of elements in this embeddings index
         """
 
-        return self.ann.count() if self.ann else self.scoring.count() if self.scoring else 0
+        if self.ann:
+            return self.ann.count()
+        if self.scoring:
+            return self.scoring.count()
+        if self.database:
+            return self.database.count()
+        if self.config.get("ids"):
+            return len([uid for uid in self.config["ids"] if uid is not None])
 
-    def search(self, query, limit=None, weights=None):
+        # Default to 0 when no suitable method found
+        return 0
+
+    def search(self, query, limit=None, weights=None, index=None):
         """
         Finds documents most similar to the input queries. This method will run either an index search
         or an index + database search depending on if a database is available.
@@ -338,15 +360,16 @@ class Embeddings:
             query: input query
             limit: maximum results
             weights: hybrid score weights, if applicable
+            index: index name, if applicable
 
         Returns:
             list of (id, score) for index search, list of dict for an index+database search
         """
 
-        results = self.batchsearch([query], limit, weights)
+        results = self.batchsearch([query], limit, weights, index)
         return results[0] if results else results
 
-    def batchsearch(self, queries, limit=None, weights=None):
+    def batchsearch(self, queries, limit=None, weights=None, index=None):
         """
         Finds documents most similar to the input queries. This method will run either an index search
         or an index + database search depending on if a database is available.
@@ -355,12 +378,13 @@ class Embeddings:
             queries: input queries
             limit: maximum results
             weights: hybrid score weights, if applicable
+            index: index name, if applicable
 
         Returns:
             list of (id, score) per query for index search, list of dict per query for an index+database search
         """
 
-        return Search(self)(queries, limit, weights)
+        return Search(self)(queries, limit, weights, index)
 
     def similarity(self, query, data):
         """
@@ -525,15 +549,20 @@ class Embeddings:
         if self.database:
             self.database.load(f"{path}/documents")
 
-        # Graph network - stores relationships
-        self.graph = self.creategraph()
-        if self.graph:
-            self.graph.load(f"{path}/graph")
-
         # Sparse vectors - stores term sparse arrays
         self.scoring = self.createscoring()
         if self.scoring:
             self.scoring.load(f"{path}/scoring")
+
+        # Subindexes
+        self.indexes = self.createindexes()
+        if self.indexes:
+            self.indexes.load(f"{path}/indexes")
+
+        # Graph network - stores relationships
+        self.graph = self.creategraph()
+        if self.graph:
+            self.graph.load(f"{path}/graph")
 
         # Dense vectors - transforms data to embeddings vectors
         self.model = self.loadvectors()
@@ -580,13 +609,17 @@ class Embeddings:
             if self.database:
                 self.database.save(f"{path}/documents")
 
-            # Save graph
-            if self.graph:
-                self.graph.save(f"{path}/graph")
-
             # Save scoring index
             if self.scoring:
                 self.scoring.save(f"{path}/scoring")
+
+            # Save subindexes
+            if self.indexes:
+                self.indexes.save(f"{path}/indexes")
+
+            # Save graph
+            if self.graph:
+                self.graph.save(f"{path}/graph")
 
             # If this is an archive, save it
             if apath:
@@ -602,8 +635,8 @@ class Embeddings:
         Closes this embeddings index and frees all resources.
         """
 
-        self.config, self.reducer, self.query, self.model = None, None, None, None
-        self.ann, self.graph, self.archive = None, None, None
+        self.ann, self.config, self.graph, self.archive = None, None, None, None
+        self.reducer, self.query, self.model, self.models = None, None, None, None
 
         # Close database connection if open
         if self.database:
@@ -614,6 +647,11 @@ class Embeddings:
         if self.scoring:
             self.scoring.close()
             self.scoring = None
+
+        # Close indexes if open
+        if self.indexes:
+            self.indexes.close()
+            self.indexes = None
 
     def info(self):
         """
@@ -702,13 +740,16 @@ class Embeddings:
             # Reset archive since this is a new index
             self.archive = None
 
-        # Create graph, if necessary
-        self.graph = self.creategraph()
-
         # Create scoring only if term indexing is enabled
         scoring = self.config.get("scoring")
         if scoring and isinstance(scoring, dict) and self.config["scoring"].get("terms"):
             self.scoring = self.createscoring()
+
+        # Create subindexes, if necessary
+        self.indexes = self.createindexes()
+
+        # Create graph, if necessary
+        self.graph = self.creategraph()
 
     def defaults(self):
         """
@@ -722,14 +763,25 @@ class Embeddings:
 
         # Expand sparse index shortcuts
         if not self.config.get("scoring") and any(self.config.get(key) for key in ["keyword", "hybrid"]):
-            self.config["scoring"] = {"method": "bm25", "terms": True}
+            self.config["scoring"] = {"method": "bm25", "terms": True, "normalize": True}
 
-        # Add default path if configuration available and this isn't a keyword index
-        if not self.model and not self.config.get("keyword"):
+        # Check if default model should be loaded
+        if not self.model and self.defaultallowed():
             self.config["path"] = "sentence-transformers/all-MiniLM-L6-v2"
 
             # Load dense vectors model
             self.model = self.loadvectors()
+
+    def defaultallowed(self):
+        """
+        Tests if this embeddings instance can use a default model if not otherwise provided.
+
+        Returns:
+            True if a default model is allowed, False otherwise
+        """
+
+        params = [("keyword", False), ("defaults", True)]
+        return all(self.config.get(key, default) == default for key, default in params)
 
     def loadconfig(self, path):
         """
@@ -795,7 +847,23 @@ class Embeddings:
             vector model
         """
 
-        return VectorsFactory.create(self.config, self.scoring)
+        # Create model cache if subindexes are enabled
+        if "indexes" in self.config and self.models is None:
+            self.models = {}
+
+        # Model path
+        path = self.config.get("path")
+
+        # Check if model is cached
+        if self.models and path in self.models:
+            return self.models[path]
+
+        # Load and store uncached model
+        model = VectorsFactory.create(self.config, self.scoring)
+        if self.models is not None and path:
+            self.models[path] = model
+
+        return model
 
     def loadquery(self):
         """
@@ -855,7 +923,7 @@ class Embeddings:
             new ANN, if enabled in config
         """
 
-        return ANNFactory.create(self.config) if self.config.get("path") or not self.config.get("keyword") else None
+        return ANNFactory.create(self.config) if self.config.get("path") or self.defaultallowed() else None
 
     def createdatabase(self):
         """
@@ -891,6 +959,26 @@ class Embeddings:
             # Create configuration with custom columns, if necessary
             config = self.columns(self.config["graph"])
             return GraphFactory.create(config)
+
+        return None
+
+    def createindexes(self):
+        """
+        Creates subindexes from config.
+
+        Returns:
+            list of subindexes
+        """
+
+        # Load subindexes
+        if "indexes" in self.config:
+            indexes = {}
+            for index, config in self.config["indexes"].items():
+                # Create index with shared model cache
+                indexes[index] = Embeddings(config, models=self.models)
+
+            # Wrap as Indexes object
+            return Indexes(self, indexes)
 
         return None
 

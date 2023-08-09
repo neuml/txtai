@@ -14,6 +14,7 @@ from txtai.embeddings import Embeddings, Reducer
 from txtai.vectors import WordVectors
 
 
+# pylint: disable=R0904
 class TestEmbeddings(unittest.TestCase):
     """
     Embeddings tests.
@@ -184,16 +185,25 @@ class TestEmbeddings(unittest.TestCase):
 
         # Index data with sparse + dense vectors
         embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2", "hybrid": True})
-
         embeddings.index(data)
 
         # Run search
         uid = embeddings.search("feel good story", 1)[0][0]
         self.assertEqual(uid, 4)
 
-        # Index data with sparse + dense vectors. Normalize scores.
-        embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2", "scoring": {"method": "bm25", "terms": True, "normalize": True}})
+        # Generate temp file path
+        index = os.path.join(tempfile.gettempdir(), "embeddings.hybrid")
 
+        # Test load/save
+        embeddings.save(index)
+        embeddings.load(index)
+
+        # Run search
+        uid = embeddings.search("feel good story", 1)[0][0]
+        self.assertEqual(uid, 4)
+
+        # Index data with sparse + dense vectors and unnormalized scores
+        embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2", "scoring": {"method": "bm25", "terms": True}})
         embeddings.index(data)
 
         # Run search
@@ -225,13 +235,38 @@ class TestEmbeddings(unittest.TestCase):
         Test keyword only (sparse) search
         """
 
+        # Build data array
+        data = [(uid, text, None) for uid, text in enumerate(self.data)]
+
         # Index data with sparse + dense vectors
         embeddings = Embeddings({"keyword": True})
-        embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+        embeddings.index(data)
 
         # Run search
         uid = embeddings.search("lottery ticket", 1)[0][0]
         self.assertEqual(uid, 4)
+
+        # Test count method
+        self.assertEqual(embeddings.count(), len(data))
+
+        # Generate temp file path
+        index = os.path.join(tempfile.gettempdir(), "embeddings.keywords")
+
+        # Test load/save
+        embeddings.save(index)
+        embeddings.load(index)
+
+        # Run search
+        uid = embeddings.search("lottery ticket", 1)[0][0]
+        self.assertEqual(uid, 4)
+
+        # Update data
+        data[0] = (0, "Feel good story: baby panda born", None)
+        embeddings.upsert([data[0]])
+
+        # Search for best match
+        uid = embeddings.search("feel good story", 1)[0][0]
+        self.assertEqual(uid, 0)
 
     def testNormalize(self):
         """
@@ -291,7 +326,7 @@ class TestEmbeddings(unittest.TestCase):
         self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
 
         # Generate temp file path
-        index = os.path.join(tempfile.gettempdir(), "embeddings")
+        index = os.path.join(tempfile.gettempdir(), "embeddings.base")
 
         self.embeddings.save(index)
         self.embeddings.load(index)
@@ -315,6 +350,49 @@ class TestEmbeddings(unittest.TestCase):
 
         self.assertEqual(uid, 4)
 
+    def testSubindex(self):
+        """
+        Test subindex
+        """
+
+        # Build data array
+        data = [(uid, text, None) for uid, text in enumerate(self.data)]
+
+        # Disable top-level indexing and create subindex
+        embeddings = Embeddings({"defaults": False, "indexes": {"index1": {"path": "sentence-transformers/nli-mpnet-base-v2"}}})
+        embeddings.index(data)
+
+        # Run search
+        uid = embeddings.search("feel good story", 1)[0][0]
+        self.assertEqual(uid, 4)
+
+        # Generate temp file path
+        index = os.path.join(tempfile.gettempdir(), "embeddings.subindex")
+
+        # Test load/save
+        embeddings.save(index)
+        embeddings.load(index)
+
+        # Run search
+        uid = embeddings.search("feel good story", 1)[0][0]
+        self.assertEqual(uid, 4)
+
+        # Update data
+        data[0] = (0, "Feel good story: baby panda born", None)
+        embeddings.upsert([data[0]])
+
+        # Search for best match
+        uid = embeddings.search("feel good story", 10)[0][0]
+        self.assertEqual(uid, 0)
+
+        # Check missing text is set to id when top-level indexing is disabled
+        embeddings.upsert([(embeddings.count(), {"content": "empty text"}, None)])
+        uid = embeddings.search(f"{embeddings.count() - 1}", 1)[0][0]
+        self.assertEqual(uid, embeddings.count() - 1)
+
+        # Close embeddings
+        embeddings.close()
+
     def testUpsert(self):
         """
         Test upsert
@@ -325,6 +403,7 @@ class TestEmbeddings(unittest.TestCase):
 
         # Reset embeddings for test
         self.embeddings.ann = None
+        del self.embeddings.config["ids"]
 
         # Create an index for the list of text
         self.embeddings.upsert(data)
@@ -377,7 +456,7 @@ class TestEmbeddings(unittest.TestCase):
         self.assertIsNotNone(embeddings.search("win", 1))
 
         # Generate temp file path
-        index = os.path.join(tempfile.gettempdir(), "wembeddings")
+        index = os.path.join(tempfile.gettempdir(), "embeddings.wordvectors")
 
         # Test save/load
         embeddings.save(index)

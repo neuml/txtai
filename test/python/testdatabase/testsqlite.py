@@ -8,7 +8,7 @@ import os
 import tempfile
 import unittest
 
-from txtai.embeddings import Embeddings
+from txtai.embeddings import Embeddings, IndexNotFoundError
 from txtai.database import Database, SQLError
 
 
@@ -270,18 +270,25 @@ class TestSQLite(unittest.TestCase):
 
         # Index data with sparse + dense vectors.
         embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2", "hybrid": True, "content": True})
-
         embeddings.index(data)
 
         # Run search
         result = embeddings.search("feel good story", 1)[0]
         self.assertEqual(result["text"], data[4][1])
 
-        # Index data with sparse + dense vectors. Normalize scores.
-        embeddings = Embeddings(
-            {"path": "sentence-transformers/nli-mpnet-base-v2", "scoring": {"method": "bm25", "terms": True, "normalize": True}, "content": True}
-        )
+        # Generate temp file path
+        index = os.path.join(tempfile.gettempdir(), f"embeddings.{self.backend}.hybrid")
 
+        # Test load/save
+        embeddings.save(index)
+        embeddings.load(index)
+
+        # Run search
+        result = embeddings.search("feel good story", 1)[0]
+        self.assertEqual(result["text"], data[4][1])
+
+        # Index data with sparse + dense vectors. Normalize scores.
+        embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2", "scoring": {"method": "bm25", "terms": True}, "content": True})
         embeddings.index(data)
 
         # Run search
@@ -392,13 +399,38 @@ class TestSQLite(unittest.TestCase):
         Test keyword only (sparse) search
         """
 
+        # Build data array
+        data = [(uid, text, None) for uid, text in enumerate(self.data)]
+
         # Index data with sparse + dense vectors
         embeddings = Embeddings({"keyword": True, "content": True})
-        embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+        embeddings.index(data)
 
         # Run search
         result = embeddings.search("lottery ticket", 1)[0]
-        self.assertEqual(result["text"], self.data[4])
+        self.assertEqual(result["text"], data[4][1])
+
+        # Test count method
+        self.assertEqual(embeddings.count(), len(data))
+
+        # Generate temp file path
+        index = os.path.join(tempfile.gettempdir(), f"embeddings.{self.backend}.keyword")
+
+        # Test load/save
+        embeddings.save(index)
+        embeddings.load(index)
+
+        # Run search
+        result = embeddings.search("lottery ticket", 1)[0]
+        self.assertEqual(result["text"], data[4][1])
+
+        # Update data
+        data[0] = (0, "Feel good story: baby panda born", None)
+        embeddings.upsert([data[0]])
+
+        # Search for best match
+        result = embeddings.search("feel good story", 1)[0]
+        self.assertEqual(result["text"], data[0][1])
 
     def testMultiData(self):
         """
@@ -454,6 +486,23 @@ class TestSQLite(unittest.TestCase):
         result = self.embeddings.search("feel good story", 1)[0]
         self.assertEqual(result["text"], self.data[4])
 
+    def testNoIndex(self):
+        """
+        Tests an embeddings instance with no available indexes
+        """
+
+        # Disable top-level indexing
+        embeddings = Embeddings(
+            {
+                "content": True,
+                "defaults": False,
+            }
+        )
+        embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        with self.assertRaises(IndexNotFoundError):
+            embeddings.search("select id, text, score from txtai where similar('feel good story')")
+
     def testNotImplemented(self):
         """
         Test exceptions for non-implemented methods
@@ -468,6 +517,7 @@ class TestSQLite(unittest.TestCase):
         self.assertRaises(NotImplementedError, database.save, None)
         self.assertRaises(NotImplementedError, database.close)
         self.assertRaises(NotImplementedError, database.ids, None)
+        self.assertRaises(NotImplementedError, database.count)
         self.assertRaises(NotImplementedError, database.resolve, None, None)
         self.assertRaises(NotImplementedError, database.embed, None, None)
         self.assertRaises(NotImplementedError, database.query, None, None)
@@ -585,6 +635,57 @@ class TestSQLite(unittest.TestCase):
         with self.assertRaises(SQLError):
             self.embeddings.search("select * from txtai where bad,query")
 
+    def testSubindex(self):
+        """
+        Test subindex
+        """
+
+        # Build data array
+        data = [(uid, text, None) for uid, text in enumerate(self.data)]
+
+        # Disable top-level indexing and create subindex
+        embeddings = Embeddings({"content": True, "defaults": False, "indexes": {"index1": {"path": "sentence-transformers/nli-mpnet-base-v2"}}})
+        embeddings.index(data)
+
+        # Run search
+        result = embeddings.search("feel good story", 1)[0]
+        self.assertEqual(result["text"], data[4][1])
+
+        # Run SQL search
+        result = embeddings.search("select id, text, score from txtai where similar('feel good story', 10, 0.5)")[0]
+        self.assertEqual(result["text"], data[4][1])
+
+        # Test missing index
+        with self.assertRaises(IndexNotFoundError):
+            embeddings.search("select id, text, score from txtai where similar('feel good story', 'notindex')")
+
+        # Generate temp file path
+        index = os.path.join(tempfile.gettempdir(), f"embeddings.{self.backend}.subindex")
+
+        # Test load/save
+        embeddings.save(index)
+        embeddings.load(index)
+
+        # Run search
+        result = embeddings.search("feel good story", 1)[0]
+        self.assertEqual(result["text"], data[4][1])
+
+        # Update data
+        data[0] = (0, "Feel good story: baby panda born", None)
+        embeddings.upsert([data[0]])
+
+        # Search for best match
+        result = embeddings.search("feel good story", 1)[0]
+        self.assertEqual(result["text"], data[0][1])
+
+        # Check missing text is set to id when top-level indexing is disabled
+        embeddings.upsert([(embeddings.count(), {"content": "empty text"}, None)])
+        result = embeddings.search(f"{embeddings.count() - 1}", 1)[0]
+        self.assertEqual(result["text"], str(embeddings.count() - 1))
+
+        # Close embeddings
+        embeddings.close()
+
     def testTerms(self):
         """
         Test extracting keyword terms from query
@@ -603,6 +704,7 @@ class TestSQLite(unittest.TestCase):
 
         # Reset embeddings for test
         self.embeddings.ann = None
+        self.embeddings.database = None
 
         # Create an index for the list of text
         self.embeddings.upsert(data)
@@ -613,7 +715,6 @@ class TestSQLite(unittest.TestCase):
 
         # Search for best match
         result = self.embeddings.search("feel good story", 1)[0]
-
         self.assertEqual(result["text"], data[0][1])
 
     def testUpsertBatch(self):
@@ -627,6 +728,7 @@ class TestSQLite(unittest.TestCase):
 
             # Reset embeddings for test
             self.embeddings.ann = None
+            self.embeddings.database = None
 
             # Create an index for the list of text
             self.embeddings.upsert(data)

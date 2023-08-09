@@ -28,10 +28,12 @@ class Transform:
         self.action = action
 
         # Alias embeddings attributes
+        self.config = embeddings.config
         self.delete = embeddings.delete
         self.model = embeddings.model
         self.database = embeddings.database
         self.graph = embeddings.graph
+        self.indexes = embeddings.indexes
         self.scoring = embeddings.scoring if embeddings.issparse() else None
 
         # Get config parameters
@@ -42,6 +44,9 @@ class Transform:
         columns = embeddings.config.get("columns", {})
         self.text = columns.get("text", "text")
         self.object = columns.get("object", "object")
+
+        # Check if top-level indexing is enabled for this embeddings
+        self.indexing = embeddings.model or embeddings.scoring
 
         # List of deleted ids with this action
         self.deletes = set()
@@ -117,6 +122,9 @@ class Transform:
         for uid, _, _ in self.stream(documents):
             ids.append(uid)
 
+        # Save offset when dense indexing is disabled
+        self.config["offset"] = self.offset
+
         return ids
 
     def stream(self, documents):
@@ -142,6 +150,10 @@ class Transform:
         # Iterate and process documents stream
         for document in documents:
             if isinstance(document[1], dict):
+                # Set text field to uid when top-level indexing is disabled and text empty
+                if not self.indexing and not document[1].get(self.text):
+                    document[1][self.text] = str(document[0])
+
                 if self.text in document[1]:
                     yield (document[0], document[1][self.text], document[2])
                     offset += 1
@@ -174,7 +186,7 @@ class Transform:
 
         # Delete from embeddings index first (which deletes from underlying indexes and datastores) if this is an upsert
         if self.action == Action.UPSERT:
-            # Get list of ids not yet seen and delete
+            # Get list of ids not yet seen and deleted
             deletes = [uid for uid, _, _ in batch if uid not in self.deletes]
             if deletes:
                 # Execute delete
@@ -187,13 +199,17 @@ class Transform:
         if self.database and self.action != Action.REINDEX:
             self.database.insert(batch, self.offset)
 
-        # Load batch into graph
-        if self.graph:
-            self.graph.insert(batch, self.offset)
-
         # Load batch into scoring
         if self.scoring:
             self.scoring.insert(batch, self.offset)
+
+        # Load batch into subindex documents stream
+        if self.indexes:
+            self.indexes.insert(batch, self.offset)
+
+        # Load batch into graph
+        if self.graph:
+            self.graph.insert(batch, self.offset)
 
         # Increment offset
         self.offset += offset

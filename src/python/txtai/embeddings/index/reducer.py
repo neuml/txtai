@@ -12,7 +12,7 @@ try:
 except ImportError:
     REDUCER = False
 
-from ..version import __pickle__
+from ...version import __pickle__
 
 
 class Reducer:

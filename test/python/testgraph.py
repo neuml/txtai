@@ -260,6 +260,61 @@ class TestGraph(unittest.TestCase):
         graph.addtopics()
         self.assertEqual(len(graph.topics), 5)
 
+    def testSubindex(self):
+        """
+        Test subindex
+        """
+
+        # Build data array
+        data = [(uid, text, None) for uid, text in enumerate(self.data)]
+
+        embeddings = Embeddings(
+            {
+                "content": True,
+                "functions": [{"name": "graph", "function": "indexes.index1.graph.attribute"}],
+                "expressions": [
+                    {"name": "category", "expression": "graph(indexid, 'category')"},
+                    {"name": "topic", "expression": "graph(indexid, 'topic')"},
+                    {"name": "topicrank", "expression": "graph(indexid, 'topicrank')"},
+                ],
+                "indexes": {
+                    "index1": {
+                        "path": "sentence-transformers/nli-mpnet-base-v2",
+                        "graph": {
+                            "limit": 5,
+                            "minscore": 0.2,
+                            "batchsize": 4,
+                            "approximate": False,
+                            "topics": {"categories": ["News"], "stopwords": ["the"]},
+                        },
+                    }
+                },
+            }
+        )
+
+        # Create an index for the list of text
+        embeddings.index(data)
+
+        # Test function
+        result = embeddings.search("select id, category, topic, topicrank from txtai where id = 0", 1)[0]
+
+        # Check columns have a value
+        self.assertIsNotNone(result["category"])
+        self.assertIsNotNone(result["topic"])
+        self.assertIsNotNone(result["topicrank"])
+
+        # Update data
+        data[0] = (0, "Feel good story: lottery winner announced", None)
+        embeddings.upsert([data[0]])
+
+        # Test function
+        result = embeddings.search("select id, category, topic, topicrank from txtai where id = 0", 1)[0]
+
+        # Check columns have a value
+        self.assertIsNotNone(result["category"])
+        self.assertIsNotNone(result["topic"])
+        self.assertIsNotNone(result["topicrank"])
+
     def testUpsert(self):
         """
         Test upsert
