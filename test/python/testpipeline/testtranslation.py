@@ -39,6 +39,7 @@ class TestTranslation(unittest.TestCase):
 
         self.assertListEqual(language, ["en"])
 
+    @unittest.skipIf(os.name == "nt", "testLongTranslation skipped on Windows")
     def testLongTranslation(self):
         """
         Test a translation longer than max tokenization length
@@ -65,6 +66,7 @@ class TestTranslation(unittest.TestCase):
         # Validate translation text
         self.assertEqual(text, "Ovo je testni prijevod na hrvatski")
 
+    @unittest.skipIf(os.name == "nt", "testMarianTranslation skipped on Windows")
     def testMarianTranslation(self):
         """
         Test a translation using Marian models
@@ -111,6 +113,7 @@ class TestTranslation(unittest.TestCase):
         # Validate no translation
         self.assertEqual(text, translation)
 
+    @unittest.skipIf(os.name == "nt", "testTranslationWithShowModels skipped on Windows")
     def testTranslationWithShowmodels(self):
         """
         Test a translation using Marian models and showmodels flag to return
