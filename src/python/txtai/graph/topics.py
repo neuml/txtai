@@ -19,7 +19,7 @@ class Topics:
             config: topic configuration
         """
 
-        self.config = config
+        self.config = config if config else {}
         self.tokenizer = Tokenizer(stopwords=True)
 
         # Additional stopwords to ignore when building topic names

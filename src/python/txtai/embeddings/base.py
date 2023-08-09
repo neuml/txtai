@@ -956,8 +956,11 @@ class Embeddings:
         """
 
         if "graph" in self.config:
+            # Get or create graph configuration
+            config = self.config["graph"] if self.config["graph"] else {}
+
             # Create configuration with custom columns, if necessary
-            config = self.columns(self.config["graph"])
+            config = self.columns(config)
             return GraphFactory.create(config)
 
         return None

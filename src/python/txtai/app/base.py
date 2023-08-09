@@ -360,7 +360,7 @@ class Application:
                     self.documents = Documents()
 
                 # Add documents
-                self.documents.add(documents)
+                self.documents.add(list(documents))
 
         # Return unmodified input documents
         return documents

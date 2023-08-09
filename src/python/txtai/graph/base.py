@@ -30,7 +30,7 @@ class Graph:
         """
 
         # Graph configuration
-        self.config = config
+        self.config = config if config else {}
 
         # Graph backend
         self.backend = None
@@ -504,8 +504,8 @@ class Graph:
         self.cleartopics()
 
         # Use community detection to get topics
-        config = self.config["topics"]
-        topics = Topics(config)
+        topics = Topics(self.config["topics"])
+        config = topics.config
         self.topics = topics(self)
 
         # Label each topic with a higher level category
