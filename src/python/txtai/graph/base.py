@@ -555,14 +555,14 @@ class Graph:
             ids = self.edges(uid)
 
             # Infer topic
-            topic = Counter(self.attribute(x, "topic") for x in ids).most_common(1)[0][0]
+            topic = Counter(self.attribute(x, "topic") for x in ids).most_common(1)[0][0] if ids else None
             if topic:
                 # Add id to topic list and set topic attribute
                 self.topics[topic].append(uid)
                 self.addattribute(uid, "topic", topic)
 
                 # Set topic rank
-                self.addattribute(uid, "topicrank", len(self.topics[topic]))
+                self.addattribute(uid, "topicrank", len(self.topics[topic]) - 1)
 
                 # Infer category
                 category = Counter(self.attribute(x, "category") for x in ids).most_common(1)[0][0]
