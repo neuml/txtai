@@ -203,7 +203,7 @@ class TestEmbeddings(unittest.TestCase):
         self.assertEqual(uid, 4)
 
         # Index data with sparse + dense vectors and unnormalized scores
-        embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2", "scoring": {"method": "bm25", "terms": True}})
+        embeddings.config["scoring"]["normalize"] = False
         embeddings.index(data)
 
         # Run search

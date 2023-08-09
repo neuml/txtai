@@ -267,7 +267,6 @@ class TestTrainer(unittest.TestCase):
         self.assertTrue(os.path.exists(os.path.join(output, "generator")))
         self.assertTrue(os.path.exists(os.path.join(output, "discriminator")))
 
-    @unittest.skipIf(os.name == "nt", "testSeqSeq skipped on Windows")
     def testSeqSeq(self):
         """
         Test training a sequence-sequence model
