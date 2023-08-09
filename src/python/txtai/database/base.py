@@ -124,6 +124,16 @@ class Database:
 
         raise NotImplementedError
 
+    def count(self):
+        """
+        Retrieves the count of this database instance.
+
+        Returns:
+            total database count
+        """
+
+        raise NotImplementedError
+
     def search(self, query, similarity=None, limit=None):
         """
         Runs a search against the database. Supports the following methods:
@@ -161,6 +171,7 @@ class Database:
                 token = f"{Token.SIMILAR_TOKEN}{x}"
                 if where and token in where:
                     where = where.replace(token, self.embed(similarity, x))
+
         elif similarity:
             # Not a SQL query, load similarity results, if any
             where = self.embed(similarity, 0)

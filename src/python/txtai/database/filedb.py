@@ -88,6 +88,7 @@ class FileDB(Database):
 
     # Queries
     SELECT_IDS = "SELECT indexid, id FROM sections WHERE id in (SELECT id FROM batch)"
+    COUNT_IDS = "SELECT count(indexid) FROM sections"
 
     # Partial sql clauses
     TABLE_CLAUSE = (
@@ -229,6 +230,10 @@ class FileDB(Database):
 
         # Format and return results
         return self.cursor.fetchall()
+
+    def count(self):
+        self.cursor.execute(FileDB.COUNT_IDS)
+        return self.cursor.fetchone()[0]
 
     def resolve(self, name, alias=None):
         # Standard column names
