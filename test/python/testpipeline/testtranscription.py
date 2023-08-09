@@ -20,27 +20,31 @@ class TestTranscription(unittest.TestCase):
     Transcription tests.
     """
 
+    @classmethod
+    def setUpClass(cls):
+        """
+        Create single transcription instance.
+        """
+
+        cls.transcribe = Transcription()
+
     def testArray(self):
         """
         Test audio data to text transcription
         """
 
-        transcribe = Transcription()
-
         # Read audio data
         raw, samplerate = sf.read(Utils.PATH + "/Make_huge_profits.wav")
 
-        self.assertEqual(transcribe((raw, samplerate)), "Make huge profits without working make up to one hundred thousand dollars a day")
-        self.assertEqual(transcribe(raw, samplerate), "Make huge profits without working make up to one hundred thousand dollars a day")
+        self.assertEqual(self.transcribe((raw, samplerate)), "Make huge profits without working make up to one hundred thousand dollars a day")
+        self.assertEqual(self.transcribe(raw, samplerate), "Make huge profits without working make up to one hundred thousand dollars a day")
 
     def testChunks(self):
         """
         Test splitting transcription into chunks
         """
 
-        transcribe = Transcription()
-
-        result = transcribe(Utils.PATH + "/Make_huge_profits.wav", join=False)[0]
+        result = self.transcribe(Utils.PATH + "/Make_huge_profits.wav", join=False)[0]
 
         self.assertIsInstance(result["raw"], np.ndarray)
         self.assertIsNotNone(result["rate"])
@@ -51,18 +55,14 @@ class TestTranscription(unittest.TestCase):
         Test audio file to text transcription
         """
 
-        transcribe = Transcription()
-
         self.assertEqual(
-            transcribe(Utils.PATH + "/Make_huge_profits.wav"), "Make huge profits without working make up to one hundred thousand dollars a day"
+            self.transcribe(Utils.PATH + "/Make_huge_profits.wav"), "Make huge profits without working make up to one hundred thousand dollars a day"
         )
 
     def testResample(self):
         """
         Test resampled audio file to text transcription
         """
-
-        transcribe = Transcription()
 
         # Read audio data
         raw, samplerate = sf.read(Utils.PATH + "/Make_huge_profits.wav")
@@ -71,14 +71,12 @@ class TestTranscription(unittest.TestCase):
         samples = round(len(raw) * float(22050) / samplerate)
         raw, samplerate = signal.resample(raw, samples), 22050
 
-        self.assertEqual(transcribe(raw, samplerate), "Make huge profits without working make up to one hundred thousand dollars a day")
+        self.assertEqual(self.transcribe(raw, samplerate), "Make huge profits without working make up to one hundred thousand dollars a day")
 
     def testStereo(self):
         """
         Test audio file in stereo to text transcription
         """
-
-        transcribe = Transcription()
 
         # Read audio data
         raw, samplerate = sf.read(Utils.PATH + "/Make_huge_profits.wav")
@@ -86,4 +84,4 @@ class TestTranscription(unittest.TestCase):
         # Convert mono to stereo
         raw = np.column_stack((raw, raw))
 
-        self.assertEqual(transcribe(raw, samplerate), "Make huge profits without working make up to one hundred thousand dollars a day")
+        self.assertEqual(self.transcribe(raw, samplerate), "Make huge profits without working make up to one hundred thousand dollars a day")

@@ -13,14 +13,21 @@ class TestTranslation(unittest.TestCase):
     Translation tests.
     """
 
+    @classmethod
+    def setUpClass(cls):
+        """
+        Create single translation instance.
+        """
+
+        cls.translate = Translation()
+
     def testDetect(self):
         """
         Test language detection
         """
-        translate = Translation()
 
         test = ["This is a test language detection."]
-        language = translate.detect(test)
+        language = self.translate.detect(test)
 
         self.assertListEqual(language, ["en"])
 
@@ -45,10 +52,8 @@ class TestTranslation(unittest.TestCase):
         Test a translation longer than max tokenization length
         """
 
-        translate = Translation()
-
         text = "This is a test translation to Spanish. " * 100
-        translation = translate(text, "es")
+        translation = self.translate(text, "es")
 
         # Validate translation text
         self.assertIsNotNone(translation)
@@ -59,9 +64,7 @@ class TestTranslation(unittest.TestCase):
         Test a translation using M2M100 models
         """
 
-        translate = Translation()
-
-        text = translate("This is a test translation to Croatian", "hr")
+        text = self.translate("This is a test translation to Croatian", "hr")
 
         # Validate translation text
         self.assertEqual(text, "Ovo je testni prijevod na hrvatski")
@@ -72,16 +75,14 @@ class TestTranslation(unittest.TestCase):
         Test a translation using Marian models
         """
 
-        translate = Translation()
-
         text = "This is a test translation into Spanish"
-        translation = translate(text, "es")
+        translation = self.translate(text, "es")
 
         # Validate translation text
         self.assertEqual(translation, "Esta es una traducción de prueba al español")
 
         # Validate translation back
-        translation = translate(translation, "en")
+        translation = self.translate(translation, "en")
         self.assertEqual(translation, text)
 
     def testNoLang(self):
@@ -89,26 +90,22 @@ class TestTranslation(unittest.TestCase):
         Test no matching language id
         """
 
-        translate = Translation()
-        self.assertIsNone(translate.langid([], "zz"))
+        self.assertIsNone(self.translate.langid([], "zz"))
 
     def testNoModel(self):
         """
         Test no known available model found
         """
 
-        translate = Translation()
-        self.assertEqual(translate.modelpath("zz", "en"), "Helsinki-NLP/opus-mt-mul-en")
+        self.assertEqual(self.translate.modelpath("zz", "en"), "Helsinki-NLP/opus-mt-mul-en")
 
     def testNoTranslation(self):
         """
         Test translation skipped when text already in destination language
         """
 
-        translate = Translation()
-
         text = "This is a test translation to English"
-        translation = translate(text, "en")
+        translation = self.translate(text, "en")
 
         # Validate no translation
         self.assertEqual(text, translation)
@@ -120,10 +117,8 @@ class TestTranslation(unittest.TestCase):
         model and language.
         """
 
-        translate = Translation()
-
         text = "This is a test translation into Spanish"
-        result = translate(text, "es", showmodels=True)
+        result = self.translate(text, "es", showmodels=True)
 
         translation, language, modelpath = result
         # Validate translation text
@@ -134,7 +129,7 @@ class TestTranslation(unittest.TestCase):
         self.assertEqual(modelpath, "Helsinki-NLP/opus-mt-en-es")
 
         # Validate translation back
-        result = translate(translation, "en", showmodels=True)
+        result = self.translate(translation, "en", showmodels=True)
 
         translation, language, modelpath = result
         self.assertEqual(translation, text)
