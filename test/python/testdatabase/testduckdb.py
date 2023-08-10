@@ -7,11 +7,11 @@ import unittest
 
 from txtai.embeddings import Embeddings
 
-from .testsqlite import TestSQLite
+from .testfiledb import Common
 
 
 # pylint: disable=R0904
-class TestDuckDB(TestSQLite):
+class TestDuckDB(Common.TestFileDB):
     """
     Embeddings with content stored in DuckDB.
     """

@@ -250,7 +250,7 @@ class TestEmbeddings(unittest.TestCase):
         self.assertEqual(embeddings.count(), len(data))
 
         # Generate temp file path
-        index = os.path.join(tempfile.gettempdir(), "embeddings.keywords")
+        index = os.path.join(tempfile.gettempdir(), "embeddings.keyword")
 
         # Test load/save
         embeddings.save(index)
