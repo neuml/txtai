@@ -52,7 +52,7 @@ class TestTranslation(unittest.TestCase):
         # Validate translation text
         self.assertIsNotNone(translation)
 
-    @unittest.skipIf(os.name == "nt", "Transcription tests skipped on Windows")
+    @unittest.skipIf(os.name == "nt", "M2M100 skipped on Windows")
     def testM2M100Translation(self):
         """
         Test a translation using M2M100 models
