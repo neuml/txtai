@@ -2,7 +2,6 @@
 Transcription module tests
 """
 
-import os
 import unittest
 
 import numpy as np
@@ -16,7 +15,6 @@ from txtai.pipeline import Transcription
 from utils import Utils
 
 
-@unittest.skipIf(os.name == "nt", "Transcription tests skipped on Windows")
 class TestTranscription(unittest.TestCase):
     """
     Transcription tests.

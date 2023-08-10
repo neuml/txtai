@@ -8,7 +8,6 @@ import unittest
 from txtai.pipeline import Translation
 
 
-@unittest.skipIf(os.name == "nt", "Translation tests skipped on Windows")
 class TestTranslation(unittest.TestCase):
     """
     Translation tests.
@@ -53,6 +52,7 @@ class TestTranslation(unittest.TestCase):
         # Validate translation text
         self.assertIsNotNone(translation)
 
+    @unittest.skipIf(os.name == "nt", "Transcription tests skipped on Windows")
     def testM2M100Translation(self):
         """
         Test a translation using M2M100 models
