@@ -42,6 +42,10 @@ General configuration that doesn't fit elsewhere.
 
 An accomplying graph index can be created with an embeddings database. This enables topic modeling, path traversal and more. [NetworkX](https://github.com/networkx/networkx) is the default graph index.
 
+## [Scoring](./scoring)
+
+Sparse keyword indexing and word vectors term weighting.
+
 ## [Vectors](./vectors)
 
 Vector search is enabled by converting text and other binary data into embeddings vectors. These vectors are then stored in an ANN index. The vector model is optional and a default model is used when not provided.

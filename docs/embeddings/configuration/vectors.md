@@ -39,13 +39,6 @@ storevectors: boolean
 
 Enables copying of a vectors model set in path into the embeddings models output directory on save. This option enables a fully encapsulated index with no external file dependencies.
 
-#### scoring
-```yaml
-scoring: bm25|tfidf|sif
-```
-
-A scoring model builds weighted averages of word vectors for a given sentence. Supports BM25, TF-IDF and SIF (smooth inverse frequency) methods. If a scoring method is not provided, mean sentence embeddings are built.
-
 #### pca
 ```yaml
 pca: int

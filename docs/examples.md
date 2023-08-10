@@ -28,6 +28,7 @@ Build semantic/similarity/vector/neural search applications.
 | [Topic Modeling with BM25](https://github.com/neuml/txtai/blob/master/examples/39_Classic_Topic_Modeling_with_BM25.ipynb) | Topic modeling backed by a BM25 index | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/39_Classic_Topic_Modeling_with_BM25.ipynb) |
 | [Embeddings in the Cloud](https://github.com/neuml/txtai/blob/master/examples/43_Embeddings_in_the_Cloud.ipynb) | Load and use an embeddings index from the Hugging Face Hub | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/43_Embeddings_in_the_Cloud.ipynb) |
 | [Customize your own embeddings database](https://github.com/neuml/txtai/blob/master/examples/45_Customize_your_own_embeddings_database.ipynb) | Ways to combine vector indexes with relational databases | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/45_Customize_your_own_embeddings_database.ipynb) |
+| [What's new in txtai 6.0](https://github.com/neuml/txtai/blob/master/examples/46_Whats_new_in_txtai_6_0.ipynb) | Sparse, hybrid and subindexes for embeddings, LLM improvements | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/46_Whats_new_in_txtai_6_0.ipynb) |
 
 ## LLM
 
