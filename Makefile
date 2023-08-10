@@ -32,5 +32,19 @@ test:
 
 # Run tests while calculating code coverage
 coverage:
-	coverage run -m unittest discover -v -s ${TEST_DIR}
+	coverage run -m unittest discover -v -k testann -s ${TEST_DIR}
+	coverage run -m unittest discover -v -k testapi -s ${TEST_DIR}
+	coverage run -m unittest discover -v -k testapp -s ${TEST_DIR}
+	coverage run -m unittest discover -v -k testarchive -s ${TEST_DIR}
+	coverage run -m unittest discover -v -k testcloud -s ${TEST_DIR}
+	coverage run -m unittest discover -v -k testconsole -s ${TEST_DIR}
+	coverage run -m unittest discover -v -k testdatabase -s ${TEST_DIR}
+	coverage run -m unittest discover -v -k testembeddings -s ${TEST_DIR}
+	coverage run -m unittest discover -v -k testgraph -s ${TEST_DIR}
+	coverage run -m unittest discover -v -k testmodels -s ${TEST_DIR}
+	coverage run -m unittest discover -v -k testoptional -s ${TEST_DIR}
+	coverage run -m unittest discover -v -k testpipeline -s ${TEST_DIR}
+	coverage run -m unittest discover -v -k testscoring -s ${TEST_DIR}
+	coverage run -m unittest discover -v -k testvectors -s ${TEST_DIR}
+	coverage run -m unittest discover -v -k testworkflow -s ${TEST_DIR}
 	coverage combine
