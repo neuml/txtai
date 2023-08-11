@@ -45,6 +45,6 @@ Summary of txtai features:
 - 💡 Pipelines powered by language models that run LLM prompts, question-answering, labeling, transcription, translation, summarizations and more
 - ↪️️ Workflows to join pipelines together and aggregate business logic. txtai processes can be simple microservices or multi-model workflows.
 - ⚙️ Build with Python or YAML. API bindings available for [JavaScript](https://github.com/neuml/txtai.js), [Java](https://github.com/neuml/txtai.java), [Rust](https://github.com/neuml/txtai.rs) and [Go](https://github.com/neuml/txtai.go).
-- ☁️ Cloud-native architecture that scales out with container orchestration systems (e.g. Kubernetes)
+- ☁️ Run local or scale out with container orchestration
 
 txtai is built with Python 3.8+, [Hugging Face Transformers](https://github.com/huggingface/transformers), [Sentence Transformers](https://github.com/UKPLab/sentence-transformers) and [FastAPI](https://github.com/tiangolo/fastapi). txtai is open-source under an Apache 2.0 license.
