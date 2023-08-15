@@ -42,7 +42,7 @@ Summary of txtai features:
 
 - 🔎 Vector search with SQL, object storage, topic modeling, graph analysis and multimodal indexing
 - 📄 Create embeddings for text, documents, audio, images and video
-- 💡 Pipelines powered by language models that run LLM prompts, question-answering, labeling, transcription, translation, summarizations and more
+- 💡 Pipelines powered by language models that run LLM prompts, question-answering, labeling, transcription, translation, summarization and more
 - ↪️️ Workflows to join pipelines together and aggregate business logic. txtai processes can be simple microservices or multi-model workflows.
 - ⚙️ Build with Python or YAML. API bindings available for [JavaScript](https://github.com/neuml/txtai.js), [Java](https://github.com/neuml/txtai.java), [Rust](https://github.com/neuml/txtai.rs) and [Go](https://github.com/neuml/txtai.go).
 - ☁️ Run local or scale out with container orchestration

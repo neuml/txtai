@@ -40,7 +40,7 @@ Summary of txtai features:
 
 - 🔎 Vector search with SQL, object storage, topic modeling, graph analysis and multimodal indexing
 - 📄 Create embeddings for text, documents, audio, images and video
-- 💡 Pipelines powered by language models that run LLM prompts, question-answering, labeling, transcription, translation, summarizations and more
+- 💡 Pipelines powered by language models that run LLM prompts, question-answering, labeling, transcription, translation, summarization and more
 - ↪️️ Workflows to join pipelines together and aggregate business logic. txtai processes can be simple microservices or multi-model workflows.
 - ⚙️ Build with Python or YAML. API bindings available for [JavaScript](https://github.com/neuml/txtai.js), [Java](https://github.com/neuml/txtai.java), [Rust](https://github.com/neuml/txtai.rs) and [Go](https://github.com/neuml/txtai.go).
 - ☁️ Run local or scale out with container orchestration
@@ -200,7 +200,7 @@ In addition to this list, there are also many other [open-source projects](https
 ![further](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/further.png#gh-light-mode-only)
 ![further](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/further-ghdark.png#gh-dark-mode-only)
 
-- [Introducing txtai, semantic search and workflows built on Transformers](https://medium.com/neuml/introducing-txtai-an-ai-powered-search-engine-built-on-transformers-37674be252ec)
+- [Introducing txtai, the all-in-one embeddings database](https://medium.com/neuml/introducing-txtai-the-all-in-one-embeddings-database-c721f4ff91ad)
 - [Tutorial series on Hashnode](https://neuml.hashnode.dev/series/txtai-tutorial) | [dev.to](https://dev.to/neuml/tutorial-series-on-txtai-ibg)
 - [What's new in txtai 6.0](https://medium.com/neuml/whats-new-in-txtai-6-0-7d93eeedf804) | [5.0](https://medium.com/neuml/whats-new-in-txtai-5-0-e5c75a13b101) | [4.0](https://medium.com/neuml/whats-new-in-txtai-4-0-bbc3a65c3d1c)
 - [Getting started with semantic search](https://medium.com/neuml/getting-started-with-semantic-search-a9fd9d8a48cf) | [workflows](https://medium.com/neuml/getting-started-with-semantic-workflows-2fefda6165d9)
