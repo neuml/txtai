@@ -88,12 +88,13 @@ Train NLP models.
 
 ## Applications
 
-Series of example applications with txtai. Links to hosted versions on [Hugging Face Spaces](https://hf.co/spaces) also provided.
+Series of example applications with txtai. Links to hosted versions on [Hugging Face Spaces](https://hf.co/spaces) are also provided, when available.
 
 | Application  | Description  |       |
 |:-------------|:-------------|------:|
 | [Basic similarity search](https://github.com/neuml/txtai/blob/master/examples/similarity.py) | Basic similarity search example. Data from the original txtai demo. |[🤗](https://hf.co/spaces/NeuML/similarity)|
 | [Baseball stats](https://github.com/neuml/txtai/blob/master/examples/baseball.py) | Match historical baseball player stats using vector search. |[🤗](https://hf.co/spaces/NeuML/baseball)|
+| [Benchmarks](https://github.com/neuml/txtai/blob/master/examples/benchmarks.py) | Calculate performance metrics for the BEIR datasets. |*Local run only*|
 | [Book search](https://github.com/neuml/txtai/blob/master/examples/books.py) | Book similarity search application. Index book descriptions and query using natural language statements. |*Local run only*|
 | [Image search](https://github.com/neuml/txtai/blob/master/examples/images.py) | Image similarity search application. Index a directory of images and run searches to identify images similar to the input query. |[🤗](https://hf.co/spaces/NeuML/imagesearch)|
 | [Summarize an article](https://github.com/neuml/txtai/blob/master/examples/article.py) | Summarize an article. Workflow that extracts text from a webpage and builds a summary. |[🤗](https://hf.co/spaces/NeuML/articlesummary)|
