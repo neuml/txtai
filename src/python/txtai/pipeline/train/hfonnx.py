@@ -19,7 +19,7 @@ from torch.onnx import export
 
 from transformers import AutoModel, AutoModelForQuestionAnswering, AutoModelForSequenceClassification, AutoTokenizer
 
-from ...models import MeanPooling
+from ...models import MeanPooling, CLSPooling
 from ..tensors import Tensors
 
 
@@ -137,6 +137,7 @@ class HFOnnx(Tensors):
         config = {
             "default": (OrderedDict({"last_hidden_state": {0: "batch", 1: "sequence"}}), AutoModel.from_pretrained),
             "pooling": (OrderedDict({"embeddings": {0: "batch", 1: "sequence"}}), lambda x: MeanPoolingOnnx(x, -1)),
+            "cls-pooling": (OrderedDict({"embeddings": {0: "batch", 1: "sequence"}}), lambda x: CLSPoolingOnnx(x, -1)),
             "question-answering": (
                 OrderedDict(
                     {
@@ -158,6 +159,22 @@ class HFOnnx(Tensors):
 class MeanPoolingOnnx(MeanPooling):
     """
     Extends MeanPooling class to name inputs to model, which is required
+    to export to ONNX.
+    """
+
+    # pylint: disable=W0221
+    def forward(self, input_ids=None, attention_mask=None, token_type_ids=None):
+        # Build list of arguments dynamically since some models take token_type_ids
+        # and others don't
+        inputs = {"input_ids": input_ids, "attention_mask": attention_mask}
+        if token_type_ids is not None:
+            inputs["token_type_ids"] = token_type_ids
+
+        return super().forward(**inputs)
+
+class CLSPoolingOnnx(CLSPooling):
+    """
+    Extends CLSPooling class to name inputs to model, which is required
     to export to ONNX.
     """
 
