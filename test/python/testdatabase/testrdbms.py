@@ -172,8 +172,6 @@ class Common:
             Test empty index
             """
 
-            print(self.__class__.__name__)
-
             # Test search against empty index
             embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2", "content": self.backend})
             self.assertEqual(embeddings.search("test"), [])
@@ -518,8 +516,6 @@ class Common:
             # Encode object
             embeddings = Embeddings({"defaults": False, "content": self.backend, "objects": True})
             embeddings.index([{"object": "binary data".encode("utf-8")}])
-
-            # embeddings.save("/tmp/a")
 
             # Decode and test extracted object
             obj = embeddings.search("select object from txtai where id = 0")[0]["object"]
