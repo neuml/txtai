@@ -1,103 +1,20 @@
 """
-FileDB module
+RDBMS module
 """
 
 import datetime
 import json
 
 from .base import Database
+from .schema import Statement
 
 
 # pylint: disable=R0904
-class FileDB(Database):
+class RDBMS(Database):
     """
-    Base file database class.
+    Base relational database class. A relational database uses SQL to insert, update, delete and select from a
+    database instance.
     """
-
-    # Temporary table for working with id batches
-    CREATE_BATCH = """
-        CREATE TEMP TABLE IF NOT EXISTS batch (
-            indexid INTEGER,
-            id TEXT,
-            batch INTEGER
-        )
-    """
-
-    DELETE_BATCH = "DELETE FROM batch"
-    INSERT_BATCH_INDEXID = "INSERT INTO batch (indexid, batch) VALUES (?, ?)"
-    INSERT_BATCH_ID = "INSERT INTO batch (id, batch) VALUES (?, ?)"
-
-    # Temporary table for joining similarity scores
-    CREATE_SCORES = """
-        CREATE TEMP TABLE IF NOT EXISTS scores (
-            indexid INTEGER PRIMARY KEY,
-            score REAL
-        )
-    """
-
-    DELETE_SCORES = "DELETE FROM scores"
-    INSERT_SCORE = "INSERT INTO scores VALUES (?, ?)"
-
-    # Documents - stores full content
-    CREATE_DOCUMENTS = """
-        CREATE TABLE IF NOT EXISTS documents (
-            id TEXT PRIMARY KEY,
-            data JSON,
-            tags TEXT,
-            entry DATETIME
-        )
-    """
-
-    INSERT_DOCUMENT = "INSERT OR REPLACE INTO documents VALUES (?, ?, ?, ?)"
-    DELETE_DOCUMENTS = "DELETE FROM documents WHERE id IN (SELECT id FROM batch)"
-
-    # Objects - stores binary content
-    CREATE_OBJECTS = """
-        CREATE TABLE IF NOT EXISTS objects (
-            id TEXT PRIMARY KEY,
-            object BLOB,
-            tags TEXT,
-            entry DATETIME
-        )
-    """
-
-    INSERT_OBJECT = "INSERT OR REPLACE INTO objects VALUES (?, ?, ?, ?)"
-    DELETE_OBJECTS = "DELETE FROM objects WHERE id IN (SELECT id FROM batch)"
-
-    # Sections - stores section text
-    CREATE_SECTIONS = """
-        CREATE TABLE IF NOT EXISTS %s (
-            indexid INTEGER PRIMARY KEY,
-            id TEXT,
-            text TEXT,
-            tags TEXT,
-            entry DATETIME
-        )
-    """
-
-    CREATE_SECTIONS_INDEX = "CREATE INDEX section_id ON sections(id)"
-    INSERT_SECTION = "INSERT INTO sections VALUES (?, ?, ?, ?, ?)"
-    DELETE_SECTIONS = "DELETE FROM sections WHERE id IN (SELECT id FROM batch)"
-    COPY_SECTIONS = (
-        "INSERT INTO %s SELECT (select count(*) - 1 from sections s1 where s.indexid >= s1.indexid) indexid, "
-        + "s.id, %s AS text, s.tags, s.entry FROM sections s LEFT JOIN documents d ON s.id = d.id ORDER BY indexid"
-    )
-    STREAM_SECTIONS = "SELECT s.id, s.text, object, s.tags FROM %s s LEFT JOIN objects o ON s.id = o.id ORDER BY indexid"
-    DROP_SECTIONS = "DROP TABLE sections"
-    RENAME_SECTIONS = "ALTER TABLE %s RENAME TO sections"
-
-    # Queries
-    SELECT_IDS = "SELECT indexid, id FROM sections WHERE id in (SELECT id FROM batch)"
-    COUNT_IDS = "SELECT count(indexid) FROM sections"
-
-    # Partial sql clauses
-    TABLE_CLAUSE = (
-        "SELECT %s FROM sections s "
-        + "LEFT JOIN documents d ON s.id = d.id "
-        + "LEFT JOIN objects o ON s.id = o.id "
-        + "LEFT JOIN scores sc ON s.indexid = sc.indexid"
-    )
-    IDS_CLAUSE = "s.indexid in (SELECT indexid from batch WHERE batch=%s)"
 
     def __init__(self, config):
         """
@@ -109,16 +26,14 @@ class FileDB(Database):
 
         super().__init__(config)
 
-        # Database connection handle
+        # Database connection
         self.connection = None
         self.cursor = None
-        self.path = None
 
     def load(self, path):
         # Load an existing database. Thread locking must be handled externally.
         self.connection = self.connect(path)
         self.cursor = self.getcursor()
-        self.path = path
 
         # Register custom functions
         self.addfunctions()
@@ -134,7 +49,7 @@ class FileDB(Database):
         for uid, document, tags in documents:
             if isinstance(document, dict):
                 # Insert document and use return value for sections table
-                document = self.insertdocument(uid, document, tags, entry)
+                document = self.loaddocument(uid, document, tags, entry)
 
             if document is not None:
                 if isinstance(document, list):
@@ -142,14 +57,17 @@ class FileDB(Database):
                     document = " ".join(document)
                 elif not isinstance(document, str):
                     # If object support is enabled, save object
-                    self.insertobject(uid, document, tags, entry)
+                    self.loadobject(uid, document, tags, entry)
 
                     # Clear section text for objects, even when objects aren't inserted
                     document = None
 
                 # Save text section
-                self.insertsection(index, uid, document, tags, entry)
+                self.loadsection(index, uid, document, tags, entry)
                 index += 1
+
+        # Post processing logic
+        self.finalize()
 
     def delete(self, ids):
         if self.connection:
@@ -157,28 +75,25 @@ class FileDB(Database):
             self.batch(ids=ids)
 
             # Delete all documents, objects and sections by id
-            self.cursor.execute(FileDB.DELETE_DOCUMENTS)
-            self.cursor.execute(FileDB.DELETE_OBJECTS)
-            self.cursor.execute(FileDB.DELETE_SECTIONS)
+            self.cursor.execute(Statement.DELETE_DOCUMENTS)
+            self.cursor.execute(Statement.DELETE_OBJECTS)
+            self.cursor.execute(Statement.DELETE_SECTIONS)
 
     def reindex(self, columns=None):
         if self.connection:
-            # Working table name
-            name = "rebuild"
-
             # Resolve and build column strings if provided
             select = "text"
             if columns:
                 select = "|| ' ' ||".join([self.resolve(c) for c in columns])
 
-            # Create new table to hold reordered sections
-            self.cursor.execute(FileDB.CREATE_SECTIONS % name)
+            # Initialize reindex operation
+            name = self.reindexstart()
 
             # Copy data over
-            self.cursor.execute(FileDB.COPY_SECTIONS % (name, select))
+            self.cursor.execute(Statement.COPY_SECTIONS % (name, select))
 
             # Stream new results
-            self.cursor.execute(FileDB.STREAM_SECTIONS % name)
+            self.cursor.execute(Statement.STREAM_SECTIONS % name)
             for uid, text, obj, tags in self.rows():
                 if not text and self.encoder and obj:
                     yield (uid, self.encoder.decode(obj), tags)
@@ -186,37 +101,15 @@ class FileDB(Database):
                     yield (uid, text, tags)
 
             # Swap as new table
-            self.cursor.execute(FileDB.DROP_SECTIONS)
-            self.cursor.execute(FileDB.RENAME_SECTIONS % name)
-            self.cursor.execute(FileDB.CREATE_SECTIONS_INDEX)
+            self.cursor.execute(Statement.DROP_SECTIONS)
+            self.cursor.execute(Statement.RENAME_SECTIONS % name)
+
+            # Finish reindex operation
+            self.reindexend(name)
 
     def save(self, path):
-        # Temporary database
-        if not self.path:
-            # Save temporary database
+        if self.connection:
             self.connection.commit()
-
-            # Copy data from current to new
-            connection = self.copy(path)
-
-            # Close temporary database
-            self.connection.close()
-
-            # Point connection to new connection
-            self.connection = connection
-            self.cursor = self.getcursor()
-            self.path = path
-
-            # Register custom functions
-            self.addfunctions()
-
-        # Paths are equal, commit changes
-        elif self.path == path:
-            self.connection.commit()
-
-        # New path is different from current path, copy data and continue using current connection
-        else:
-            self.copy(path).close()
 
     def close(self):
         # Close connection
@@ -226,13 +119,13 @@ class FileDB(Database):
     def ids(self, ids):
         # Batch ids and run query
         self.batch(ids=ids)
-        self.cursor.execute(FileDB.SELECT_IDS)
+        self.cursor.execute(Statement.SELECT_IDS)
 
         # Format and return results
         return self.cursor.fetchall()
 
     def count(self):
-        self.cursor.execute(FileDB.COUNT_IDS)
+        self.cursor.execute(Statement.COUNT_IDS)
         return self.cursor.fetchone()[0]
 
     def resolve(self, name, alias=None):
@@ -254,7 +147,7 @@ class FileDB(Database):
             return self.expressions[name]
 
         # Name is already resolved, skip
-        if name.startswith("json_extract(data") or any(f"s.{s}" == name for s in sections):
+        if name.startswith(self.jsonprefix()) or any(f"s.{s}" == name for s in sections):
             return name
 
         # Standard columns - need prefixes
@@ -266,7 +159,7 @@ class FileDB(Database):
             return name
 
         # Other columns come from documents.data JSON
-        return f"json_extract(data, '$.{name}')"
+        return self.jsoncolumn(name)
 
     def embed(self, similarity, batch):
         # Load similarity results id batch
@@ -277,7 +170,7 @@ class FileDB(Database):
             self.scores(similarity)
 
         # Return ids clause placeholder
-        return FileDB.IDS_CLAUSE % batch
+        return Statement.IDS_CLAUSE % batch
 
     # pylint: disable=R0912
     def query(self, query, limit):
@@ -289,7 +182,7 @@ class FileDB(Database):
         similarity = query.get("similar")
 
         # Build query text
-        query = FileDB.TABLE_CLAUSE % select
+        query = Statement.TABLE_CLAUSE % select
         if where is not None:
             query += f" WHERE {where}"
         if groupby is not None:
@@ -330,7 +223,7 @@ class FileDB(Database):
             for x, column in enumerate(columns):
                 if column not in result or result[column] is None:
                     # Decode object
-                    if self.encoder and column == "object":
+                    if self.encoder and column == self.object:
                         result[column] = self.encoder.decode(row[x])
                     else:
                         result[column] = row[x]
@@ -352,19 +245,31 @@ class FileDB(Database):
             # Register custom functions
             self.addfunctions()
 
-            # Create initial schema and indices
-            self.cursor.execute(FileDB.CREATE_DOCUMENTS)
-            self.cursor.execute(FileDB.CREATE_OBJECTS)
-            self.cursor.execute(FileDB.CREATE_SECTIONS % "sections")
-            self.cursor.execute(FileDB.CREATE_SECTIONS_INDEX)
+            # Create initial table schema
+            self.createtables()
 
-    def insertdocument(self, uid, document, tags, entry):
+    def createtables(self):
         """
-        Inserts a document.
+        Creates the initial table schema.
+        """
+
+        self.cursor.execute(Statement.CREATE_DOCUMENTS)
+        self.cursor.execute(Statement.CREATE_OBJECTS)
+        self.cursor.execute(Statement.CREATE_SECTIONS % "sections")
+        self.cursor.execute(Statement.CREATE_SECTIONS_INDEX)
+
+    def finalize(self):
+        """
+        Post processing logic run after inserting a batch of documents. Default method does nothing.
+        """
+
+    def loaddocument(self, uid, document, tags, entry):
+        """
+        Applies pre-processing logic and inserts a document.
 
         Args:
             uid: unique id
-            document: input document
+            document: input document dictionary
             tags: document tags
             entry: generated entry date
 
@@ -380,18 +285,31 @@ class FileDB(Database):
 
         # Insert document as JSON
         if document:
-            self.cursor.execute(FileDB.INSERT_DOCUMENT, [uid, json.dumps(document, allow_nan=False), tags, entry])
+            self.insertdocument(uid, json.dumps(document, allow_nan=False), tags, entry)
 
-        # If text and object are both available, insert object as it won't otherwise be used
+        # If text and object are both available, load object as it won't otherwise be used
         if self.text in document and obj:
-            self.insertobject(uid, obj, tags, entry)
+            self.loadobject(uid, obj, tags, entry)
 
         # Return value to use for section - use text if available otherwise use object
         return document[self.text] if self.text in document else obj
 
-    def insertobject(self, uid, obj, tags, entry):
+    def insertdocument(self, uid, data, tags, entry):
         """
-        Inserts an object.
+        Inserts a document.
+
+        Args:
+            uid: unique id
+            data: document data
+            tags: document tags
+            entry: generated entry date
+        """
+
+        self.cursor.execute(Statement.INSERT_DOCUMENT, [uid, data, tags, entry])
+
+    def loadobject(self, uid, obj, tags, entry):
+        """
+        Applies pre-preprocessing logic and inserts an object.
 
         Args:
             uid: unique id
@@ -402,7 +320,34 @@ class FileDB(Database):
 
         # If object support is enabled, save object
         if self.encoder:
-            self.cursor.execute(FileDB.INSERT_OBJECT, [uid, self.encoder.encode(obj), tags, entry])
+            self.insertobject(uid, self.encoder.encode(obj), tags, entry)
+
+    def insertobject(self, uid, data, tags, entry):
+        """
+        Inserts an object.
+
+        Args:
+            uid: unique id
+            data: encoded data
+            tags: object tags
+            entry: generated entry date
+        """
+
+        self.cursor.execute(Statement.INSERT_OBJECT, [uid, data, tags, entry])
+
+    def loadsection(self, index, uid, text, tags, entry):
+        """
+        Applies pre-processing logic and inserts a section.
+
+        Args:
+            index: index id
+            uid: unique id
+            text: section text
+            tags: section tags
+            entry: generated entry date
+        """
+
+        self.insertsection(index, uid, text, tags, entry)
 
     def insertsection(self, index, uid, text, tags, entry):
         """
@@ -417,17 +362,34 @@ class FileDB(Database):
         """
 
         # Save text section
-        self.cursor.execute(FileDB.INSERT_SECTION, [index, uid, text, tags, entry])
+        self.cursor.execute(Statement.INSERT_SECTION, [index, uid, text, tags, entry])
 
-    def defaults(self):
+    def reindexstart(self):
         """
-        Returns a list of default columns when there is no select clause.
+        Starts a reindex operation.
 
         Returns:
-            list of default columns
+            temporary working table name
         """
 
-        return "s.id, text, score"
+        # Working table name
+        name = "rebuild"
+
+        # Create new table to hold reordered sections
+        self.cursor.execute(Statement.CREATE_SECTIONS % name)
+
+        return name
+
+    # pylint: disable=W0613
+    def reindexend(self, name):
+        """
+        Ends a reindex operation.
+
+        Args:
+            name: working table name
+        """
+
+        self.cursor.execute(Statement.CREATE_SECTIONS_INDEX)
 
     def batch(self, indexids=None, ids=None, batch=None):
         """
@@ -439,17 +401,33 @@ class FileDB(Database):
             batch: batch index, used when statement has multiple subselects
         """
 
-        # Create or Replace temporary batch table
-        self.cursor.execute(FileDB.CREATE_BATCH)
+        # Create or replace batch table
+        self.createbatch()
 
         # Delete batch when batch id is empty or for batch 0
         if not batch:
-            self.cursor.execute(FileDB.DELETE_BATCH)
+            self.cursor.execute(Statement.DELETE_BATCH)
+
+        # Add batch
+        self.insertbatch(indexids, ids, batch)
+
+    def createbatch(self):
+        """
+        Creates temporary batch table.
+        """
+
+        # Create or Replace temporary batch table
+        self.cursor.execute(Statement.CREATE_BATCH)
+
+    def insertbatch(self, indexids, ids, batch):
+        """
+        Inserts batch of ids.
+        """
 
         if indexids:
-            self.cursor.executemany(FileDB.INSERT_BATCH_INDEXID, [(i, batch) for i in indexids])
+            self.cursor.executemany(Statement.INSERT_BATCH_INDEXID, [(i, batch) for i in indexids])
         if ids:
-            self.cursor.executemany(FileDB.INSERT_BATCH_ID, [(str(uid), batch) for uid in ids])
+            self.cursor.executemany(Statement.INSERT_BATCH_ID, [(str(uid), batch) for uid in ids])
 
     def scores(self, similarity):
         """
@@ -459,11 +437,11 @@ class FileDB(Database):
             similarity: similarity results as [(indexid, score)]
         """
 
-        # Create or Replace temporary scores table
-        self.cursor.execute(FileDB.CREATE_SCORES)
+        # Create or replace scores table
+        self.createscores()
 
         # Delete scores
-        self.cursor.execute(FileDB.DELETE_SCORES)
+        self.cursor.execute(Statement.DELETE_SCORES)
 
         if similarity:
             # Average scores per id, needed for multiple similar() clauses
@@ -474,8 +452,37 @@ class FileDB(Database):
                         scores[i] = []
                     scores[i].append(score)
 
-            # Average scores by id
-            self.cursor.executemany(FileDB.INSERT_SCORE, [(i, sum(s) / len(s)) for i, s in scores.items()])
+            # Add scores
+            self.insertscores(scores)
+
+    def createscores(self):
+        """
+        Creates temporary scores table.
+        """
+
+        # Create or Replace temporary scores table
+        self.cursor.execute(Statement.CREATE_SCORES)
+
+    def insertscores(self, scores):
+        """
+        Inserts a batch of scores.
+
+        Args:
+            scores: scores to add
+        """
+
+        # Average scores by id
+        self.cursor.executemany(Statement.INSERT_SCORE, [(i, sum(s) / len(s)) for i, s in scores.items()])
+
+    def defaults(self):
+        """
+        Returns a list of default columns when there is no select clause.
+
+        Returns:
+            list of default columns
+        """
+
+        return "s.id, text, score"
 
     def connect(self, path=None):
         """
@@ -500,6 +507,29 @@ class FileDB(Database):
 
         raise NotImplementedError
 
+    def jsonprefix(self):
+        """
+        Returns json column prefix to test for.
+
+        Returns:
+            dynamic column prefix
+        """
+
+        raise NotImplementedError
+
+    def jsoncolumn(self, name):
+        """
+        Builds a json extract column expression for name.
+
+        Args:
+            name: column name
+
+        Returns:
+            dynamic column expression
+        """
+
+        raise NotImplementedError
+
     def rows(self):
         """
         Returns current cursor row iterator for last executed query.
@@ -516,19 +546,6 @@ class FileDB(Database):
     def addfunctions(self):
         """
         Adds custom functions in current connection.
-        """
-
-        raise NotImplementedError
-
-    def copy(self, path):
-        """
-        Copies the current database into path.
-
-        Args:
-            path: path to write database
-
-        Returns:
-            new connection with data copied over
         """
 
         raise NotImplementedError

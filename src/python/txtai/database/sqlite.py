@@ -5,10 +5,10 @@ SQLite module
 import os
 import sqlite3
 
-from .filedb import FileDB
+from .embedded import Embedded
 
 
-class SQLite(FileDB):
+class SQLite(Embedded):
     """
     Database instance backed by SQLite.
     """

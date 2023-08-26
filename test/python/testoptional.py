@@ -40,6 +40,7 @@ class TestOptional(unittest.TestCase):
             "sklearn.decomposition",
             "sentence_transformers",
             "soundfile",
+            "sqlalchemy",
             "tika",
             "ttstokenizer",
             "xmltodict",
@@ -107,8 +108,10 @@ class TestOptional(unittest.TestCase):
         Test missing database dependencies
         """
 
-        from txtai.database import DuckDB
-        from txtai.database import ImageEncoder
+        from txtai.database import Client, DuckDB, ImageEncoder
+
+        with self.assertRaises(ImportError):
+            Client({})
 
         with self.assertRaises(ImportError):
             DuckDB({})

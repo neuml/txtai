@@ -1,6 +1,10 @@
 """
-SQLite module tests
+Client module tests
 """
+
+import os
+import time
+import tempfile
 
 from txtai.embeddings import Embeddings
 
@@ -8,9 +12,9 @@ from .testrdbms import Common
 
 
 # pylint: disable=R0904
-class TestSQLite(Common.TestRDBMS):
+class TestClient(Common.TestRDBMS):
     """
-    Embeddings with content stored in SQLite tests.
+    Embeddings with content stored in a client RDBMS.
     """
 
     @classmethod
@@ -29,10 +33,10 @@ class TestSQLite(Common.TestRDBMS):
         ]
 
         # Content backend
-        cls.backend = "sqlite"
+        cls.backend = None
 
         # Create embeddings model, backed by sentence-transformers & transformers
-        cls.embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2", "content": cls.backend})
+        cls.embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2"})
 
     @classmethod
     def tearDownClass(cls):
@@ -43,31 +47,13 @@ class TestSQLite(Common.TestRDBMS):
         if cls.embeddings:
             cls.embeddings.close()
 
-    def testFunction(self):
+    def setUp(self):
         """
-        Test custom functions
+        Set unique database path for each test.
         """
 
-        embeddings = Embeddings(
-            {
-                "path": "sentence-transformers/nli-mpnet-base-v2",
-                "content": self.backend,
-                "functions": [{"name": "length", "function": "testdatabase.testsqlite.length"}],
-            }
-        )
+        # Generate unique database path and set on embeddings
+        path = os.path.join(tempfile.gettempdir(), f"{int(time.time() * 1000)}.sqlite")
+        self.backend = f"sqlite:///{path}"
 
-        # Create an index for the list of text
-        embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
-
-        # Search for best match
-        result = embeddings.search("select length(text) length from txtai where id = 0", 1)[0]
-
-        self.assertEqual(result["length"], 39)
-
-
-def length(text):
-    """
-    Custom SQL function.
-    """
-
-    return len(text)
+        self.embeddings.config["content"] = self.backend

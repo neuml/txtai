@@ -14,10 +14,11 @@ try:
 except ImportError:
     DUCKDB = False
 
-from .filedb import FileDB
+from .embedded import Embedded
+from .schema import Statement
 
 
-class DuckDB(FileDB):
+class DuckDB(Embedded):
     """
     Database instance backed by DuckDB.
     """
@@ -32,21 +33,19 @@ class DuckDB(FileDB):
         if not DUCKDB:
             raise ImportError('DuckDB is not available - install "database" extra to enable')
 
-    def insertdocument(self, uid, document, tags, entry):
-        if document:
-            # Delete existing document
-            self.cursor.execute(DuckDB.DELETE_DOCUMENT, [uid])
+    def insertdocument(self, uid, data, tags, entry):
+        # Delete existing document
+        self.cursor.execute(DuckDB.DELETE_DOCUMENT, [uid])
 
         # Call parent logic
-        return super().insertdocument(uid, document, tags, entry)
+        super().insertdocument(uid, data, tags, entry)
 
-    def insertobject(self, uid, obj, tags, entry):
-        if self.encoder:
-            # Delete existing object
-            self.cursor.execute(DuckDB.DELETE_OBJECT, [uid])
+    def insertobject(self, uid, data, tags, entry):
+        # Delete existing object
+        self.cursor.execute(DuckDB.DELETE_OBJECT, [uid])
 
         # Call parent logic
-        super().insertobject(uid, obj, tags, entry)
+        super().insertobject(uid, data, tags, entry)
 
     def connect(self, path=":memory:"):
         # Create connection and start a transaction
@@ -89,7 +88,7 @@ class DuckDB(FileDB):
                 self.connection.execute(f"COPY {table} TO '{directory}/{table}.parquet' (FORMAT parquet)")
 
             # Create initial schema
-            for schema in [FileDB.CREATE_DOCUMENTS, FileDB.CREATE_OBJECTS, FileDB.CREATE_SECTIONS % "sections"]:
+            for schema in [Statement.CREATE_DOCUMENTS, Statement.CREATE_OBJECTS, Statement.CREATE_SECTIONS % "sections"]:
                 connection.execute(schema)
 
             # Import tables into new schema
@@ -97,7 +96,7 @@ class DuckDB(FileDB):
                 connection.execute(f"COPY {table} FROM '{directory}/{table}.parquet' (FORMAT parquet)")
 
             # Create indexes and sync data to database file
-            connection.execute(FileDB.CREATE_SECTIONS_INDEX)
+            connection.execute(Statement.CREATE_SECTIONS_INDEX)
             connection.execute("CHECKPOINT")
 
         # Start transaction

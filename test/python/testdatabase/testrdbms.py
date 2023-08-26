@@ -9,7 +9,7 @@ import tempfile
 import unittest
 
 from txtai.embeddings import Embeddings, IndexNotFoundError
-from txtai.database import FileDB, SQLError
+from txtai.database import Embedded, RDBMS, SQLError
 
 
 class Common:
@@ -18,7 +18,7 @@ class Common:
     """
 
     # pylint: disable=R0904
-    class TestFileDB(unittest.TestCase):
+    class TestRDBMS(unittest.TestCase):
         """
         Embeddings with content stored in a file database tests.
         """
@@ -39,7 +39,7 @@ class Common:
             ]
 
             # Content backend
-            cls.backend = "sqlite"
+            cls.backend = None
 
             # Create embeddings model, backed by sentence-transformers & transformers
             cls.embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2", "content": cls.backend})
@@ -63,7 +63,7 @@ class Common:
                 self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
 
                 # Generate temp file path
-                index = os.path.join(tempfile.gettempdir(), f"embeddings.{self.backend}.{extension}")
+                index = os.path.join(tempfile.gettempdir(), f"embeddings.{self.category()}.{extension}")
 
                 self.embeddings.save(index)
                 self.embeddings.load(index)
@@ -83,14 +83,14 @@ class Common:
             """
 
             # Default sequence id
-            embeddings = Embeddings(path="sentence-transformers/nli-mpnet-base-v2", content=True)
+            embeddings = Embeddings(path="sentence-transformers/nli-mpnet-base-v2", content=self.backend)
             embeddings.index(self.data)
 
             result = embeddings.search("feel good story", 1)[0]
             self.assertEqual(result["text"], self.data[4])
 
             # UUID
-            embeddings = Embeddings(autoid="uuid4", path="sentence-transformers/nli-mpnet-base-v2", content=True)
+            embeddings.config["autoid"] = "uuid4"
             embeddings.index(self.data)
 
             result = embeddings.search(self.data[4], 1)[0]
@@ -126,7 +126,7 @@ class Common:
                 embeddings.index([(0, "Close test", None)])
 
                 # Save index
-                index = os.path.join(tempfile.gettempdir(), f"embeddings.{self.backend}.close")
+                index = os.path.join(tempfile.gettempdir(), f"embeddings.{self.category()}.close")
                 embeddings.save(index)
 
                 # Close index
@@ -171,6 +171,8 @@ class Common:
             """
             Test empty index
             """
+
+            print(self.__class__.__name__)
 
             # Test search against empty index
             embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2", "content": self.backend})
@@ -227,27 +229,6 @@ class Common:
 
             self.assertEqual(self.embeddings.explain("select * from txtai limit 1")[0]["id"], "0")
 
-        def testFunction(self):
-            """
-            Test custom functions
-            """
-
-            embeddings = Embeddings(
-                {
-                    "path": "sentence-transformers/nli-mpnet-base-v2",
-                    "content": self.backend,
-                    "functions": [{"name": "length", "function": "testdatabase.testsqlite.length"}],
-                }
-            )
-
-            # Create an index for the list of text
-            embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
-
-            # Search for best match
-            result = embeddings.search("select length(text) length from txtai where id = 0", 1)[0]
-
-            self.assertEqual(result["length"], 39)
-
         def testGenerator(self):
             """
             Test index with a generator
@@ -274,7 +255,7 @@ class Common:
             data = [(uid, text, None) for uid, text in enumerate(self.data)]
 
             # Index data with sparse + dense vectors.
-            embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2", "hybrid": True, "content": True})
+            embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2", "hybrid": True, "content": self.backend})
             embeddings.index(data)
 
             # Run search
@@ -282,7 +263,7 @@ class Common:
             self.assertEqual(result["text"], data[4][1])
 
             # Generate temp file path
-            index = os.path.join(tempfile.gettempdir(), f"embeddings.{self.backend}.hybrid")
+            index = os.path.join(tempfile.gettempdir(), f"embeddings.{self.category()}.hybrid")
 
             # Test load/save
             embeddings.save(index)
@@ -392,7 +373,7 @@ class Common:
             embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
 
             # Generate temp file path
-            index = os.path.join(tempfile.gettempdir(), f"embeddings.{self.backend}.json")
+            index = os.path.join(tempfile.gettempdir(), f"embeddings.{self.category()}.json")
 
             embeddings.save(index)
 
@@ -412,7 +393,7 @@ class Common:
             data = [(uid, text, None) for uid, text in enumerate(self.data)]
 
             # Index data with sparse + dense vectors
-            embeddings = Embeddings({"keyword": True, "content": True})
+            embeddings = Embeddings({"keyword": True, "content": self.backend})
             embeddings.index(data)
 
             # Run search
@@ -423,7 +404,7 @@ class Common:
             self.assertEqual(embeddings.count(), len(data))
 
             # Generate temp file path
-            index = os.path.join(tempfile.gettempdir(), f"embeddings.{self.backend}.keyword")
+            index = os.path.join(tempfile.gettempdir(), f"embeddings.{self.category()}.keyword")
 
             # Test load/save
             embeddings.save(index)
@@ -470,14 +451,14 @@ class Common:
             self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
 
             # Save original index
-            index = os.path.join(tempfile.gettempdir(), f"embeddings.{self.backend}.insert")
+            index = os.path.join(tempfile.gettempdir(), f"embeddings.{self.category()}.insert")
             self.embeddings.save(index)
 
             # Modify index
             self.embeddings.upsert([(0, "Looking out into the dreadful abyss", None)])
 
             # Save to a different location
-            indexupdate = os.path.join(tempfile.gettempdir(), f"embeddings.{self.backend}.update")
+            indexupdate = os.path.join(tempfile.gettempdir(), f"embeddings.{self.category()}.update")
             self.embeddings.save(indexupdate)
 
             # Save to same location
@@ -503,7 +484,7 @@ class Common:
             # Disable top-level indexing
             embeddings = Embeddings(
                 {
-                    "content": True,
+                    "content": self.backend,
                     "defaults": False,
                 }
             )
@@ -517,13 +498,32 @@ class Common:
             Test exceptions for non-implemented methods
             """
 
-            db = FileDB({})
+            db = RDBMS({})
 
             self.assertRaises(NotImplementedError, db.connect, None)
             self.assertRaises(NotImplementedError, db.getcursor)
+            self.assertRaises(NotImplementedError, db.jsonprefix)
+            self.assertRaises(NotImplementedError, db.jsoncolumn, None)
             self.assertRaises(NotImplementedError, db.rows)
             self.assertRaises(NotImplementedError, db.addfunctions)
+
+            db = Embedded({})
             self.assertRaises(NotImplementedError, db.copy, None)
+
+        def testObject(self):
+            """
+            Test object field
+            """
+
+            # Encode object
+            embeddings = Embeddings({"defaults": False, "content": self.backend, "objects": True})
+            embeddings.index([{"object": "binary data".encode("utf-8")}])
+
+            # embeddings.save("/tmp/a")
+
+            # Decode and test extracted object
+            obj = embeddings.search("select object from txtai where id = 0")[0]["object"]
+            self.assertEqual(str(obj.getvalue(), "utf-8"), "binary data")
 
         def testQueryModel(self):
             """
@@ -570,7 +570,7 @@ class Common:
             self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
 
             # Generate temp file path
-            index = os.path.join(tempfile.gettempdir(), f"embeddings.{self.backend}")
+            index = os.path.join(tempfile.gettempdir(), f"embeddings.{self.category()}")
 
             self.embeddings.save(index)
             self.embeddings.load(index)
@@ -647,7 +647,9 @@ class Common:
             data = [(uid, text, None) for uid, text in enumerate(self.data)]
 
             # Disable top-level indexing and create subindex
-            embeddings = Embeddings({"content": True, "defaults": False, "indexes": {"index1": {"path": "sentence-transformers/nli-mpnet-base-v2"}}})
+            embeddings = Embeddings(
+                {"content": self.backend, "defaults": False, "indexes": {"index1": {"path": "sentence-transformers/nli-mpnet-base-v2"}}}
+            )
             embeddings.index(data)
 
             # Run search
@@ -663,7 +665,7 @@ class Common:
                 embeddings.search("select id, text, score from txtai where similar('feel good story', 'notindex')")
 
             # Generate temp file path
-            index = os.path.join(tempfile.gettempdir(), f"embeddings.{self.backend}.subindex")
+            index = os.path.join(tempfile.gettempdir(), f"embeddings.{self.category()}.subindex")
 
             # Test load/save
             embeddings.save(index)
@@ -750,3 +752,13 @@ class Common:
                 self.assertEqual(result["text"], data[0][1])
             finally:
                 del self.embeddings.config["batch"]
+
+        def category(self):
+            """
+            Content backend category.
+
+            Returns:
+                category
+            """
+
+            return self.__class__.__name__.lower().replace("test", "")
