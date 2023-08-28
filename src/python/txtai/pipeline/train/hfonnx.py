@@ -15,6 +15,7 @@ try:
 except ImportError:
     ONNX_RUNTIME = False
 
+from torch import Tensor
 from torch.onnx import export
 
 from transformers import AutoModel, AutoModelForQuestionAnswering, AutoModelForSequenceClassification, AutoTokenizer
@@ -54,7 +55,7 @@ class HFOnnx(Tensors):
 
         # Generate dummy inputs
         dummy = dict(tokenizer(["test inputs"], return_tensors="pt"))
-
+        dummy = {k: Tensor.int(v) for k, v in dummy.items()}
         # Default to BytesIO if no output file provided
         output = output if output else BytesIO()
 
