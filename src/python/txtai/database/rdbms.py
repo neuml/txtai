@@ -260,7 +260,7 @@ class RDBMS(Database):
 
     def finalize(self):
         """
-        Post processing logic run after inserting a batch of documents. Default method does nothing.
+        Post processing logic run after inserting a batch of documents. Default method is no-op.
         """
 
     def loaddocument(self, uid, document, tags, entry):
