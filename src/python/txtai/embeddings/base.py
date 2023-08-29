@@ -426,7 +426,8 @@ class Embeddings:
 
     def explain(self, query, texts=None, limit=None):
         """
-        Explains the importance of each input token in text for a query.
+        Explains the importance of each input token in text for a query. This method requires either content to be enabled
+        or texts to be provided.
 
         Args:
             query: input query
@@ -442,7 +443,8 @@ class Embeddings:
 
     def batchexplain(self, queries, texts=None, limit=None):
         """
-        Explains the importance of each input token in text for a list of queries.
+        Explains the importance of each input token in text for a list of queries. This method requires either content to be enabled
+        or texts to be provided.
 
         Args:
             queries: input queries
