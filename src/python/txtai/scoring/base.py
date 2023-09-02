@@ -158,7 +158,7 @@ class Scoring:
             self.avgscore = self.score(self.avgfreq, self.avgidf, self.avgdl)
 
             # Filter for tags that appear in at least 1% of the documents
-            self.tags = {tag: number for tag, number in self.tags.items() if number >= self.total * 0.005}
+            self.tags = Counter({tag: number for tag, number in self.tags.items() if number >= self.total * 0.005})
 
         # Index terms, if available
         if self.terms:
