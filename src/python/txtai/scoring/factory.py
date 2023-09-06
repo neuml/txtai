@@ -62,7 +62,7 @@ class ScoringFactory:
             config: index configuration parameters
 
         Returns:
-            Graph
+            Scoring
         """
 
         try:
