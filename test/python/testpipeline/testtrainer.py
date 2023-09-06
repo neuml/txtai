@@ -202,7 +202,7 @@ class TestTrainer(unittest.TestCase):
 
         data = []
         for x in self.data:
-            data.append({"text": x["text"], "label": [float(x["label"])] * 2})
+            data.append({"text": x["text"], "label": [0.0, 1.0] if x["label"] else [1.0, 0.0]})
 
         trainer = HFTrainer()
         model, tokenizer = trainer("google/bert_uncased_L-2_H-128_A-2", data)

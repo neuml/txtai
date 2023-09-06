@@ -41,6 +41,21 @@ class TestScoring(unittest.TestCase):
 
         self.runTests("bm25")
 
+    def testCustom(self):
+        """
+        Test custom method
+        """
+
+        self.runTests("txtai.scoring.BM25")
+
+    def testCustomNotFound(self):
+        """
+        Test unresolvable custom method
+        """
+
+        with self.assertRaises(ImportError):
+            ScoringFactory.create("notfound.scoring")
+
     def testSIF(self):
         """
         Test sif
@@ -54,13 +69,6 @@ class TestScoring(unittest.TestCase):
         """
 
         self.runTests("tfidf")
-
-    def testUnknown(self):
-        """
-        Test unknown method
-        """
-
-        self.assertIsNone(ScoringFactory.create("unknown"))
 
     def runTests(self, method):
         """
