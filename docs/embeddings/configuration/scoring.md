@@ -10,10 +10,10 @@ The following covers the available options
 
 ## method
 ```yaml
-method: bm25|tfidf|sif
+method: bm25|tfidf|sif|custom
 ```
 
-Sets the scoring method. 
+Sets the scoring method. Add custom scoring via setting this parameter to the fully resolvable class string.
 
 ## terms
 ```yaml

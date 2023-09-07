@@ -4,10 +4,14 @@ The following covers available content storage configuration options.
 
 ## content
 ```yaml
-content: boolean|sqlite|duckdb|custom
+content: boolean|sqlite|duckdb|client|url|custom
 ```
 
-Enables content storage. When true, the default storage engine, `sqlite` will be used to save metadata alongside embeddings vectors. Also supports `duckdb`. Add custom storage engines via setting this parameter to the fully resolvable class string.
+Enables content storage. When true, the default storage engine, `sqlite` will be used to save metadata alongside embeddings vectors.
+
+Client-server connections are supported with either `client` or a full connection URL. When set to `client`, the CLIENT_URL environment variable must be set to the full connection URL.
+
+Add custom storage engines via setting this parameter to the fully resolvable class string.
 
 Content storage specific settings are set with a corresponding configuration object having the same name as the content storage engine (i.e. duckdb or sqlite). None of these are required and are set to defaults if omitted.
 

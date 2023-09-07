@@ -2,6 +2,7 @@
 Client module
 """
 
+import os
 import time
 
 # Conditional import
@@ -103,8 +104,14 @@ class Client(RDBMS):
         self.connection.execute(insert(Score), [{"indexid": i, "score": sum(s) / len(s)} for i, s in scores.items()])
 
     def connect(self, path=None):
+        # Connection URL
+        content = self.config["content"]
+
+        # Read ENV variable, if necessary
+        content = os.environ.get("CLIENT_URL") if content == "client" else content
+
         # Create engine using database URL
-        engine = create_engine(self.config["content"], poolclass=StaticPool, echo=False)
+        engine = create_engine(content, poolclass=StaticPool, echo=False)
 
         # Create database session
         return Session(engine)

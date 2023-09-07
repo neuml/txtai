@@ -46,7 +46,7 @@ class DatabaseFactory:
         elif content:
             # Check if content is a URL
             url = urlparse(content)
-            if url.scheme:
+            if content == "client" or url.scheme:
                 # Connect to database server URL
                 database = Client(config)
             else:
