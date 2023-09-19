@@ -34,7 +34,7 @@ jobs:
           java-version: "8"
 
       - name: Install dependencies - Linux
-        run: sudo apt-get update && apt-get install libsndfile1
+        run: sudo apt-get update && sudo apt-get install libsndfile1
         if: matrix.os == 'ubuntu-latest'
 
       - name: Install dependencies - macOS
