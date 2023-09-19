@@ -73,7 +73,7 @@ Assuming this YAML content is stored in a file named config.yml, the following c
 CONFIG=config.yml uvicorn "txtai.api:app"
 ```
 
-uvicorn is a full-featured production ready server with support for SSL and more. See the [uvicorn deployment guide](https://www.uvicorn.org/deployment/) for details.
+Uvicorn is a full-featured production-ready server. See the [Uvicorn deployment guide](https://www.uvicorn.org/deployment/) for more on configuration options.
 
 ## Connect to API
 
@@ -87,6 +87,14 @@ curl \
   -H "Content-Type: application/json" \
   -d '{"name":"sumfrench", "elements": ["https://github.com/neuml/txtai"]}'
 ```
+
+## HTTPS
+
+The API service command specified earlier starts a Uvicorn server as a HTTP service on port 8000. To run a HTTPS service, consider the following options.
+
+- [TLS Proxy Server](https://fastapi.tiangolo.com/deployment/https/). *Recommended choice*. With this configuration, the txtai API service runs as a HTTP service only accessible on the localhost/local network. The proxy server handles all encryption and redirects requests to local services. See this [example configuration](https://www.uvicorn.org/deployment/#running-behind-nginx) for more.
+
+- [Uvicorn SSL Certificate](https://www.uvicorn.org/deployment/). Another option is setting the SSL certificate on the Uvicorn service. This works in simple situations but gets complex when hosting multiple txtai or other related services.
 
 ## Local instance
 
