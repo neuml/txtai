@@ -79,12 +79,13 @@ class RDBMS(Database):
             self.cursor.execute(Statement.DELETE_OBJECTS)
             self.cursor.execute(Statement.DELETE_SECTIONS)
 
-    def reindex(self, columns=None):
+    def reindex(self, config):
         if self.connection:
-            # Resolve and build column strings if provided
-            select = "text"
-            if columns:
-                select = "|| ' ' ||".join([self.resolve(c) for c in columns])
+            # Set new configuration
+            self.configure(config)
+
+            # Resolve text column
+            select = self.resolve(self.text)
 
             # Initialize reindex operation
             name = self.reindexstart()
@@ -94,11 +95,15 @@ class RDBMS(Database):
 
             # Stream new results
             self.cursor.execute(Statement.STREAM_SECTIONS % name)
-            for uid, text, obj, tags in self.rows():
+            for uid, text, data, obj, tags in self.rows():
                 if not text and self.encoder and obj:
                     yield (uid, self.encoder.decode(obj), tags)
                 else:
-                    yield (uid, text, tags)
+                    # Read JSON data, if provided
+                    data = json.loads(data) if data and isinstance(data, str) else data
+
+                    # Stream data if available, otherwise use section text
+                    yield (uid, data if data else text, tags)
 
             # Swap as new table
             self.cursor.execute(Statement.DROP_SECTIONS)

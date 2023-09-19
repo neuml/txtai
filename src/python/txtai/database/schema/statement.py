@@ -76,7 +76,11 @@ class Statement:
         "INSERT INTO %s SELECT (select count(*) - 1 from sections s1 where s.indexid >= s1.indexid) indexid, "
         + "s.id, %s AS text, s.tags, s.entry FROM sections s LEFT JOIN documents d ON s.id = d.id ORDER BY indexid"
     )
-    STREAM_SECTIONS = "SELECT s.id, s.text, object, s.tags FROM %s s LEFT JOIN objects o ON s.id = o.id ORDER BY indexid"
+    STREAM_SECTIONS = (
+        "SELECT s.id, s.text, data, object, s.tags FROM %s s "
+        + "LEFT JOIN documents d ON s.id = d.id "
+        + "LEFT JOIN objects o ON s.id = o.id ORDER BY indexid"
+    )
     DROP_SECTIONS = "DROP TABLE sections"
     RENAME_SECTIONS = "ALTER TABLE %s RENAME TO sections"
 

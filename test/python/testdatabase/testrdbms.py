@@ -550,7 +550,7 @@ class Common:
             self.embeddings.delete(([0, 1]))
 
             # Reindex
-            self.embeddings.reindex({"path": "sentence-transformers/nli-mpnet-base-v2"}, ["text"])
+            self.embeddings.reindex({"path": "sentence-transformers/nli-mpnet-base-v2"})
 
             # Search for best match
             result = self.embeddings.search("feel good story", 1)[0]

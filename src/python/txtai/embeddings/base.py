@@ -260,18 +260,21 @@ class Embeddings:
 
         return deletes
 
-    def reindex(self, config, columns=None, function=None):
+    def reindex(self, config=None, function=None, **kwargs):
         """
         Recreates the approximate nearest neighbor (ann) index using config. This method only works if document
         content storage is enabled.
 
         Args:
             config: new config
-            columns: optional list of document columns used to rebuild data
             function: optional function to prepare content for indexing
+            kwargs: additional configuration as keyword args
         """
 
         if self.database:
+            # Merge configuration into single dictionary
+            config = {**config, **kwargs} if config and kwargs else config if config else kwargs
+
             # Keep content and objects parameters to ensure database is preserved
             config["content"] = self.config["content"]
             if "objects" in self.config:
@@ -286,9 +289,9 @@ class Embeddings:
 
             # Reindex
             if function:
-                self.index(function(self.database.reindex(columns)), True)
+                self.index(function(self.database.reindex(self.config)), True)
             else:
-                self.index(self.database.reindex(columns), True)
+                self.index(self.database.reindex(self.config), True)
 
     def transform(self, document):
         """
@@ -741,6 +744,9 @@ class Embeddings:
 
             # Reset archive since this is a new index
             self.archive = None
+
+        # Initialize ANN, will be created after index transformations complete
+        self.ann = None
 
         # Create scoring only if term indexing is enabled
         scoring = self.config.get("scoring")

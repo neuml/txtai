@@ -27,29 +27,8 @@ class Database:
             config: database configuration
         """
 
-        # Database configuration
-        self.config = config
-
-        # SQL parser
-        self.sql = SQL(self)
-
-        # Load objects encoder
-        encoder = self.config.get("objects")
-        self.encoder = EncoderFactory.create(encoder) if encoder else None
-
-        # Transform columns
-        columns = config.get("columns", {})
-        self.text = columns.get("text", "text")
-        self.object = columns.get("object", "object")
-
-        # Custom functions and expressions
-        self.functions, self.expressions = None, None
-
-        # Load custom functions
-        self.registerfunctions(self.config)
-
-        # Load custom expressions
-        self.registerexpressions(self.config)
+        # Initialize configuration
+        self.configure(config)
 
     def load(self, path):
         """
@@ -82,13 +61,13 @@ class Database:
 
         raise NotImplementedError
 
-    def reindex(self, columns=None):
+    def reindex(self, config):
         """
         Reindexes internal database content and streams results back. This method must renumber indexids
         sequentially as deletes could have caused indexid gaps.
 
         Args:
-            columns: optional list of document columns used to rebuild data
+            config: new configuration
         """
 
         raise NotImplementedError
@@ -235,6 +214,38 @@ class Database:
 
         raise NotImplementedError
 
+    def configure(self, config):
+        """
+        Initialize configuration.
+
+        Args:
+            config: configuration
+        """
+
+        # Database configuration
+        self.config = config
+
+        # SQL parser
+        self.sql = SQL(self)
+
+        # Load objects encoder
+        encoder = self.config.get("objects")
+        self.encoder = EncoderFactory.create(encoder) if encoder else None
+
+        # Transform columns
+        columns = config.get("columns", {})
+        self.text = columns.get("text", "text")
+        self.object = columns.get("object", "object")
+
+        # Custom functions and expressions
+        self.functions, self.expressions = None, None
+
+        # Load custom functions
+        self.registerfunctions(self.config)
+
+        # Load custom expressions
+        self.registerexpressions(self.config)
+
     def registerfunctions(self, config):
         """
         Register custom functions. This method stores the function details for underlying
@@ -264,6 +275,7 @@ class Database:
                 # Store function details
                 functions.append((name, argcount, fn))
 
+            # pylint: disable=W0201
             self.functions = functions
 
     def registerexpressions(self, config):
@@ -283,6 +295,7 @@ class Database:
                 if name and expression:
                     expressions[name] = self.sql.snippet(expression)
 
+            # pylint: disable=W0201
             self.expressions = expressions
 
     def execute(self, function, *args):
