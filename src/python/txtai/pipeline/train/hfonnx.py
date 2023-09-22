@@ -105,8 +105,8 @@ class HFOnnx(Tensors):
 
             output = temp
 
-        # Quantize optimized model
-        quantize_dynamic(output, output, optimize_model=False, extra_options={"MatMulConstBOnly": False})
+        # Quantize model
+        quantize_dynamic(output, output, extra_options={"MatMulConstBOnly": False})
 
         # Read file back to bytes if temp file was created
         if temp:
