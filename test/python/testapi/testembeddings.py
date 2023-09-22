@@ -197,6 +197,24 @@ class TestEmbeddings(unittest.TestCase):
         ).json()
         self.assertEqual("Flyers", answers[0]["answer"])
 
+    def testReindex(self):
+        """
+        Test reindex via API
+        """
+
+        # Reindex data
+        self.client.post("reindex", json={"config": {"path": "sentence-transformers/nli-mpnet-base-v2"}})
+
+        # Search for best match
+        query = urllib.parse.quote("feel good story")
+        uid = self.client.get(f"search?query={query}&limit=1").json()[0]["id"]
+
+        self.assertEqual(uid, 4)
+
+        # Reset data
+        self.client.post("add", json=[{"id": x, "text": row} for x, row in enumerate(self.data)])
+        self.client.get("index")
+
     def testSearch(self):
         """
         Test search via API
@@ -293,6 +311,7 @@ class TestEmbeddings(unittest.TestCase):
         self.assertEqual(self.client.get("index").status_code, 403)
         self.assertEqual(self.client.get("upsert").status_code, 403)
         self.assertEqual(self.client.post("delete", json=[0]).status_code, 403)
+        self.assertEqual(self.client.post("reindex", json={"config": {"path": "sentence-transformers/nli-mpnet-base-v2"}}).status_code, 403)
 
     def testXFunctions(self):
         """

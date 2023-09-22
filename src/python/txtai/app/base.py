@@ -289,46 +289,48 @@ class Application:
         # Attempt to resolve action as a callable function
         return PipelineFactory.create({}, function)
 
-    def search(self, query, limit=10):
+    def search(self, query, limit=10, weights=None, index=None):
         """
-        Finds documents in the embeddings model most similar to the input query. Returns
-        a list of {id: value, score: value} sorted by highest score, where id is the
-        document id in the embeddings model.
+        Finds documents most similar to the input query. This method will run either an index search
+        or an index + database search depending on if a database is available.
 
         Args:
-            query: query text
-            limit: maximum results, used if request is None
+            query: input query
+            limit: maximum results
+            weights: hybrid score weights, if applicable
+            index: index name, if applicable
 
         Returns:
-            list of {id: value, score: value}
+            list of {id: value, score: value} for index search, list of dict for an index + database search
         """
 
         if self.embeddings:
             with self.lock:
-                results = self.embeddings.search(query, limit)
+                results = self.embeddings.search(query, limit, weights, index)
 
             # Unpack (id, score) tuple, if necessary. Otherwise, results are dictionaries.
             return [{"id": r[0], "score": float(r[1])} if isinstance(r, tuple) else r for r in results]
 
         return None
 
-    def batchsearch(self, queries, limit=10):
+    def batchsearch(self, queries, limit=10, weights=None, index=None):
         """
-        Finds documents in the embeddings model most similar to the input queries. Returns
-        a list of {id: value, score: value} sorted by highest score per query, where id is
-        the document id in the embeddings model.
+        Finds documents most similar to the input queries. This method will run either an index search
+        or an index + database search depending on if a database is available.
 
         Args:
-            queries: queries text
+            queries: input queries
             limit: maximum results
+            weights: hybrid score weights, if applicable
+            index: index name, if applicable
 
         Returns:
-            list of {id: value, score: value} per query
+            list of {id: value, score: value} per query for index search, list of dict per query for an index + database search
         """
 
         if self.embeddings:
             with self.lock:
-                search = self.embeddings.batchsearch(queries, limit)
+                search = self.embeddings.batchsearch(queries, limit, weights, index)
 
             results = []
             for result in search:
@@ -433,6 +435,27 @@ class Application:
                 return self.embeddings.delete(ids)
 
         return None
+
+    def reindex(self, config, function=None):
+        """
+        Recreates embeddings index using config. This method only works if document content storage is enabled.
+
+        Args:
+            config: new config
+            function: optional function to prepare content for indexing
+        """
+
+        # Raise error if index is not writable
+        if not self.config.get("writable"):
+            raise ReadOnlyError("Attempting to reindex a read-only index (writable != True)")
+
+        if self.embeddings:
+            with self.lock:
+                # Resolve function, if necessary
+                function = self.function(function) if function and isinstance(function, str) else function
+
+                # Reindex
+                self.embeddings.reindex(config, function)
 
     def count(self):
         """

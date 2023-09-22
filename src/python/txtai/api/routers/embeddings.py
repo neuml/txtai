@@ -15,37 +15,40 @@ router = APIRouter()
 @router.get("/search")
 def search(query: str, request: Request):
     """
-    Finds documents in the embeddings model most similar to the input query. Returns
-    a list of {id: value, score: value} sorted by highest score, where id is the
-    document id in the embeddings model.
+    Finds documents most similar to the input query. This method will run either an index search
+    or an index + database search depending on if a database is available.
 
     Args:
-        query: query text
+        query: input query
         request: FastAPI request
 
     Returns:
-        list of {id: value, score: value}
+        list of {id: value, score: value} for index search, list of dict for an index + database search
     """
 
     return application.get().search(query, request=request)
 
 
+# pylint: disable=W0621
 @router.post("/batchsearch")
-def batchsearch(queries: List[str] = Body(...), limit: int = Body(...)):
+def batchsearch(
+    queries: List[str] = Body(...), limit: int = Body(default=None), weights: float = Body(default=None), index: str = Body(default=None)
+):
     """
-    Finds documents in the embeddings model most similar to the input queries. Returns
-    a list of {id: value, score: value} sorted by highest score per query, where id is
-    the document id in the embeddings model.
+    Finds documents most similar to the input queries. This method will run either an index search
+    or an index + database search depending on if a database is available.
 
     Args:
-        queries: queries text
+        queries: input queries
         limit: maximum results
+        weights: hybrid score weights, if applicable
+        index: index name, if applicable
 
     Returns:
-        list of {id: value, score: value} per query
+        list of {id: value, score: value} per query for index search, list of dict per query for an index + database search
     """
 
-    return application.get().batchsearch(queries, limit)
+    return application.get().batchsearch(queries, limit, weights, index)
 
 
 @router.post("/add")
@@ -101,6 +104,22 @@ def delete(ids: List = Body(...)):
 
     try:
         return application.get().delete(ids)
+    except ReadOnlyError as e:
+        raise HTTPException(status_code=403, detail=e.args[0]) from e
+
+
+@router.post("/reindex")
+def reindex(config: dict = Body(...), function: str = Body(default=None)):
+    """
+    Recreates this embeddings index using config. This method only works if document content storage is enabled.
+
+    Args:
+        config: new config
+        function: optional function to prepare content for indexing
+    """
+
+    try:
+        application.get().reindex(config, function)
     except ReadOnlyError as e:
         raise HTTPException(status_code=403, detail=e.args[0]) from e
 

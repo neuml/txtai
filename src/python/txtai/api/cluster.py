@@ -3,6 +3,7 @@ Cluster module
 """
 
 import asyncio
+import random
 import urllib.parse
 import zlib
 
@@ -36,24 +37,29 @@ class Cluster:
         # Query aggregator
         self.aggregate = Aggregate()
 
-    def search(self, query, limit=None):
+    def search(self, query, limit=None, weights=None, index=None):
         """
-        Finds documents in the embeddings cluster most similar to the input query. Returns
-        a list of {id: value, score: value} sorted by highest score, where id is the
-        document id in the embeddings model.
+        Finds documents most similar to the input query. This method will run either an index search
+        or an index + database search depending on if a database is available.
 
         Args:
-            query: query text
+            query: input query
             limit: maximum results
+            weights: hybrid score weights, if applicable
+            index: index name, if applicable
 
         Returns:
-            list of {id: value, score: value}
+            list of {id: value, score: value} for index search, list of dict for an index + database search
         """
 
         # Build URL
         action = f"search?query={urllib.parse.quote_plus(query)}"
         if limit:
             action += f"&limit={limit}"
+        if weights:
+            action += f"&weights={weights}"
+        if index:
+            action += f"&index={index}"
 
         # Run query and flatten results into single results list
         results = []
@@ -66,24 +72,29 @@ class Cluster:
         # Limit results
         return results[: (limit if limit else 10)]
 
-    def batchsearch(self, queries, limit=None):
+    def batchsearch(self, queries, limit=None, weights=None, index=None):
         """
-        Finds documents in the embeddings cluster most similar to the input queries. Returns
-        a list of {id: value, score: value} sorted by highest score per query, where id is
-        the document id in the embeddings model.
+        Finds documents most similar to the input queries. This method will run either an index search
+        or an index + database search depending on if a database is available.
 
         Args:
-            queries: queries text
+            queries: input queries
             limit: maximum results
+            weights: hybrid score weights, if applicable
+            index: index name, if applicable
 
         Returns:
-            list of {id: value, score: value} per query
+            list of {id: value, score: value} per query for index search, list of dict per query for an index + database search
         """
 
         # POST parameters
         params = {"queries": queries}
         if limit:
             params["limit"] = limit
+        if weights:
+            params["weights"] = weights
+        if index:
+            params["index"] = index
 
         # Run query
         batch = self.execute("post", "batchsearch", [params] * len(self.shards))
@@ -135,7 +146,18 @@ class Cluster:
             ids deleted
         """
 
-        return [uid for ids in self.execute("post", "delete", self.shard(ids)) for uid in ids]
+        return [uid for ids in self.execute("post", "delete", [ids] * len(self.shards)) for uid in ids]
+
+    def reindex(self, config, function=None):
+        """
+        Recreates this embeddings index using config. This method only works if document content storage is enabled.
+
+        Args:
+            config: new config
+            function: optional function to prepare content for indexing
+        """
+
+        self.execute("post", "reindex", [{"config": config, "function": function}] * len(self.shards))
 
     def count(self):
         """
@@ -160,10 +182,13 @@ class Cluster:
 
         shards = [[] for _ in range(len(self.shards))]
         for document in documents:
-            uid = document["id"] if isinstance(document, dict) else document
-            if isinstance(uid, str):
+            uid = document.get("id") if isinstance(document, dict) else document
+            if uid and isinstance(uid, str):
                 # Quick int hash of string to help derive shard id
                 uid = zlib.adler32(uid.encode("utf-8"))
+            elif uid is None:
+                # Get random shard id when uid isn't set
+                uid = random.randint(0, len(shards) - 1)
 
             shards[uid % len(self.shards)].append(document)
 

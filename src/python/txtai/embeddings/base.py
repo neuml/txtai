@@ -262,8 +262,7 @@ class Embeddings:
 
     def reindex(self, config=None, function=None, **kwargs):
         """
-        Recreates the approximate nearest neighbor (ann) index using config. This method only works if document
-        content storage is enabled.
+        Recreates embeddings index using config. This method only works if document content storage is enabled.
 
         Args:
             config: new config
@@ -356,7 +355,7 @@ class Embeddings:
 
     def search(self, query, limit=None, weights=None, index=None):
         """
-        Finds documents most similar to the input queries. This method will run either an index search
+        Finds documents most similar to the input query. This method will run either an index search
         or an index + database search depending on if a database is available.
 
         Args:
@@ -366,7 +365,7 @@ class Embeddings:
             index: index name, if applicable
 
         Returns:
-            list of (id, score) for index search, list of dict for an index+database search
+            list of (id, score) for index search, list of dict for an index + database search
         """
 
         results = self.batchsearch([query], limit, weights, index)
@@ -384,7 +383,7 @@ class Embeddings:
             index: index name, if applicable
 
         Returns:
-            list of (id, score) per query for index search, list of dict per query for an index+database search
+            list of (id, score) per query for index search, list of dict per query for an index + database search
         """
 
         return Search(self)(queries, limit, weights, index)
