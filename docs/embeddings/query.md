@@ -61,14 +61,14 @@ For example:
 
 ```python
 embeddings.index([{"text": "text to index", "flag": True,
-                   "entry": "2022-01-01"}])
+                   "actiondate": "2022-01-01"}])
 ```
 
 With the above input data, queries can now have more complex filters.
 
 ```sql
-SELECT text, flag, entry FROM txtai WHERE similar('query') AND flag = 1
-AND entry >= '2022-01-01'
+SELECT text, flag, actiondate FROM txtai WHERE similar('query') AND flag = 1
+AND actiondate >= '2022-01-01'
 ```
 
 txtai's query layer automatically detects columns and translates queries into a format that can be understood by the underlying database.
