@@ -41,7 +41,7 @@ class TransformersVectors(Vectors):
             raise ImportError('sentence-transformers is not available - install "similarity" extra to enable')
 
         # Build embeddings with sentence-transformers
-        return SentenceTransformer(path, device=Models.reference(deviceid))
+        return SentenceTransformer(path, device=Models.device(deviceid))
 
     def encode(self, data):
         # Encode data using vectors model

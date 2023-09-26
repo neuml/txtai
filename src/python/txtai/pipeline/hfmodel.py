@@ -31,7 +31,7 @@ class HFModel(Tensors):
 
         # Get tensor device reference
         self.deviceid = Models.deviceid(gpu)
-        self.device = Models.reference(self.deviceid)
+        self.device = Models.device(self.deviceid)
 
         # Process batch size
         self.batchsize = batch

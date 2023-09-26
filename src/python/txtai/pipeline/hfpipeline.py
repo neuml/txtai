@@ -36,8 +36,9 @@ class HFPipeline(Tensors):
             # Check if input model is a Pipeline or a HF pipeline
             self.pipeline = model.pipeline if isinstance(model, HFPipeline) else model
         else:
-            # Get device id
+            # Get device
             deviceid = Models.deviceid(gpu) if "device_map" not in kwargs else None
+            device = Models.device(deviceid) if deviceid is not None else None
 
             # Split into model args, pipeline args
             modelargs, kwargs = self.parseargs(**kwargs)
@@ -50,9 +51,9 @@ class HFPipeline(Tensors):
                 # Load model
                 model = Models.load(path[0], config, task)
 
-                self.pipeline = pipeline(task, model=model, tokenizer=path[1], device=deviceid, model_kwargs=modelargs, **kwargs)
+                self.pipeline = pipeline(task, model=model, tokenizer=path[1], device=device, model_kwargs=modelargs, **kwargs)
             else:
-                self.pipeline = pipeline(task, model=path, device=deviceid, model_kwargs=modelargs, **kwargs)
+                self.pipeline = pipeline(task, model=path, device=device, model_kwargs=modelargs, **kwargs)
 
             # Model quantization. Compresses model to int8 precision, improves runtime performance. Only supported on CPU.
             if deviceid == -1 and quantize:
