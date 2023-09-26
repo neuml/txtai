@@ -49,7 +49,7 @@ jobs:
       - name: Build
         run: |
           pip install -U wheel
-          pip install .[all,dev] pandas==2.0.3
+          pip install .[all,dev]
           python -c "import nltk; nltk.download('punkt')"
           python --version
           make data coverage
