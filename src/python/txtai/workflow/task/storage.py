@@ -89,15 +89,24 @@ class StorageTask(Task):
         provider = re.sub(StorageTask.PREFIX, r"\1", element.lower())
         path = re.sub(StorageTask.PATH, r"\1", element)
 
-        key, container = os.path.dirname(path), os.path.basename(path)
+        # Load key and secret, if applicable
+        key = self.key if self.key is not None else os.environ.get("ACCESS_KEY")
+        secret = self.secret if self.secret is not None else os.environ.get("ACCESS_SECRET")
+
+        # Parse key and container
+        key, container = (os.path.dirname(path), os.path.basename(path)) if key is None else (key, path)
+
+        # Parse optional prefix from container
+        parts = container.split("/", 1)
+        container, prefix = (parts[0], parts[1]) if len(parts) > 1 else (container, None)
 
         # Get driver for provider
         driver = get_driver(provider)
 
         # Get client connection
         client = driver(
-            key if key else self.key if self.key else os.environ.get("ACCESS_KEY"),
-            self.secret if self.secret else os.environ.get("ACCESS_SECRET"),
+            key,
+            secret,
             host=self.host,
             port=self.port,
             token=self.token,
@@ -105,4 +114,4 @@ class StorageTask(Task):
         )
 
         container = client.get_container(container_name=container)
-        return [client.get_object_cdn_url(obj) for obj in client.list_container_objects(container=container)]
+        return [client.get_object_cdn_url(obj) for obj in client.list_container_objects(container=container, prefix=prefix)]

@@ -59,7 +59,7 @@ class ObjectStorage(Cloud):
         try:
             # If this is an archive path, check if file exists
             if self.isarchive(path):
-                return self.client.get_object(self.config["container"], os.path.basename(path))
+                return self.client.get_object(self.config["container"], self.objectname(path))
 
             # Otherwise check if container exists
             return self.client.get_container(self.config["container"])
@@ -69,17 +69,22 @@ class ObjectStorage(Cloud):
     def load(self, path=None):
         # Download archive file
         if self.isarchive(path):
-            obj = self.client.get_object(self.config["container"], os.path.basename(path))
+            obj = self.client.get_object(self.config["container"], self.objectname(path))
             obj.download(path, overwrite_existing=True)
 
-        # Download all files in container
+        # Download files in container. Optionally filter with a provided prefix.
         else:
-            # Create local directory, if necessary
-            os.makedirs(path, exist_ok=True)
-
             container = self.client.get_container(self.config["container"])
-            for obj in container.list_objects():
-                obj.download(os.path.join(path, obj.name), overwrite_existing=True)
+            for obj in container.list_objects(prefix=self.config.get("prefix")):
+                # Derive local path and directory
+                localpath = os.path.join(path, obj.name)
+                directory = os.path.dirname(localpath)
+
+                # Create local directory, if necessary
+                os.makedirs(directory, exist_ok=True)
+
+                # Download file locally
+                obj.download(localpath, overwrite_existing=True)
 
         return path
 
@@ -93,4 +98,25 @@ class ObjectStorage(Cloud):
         # Upload files
         for f in self.listfiles(path):
             with open(f, "rb") as iterator:
-                self.client.upload_object_via_stream(iterator=iterator, container=container, object_name=os.path.basename(f))
+                self.client.upload_object_via_stream(iterator=iterator, container=container, object_name=self.objectname(f))
+
+    def objectname(self, name):
+        """
+        Derives an object name. This method checks if a prefix configuration parameter is present and combines
+        it with the input name parameter.
+
+        Args:
+            name: input name
+
+        Returns:
+            object name
+        """
+
+        # Get base name
+        name = os.path.basename(name)
+
+        # Get optional prefix/folder
+        prefix = self.config.get("prefix")
+
+        # Prepend prefix, if applicable
+        return f"{prefix}/{name}" if prefix else name
