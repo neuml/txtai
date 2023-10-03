@@ -4,6 +4,7 @@ Template module
 
 from string import Formatter
 
+from ...util import TemplateFormatter
 from .file import Task
 
 
@@ -108,14 +109,3 @@ class ExtractorTask(TemplateTask):
 
         # Default mode is to use element text for both query and question
         return {"query": element, "question": super().prepare(element)}
-
-
-class TemplateFormatter(Formatter):
-    """
-    Helper class used to format template checks.
-    """
-
-    def check_unused_args(self, used_args, args, kwargs):
-        difference = set(kwargs).difference(used_args)
-        if difference:
-            raise KeyError(difference)

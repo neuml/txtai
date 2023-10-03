@@ -3,6 +3,7 @@ LLM Module
 """
 
 from ...models import Models
+from ...util import TemplateFormatter
 
 from ..hfpipeline import HFPipeline
 
@@ -13,11 +14,14 @@ class LLM(HFPipeline):
     sequence to sequence model.
     """
 
-    def __init__(self, path=None, quantize=False, gpu=True, model=None, task=None, **kwargs):
+    def __init__(self, path=None, quantize=False, gpu=True, model=None, task=None, template=None, **kwargs):
         super().__init__(self.task(path, task, **kwargs), path if path else "google/flan-t5-base", quantize, gpu, model, **kwargs)
 
         # Load tokenizer, if necessary
         self.pipeline.tokenizer = self.pipeline.tokenizer if self.pipeline.tokenizer else Models.tokenizer(path, **kwargs)
+
+        # Template to apply to all inputs. Must include a {text} parameter.
+        self.template = template
 
     def __call__(self, text, prefix=None, maxlength=512, workers=0, **kwargs):
         """
@@ -40,6 +44,11 @@ class LLM(HFPipeline):
         # Add prefix, if necessary
         if prefix:
             texts = [f"{prefix}{x}" for x in texts]
+
+        # Apply template, if necessary
+        if self.template:
+            formatter = TemplateFormatter()
+            texts = [formatter.format(self.template, text=x) for x in texts]
 
         # Run pipeline
         results = self.pipeline(texts, max_length=maxlength, num_workers=workers, **kwargs)

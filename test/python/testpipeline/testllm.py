@@ -38,7 +38,7 @@ class TestLLM(unittest.TestCase):
         model = AutoModelForCausalLM.from_pretrained("hf-internal-testing/tiny-random-gpt2")
         tokenizer = AutoTokenizer.from_pretrained("hf-internal-testing/tiny-random-gpt2")
 
-        model = LLM((model, tokenizer))
+        model = LLM((model, tokenizer), template="{text}")
         start = "Hello, how are"
 
         # Test that text is generated
