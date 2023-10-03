@@ -6,6 +6,7 @@ import os
 import tempfile
 
 from urllib.request import urlretrieve
+from urllib.parse import urlparse
 
 from .url import UrlTask
 
@@ -15,12 +16,13 @@ class RetrieveTask(UrlTask):
     Task that retrieves urls (local or remote) to a local directory.
     """
 
-    def register(self, directory=None):
+    def register(self, directory=None, flatten=True):
         """
         Adds retrieve parameters to task.
 
         Args:
             directory: local directory used to store retrieved files
+            flatten: flatten input directory structure, defaults to True
         """
 
         # pylint: disable=W0201
@@ -32,20 +34,28 @@ class RetrieveTask(UrlTask):
             directory = self.tempdir.name
 
         # Create output directory if necessary
-        if not os.path.exists(directory):
-            os.makedirs(directory)
+        os.makedirs(directory, exist_ok=True)
 
         self.directory = directory
+        self.flatten = flatten
 
     def prepare(self, element):
-        # Extract file name
-        _, name = os.path.split(element)
+        # Extract file path from URL
+        path = urlparse(element).path
 
-        # Derive output path
-        path = os.path.join(self.directory, name)
+        if self.flatten:
+            # Flatten directory structure (default)
+            path = os.path.join(self.directory, os.path.basename(path))
+        else:
+            # Derive output path
+            path = os.path.join(self.directory, os.path.normpath(path.lstrip("/")))
+            directory = os.path.dirname(path)
+
+            # Create local directory, if necessary
+            os.makedirs(directory, exist_ok=True)
 
         # Retrieve URL
-        urlretrieve(element, os.path.join(self.directory, name))
+        urlretrieve(element, path)
 
         # Return new file path
         return path

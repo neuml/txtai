@@ -330,6 +330,11 @@ class TestWorkflow(unittest.TestCase):
         results = list(workflow(["file://" + Utils.PATH + "/books.jpg"]))
         self.assertTrue(results[0].endswith("books.jpg"))
 
+        # Test with directory structures
+        workflow = Workflow([RetrieveTask(flatten=False)])
+        results = list(workflow(["file://" + Utils.PATH + "/books.jpg"]))
+        self.assertTrue(results[0].endswith("books.jpg") and "txtai" in results[0])
+
     def testScheduleWorkflow(self):
         """
         Test workflow schedules
