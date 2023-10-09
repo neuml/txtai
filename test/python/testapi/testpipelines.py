@@ -58,6 +58,7 @@ translation:
 
 
 # pylint: disable=R0904
+@unittest.skipIf(os.name == "nt", "TestPipelines skipped on Windows")
 class TestPipelines(unittest.TestCase):
     """
     API tests for pipelines.
@@ -316,7 +317,6 @@ class TestPipelines(unittest.TestCase):
         translation = self.client.get(f"translate?text={urllib.parse.quote('This is a test translation into Spanish')}&target=es").json()
         self.assertEqual(translation, "Esta es una traducción de prueba al español")
 
-    @unittest.skipIf(os.name == "nt", "testTranslateBatch skipped on Windows")
     def testTranslateBatch(self):
         """
         Test batch translate via API
