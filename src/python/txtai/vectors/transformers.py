@@ -2,8 +2,6 @@
 Transformers module
 """
 
-import os
-
 # Conditional import
 try:
     from sentence_transformers import SentenceTransformer
@@ -13,7 +11,7 @@ except ImportError:
     SENTENCE_TRANSFORMERS = False
 
 from .base import Vectors
-from ..models import MeanPooling, Models, Pooling
+from ..models import Models, PoolingFactory
 from ..pipeline import Tokenizer
 
 
@@ -32,11 +30,9 @@ class TransformersVectors(Vectors):
 
         # Build embeddings with transformers (default)
         if transformers:
-            if isinstance(path, bytes) or (isinstance(path, str) and os.path.isfile(path)) or method == "pooling":
-                return Pooling(path, device=deviceid, tokenizer=self.config.get("tokenizer"))
+            return PoolingFactory.create({"path": path, "device": deviceid, "tokenizer": self.config.get("tokenizer"), "method": method})
 
-            return MeanPooling(path, device=deviceid, tokenizer=self.config.get("tokenizer"))
-
+        # Otherwise, use sentence-transformers library
         if not SENTENCE_TRANSFORMERS:
             raise ImportError('sentence-transformers is not available - install "similarity" extra to enable')
 

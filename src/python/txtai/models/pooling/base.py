@@ -7,7 +7,7 @@ import torch
 
 from torch import nn
 
-from .models import Models
+from ..models import Models
 
 
 class Pooling(nn.Module):
@@ -36,7 +36,7 @@ class Pooling(nn.Module):
         Models.checklength(self.model, self.tokenizer)
 
         # Set max length
-        self.maxlength = maxlength if maxlength else self.tokenizer.model_max_length
+        self.maxlength = maxlength if maxlength else self.tokenizer.model_max_length if self.tokenizer.model_max_length != int(1e30) else None
 
         # Move to device
         self.to(self.device)
@@ -104,29 +104,3 @@ class Pooling(nn.Module):
         """
 
         return self.model(**inputs)[0]
-
-
-class MeanPooling(Pooling):
-    """
-    Builds mean pooled vectors usings outputs from a transformers model.
-    """
-
-    def forward(self, **inputs):
-        """
-        Runs mean pooling on token embeddings taking the input mask into account.
-
-        Args:
-            inputs: model inputs
-
-        Returns:
-            mean pooled embeddings using output token embeddings (i.e. last hidden state)
-        """
-
-        # Run through transformers model
-        tokens = super().forward(**inputs)
-        mask = inputs["attention_mask"]
-
-        # Mean pooling
-        # pylint: disable=E1101
-        mask = mask.unsqueeze(-1).expand(tokens.size()).float()
-        return torch.sum(tokens * mask, 1) / torch.clamp(mask.sum(1), min=1e-9)
