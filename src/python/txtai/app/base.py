@@ -432,7 +432,15 @@ class Application:
 
         if self.embeddings:
             with self.lock:
-                return self.embeddings.delete(ids)
+                # Run delete operation
+                deleted = self.embeddings.delete(ids)
+
+                # Save index if path available, otherwise this is an memory-only index
+                if self.config.get("path"):
+                    self.embeddings.save(self.config["path"], self.config.get("cloud"))
+
+                # Return deleted ids
+                return deleted
 
         return None
 
@@ -456,6 +464,10 @@ class Application:
 
                 # Reindex
                 self.embeddings.reindex(config, function)
+
+                # Save index if path available, otherwise this is an memory-only index
+                if self.config.get("path"):
+                    self.embeddings.save(self.config["path"], self.config.get("cloud"))
 
     def count(self):
         """
