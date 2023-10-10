@@ -58,7 +58,6 @@ translation:
 
 
 # pylint: disable=R0904
-@unittest.skipIf(os.name == "nt", "TestPipelines skipped on Windows")
 class TestPipelines(unittest.TestCase):
     """
     API tests for pipelines.
