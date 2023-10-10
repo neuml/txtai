@@ -56,12 +56,11 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from txtai.pipeline import LLM
 
-# Load Falcon-7B-Instruct
-path = "tiiuae/falcon-7b-instruct"
+# Load Mistral-7B-OpenOrca
+path = "Open-Orca/Mistral-7B-OpenOrca"
 model = AutoModelForCausalLM.from_pretrained(
   path,
   torch_dtype=torch.bfloat16,
-  trust_remote_code=True
 )
 tokenizer = AutoTokenizer.from_pretrained(path)
 

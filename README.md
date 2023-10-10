@@ -161,7 +161,7 @@ See the table below for the current recommended models. These models all allow c
 | [Labels - Zero Shot](https://neuml.github.io/txtai/pipeline/text/labels)      | [BART-Large-MNLI](https://hf.co/facebook/bart-large)                     |
 | [Labels - Fixed](https://neuml.github.io/txtai/pipeline/text/labels)          | Fine-tune with [training pipeline](https://neuml.github.io/txtai/pipeline/train/trainer)          |
 | [Large Language Model (LLM)](https://neuml.github.io/txtai/pipeline/text/llm) | [Flan T5 XL](https://hf.co/google/flan-t5-xl)                            | 
-|                                                                               | [Falcon 7B Instruct](https://hf.co/tiiuae/falcon-7b-instruct)            |
+|                                                                               | [Mistral 7B OpenOrca](https://hf.co/Open-Orca/Mistral-7B-OpenOrca)       |
 | [Summarization](https://neuml.github.io/txtai/pipeline/text/summary)          | [DistilBART](https://hf.co/sshleifer/distilbart-cnn-12-6)                |
 | [Text-to-Speech](https://neuml.github.io/txtai/pipeline/audio/texttospeech)   | [ESPnet JETS](https://hf.co/NeuML/ljspeech-jets-onnx)                    |
 | [Transcription](https://neuml.github.io/txtai/pipeline/audio/transcription)   | [Whisper](https://hf.co/openai/whisper-base)                             | 
@@ -173,7 +173,7 @@ See the following links to learn more.
 
 - [Hugging Face Tasks](https://hf.co/tasks)
 - [Hugging Face Model Hub](https://hf.co/models)
-- [MTSB Leaderboard](https://hf.co/spaces/mteb/leaderboard)
+- [MTEB Leaderboard](https://hf.co/spaces/mteb/leaderboard)
 - [Open LLM Leaderboard](https://hf.co/spaces/HuggingFaceH4/open_llm_leaderboard)
 
 ## Powered by txtai

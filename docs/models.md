@@ -12,7 +12,7 @@ See the table below for the current recommended models. These models all allow c
 | [Labels - Zero Shot](./pipeline/text/labels.md)      | [BART-Large-MNLI](https://hf.co/facebook/bart-large)                     |
 | [Labels - Fixed](./pipeline/text/labels.md)          | Fine-tune with [training pipeline](./pipeline/train/trainer.md)          |
 | [Large Language Model (LLM)](./pipeline/text/llm.md) | [Flan T5 XL](https://hf.co/google/flan-t5-xl)                            | 
-|                                                      | [Falcon 7B Instruct](https://hf.co/tiiuae/falcon-7b-instruct)            |
+|                                                      | [Mistral 7B OpenOrca](https://hf.co/Open-Orca/Mistral-7B-OpenOrca)       |
 | [Summarization](./pipeline/text/summary.md)          | [DistilBART](https://hf.co/sshleifer/distilbart-cnn-12-6)                |
 | [Text-to-Speech](./pipeline/audio/texttospeech.md)   | [ESPnet JETS](https://hf.co/NeuML/ljspeech-jets-onnx)                    |
 | [Transcription](./pipeline/audio/transcription.md)   | [Whisper](https://hf.co/openai/whisper-base)                             | 
@@ -24,5 +24,5 @@ See the following links to learn more.
 
 - [Hugging Face Tasks](https://hf.co/tasks)
 - [Hugging Face Model Hub](https://hf.co/models)
-- [MTSB Leaderboard](https://hf.co/spaces/mteb/leaderboard)
+- [MTEB Leaderboard](https://hf.co/spaces/mteb/leaderboard)
 - [Open LLM Leaderboard](https://hf.co/spaces/HuggingFaceH4/open_llm_leaderboard)
