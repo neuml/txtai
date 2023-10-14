@@ -41,7 +41,7 @@ class Extractor(Pipeline):
 
         Args:
             similarity: similarity instance (embeddings or similarity pipeline)
-            path: path to model, supports Questions, Generator, Sequences or custom pipeline
+            path: path to model, supports a LLM, Questions or custom pipeline
             quantize: True if model should be quantized before inference, False otherwise.
             gpu: if gpu inference should be used (only works if GPUs are available)
             model: optional existing pipeline model to wrap
@@ -57,11 +57,11 @@ class Extractor(Pipeline):
         # Similarity instance
         self.similarity = similarity
 
-        # Question-Answer model. Can be prompt-driven LLM or extractive qa
+        # Model can be a LLM, Questions or custom pipeline
         self.model = self.load(path, quantize, gpu, model, task, **kwargs)
 
         # Tokenizer class use default method if not set
-        self.tokenizer = tokenizer if tokenizer else Tokenizer() if hasattr(self.similarity, "scoring") and self.similarity.scoring else None
+        self.tokenizer = tokenizer if tokenizer else Tokenizer() if hasattr(self.similarity, "scoring") and self.similarity.isweighted() else None
 
         # Minimum score to include context match
         self.minscore = minscore if minscore is not None else 0.0
@@ -75,7 +75,7 @@ class Extractor(Pipeline):
         # Output format
         self.output = output
 
-    def __call__(self, queue, texts=None):
+    def __call__(self, queue, texts=None, **kwargs):
         """
         Finds answers to input questions. This method runs queries to find the top n best matches and uses that as the context.
         A model is then run against the context for each input question, with the answer returned.
@@ -83,6 +83,7 @@ class Extractor(Pipeline):
         Args:
             queue: input question queue (name, query, question, snippet), can be list of tuples or dicts
             texts: optional list of text for context, otherwise runs embeddings search
+            kwargs: additional keyword arguments to pass to pipeline model
 
         Returns:
             list of answers matching input format (tuple or dict) containing fields as specified by output format
@@ -116,17 +117,17 @@ class Extractor(Pipeline):
             snippets.append(snippet)
 
         # Run pipeline and return answers
-        answers = self.answers(names, questions, contexts, [[text for _, text, _ in topn] for topn in topns], snippets)
+        answers = self.answers(names, questions, contexts, [[text for _, text, _ in topn] for topn in topns], snippets, **kwargs)
 
         # Apply output formatting to answers and return
         return self.apply(inputs, queries, answers, topns)
 
     def load(self, path, quantize, gpu, model, task, **kwargs):
         """
-        Loads a question-answer model.
+        Loads a LLM, Questions or custom pipeline.
 
         Args:
-            path: path to model, loads a Questions, Generator or Sequences pipeline
+            path: path to model, supports a LLM, Questions or custom pipeline
             quantize: True if model should be quantized before inference, False otherwise.
             gpu: if gpu inference should be used (only works if GPUs are available)
             model: optional existing pipeline model to wrap
@@ -134,7 +135,7 @@ class Extractor(Pipeline):
             kwargs: additional keyword arguments to pass to pipeline model
 
         Returns:
-            Generator, Sequences, Questions or custom pipeline
+            LLM, Questions or custom pipeline
         """
 
         # Only try to load if path is a string
@@ -144,11 +145,11 @@ class Extractor(Pipeline):
         # Attempt to resolve task if not provided
         task = task if task else Models.task(path, **kwargs)
 
-        # Load model as Question pipeline
+        # Load Questions pipeline
         if task == "question-answering":
             return Questions(path, quantize, gpu, model, **kwargs)
 
-        # Load model as LLM pipeline
+        # Load LLM pipeline
         return LLM(path, quantize, gpu, model, task, **kwargs)
 
     def query(self, queries, texts):
@@ -279,7 +280,7 @@ class Extractor(Pipeline):
 
         return self.tokenizer(text) if self.tokenizer else text
 
-    def answers(self, names, questions, contexts, topns, snippets):
+    def answers(self, names, questions, contexts, topns, snippets, **kwargs):
         """
         Executes pipeline and formats extracted answers.
 
@@ -289,6 +290,7 @@ class Extractor(Pipeline):
             contexts: question context
             topns: same as question context but as a list with each candidate element
             snippets: flags to enable answer snippets per answer
+            kwargs: additional keyword arguments to pass to pipeline model
 
         Returns:
             list of (name, answer)
@@ -302,7 +304,7 @@ class Extractor(Pipeline):
             answers = self.model(questions, contexts)
         else:
             # Combine question and context into single text field for generative pipelines
-            answers = self.model([f"{questions[x]} {context}" for x, context in enumerate(contexts)])
+            answers = self.model([f"{questions[x]} {context}" for x, context in enumerate(contexts)], **kwargs)
 
         # Extract and format answer
         for x, answer in enumerate(answers):
