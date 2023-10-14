@@ -453,6 +453,11 @@ class TestWorkflow(unittest.TestCase):
         results = list(workflow([{"query": "query", "question": "prompt"}]))
         self.assertEqual(results[0], {"query": "query", "question": "This is a prompt"})
 
+        # Test additional template parameters
+        workflow = Workflow([ExtractorTask(template="This is a {text} with another {param}")])
+        results = list(workflow([{"query": "query", "question": "prompt", "param": "value"}]))
+        self.assertEqual(results[0], {"query": "query", "question": "This is a prompt with another value", "param": "value"})
+
     def testTensorTransformWorkflow(self):
         """
         Test a tensor workflow with list transformations

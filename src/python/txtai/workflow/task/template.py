@@ -102,9 +102,14 @@ class ExtractorTask(TemplateTask):
     """
 
     def prepare(self, element):
-        # Allow partial input with the "question" field used to complete prompt template
+        # Apply prompt template using all variables except "query" and use output as question
         if isinstance(element, dict):
-            element["question"] = super().prepare(element["question"])
+            # Make a copy without query and run through template
+            params = dict(element)
+            params.pop("query", None)
+            params["text"] = params.pop("question")
+
+            element["question"] = super().prepare(params)
             return element
 
         # Default mode is to use element text for both query and question
