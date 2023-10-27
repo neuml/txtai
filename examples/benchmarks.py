@@ -2,7 +2,7 @@
 Runs benchmark evaluations with the BEIR dataset.
 
 Install txtai and the following dependencies to run:
-    pip install txtai pytrec_eval rank-bm25 elasticsearch
+    pip install txtai pytrec_eval rank-bm25 elasticsearch psutil
 """
 
 import csv
@@ -14,6 +14,7 @@ import sys
 import time
 
 import psutil
+import yaml
 
 import numpy as np
 
@@ -138,6 +139,29 @@ class Index:
 
         return [data[x : x + size] for x in range(0, len(data), size)]
 
+    def config(self, key, default):
+        """
+        Reads configuration from a config.yml file. Returns default configuration
+        if config.yml file is not found or config key isn't present.
+
+        Args:
+            key: configuration key to lookup
+            default: default configuration
+
+        Returns:
+            config if found, otherwise returns default config
+        """
+
+        if os.path.exists("config.yml"):
+            # Read configuration
+            with open("config.yml", "r", encoding="utf-8") as f:
+                # Check for config
+                config = yaml.safe_load(f)
+                if key in config:
+                    return config[key]
+
+        return default
+
 
 class Score(Index):
     """
@@ -145,7 +169,11 @@ class Score(Index):
     """
 
     def index(self):
-        scoring = ScoringFactory.create({"method": "bm25", "terms": True})
+        # Read configuration
+        config = self.config("scoring", {"method": "bm25", "terms": True})
+
+        # Create scoring instance
+        scoring = ScoringFactory.create(config)
 
         path = f"{self.path}/scoring"
         if os.path.exists(path) and not self.refresh:
@@ -168,8 +196,11 @@ class Embed(Index):
             embeddings = Embeddings()
             embeddings.load(path)
         else:
+            # Read configuration
+            config = self.config("embed", {"batch": 8192, "encodebatch": 128, "faiss": {"quantize": True, "sample": 0.05}})
+
             # Build index
-            embeddings = Embeddings({"batch": 8192, "encodebatch": 128, "faiss": {"quantize": True, "sample": 0.05}})
+            embeddings = Embeddings(config)
             embeddings.index(self.rows())
             embeddings.save(path)
 
@@ -187,15 +218,19 @@ class Hybrid(Index):
             embeddings = Embeddings()
             embeddings.load(path)
         else:
-            # Build index
-            embeddings = Embeddings(
+            # Read configuration
+            config = self.config(
+                "hybrid",
                 {
                     "batch": 8192,
                     "encodebatch": 128,
                     "faiss": {"quantize": True, "sample": 0.05},
                     "scoring": {"method": "bm25", "terms": True, "normalize": True},
-                }
+                },
             )
+
+            # Build index
+            embeddings = Embeddings(config)
 
             embeddings.index(self.rows())
             embeddings.save(path)
