@@ -7,6 +7,7 @@ import math
 import numpy as np
 
 from faiss import index_factory, IO_FLAG_MMAP, METRIC_INNER_PRODUCT, read_index, write_index
+from faiss import index_binary_factory, read_index_binary, write_index_binary, IndexBinaryIDMap
 
 from .base import ANN
 
@@ -16,9 +17,19 @@ class Faiss(ANN):
     Builds an ANN index using the Faiss library.
     """
 
+    def __init__(self, config):
+        super().__init__(config)
+
+        # Scalar quantization
+        quantize = self.config.get("quantize")
+        self.qbits = quantize if quantize and isinstance(quantize, int) and not isinstance(quantize, bool) else None
+
     def load(self, path):
+        # Get read function
+        readindex = read_index_binary if self.qbits else read_index
+
         # Load index
-        self.backend = read_index(path, IO_FLAG_MMAP if self.setting("mmap") is True else 0)
+        self.backend = readindex(path, IO_FLAG_MMAP if self.setting("mmap") is True else 0)
 
     def index(self, embeddings):
         # Compute model training size
@@ -31,7 +42,9 @@ class Faiss(ANN):
 
         # Configure embeddings index. Inner product is equal to cosine similarity on normalized vectors.
         params = self.configure(embeddings.shape[0], train.shape[0])
-        self.backend = index_factory(embeddings.shape[1], params, METRIC_INNER_PRODUCT)
+
+        # Create index
+        self.backend = self.create(embeddings, params)
 
         # Train model
         self.backend.train(train)
@@ -58,14 +71,21 @@ class Faiss(ANN):
         self.backend.remove_ids(np.array(ids, dtype=np.int64))
 
     def search(self, queries, limit):
-        # Run the query
+        # Set nprobe and nflip search parameters
         self.backend.nprobe = self.nprobe()
+        self.backend.nflip = self.setting("nflip", self.backend.nprobe)
+
+        # Run the query
         scores, ids = self.backend.search(queries, limit)
 
         # Map results to [(id, score)]
         results = []
         for x, score in enumerate(scores):
-            results.append(list(zip(ids[x].tolist(), score.tolist())))
+            # Transform scores
+            score = [1.0 - (x / (self.config["dimensions"] * 8)) for x in score.tolist()] if self.qbits else score.tolist()
+
+            # Add results
+            results.append(list(zip(ids[x].tolist(), score)))
 
         return results
 
@@ -73,8 +93,11 @@ class Faiss(ANN):
         return self.backend.ntotal
 
     def save(self, path):
+        # Get write function
+        writeindex = write_index_binary if self.qbits else write_index
+
         # Write index
-        write_index(self.backend, path)
+        writeindex(self.backend, path)
 
     def configure(self, count, train):
         """
@@ -94,17 +117,46 @@ class Faiss(ANN):
         if components:
             return components
 
+        # Derive quantization. Prefer backend-specific setting. Fallback to root-level parameter.
+        quantize = self.setting("quantize", self.config.get("quantize"))
+        quantize = 8 if isinstance(quantize, bool) else quantize
+
         # Get storage setting
-        storage = "SQ8" if self.setting("quantize", self.config.get("quantize")) else "Flat"
+        storage = f"SQ{quantize}" if quantize else "Flat"
 
         # Small index, use storage directly with IDMap
         if count <= 5000:
-            return f"IDMap,{storage}"
+            return "BFlat" if self.qbits else f"IDMap,{storage}"
 
         x = self.cells(train)
-        components = f"IVF{x},{storage}"
+        components = f"BIVF{x}" if self.qbits else f"IVF{x},{storage}"
 
         return components
+
+    def create(self, embeddings, params):
+        """
+        Creates a new index.
+
+        Args:
+            embeddings: embeddings to index
+            params: index parameters
+
+        Returns:
+            new index
+        """
+
+        # Create binary index
+        if self.qbits:
+            index = index_binary_factory(embeddings.shape[1] * 8, params)
+
+            # Wrap with BinaryIDMap, if necessary
+            if any(x in params for x in ["BFlat", "BHNSW"]):
+                index = IndexBinaryIDMap(index)
+
+            return index
+
+        # Create standard float index
+        return index_factory(embeddings.shape[1], params, METRIC_INNER_PRODUCT)
 
     def cells(self, count):
         """

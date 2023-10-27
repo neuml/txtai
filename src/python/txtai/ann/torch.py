@@ -20,6 +20,7 @@ class Torch(NumPy):
 
         # Define array functions
         self.all, self.cat, self.dot, self.zeros = torch.all, torch.cat, torch.mm, torch.zeros
+        self.argsort, self.xor = torch.argsort, torch.bitwise_xor
 
     def tensor(self, array):
         # Convert array to Tensor
@@ -28,6 +29,9 @@ class Torch(NumPy):
 
         # Load to GPU device, if available
         return array.cuda() if torch.cuda.is_available() else array
+
+    def totype(self, array, dtype):
+        return array.long() if dtype == np.int64 else array
 
     def settings(self):
         return {"torch": torch.__version__}

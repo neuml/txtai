@@ -21,6 +21,11 @@ class NumPy(ANN):
 
         # Array function definitions
         self.all, self.cat, self.dot, self.zeros = np.all, np.concatenate, np.dot, np.zeros
+        self.argsort, self.xor = np.argsort, np.bitwise_xor
+
+        # Scalar quantization
+        quantize = self.config.get("quantize")
+        self.qbits = quantize if quantize and isinstance(quantize, int) and not isinstance(quantize, bool) else None
 
     def load(self, path):
         # Load array from file
@@ -53,11 +58,23 @@ class NumPy(ANN):
         self.backend[ids] = self.tensor(self.zeros((len(ids), self.backend.shape[1])))
 
     def search(self, queries, limit):
-        # Dot product on normalized vectors is equal to cosine similarity
-        scores = self.dot(self.tensor(queries), self.backend.T).tolist()
+        if self.qbits:
+            # Calculate hamming score for integer vectors
+            scores = self.hammingscore(queries)
+        else:
+            # Dot product on normalized vectors is equal to cosine similarity
+            scores = self.dot(self.tensor(queries), self.backend.T)
 
-        # Add index and sort desc based on score
-        return [sorted(enumerate(score), key=lambda x: x[1], reverse=True)[:limit] for score in scores]
+        # Get topn ids
+        ids = self.argsort(-scores)[:, :limit]
+
+        # Map results to [(id, score)]
+        results = []
+        for x, score in enumerate(scores):
+            # Add results
+            results.append(list(zip(ids[x].tolist(), score[ids[x]].tolist())))
+
+        return results
 
     def count(self):
         # Get count of non-zero rows (ignores deleted rows)
@@ -81,6 +98,20 @@ class NumPy(ANN):
 
         return array
 
+    def totype(self, array, dtype):
+        """
+        Casts array to dtype.
+
+        Args:
+            array: input array
+            dtype: dtype
+
+        Returns:
+            array cast as dtype
+        """
+
+        return np.int64(array) if dtype == np.int64 else array
+
     def settings(self):
         """
         Returns settings for this array.
@@ -90,3 +121,31 @@ class NumPy(ANN):
         """
 
         return {"numpy": np.__version__}
+
+    def hammingscore(self, queries):
+        """
+        Calculates a hamming distance score.
+
+        This is defined as:
+
+            score = 1.0 - (hamming distance / total number of bits)
+
+        Args:
+            queries: queries array
+
+        Returns:
+            scores
+        """
+
+        # Build table of number of bits for each distinct uint8 value
+        table = 1 << np.arange(8)
+        table = self.tensor(np.array([np.count_nonzero(x & table) for x in np.arange(256)]))
+
+        # Number of different bits
+        delta = self.xor(self.tensor(queries[:, None]), self.backend)
+
+        # Cast to long array
+        delta = self.totype(delta, np.int64)
+
+        # Calculate score as 1.0 - percentage of different bits
+        return 1.0 - (table[delta].sum(axis=2) / (self.config["dimensions"] * 8))
