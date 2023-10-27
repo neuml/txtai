@@ -26,7 +26,7 @@ from .search import Explain, Query, Search, Terms
 # pylint: disable=C0302,R0904
 class Embeddings:
     """
-    Embeddings is the engine that delivers semantic search. Data is transformed into embeddings vectors where similar concepts
+    Embeddings databases are the engine that delivers semantic search. Data is transformed into embeddings vectors where similar concepts
     will produce similar vectors. Indexes both large and small are built with these vectors. The indexes are used to find results
     that have the same meaning, not necessarily the same keywords.
     """
@@ -121,9 +121,6 @@ class Embeddings:
                     self.reducer = Reducer(embeddings, self.config["pca"])
                     self.reducer(embeddings)
 
-                # Normalize embeddings
-                self.normalize(embeddings)
-
                 # Save index dimensions
                 self.config["dimensions"] = dimensions
 
@@ -176,9 +173,6 @@ class Embeddings:
                 # Remove principal components from embeddings, if necessary
                 if self.reducer:
                     self.reducer(embeddings)
-
-                # Normalize embeddings
-                self.normalize(embeddings)
 
                 # Append embeddings to the index
                 self.ann.append(embeddings)
@@ -327,9 +321,6 @@ class Embeddings:
         # model to reduce the noise of common but less relevant terms.
         if self.reducer:
             self.reducer(embeddings)
-
-        # Normalize embeddings
-        self.normalize(embeddings)
 
         return embeddings
 
@@ -1035,17 +1026,3 @@ class Embeddings:
             config["columns"] = self.config["columns"]
 
         return config
-
-    def normalize(self, embeddings):
-        """
-        Normalizes embeddings using L2 normalization. Operation applied directly on array.
-
-        Args:
-            embeddings: input embeddings matrix
-        """
-
-        # Calculation is different for matrices vs vectors
-        if len(embeddings.shape) > 1:
-            embeddings /= np.linalg.norm(embeddings, axis=1)[:, np.newaxis]
-        else:
-            embeddings /= np.linalg.norm(embeddings)
