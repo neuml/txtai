@@ -78,13 +78,15 @@ encodebatch: int
 
 Sets the encode batch size. This parameter controls the underlying vector model batch size. This often corresponds to a GPU batch size, which controls GPU memory usage.
 
-## tokenize
+## quantize
 ```yaml
-tokenize: boolean
+quantize: int|bool
 ```
 
-Enables string tokenization (defaults to false). This method applies tokenization rules that only work with English language text and may increase the quality of
-English language sentence embeddings in some situations.
+Enables scalar quantization at the specified precision. Supports 1-bit through 8-bit quantization. Scalar quantization transforms continuous floating point values
+to discrete unsigned integers.
+
+This parameter supports booleans for backwards compatability. When set to true/false, this flag sets [faiss.quantize](../ann/#faiss).
 
 ## instructions
 ```yaml
@@ -96,3 +98,11 @@ instructions:
 Instruction-based models use prefixes to modify how embeddings are computed. This is especially useful with asymmetric search, which is when the query and indexed data are of vastly different lengths. In other words, short queries with long documents.
 
 [E5-base](https://huggingface.co/intfloat/e5-base) is an example of a model that accepts instructions. It takes `query: ` and `passage: ` prefixes and uses those to generate embeddings that work well for asymmetric search.
+
+## tokenize
+```yaml
+tokenize: boolean
+```
+
+Enables string tokenization (defaults to false). This method applies tokenization rules that only work with English language text and may increase the quality of
+English language sentence embeddings in some situations.

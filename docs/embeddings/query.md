@@ -35,23 +35,29 @@ SELECT id, text, score FROM txtai WHERE similar('feel good story')
 SELECT id, text, score FROM txtai WHERE similar('feel good story')
 ```
 
-The similar clause takes two arguments:
+The similar clause takes the following arguments:
 
 ```sql
-similar("query", "number of candidates")
+similar("query", "number of candidates", "index", "weights")
 ```
 
 | Argument              | Description                            |
 | --------------------- | ---------------------------------------|
 | query                 | natural language query to run          |
 | number of candidates  | number of candidate results to return  |
+| index                 | target index name                      |
+| weights               | hybrid score weights                   |
 
-The txtai query layer has to join results from two separate components, a relational store and a similarity index. With a similar clause, a similarity search is run and those ids are fed to the underlying database query.
+The txtai query layer joins results from two separate components, a relational store and a similarity index. With a similar clause, a similarity search is run and those ids are fed to the underlying database query.
 
 The number of candidates should be larger than the desired number of results when applying additional filter clauses. This ensures that `limit` results are still returned after applying additional filters. If the number of candidates is not specified, it is defaulted as follows:
 
 - For a single query filter clause, the default is the query limit
 - With multiple filtering clauses, the default is 10x the query limit
+
+The index name is only applicable when [subindexes](../configuration/general/#indexes) are enabled. This specifies the index to use for the query.
+
+Weights sets the hybrid score weights when an index has both a sparse and dense index.
 
 ### Dynamic columns
 
@@ -161,10 +167,28 @@ entry >= date('now', '-1 day')
 
 This requires setting a [query translation model](../configuration/database#query). The default query translation model is [t5-small-txtsql](https://huggingface.co/NeuML/t5-small-txtsql) but this can easily be finetuned to handle different use cases.
 
+## Hybrid search
+
+When an embeddings database has both a sparse and dense index, both indexes will be queried and the results will be equally weighted unless otherwise specified.
+
+```python
+embeddings.search("query", weights=0.5)
+embeddings.search("select id, text, score from txtai where similar('query', 0.5)")
+```
+
+## Subindexes
+
+Subindexes can be queried as follows:
+
+```python
+embeddings.search("query", index="subindex1")
+embeddings.search("select id, text, score from txtai where similar('query', 'subindex1')")
+```
+
 ## Combined index architecture
 
-When content storage is enabled, txtai becomes a dual storage engine. Content is stored in an underlying database (currently supports SQLite) along with an Approximate Nearest Neighbor (ANN) index. These components combine to deliver similarity search alongside traditional structured search.
+txtai has multiple storage and indexing components. Content is stored in an underlying database along with an approximate nearest neighbor (ANN) index, keyword index and graph network. These components combine to deliver similarity search alongside traditional structured search.
 
-The ANN index stores ids and vectors for each input element. When a natural language query is run, the query is translated into a vector and a similarity query finds the best matching ids. When a database is added into the mix, an additional step is applied. This step takes those ids and effectively inserts them as part of the underlying database query.
+The ANN index stores ids and vectors for each input element. When a natural language query is run, the query is translated into a vector and a similarity query finds the best matching ids. When a database is added into the mix, an additional step is executed. This step takes those ids and effectively inserts them as part of the underlying database query. The same steps apply with keyword indexes except a term frequency index is used to find the best matching ids.
 
-Dynamic columns are supported via the underlying engine. For SQLite, data is stored as JSON and dynamic columns are converted into `json_extract` clauses. This same concept can be expanded to other storage engines like PostgreSQL and could even work with NoSQL stores. 
+Dynamic columns are supported via the underlying engine. For SQLite, data is stored as JSON and dynamic columns are converted into `json_extract` clauses. Client-server databases are supported via [SQLAlchemy](https://docs.sqlalchemy.org/en/20/dialects/) and dynamic columns are supported provided the underlying engine has [JSON](https://docs.sqlalchemy.org/en/20/core/type_basics.html#sqlalchemy.types.JSON) support.

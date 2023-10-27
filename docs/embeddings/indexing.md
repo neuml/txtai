@@ -3,7 +3,7 @@
 ![indexing](../images/indexing.png#only-light)
 ![indexing](../images/indexing-dark.png#only-dark)
 
-This section gives an in-depth overview on how to index data with txtai. We'll cover vectorization, indexing, updating and deleting data.
+This section gives an in-depth overview on how to index data with txtai. We'll cover vectorization, indexing/updating/deleting data and the various components of an embeddings database.
 
 ## Vectorization
 
@@ -12,6 +12,8 @@ The most compute intensive step in building an index is vectorization. The [path
 The [batch](../configuration/vectors#batch) and [encodebatch](../configuration/vectors#encodebatch) parameters control the vectorization process. Larger values for `batch` will pass larger batches to the vectorization method. Larger values for `encodebatch` will pass larger batches for each vector encode call. In the case of GPU vector models, larger values will consume more GPU memory.
 
 Data is buffered to temporary storage during indexing as embeddings vectors can be quite large (for example 768 dimensions of float32 is 768 * 4 = 3072 bytes per vector). Once vectorization is complete, a mmapped array is created with all vectors for [Approximate Nearest Neighbor (ANN)](../configuration/vectors#backend) indexing.
+
+The terms `ANN` and `dense vector index` are used interchangeably throughout txtai's documentation.
 
 ## Setting a backend
 
@@ -104,7 +106,19 @@ embeddings.graph.showpath(id1, id2)
 
 Graphs are persisted alongside an embeddings index. Each save and load will also save and load the graph.
 
-## Scoring
+## Sparse vectors
+
+Scoring instances can create a standalone [keyword](../configuration/general#keyword) or sparse index (BM25, TF-IDF). This enables [hybrid](../configuration/general/#hybrid) search when there is an available dense vector index.
+
+The terms `sparse vector index`, `keyword index`, `terms index` and `scoring index` are used interchangeably throughout txtai's documentation.
+
+See [this link](../../examples/#semantic-search) to learn more.
+
+## Subindexes
+
+An embeddings instance can optionally have associated [subindexes](../configuration/general/#indexes), which are also embeddings databases. This enables indexing additional fields, vector models and much more.
+
+## Word vectors
 
 When using [word vector backed models](../configuration/vectors#words) with scoring set, a separate call is required before calling `index` as follows:
 
@@ -113,6 +127,4 @@ embeddings.score(rows)
 embeddings.index(rows)
 ```
 
-Two calls are required to support generator-backed iteration of data. The scoring index requires a separate full-pass of the data.
-
-Scoring instances can also create a standalone keyword-based index (BM25, TF-IDF). See [this link](../../examples/#semantic-search) to learn more.
+Both calls are required to support generator-backed iteration of data with word vectors models.
