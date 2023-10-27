@@ -268,26 +268,19 @@ class TestEmbeddings(unittest.TestCase):
         uid = embeddings.search("feel good story", 1)[0][0]
         self.assertEqual(uid, 0)
 
-    def testNormalize(self):
+    def testQuantize(self):
         """
-        Test batch normalize and single input normalize are equal
+        Test scalar quantization
         """
 
-        # Generate data
-        data1 = np.random.rand(5, 5).astype(np.float32)
-        data2 = data1.copy()
+        for ann in ["faiss", "numpy", "torch"]:
+            # Index data with 1-bit scalar quantization
+            embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2", "quantize": 1, "backend": ann})
+            embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
 
-        # Keep original data to ensure it changed
-        original = data1.copy()
-
-        # Normalize data
-        self.embeddings.normalize(data1)
-        for x in data2:
-            self.embeddings.normalize(x)
-
-        # Test both data arrays are the same and changed from original
-        self.assertTrue(np.allclose(data1, data2))
-        self.assertFalse(np.allclose(data1, original))
+            # Search for best match
+            uid = embeddings.search("feel good story", 1)[0][0]
+            self.assertEqual(uid, 4)
 
     def testReducer(self):
         """

@@ -521,6 +521,19 @@ class Common:
             obj = embeddings.search("select object from txtai where id = 0")[0]["object"]
             self.assertEqual(str(obj.getvalue(), "utf-8"), "binary data")
 
+        def testQuantize(self):
+            """
+            Test scalar quantization
+            """
+
+            # Index data with 1-bit scalar quantization
+            embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2", "quantize": 1, "content": self.backend})
+            embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+            # Search for best match
+            result = self.embeddings.search("feel good story", 1)[0]
+            self.assertEqual(result["text"], self.data[4])
+
         def testQueryModel(self):
             """
             Test index

@@ -40,6 +40,10 @@ class Transform:
         self.offset = embeddings.config.get("offset", 0) if action == Action.UPSERT else 0
         self.batch = embeddings.config.get("batch", 1024)
 
+        # Scalar quantization
+        quantize = embeddings.config.get("quantize")
+        self.qbits = quantize if isinstance(quantize, int) and not isinstance(quantize, bool) else None
+
         # Transform columns
         columns = embeddings.config.get("columns", {})
         self.text = columns.get("text", "text")
@@ -93,7 +97,11 @@ class Transform:
         # Check that embeddings are available and load as a memmap
         embeddings = None
         if ids:
-            embeddings = np.memmap(buffer, dtype=np.float32, shape=(len(ids), dimensions), mode="w+")
+            # Determine dtype
+            dtype = np.uint8 if self.qbits else np.float32
+
+            # Write batches
+            embeddings = np.memmap(buffer, dtype=dtype, shape=(len(ids), dimensions), mode="w+")
             with open(stream, "rb") as queue:
                 x = 0
                 for _ in range(batches):

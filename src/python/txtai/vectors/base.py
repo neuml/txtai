@@ -44,6 +44,10 @@ class Vectors:
             # Embeddings instructions
             self.instructions = config.get("instructions")
 
+            # Scalar quantization - supports 1-bit through 8-bit quantization
+            quantize = config.get("quantize")
+            self.qbits = max(min(quantize, 8), 1) if isinstance(quantize, int) and not isinstance(quantize, bool) else None
+
     def load(self, path):
         """
         Loads vector model at path.
@@ -141,7 +145,7 @@ class Vectors:
         if documents and isinstance(documents[0], np.ndarray):
             return np.array(documents, dtype=np.float32)
 
-        return self.encode(documents)
+        return self.vectorize(documents)
 
     def batch(self, documents, output):
         """
@@ -161,7 +165,7 @@ class Vectors:
         dimensions = None
 
         # Build embeddings
-        embeddings = self.encode(documents)
+        embeddings = self.vectorize(documents)
         if embeddings is not None:
             dimensions = embeddings.shape[1]
             pickle.dump(embeddings, output, protocol=__pickle__)
@@ -189,3 +193,73 @@ class Vectors:
             data = f"{self.instructions[category]}{data}"
 
         return data
+
+    def vectorize(self, data):
+        """
+        Runs data vectorization, which consists of the following steps.
+
+          1. Encode data into vectors using underlying model
+          2. Normalize vectors
+          3. Quantize vectors, if necessary
+
+        Args:
+            data: input data
+
+        Returns:
+            embeddings vectors
+        """
+
+        # Transform data into vectors
+        embeddings = self.encode(data)
+
+        if embeddings is not None:
+            # Normalize data
+            self.normalize(embeddings)
+
+            # Apply quantization, if necessary
+            if self.qbits:
+                embeddings = self.quantize(embeddings)
+
+        return embeddings
+
+    def normalize(self, embeddings):
+        """
+        Normalizes embeddings using L2 normalization. Operation applied directly on array.
+
+        Args:
+            embeddings: input embeddings
+        """
+
+        # Calculation is different for matrices vs vectors
+        if len(embeddings.shape) > 1:
+            embeddings /= np.linalg.norm(embeddings, axis=1)[:, np.newaxis]
+        else:
+            embeddings /= np.linalg.norm(embeddings)
+
+    def quantize(self, embeddings):
+        """
+        Quantizes embeddings using scalar quantization.
+
+        Args:
+            embeddings: input embeddings
+
+        Returns:
+            quantized embeddings
+        """
+
+        # Scale factor is midpoint in range
+        factor = 2 ** (self.qbits - 1)
+
+        # Quantize to uint8
+        scalars = embeddings * factor
+        scalars = scalars.clip(-factor, factor - 1) + factor
+        scalars = scalars.astype(np.uint8)
+
+        # Transform uint8 to bits
+        bits = np.unpackbits(scalars.reshape(-1, 1), axis=1)
+
+        # Remove unused bits (i.e. for 3-bit quantization, the leading 5 bits are removed)
+        bits = bits[:, -self.qbits :]
+
+        # Reshape using original data dimensions and pack bits into uint8 array
+        return np.packbits(bits.reshape(embeddings.shape[0], embeddings.shape[1] * self.qbits), axis=1)
