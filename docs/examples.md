@@ -90,7 +90,7 @@ Run distributed txtai, integrate with the API and cloud endpoints.
 
 ## Architecture
 
-Deep dives into project architecture, data formats and performance.
+Deep dives into project architecture, data formats, benchmarks, and performance.
 
 | Notebook  | Description  |       |
 |:----------|:-------------|------:|
@@ -100,6 +100,7 @@ Deep dives into project architecture, data formats and performance.
 | [Building an efficient sparse keyword index in Python](https://github.com/neuml/txtai/blob/master/examples/47_Building_an_efficient_sparse_keyword_index_in_Python.ipynb) | Fast and accurate sparse keyword indexing | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/48_Benefits_of_hybrid_search.ipynb) |
 | [Benefits of hybrid search](https://github.com/neuml/txtai/blob/master/examples/48_Benefits_of_hybrid_search.ipynb) | Improve accuracy with a combination of semantic and keyword search | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/48_Benefits_of_hybrid_search.ipynb) |
 | [External database integration](https://github.com/neuml/txtai/blob/master/examples/49_External_database_integration.ipynb) | Store metadata in PostgreSQL, MariaDB, MySQL and more | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/49_External_database_integration.ipynb) |
+| [All about vector quantization](https://github.com/neuml/txtai/blob/master/examples/50_All_about_vector_quantization.ipynb) | Benchmarking scalar and product quantization methods | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/50_All_about_vector_quantization.ipynb) |
 
 ## Releases
 
