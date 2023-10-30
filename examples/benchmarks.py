@@ -199,7 +199,7 @@ class Embed(Index):
             embeddings.load(path)
         else:
             # Read configuration
-            config = self.readconfig("embed", {"batch": 8192, "encodebatch": 128, "faiss": {"quantize": True, "sample": 0.05}})
+            config = self.readconfig("embeddings", {"batch": 8192, "encodebatch": 128, "faiss": {"quantize": True, "sample": 0.05}})
 
             # Build index
             embeddings = Embeddings(config)
