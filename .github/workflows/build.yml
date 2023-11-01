@@ -41,6 +41,7 @@ jobs:
         run: |
           echo "OMP_NUM_THREADS=1" >> $GITHUB_ENV
           echo "PYTORCH_MPS_DISABLE=1" >> $GITHUB_ENV
+          echo "ACCELERATE_USE_CPU=1" >> $GITHUB_ENV
         if: matrix.os == 'macos-latest'
 
       - name: Install dependencies - Windows
