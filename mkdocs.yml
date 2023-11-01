@@ -113,6 +113,7 @@ nav:
         - api/index.md
         - Cluster: api/cluster.md
         - Configuration: api/configuration.md
+        - Extensions: api/extensions.md
         - Methods: api/methods.md
     - Cloud: cloud.md
     - Examples: examples.md
