@@ -132,7 +132,7 @@ class Models:
             else f"cuda:{deviceid}"
             if torch.cuda.is_available()
             else "mps"
-            if torch.backends.mps.is_available()
+            if Models.hasmpsdevice()
             else Models.finddevice()
         )
 
@@ -145,7 +145,18 @@ class Models:
             True if an accelerator device is available, False otherwise
         """
 
-        return torch.cuda.is_available() or torch.backends.mps.is_available() or bool(Models.finddevice())
+        return torch.cuda.is_available() or Models.hasmpsdevice() or bool(Models.finddevice())
+
+    @staticmethod
+    def hasmpsdevice():
+        """
+        Checks if there is a MPS device available.
+
+        Returns:
+            True if a MPS device is available, False otherwise
+        """
+
+        return os.environ.get("PYTORCH_MPS_DISABLE") != "1" and torch.backends.mps.is_available()
 
     @staticmethod
     def finddevice():
