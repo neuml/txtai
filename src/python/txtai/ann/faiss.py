@@ -115,7 +115,8 @@ class Faiss(ANN):
         components = self.setting("components")
 
         if components:
-            return components
+            # Format and return components string
+            return self.components(components, train)
 
         # Derive quantization. Prefer backend-specific setting. Fallback to root-level parameter.
         quantize = self.setting("quantize", self.config.get("quantize"))
@@ -171,7 +172,28 @@ class Faiss(ANN):
 
         # Calculate number of IVF cells where x = min(4 * sqrt(embeddings count), embeddings count / 39)
         # Faiss requires at least 39 * x data points
-        return min(round(4 * math.sqrt(count)), int(count / 39))
+        return max(min(round(4 * math.sqrt(count)), int(count / 39)), 1)
+
+    def components(self, components, train):
+        """
+        Formats a components string. This method automatically calculates the optimal number of IVF cells, if omitted.
+
+        Args:
+            components: input components string
+            train: number of rows selected for model training
+
+        Returns:
+            formatted components string
+        """
+
+        # Optimal number of IVF cells
+        x = self.cells(train)
+
+        # Add number of IVF cells, if missing
+        components = [f"IVF{x}" if component == "IVF" else component for component in components.split(",")]
+
+        # Return components string
+        return ",".join(components)
 
     def nprobe(self):
         """
