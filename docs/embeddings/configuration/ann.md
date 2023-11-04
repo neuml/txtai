@@ -16,9 +16,10 @@ Backend-specific settings are set with a corresponding configuration object havi
 ### faiss
 ```yaml
 faiss:
-    components: comma separated list of components - defaults to "Flat" for small
+    components: comma separated list of components - defaults to "IDMap,Flat" for small
                 indices and "IVFx,Flat" for larger indexes where
-                x = 4 * sqrt(embeddings count)
+                x = min(4 * sqrt(embeddings count), embeddings count / 39)
+                automatically calculates number of IVF cells when omitted (supports "IVF,Flat")
     nprobe: search probe setting (int) - defaults to x/16 (as defined above)
             for larger indexes
     nflip: same as nprobe - only used with binary hash indexes
