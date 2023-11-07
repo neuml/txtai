@@ -32,7 +32,6 @@ The similar clause is a txtai function that enables similarity searches with SQL
 
 ```sql
 SELECT id, text, score FROM txtai WHERE similar('feel good story')
-SELECT id, text, score FROM txtai WHERE similar('feel good story')
 ```
 
 The similar clause takes the following arguments:
@@ -92,6 +91,20 @@ SELECT text FROM txtai WHERE [parent.child element] = 'abc'
 
 Note the bracket statement escaping the nested column with spaces in the name.
 
+### Bind parameters
+
+txtai has support for SQL bind parameters.
+
+```python
+# Query with a bind parameter for similar clause
+query = "SELECT id, text, score FROM txtai WHERE similar(:x)"
+results = embeddings.search(query, parameters={"x": "feel good story"})
+
+# Query with a bind parameter for column filter
+query = "select text, flag, actiondate from txtai where flag = :x"
+results = embeddings.search(query, parameters={"x": 1})
+```
+
 ### Aggregation queries
 
 The goal of txtai's query language is to closely support all functions in the underlying database engine. The main challenge is ensuring dynamic columns are properly escaped into the engines native query function. 
@@ -123,6 +136,10 @@ embeddings.index([("txtai", {"text": "txtai executes machine-learning workflows.
 # Query txtai and get associated object
 query = "select object from txtai where similar('machine learning') limit 1"
 result = embeddings.search(query)[0]["object"]
+
+# Query binary content with a bind parameter
+query = "select object from txtai where similar(:x) limit 1"
+results = embeddings.search(query, parameters={"x": request.read()})
 ```
 
 ## Custom SQL functions
