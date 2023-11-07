@@ -178,7 +178,7 @@ class RDBMS(Database):
         return Statement.IDS_CLAUSE % batch
 
     # pylint: disable=R0912
-    def query(self, query, limit):
+    def query(self, query, limit, parameters):
         # Extract query components
         select = query.get("select", self.defaults())
         where = query.get("where")
@@ -214,7 +214,8 @@ class RDBMS(Database):
             self.scores(None)
 
         # Runs a user query through execute method, which has common user query handling logic
-        self.execute(self.cursor.execute, query)
+        args = (query, parameters) if parameters else (query,)
+        self.execute(self.cursor.execute, *args)
 
         # Retrieve column list from query
         columns = [c[0] for c in self.cursor.description]

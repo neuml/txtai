@@ -37,7 +37,7 @@ class Search:
         self.query = embeddings.query
         self.scoring = embeddings.scoring if embeddings.issparse() else None
 
-    def __call__(self, queries, limit=None, weights=None, index=None):
+    def __call__(self, queries, limit=None, weights=None, index=None, parameters=None):
         """
         Executes a batch search for queries. This method will run either an index search or an index + database search
         depending on if a database is available.
@@ -47,6 +47,7 @@ class Search:
             limit: maximum results
             weights: hybrid score weights
             index: index name
+            parameters: list of dicts of named parameters to bind to placeholders
 
         Returns:
             list of (id, score) per query for index search, list of dict per query for an index + database search
@@ -66,7 +67,7 @@ class Search:
 
         # Database search
         if not self.indexids and self.database:
-            return self.dbsearch(queries, limit, weights, index)
+            return self.dbsearch(queries, limit, weights, index, parameters)
 
         # Default vector index query (sparse, dense or hybrid)
         return self.search(queries, limit, weights, index)
@@ -209,7 +210,7 @@ class Search:
 
         return results
 
-    def dbsearch(self, queries, limit, weights, index):
+    def dbsearch(self, queries, limit, weights, index, parameters):
         """
         Executes an index + database search.
 
@@ -218,6 +219,7 @@ class Search:
             limit: maximum results
             weights: default hybrid score weights
             index: default index name
+            parameters: list of dicts of named parameters to bind to placeholders
 
         Returns:
             list of dict per query
@@ -230,13 +232,13 @@ class Search:
         limit = max(limit, self.limit(queries))
 
         # Bulk index scan
-        scan = Scan(self.search, limit, weights, index)(queries)
+        scan = Scan(self.search, limit, weights, index)(queries, parameters)
 
         # Combine index search results with database search results
         results = []
         for x, query in enumerate(queries):
             # Run the database query, get matching bulk searches for current query
-            result = self.database.search(query, [r for y, r in scan if x == y], limit)
+            result = self.database.search(query, [r for y, r in scan if x == y], limit, parameters[x] if parameters and parameters[x] else None)
             results.append(result)
 
         return results

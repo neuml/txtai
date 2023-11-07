@@ -3,6 +3,7 @@ DuckDB module
 """
 
 import os
+import re
 
 from tempfile import TemporaryDirectory
 
@@ -33,18 +34,22 @@ class DuckDB(Embedded):
         if not DUCKDB:
             raise ImportError('DuckDB is not available - install "database" extra to enable')
 
+    def execute(self, function, *args):
+        # Call parent method with DuckDB compatible arguments
+        return super().execute(function, *self.formatargs(args))
+
     def insertdocument(self, uid, data, tags, entry):
         # Delete existing document
         self.cursor.execute(DuckDB.DELETE_DOCUMENT, [uid])
 
-        # Call parent logic
+        # Call parent method
         super().insertdocument(uid, data, tags, entry)
 
     def insertobject(self, uid, data, tags, entry):
         # Delete existing object
         self.cursor.execute(DuckDB.DELETE_OBJECT, [uid])
 
-        # Call parent logic
+        # Call parent method
         super().insertobject(uid, data, tags, entry)
 
     def connect(self, path=":memory:"):
@@ -57,6 +62,14 @@ class DuckDB(Embedded):
 
     def getcursor(self):
         return self.connection
+
+    def jsonprefix(self):
+        # Return json column prefix
+        return "json_extract_string(data"
+
+    def jsoncolumn(self, name):
+        # Generate json column using json_extract function
+        return f"json_extract_string(data, '$.{name}')"
 
     def rows(self):
         # Iteratively retrieve and yield rows
@@ -103,3 +116,35 @@ class DuckDB(Embedded):
         connection.begin()
 
         return connection
+
+    def formatargs(self, args):
+        """
+        DuckDB doesn't support named parameters. This method replaces named parameters with question marks
+        and makes parameters a list.
+
+        Args:
+            args: input arguments
+
+        Returns:
+            DuckDB compatible args
+        """
+
+        if args and len(args) > 1:
+            # Unpack query args
+            query, parameters = args
+
+            # Iterate over parameters
+            #   - Replace named parameters with ?'s
+            #   - Build list of value with position indexes
+            params = []
+            for key, value in parameters.items():
+                pattern = rf"\:{key}(?=\s|$)"
+                match = re.search(pattern, query)
+                if match:
+                    query = re.sub(pattern, "?", query, count=1)
+                    params.append((match.start(), value))
+
+            # Repack query and parameter list
+            args = (query, [value for _, value in sorted(params, key=lambda x: x[0])])
+
+        return args

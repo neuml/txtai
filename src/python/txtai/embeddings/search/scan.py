@@ -34,12 +34,13 @@ class Scan:
         # Default index
         self.index = index
 
-    def __call__(self, queries):
+    def __call__(self, queries, parameters):
         """
         Executes a scan for a list of queries.
 
         Args:
             queries: list of queries to run
+            parameters: list of dicts of named parameters to bind to placeholders
 
         Returns:
             list of (id, score) per query
@@ -52,7 +53,7 @@ class Scan:
         default = None
 
         # Group by index and run
-        for index, iqueries in self.parse(queries).items():
+        for index, iqueries in self.parse(queries, parameters).items():
             # Query limit to pass to batch search
             candidates = [query.candidates for query in iqueries if query.candidates]
             if not candidates and not default:
@@ -75,12 +76,13 @@ class Scan:
         # Sort by query uid and return results
         return [result for _, result in sorted(results.items())]
 
-    def parse(self, queries):
+    def parse(self, queries, parameters):
         """
         Parse index query clauses from a list of parsed queries.
 
         Args:
             queries: list of parsed queries
+            parameters: list of dicts of named parameters to bind to placeholders
 
         Returns:
             index query clauses grouped by index
@@ -91,7 +93,11 @@ class Scan:
             if "similar" in query:
                 # Extract similar query clauses
                 for params in query["similar"]:
-                    # Parse query clause parameters
+                    # Resolve bind parameters
+                    if parameters and parameters[x]:
+                        params = self.bind(params, parameters[x])
+
+                    # Parse query clause
                     clause = Clause(uid, x, params)
 
                     # Create clause list for index
@@ -103,6 +109,28 @@ class Scan:
                     uid += 1
 
         return results
+
+    def bind(self, similar, parameters):
+        """
+        Resolves bind parameters for a similar function call.
+
+        Args:
+            similar: similar function call arguments
+            parameters: bind parameters
+
+        Returns:
+            similar function call arguments with resolved bind parameters
+        """
+
+        resolved = []
+        for p in similar:
+            # Resolve bind parameters
+            if isinstance(p, str) and p.startswith(":") and p[1:] in parameters:
+                resolved.append(parameters[p[1:]])
+            else:
+                resolved.append(p)
+
+        return resolved
 
     def default(self, queries):
         """
@@ -155,11 +183,11 @@ class Clause:
         """
 
         for param in params:
-            if param.isdigit():
+            if (isinstance(param, str) and param.isdigit()) or isinstance(param, int):
                 # Number of query candidates
                 self.candidates = int(param)
 
-            elif param.replace(".", "").isdigit():
+            elif (isinstance(param, str) and param.replace(".", "").isdigit()) or isinstance(param, float):
                 # Hybrid score weights
                 self.weights = float(param)
 

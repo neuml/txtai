@@ -344,7 +344,7 @@ class Embeddings:
         # Default to 0 when no suitable method found
         return 0
 
-    def search(self, query, limit=None, weights=None, index=None):
+    def search(self, query, limit=None, weights=None, index=None, parameters=None):
         """
         Finds documents most similar to the input query. This method will run either an index search
         or an index + database search depending on if a database is available.
@@ -354,15 +354,16 @@ class Embeddings:
             limit: maximum results
             weights: hybrid score weights, if applicable
             index: index name, if applicable
+            parameters: dict of named parameters to bind to placeholders
 
         Returns:
             list of (id, score) for index search, list of dict for an index + database search
         """
 
-        results = self.batchsearch([query], limit, weights, index)
+        results = self.batchsearch([query], limit, weights, index, [parameters])
         return results[0] if results else results
 
-    def batchsearch(self, queries, limit=None, weights=None, index=None):
+    def batchsearch(self, queries, limit=None, weights=None, index=None, parameters=None):
         """
         Finds documents most similar to the input queries. This method will run either an index search
         or an index + database search depending on if a database is available.
@@ -372,12 +373,13 @@ class Embeddings:
             limit: maximum results
             weights: hybrid score weights, if applicable
             index: index name, if applicable
+            parameters: list of dicts of named parameters to bind to placeholders
 
         Returns:
             list of (id, score) per query for index search, list of dict per query for an index + database search
         """
 
-        return Search(self)(queries, limit, weights, index)
+        return Search(self)(queries, limit, weights, index, parameters)
 
     def similarity(self, query, data):
         """

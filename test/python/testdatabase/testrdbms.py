@@ -615,7 +615,7 @@ class Common:
             """
 
             # Create an index for the list of text
-            self.embeddings.index([(uid, {"text": text, "length": len(text)}, None) for uid, text in enumerate(self.data)])
+            self.embeddings.index([(uid, {"text": text, "length": len(text), "attribute": f"ID{uid}"}, None) for uid, text in enumerate(self.data)])
 
             # Test similar
             result = self.embeddings.search(
@@ -643,9 +643,33 @@ class Common:
             result = self.embeddings.search("select id, text, length, data, entry from txtai")[0]
             self.assertEqual(sorted(result.keys()), ["data", "entry", "id", "length", "text"])
 
+            # Test column filtering
+            result = self.embeddings.search("select text from txtai where attribute = 'ID4'", 1)[0]
+            self.assertEqual(result["text"], self.data[4])
+
             # Test SQL parse error
             with self.assertRaises(SQLError):
                 self.embeddings.search("select * from txtai where bad,query")
+
+        def testSQLBind(self):
+            """
+            Test SQL statements with bind parameters
+            """
+
+            # Create an index for the list of text
+            self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+            # Test similar clause bind parameters
+            result = self.embeddings.search("select id, text, score from txtai where similar(:x)", parameters={"x": "feel good story"})[0]
+            self.assertEqual(result["text"], self.data[4])
+
+            # Test similar clause bind and non-bind parameters
+            result = self.embeddings.search("select id, text, score from txtai where similar(:x, 0.5)", parameters={"x": "feel good story"})[0]
+            self.assertEqual(result["text"], self.data[4])
+
+            # Test where filtering with bind parameters
+            result = self.embeddings.search("select * from txtai where text like :x", parameters={"x": "%iceberg%"})[0]
+            self.assertEqual(result["text"], self.data[1])
 
         def testSubindex(self):
             """

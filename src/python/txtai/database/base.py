@@ -113,7 +113,7 @@ class Database:
 
         raise NotImplementedError
 
-    def search(self, query, similarity=None, limit=None):
+    def search(self, query, similarity=None, limit=None, parameters=None):
         """
         Runs a search against the database. Supports the following methods:
 
@@ -133,6 +133,7 @@ class Database:
             query: input query
             similarity: similarity results as [(indexid, score)]
             limit: maximum number of results to return
+            parameters: dict of named parameters to bind to placeholders
 
         Returns:
             query results as a list of dicts
@@ -159,7 +160,7 @@ class Database:
         query["where"] = where
 
         # Run query
-        return self.query(query, limit)
+        return self.query(query, limit, parameters)
 
     def parse(self, query):
         """
@@ -200,13 +201,14 @@ class Database:
 
         raise NotImplementedError
 
-    def query(self, query, limit):
+    def query(self, query, limit, parameters):
         """
         Executes query against database.
 
         Args:
             query: input query
             limit: maximum number of results to return
+            parameters: dict of named parameters to bind to placeholders
 
         Returns:
             query results
@@ -312,7 +314,7 @@ class Database:
 
         try:
             # Debug log SQL
-            logger.debug(*args)
+            logger.debug(" ".join(["%s"] * len(args)), *args)
 
             return function(*args)
         except Exception as ex:

@@ -61,7 +61,7 @@ class Client(RDBMS):
         d = aliased(Document, name="d")
 
         # Build JSON column expression for column
-        return str(cast(d.data[name], Text).compile(dialect=self.connection.bind.dialect, compile_kwargs={"literal_binds": True}))
+        return str(cast(d.data[name].as_string(), Text).compile(dialect=self.connection.bind.dialect, compile_kwargs={"literal_binds": True}))
 
     def createtables(self):
         # Create tables
@@ -111,7 +111,7 @@ class Client(RDBMS):
         content = os.environ.get("CLIENT_URL") if content == "client" else content
 
         # Create engine using database URL
-        engine = create_engine(content, poolclass=StaticPool, echo=False)
+        engine = create_engine(content, poolclass=StaticPool, echo=False, json_serializer=lambda x: x)
 
         # Create database session
         return Session(engine)
@@ -138,18 +138,19 @@ class Cursor:
     def __iter__(self):
         return self.result
 
-    def execute(self, statement):
+    def execute(self, statement, parameters=None):
         """
         Executes statement.
 
         Args:
             statement: statement to execute
+            parameters: optional dictionary with bind parameters
         """
 
         if isinstance(statement, str):
             statement = textsql(statement)
 
-        self.result = self.connection.execute(statement)
+        self.result = self.connection.execute(statement, parameters)
 
     def fetchall(self):
         """

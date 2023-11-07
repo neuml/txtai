@@ -387,7 +387,7 @@ class Expression:
 
     def resolve(self, token, aliases):
         """
-        Resolves this token's value if it is not an alias.
+        Resolves this token's value if it is not an alias or a bind parameter.
 
         Args:
             token: token to resolve
@@ -397,7 +397,8 @@ class Expression:
             resolved token value
         """
 
-        if aliases and Token.normalize(token) in aliases:
+        # Check for alias or bind parameter
+        if (aliases and Token.normalize(token) in aliases) or (token.startswith(":")):
             return token
 
         return self.resolver(token)

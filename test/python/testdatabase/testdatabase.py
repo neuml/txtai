@@ -29,4 +29,4 @@ class TestDatabase(unittest.TestCase):
         self.assertRaises(NotImplementedError, database.count)
         self.assertRaises(NotImplementedError, database.resolve, None, None)
         self.assertRaises(NotImplementedError, database.embed, None, None)
-        self.assertRaises(NotImplementedError, database.query, None, None)
+        self.assertRaises(NotImplementedError, database.query, None, None, None)
