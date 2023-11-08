@@ -90,7 +90,7 @@ extras["all"] = (
 
 setup(
     name="txtai",
-    version="6.2.0",
+    version="6.3.0",
     author="NeuML",
     description="All-in-one open-source embeddings database for semantic search, LLM orchestration and language model workflows",
     long_description=DESCRIPTION,
