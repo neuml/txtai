@@ -60,7 +60,9 @@ Weights sets the hybrid score weights when an index has both a sparse and dense 
 
 ### Dynamic columns
 
-Content can be indexed in multiple ways when content storage is enabled. [Remember that input documents](../#index) take the form of `(id, data, tags)` tuples. If data is a string, then content is primarily filtered with similar clauses. If data is a dictionary, then all fields in the dictionary are indexed and searchable.
+Content can be indexed in multiple ways when content storage is enabled. [Remember that input documents](../#index) take the form of `(id, data, tags)` tuples. If data is a string or binary content, it's indexed and searchable with `similar()` clauses.
+
+If data is a dictionary, then all fields in the dictionary are stored and available via SQL. The `text` field or [field specified in the index configuration](../configuration/general/#columns) is indexed and searchable with `similar()` clauses.
 
 For example:
 
