@@ -30,6 +30,16 @@ Wrap the list or generator passed to the index call with tqdm. See [#478](https:
 
 __Question__
 
+What is the best way to analyze the content of a txtai index?
+
+__Answer__
+
+txtai has a console application that makes this easy. Read [this article](https://medium.com/neuml/insights-from-the-txtai-console-d307c28e149e) to learn more.
+
+----------
+
+__Question__
+
 How can models be externally loaded and passed to embeddings and pipelines?
 
 __Answer__
@@ -45,7 +55,7 @@ model = AutoModel.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
 tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
 
 # Pass to embeddings instance
-embeddings = Embeddings({"path": model, "tokenizer": tokenizer})
+embeddings = Embeddings(path=model, tokenizer=tokenizer)
 ```
 
 LLM pipeline example.

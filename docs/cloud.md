@@ -3,11 +3,12 @@
 ![cloud](images/cloud.png#only-light)
 ![cloud](images/cloud-dark.png#only-dark)
 
-Scalable cloud-native applications can be built with txtai. The following container runtimes are supported.
+Scalable cloud-native applications can be built with txtai. The following cloud runtimes are supported.
 
 - Container Orchestration Systems (i.e. Kubernetes)
 - Docker Engine
 - Serverless Compute
+- txtai.cloud (coming in 2024)
 
 Images for txtai are available on Docker Hub for [CPU](https://hub.docker.com/r/neuml/txtai-cpu) and [GPU](https://hub.docker.com/r/neuml/txtai-gpu) installs. The CPU install is recommended when GPUs aren't available given the image is half the size.
 
@@ -175,3 +176,7 @@ If successful, a local API instance is now running in a "serverless" fashion. Th
 txtai scales with container orchestration systems. This can be self-hosted or with a cloud provider such as [Amazon Elastic Kubernetes Service](https://aws.amazon.com/eks/), [Google Kubernetes Engine](https://cloud.google.com/kubernetes-engine) and [Azure Kubernetes Service](https://azure.microsoft.com/en-us/services/kubernetes-service/). There are also other smaller providers with a managed Kubernetes offering.
 
 A full example covering how to build a serverless txtai application on Kubernetes with Knative [can be found here](https://medium.com/neuml/serverless-vector-search-with-txtai-96f6163ab972).
+
+## txtai.cloud
+
+[txtai.cloud](https://txtai.cloud) is a planned effort that will offer an easy and secure way to run hosted txtai API instances.
