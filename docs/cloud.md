@@ -179,4 +179,4 @@ A full example covering how to build a serverless txtai application on Kubernete
 
 ## txtai.cloud
 
-[txtai.cloud](https://txtai.cloud) is a planned effort that will offer an easy and secure way to run hosted txtai API instances.
+[txtai.cloud](https://txtai.cloud) is a planned effort that will offer an easy and secure way to run hosted txtai applications.
