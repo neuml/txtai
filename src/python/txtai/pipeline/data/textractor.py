@@ -36,7 +36,7 @@ class Textractor(Segmentation):
         self.tika = self.checkjava() if tika else False
 
         # HTML to Text extractor
-        self.extract = Extract()
+        self.extract = Extract(self.sections)
 
     def text(self, text):
         # Use Tika if available
@@ -87,6 +87,16 @@ class Extract:
     Visual formatting is not included (bold, italic, styling etc).
     """
 
+    def __init__(self, sections):
+        """
+        Create a new Extract instance.
+
+        Args:
+            sections: True if section parsing enabled, False otherwise
+        """
+
+        self.sections = sections
+
     def __call__(self, html):
         """
         Transforms input HTML into formatted text.
@@ -135,8 +145,8 @@ class Extract:
         # Join elements into text
         text = "\n".join(self.process(node) for node in children) if self.iscontainer(node, children) else self.text(node)
 
-        # Detect page breaks. Otherwise add node text.
-        return f"{text}\f" if page else text
+        # Add page breaks, if section parsing enabled. Otherwise add node text.
+        return f"{text}\f" if page and self.sections else text
 
     def text(self, node):
         """

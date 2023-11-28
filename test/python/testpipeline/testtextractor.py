@@ -95,7 +95,7 @@ class TestTextractor(unittest.TestCase):
         text = textractor(Utils.PATH + "/article.pdf")
 
         # Check length of text is as expected
-        self.assertEqual(len(text), 2334)
+        self.assertEqual(len(text), 2333)
 
     def testTable(self):
         """
