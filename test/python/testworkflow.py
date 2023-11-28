@@ -392,7 +392,7 @@ class TestWorkflow(unittest.TestCase):
 
         results = list(workflow(["local://" + Utils.PATH, "test string"]))
 
-        self.assertEqual(len(results), 19)
+        self.assertEqual(len(results), 22)
 
     def testTemplateInput(self):
         """

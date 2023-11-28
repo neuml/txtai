@@ -52,11 +52,24 @@ class TestTextractor(unittest.TestCase):
 
         textractor = Textractor(paragraphs=True)
 
-        # Extract text as sentences
+        # Extract text as paragraphs
         paragraphs = textractor(Utils.PATH + "/article.pdf")
 
         # Check number of paragraphs is as expected
-        self.assertEqual(len(paragraphs), 13)
+        self.assertEqual(len(paragraphs), 11)
+
+    def testSections(self):
+        """
+        Test extraction to sections
+        """
+
+        textractor = Textractor(sections=True)
+
+        # Extract as sections
+        paragraphs = textractor(Utils.PATH + "/document.pdf")
+
+        # Check number of sections is as expected
+        self.assertEqual(len(paragraphs), 3)
 
     def testSentences(self):
         """
@@ -82,4 +95,18 @@ class TestTextractor(unittest.TestCase):
         text = textractor(Utils.PATH + "/article.pdf")
 
         # Check length of text is as expected
-        self.assertEqual(len(text), 2301)
+        self.assertEqual(len(text), 2334)
+
+    def testTable(self):
+        """
+        Test table extraction
+        """
+
+        textractor = Textractor()
+
+        # Extract text as a single block
+        for name in ["document.docx", "spreadsheet.xlsx"]:
+            text = textractor(f"{Utils.PATH}/{name}")
+
+            # Check for table header
+            self.assertTrue("|---|" in text)

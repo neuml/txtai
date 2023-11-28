@@ -23,7 +23,7 @@ endif
 # Download test data
 data:
 	mkdir -p /tmp/txtai
-	wget -N https://github.com/neuml/txtai/releases/download/v3.5.0/tests.tar.gz -P /tmp
+	wget -N https://github.com/neuml/txtai/releases/download/v6.2.0/tests.tar.gz -P /tmp
 	tar -xvzf /tmp/tests.tar.gz -C /tmp
 
 # Unit tests

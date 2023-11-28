@@ -20,7 +20,7 @@ class Segmentation(Pipeline):
     Segments text into logical units.
     """
 
-    def __init__(self, sentences=False, lines=False, paragraphs=False, minlength=None, join=False):
+    def __init__(self, sentences=False, lines=False, paragraphs=False, minlength=None, join=False, sections=False):
         """
         Creates a new Segmentation pipeline.
 
@@ -30,6 +30,7 @@ class Segmentation(Pipeline):
             paragraphs: tokenizes text into paragraphs if True, defaults to False
             minlength: require at least minlength characters per text element, defaults to None
             join: joins tokenized sections back together if True, defaults to False
+            sections: tokenizes text into sections if True, defaults to False. Splits using section or page breaks, depending on what's available
         """
 
         if not NLTK:
@@ -38,6 +39,7 @@ class Segmentation(Pipeline):
         self.sentences = sentences
         self.lines = lines
         self.paragraphs = paragraphs
+        self.sections = sections
         self.minlength = minlength
         self.join = join
 
@@ -96,19 +98,23 @@ class Segmentation(Pipeline):
         if self.sentences:
             content = [self.clean(x) for x in sent_tokenize(text)]
         elif self.lines:
-            content = [self.clean(x) for x in text.split("\n")]
+            content = [self.clean(x) for x in re.split(r"\n{1,}", text)]
         elif self.paragraphs:
-            content = [self.clean(x) for x in text.split("\n\n")]
+            content = [self.clean(x) for x in re.split(r"\n{2,}", text)]
+        elif self.sections:
+            split = r"\f" if "\f" in text else r"\n{3,}"
+            content = [self.clean(x) for x in re.split(split, text)]
         else:
-            content = [self.clean(text)]
+            content = self.clean(text)
 
-        # Remove empty strings
-        content = [x for x in content if x]
-
-        if self.sentences or self.lines or self.paragraphs:
+        # Text tokenization enabled
+        if isinstance(content, list):
+            # Remove empty strings
+            content = [x for x in content if x]
             return " ".join(content) if self.join else content
 
-        return content[0] if content else content
+        # Default method that returns clean text
+        return content
 
     def clean(self, text):
         """
@@ -121,8 +127,7 @@ class Segmentation(Pipeline):
             clean text
         """
 
-        text = text.replace("\n", " ")
-        text = re.sub(r"\s+", " ", text)
+        text = re.sub(r" +", " ", text)
         text = text.strip()
 
         return text if not self.minlength or len(text) >= self.minlength else None
