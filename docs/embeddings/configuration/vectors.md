@@ -106,3 +106,10 @@ tokenize: boolean
 
 Enables string tokenization (defaults to false). This method applies tokenization rules that only work with English language text and may increase the quality of
 English language sentence embeddings in some situations.
+
+## models
+```yaml
+models: dict
+```
+
+Loads and stores vector models in this cache. This is primarily used with subindexes but can be set on any embeddings instance. This prevents the same model from being loaded multiple times when working with multiple embeddings instances.

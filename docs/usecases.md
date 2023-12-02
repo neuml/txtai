@@ -24,16 +24,33 @@ Get started with the following examples.
 
 ## LLM Orchestration
 
-Prompt-driven search, retrieval augmented generation (RAG), pipelines and workflows that interface with large language models (LLMs).
+LLM chains, retrieval augmented generation (RAG), chat with your data, pipelines and workflows that interface with large language models (LLMs).
+
+### Chains
+
+Integrate LLM chains (known as workflows in txtai), multiple LLM agents and self-critique.
 
 ![llm](images/llm.png)
 
-Integrate conversational search, LLM chains and self-critique.
+See below to learn more.
 
 | Notebook  | Description  |       |
 |:----------|:-------------|------:|
-| [Prompt-driven search with LLMs](https://github.com/neuml/txtai/blob/master/examples/42_Prompt_driven_search_with_LLMs.ipynb) | Embeddings-guided and Prompt-driven search with Large Language Models (LLMs) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/42_Prompt_driven_search_with_LLMs.ipynb) |
 | [Prompt templates and task chains](https://github.com/neuml/txtai/blob/master/examples/44_Prompt_templates_and_task_chains.ipynb) | Build model prompts and connect tasks together with workflows | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/44_Prompt_templates_and_task_chains.ipynb) |
+
+### Retrieval augmented generation
+
+Retrieval augmented generation (RAG) reduces the risk of LLM hallucinations by constraining the output with a knowledge base as context. RAG is commonly used to "chat with your data".
+
+![rag](images/rag.png#gh-light-mode-only)
+![rag](images/rag-dark.png#gh-dark-mode-only)
+
+A novel feature of txtai is that it can provide both an answer and source citation.
+
+| Notebook  | Description  |       |
+|:----------|:-------------|------:|
+| [Build RAG pipelines with txtai](https://github.com/neuml/txtai/blob/master/examples/52_Build_RAG_pipelines_with_txtai.ipynb) | Guide on retrieval augmented generation including how to create citations | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/52_Build_RAG_pipelines_with_txtai.ipynb) |
+| [Prompt-driven search with LLMs](https://github.com/neuml/txtai/blob/master/examples/42_Prompt_driven_search_with_LLMs.ipynb) | Embeddings-guided and Prompt-driven search with Large Language Models (LLMs) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/42_Prompt_driven_search_with_LLMs.ipynb) |
 
 ## Language Model Workflows
 

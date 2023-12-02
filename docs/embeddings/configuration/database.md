@@ -24,10 +24,16 @@ sqlite:
 
 ## objects
 ```yaml
-objects: boolean
+objects: boolean|image|pickle
 ```
 
-Enables object storage. When content storage is enabled and this is true, support for storing binary content alongside embeddings vectors and metadata is enabled.
+Enables object storage. Supports storing binary content alongside embeddings vectors and metadata. Requires content storage to also be enabled.
+
+Object encoding options are:
+
+- `standard`: Default encoder when boolean set. Encodes and decodes objects as byte arrays.
+- `image`: Image encoder. Encodes and decodes objects as image objects.
+- `pickle`: Pickle encoder. Encodes and decodes objects with the pickle module. Supports arbitrary objects.
 
 ## functions
 ```yaml
