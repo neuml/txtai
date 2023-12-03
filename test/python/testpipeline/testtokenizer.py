@@ -21,6 +21,15 @@ class TestTokenizer(unittest.TestCase):
         self.assertEqual(Tokenizer.tokenize("Y this is a test!"), ["test"])
         self.assertEqual(Tokenizer.tokenize("abc123 ABC 123"), ["abc123", "abc"])
 
+    def testEmptyTokenize(self):
+        """
+        Test handling empty and None inputs
+        """
+
+        # Test that parser can handle empty or None strings
+        self.assertEqual(Tokenizer.tokenize(""), [])
+        self.assertEqual(Tokenizer.tokenize(None), None)
+
     def testStandardTokenize(self):
         """
         Test standard tokenization

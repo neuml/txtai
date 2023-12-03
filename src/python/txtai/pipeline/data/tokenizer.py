@@ -88,6 +88,10 @@ class Tokenizer(Pipeline):
             list of tokens
         """
 
+        # Check for None and skip processing
+        if text is None:
+            return None
+
         # Lowercase
         text = text.lower() if self.lowercase else text
 
