@@ -20,6 +20,35 @@ class TestArchive(unittest.TestCase):
     Archive tests.
     """
 
+    def testDirectory(self):
+        """
+        Test directory included in compressed files
+        """
+
+        for extension in ["tar", "zip"]:
+            # Create archive instance
+            archive = ArchiveFactory.create()
+
+            # Create subdirectory in archive working path
+            path = os.path.join(archive.path(), "dir")
+            os.makedirs(path, exist_ok=True)
+
+            # Create file in archive working path
+            with open(os.path.join(path, "test"), "w", encoding="utf-8") as f:
+                f.write("test")
+
+            # Save archive
+            path = os.path.join(tempfile.gettempdir(), f"subdir.{extension}")
+            archive.save(path)
+
+            # Extract files from archive
+            archive = ArchiveFactory.create()
+            archive.load(path)
+
+            # Check if file properly extracted
+            path = os.path.join(archive.path(), "dir", "test")
+            self.assertTrue(os.path.exists(path))
+
     def testInvalidTar(self):
         """
         Test invalid tar file
