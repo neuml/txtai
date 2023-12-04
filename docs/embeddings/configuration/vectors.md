@@ -99,17 +99,16 @@ Instruction-based models use prefixes to modify how embeddings are computed. Thi
 
 [E5-base](https://huggingface.co/intfloat/e5-base) is an example of a model that accepts instructions. It takes `query: ` and `passage: ` prefixes and uses those to generate embeddings that work well for asymmetric search.
 
-## tokenize
-```yaml
-tokenize: boolean
-```
-
-Enables string tokenization (defaults to false). This method applies tokenization rules that only work with English language text and may increase the quality of
-English language sentence embeddings in some situations.
-
 ## models
 ```yaml
 models: dict
 ```
 
 Loads and stores vector models in this cache. This is primarily used with subindexes but can be set on any embeddings instance. This prevents the same model from being loaded multiple times when working with multiple embeddings instances.
+
+## tokenize
+```yaml
+tokenize: boolean
+```
+
+Enables string tokenization (defaults to false). This method applies tokenization rules that only work with English language text. It's not recommended for use with recent vector models.
