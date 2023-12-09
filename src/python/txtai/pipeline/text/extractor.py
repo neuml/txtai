@@ -6,8 +6,8 @@ from ...models import Models
 
 from ..base import Pipeline
 from ..data import Tokenizer
+from ..llm import LLM
 
-from .llm import LLM
 from .questions import Questions
 from .similarity import Similarity
 
@@ -34,6 +34,8 @@ class Extractor(Pipeline):
         context=None,
         task=None,
         output="default",
+        template=None,
+        separator=" ",
         **kwargs,
     ):
         """
@@ -51,6 +53,8 @@ class Extractor(Pipeline):
             context: topn context matches to include, defaults to 3
             task: model task (language-generation, sequence-sequence or question-answering), defaults to auto-detect
             output: output format, 'default' returns (name, answer), 'flatten' returns answers and 'reference' returns (name, answer, reference)
+            template: prompt template, it must have a parameter for {question} and {context}, defaults to "{question} {context}"
+            separator: context separator
             kwargs: additional keyword arguments to pass to pipeline model
         """
 
@@ -75,13 +79,19 @@ class Extractor(Pipeline):
         # Output format
         self.output = output
 
+        # Prompt template
+        self.template = template if template else "{question} {context}"
+
+        # Context separator
+        self.separator = separator
+
     def __call__(self, queue, texts=None, **kwargs):
         """
         Finds answers to input questions. This method runs queries to find the top n best matches and uses that as the context.
         A model is then run against the context for each input question, with the answer returned.
 
         Args:
-            queue: input question queue (name, query, question, snippet), can be list of tuples or dicts
+            queue: input question queue (name, query, question, snippet), can be list of tuples/dicts/strings or a single input element
             texts: optional list of text for context, otherwise runs embeddings search
             kwargs: additional keyword arguments to pass to pipeline model
 
@@ -92,10 +102,16 @@ class Extractor(Pipeline):
         # Save original queue format
         inputs = queue
 
+        # Convert queue to list, if necessary
+        queue = queue if isinstance(queue, list) else [queue]
+
         # Convert dictionary inputs to tuples
         if queue and isinstance(queue[0], dict):
             # Convert dict to tuple
             queue = [tuple(row.get(x) for x in ["name", "query", "question", "snippet"]) for row in queue]
+        if queue and isinstance(queue[0], str):
+            # Convert string questions to tuple
+            queue = [(None, row, row, None) for row in queue]
 
         # Rank texts by similarity for each query
         results = self.query([query for _, query, _, _ in queue], texts)
@@ -107,7 +123,7 @@ class Extractor(Pipeline):
             topn = sorted(results[x], key=lambda y: y[2], reverse=True)[: self.context]
 
             # Generate context using ordering from texts, if available, otherwise order by score
-            context = " ".join(text for _, text, _ in (sorted(topn, key=lambda y: y[0]) if texts else topn))
+            context = self.separator.join(text for _, text, _ in (sorted(topn, key=lambda y: y[0]) if texts else topn))
 
             names.append(name)
             queries.append(query)
@@ -150,7 +166,7 @@ class Extractor(Pipeline):
             return Questions(path, quantize, gpu, model, **kwargs)
 
         # Load LLM pipeline
-        return LLM(path, quantize, gpu, model, task, **kwargs)
+        return LLM(path=path, quantize=quantize, gpu=gpu, model=model, task=task, **kwargs)
 
     def query(self, queries, texts):
         """
@@ -304,7 +320,7 @@ class Extractor(Pipeline):
             answers = self.model(questions, contexts)
         else:
             # Combine question and context into single text field for generative pipelines
-            answers = self.model([f"{questions[x]} {context}" for x, context in enumerate(contexts)], **kwargs)
+            answers = self.model([self.template.format(question=questions[x], context=context) for x, context in enumerate(contexts)], **kwargs)
 
         # Extract and format answer
         for x, answer in enumerate(answers):
@@ -356,19 +372,20 @@ class Extractor(Pipeline):
 
         # Flatten to list of answers and return
         if self.output == "flatten":
-            return [answer for _, answer in answers]
+            answers = [answer for _, answer in answers]
+        else:
+            # Resolve id reference for each answer
+            if self.output == "reference":
+                answers = self.reference(queries, answers, topns)
 
-        # Resolve id reference for each answer
-        if self.output == "reference":
-            answers = self.reference(queries, answers, topns)
+            # Ensure output format matches input format
+            if inputs and isinstance(inputs[0], (dict, str)):
+                # Add name if input queue had name field
+                fields = ["name", "answer", "reference"] if isinstance(inputs[0], dict) and "name" in inputs[0] else [None, "answer", "reference"]
+                answers = [{fields[x]: column for x, column in enumerate(row) if fields[x]} for row in answers]
 
-        # Ensure output format matches input format
-        if inputs and isinstance(inputs[0], dict):
-            # Add name if input queue had name field
-            fields = ["name", "answer", "reference"] if "name" in inputs[0] else [None, "answer", "reference"]
-            answers = [{fields[x]: column for x, column in enumerate(row) if fields[x]} for row in answers]
-
-        return answers
+        # Unpack single answer, if necessary
+        return answers[0] if answers and isinstance(inputs, (tuple, dict, str)) else answers
 
     def reference(self, queries, answers, topns):
         """
