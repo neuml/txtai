@@ -4,8 +4,10 @@ LLM module
 
 from .factory import GenerationFactory
 
+from ..base import Pipeline
 
-class LLM:
+
+class LLM(Pipeline):
     """
     Pipeline for running large language models (LLMs). This class supports the following LLM backends:
 
