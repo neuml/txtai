@@ -1,27 +1,41 @@
 """
-LLM Module
+Hugging Face module
 """
 
 from ...models import Models
-from ...util import TemplateFormatter
 
 from ..hfpipeline import HFPipeline
 
+from .generation import Generation
 
-class LLM(HFPipeline):
+
+class HFGeneration(Generation):
     """
-    Runs prompts through a large language model (LLM). This pipeline autodetects if the model path is a text generation or
-    sequence to sequence model.
+    Hugging Face Transformers generative model.
     """
 
-    def __init__(self, path=None, quantize=False, gpu=True, model=None, task=None, template=None, **kwargs):
-        super().__init__(self.task(path, task, **kwargs), path if path else "google/flan-t5-base", quantize, gpu, model, **kwargs)
+    def __init__(self, path, template=None, **kwargs):
+        # Call parent constructor
+        super().__init__(path, template, **kwargs)
+
+        # Create HuggingFace LLM pipeline
+        self.llm = HFLLM(path, **kwargs)
+
+    def execute(self, texts, maxlength, **kwargs):
+        return self.llm(texts, maxlength=maxlength, **kwargs)
+
+
+class HFLLM(HFPipeline):
+    """
+    Hugging Face Transformers large language model (LLM) pipeline. This pipeline autodetects if the model path
+    is a text generation or sequence to sequence model.
+    """
+
+    def __init__(self, path=None, quantize=False, gpu=True, model=None, task=None, **kwargs):
+        super().__init__(self.task(path, task, **kwargs), path, quantize, gpu, model, **kwargs)
 
         # Load tokenizer, if necessary
         self.pipeline.tokenizer = self.pipeline.tokenizer if self.pipeline.tokenizer else Models.tokenizer(path, **kwargs)
-
-        # Template to apply to all inputs. Must include a {text} parameter.
-        self.template = template
 
     def __call__(self, text, prefix=None, maxlength=512, workers=0, **kwargs):
         """
@@ -45,42 +59,28 @@ class LLM(HFPipeline):
         if prefix:
             texts = [f"{prefix}{x}" for x in texts]
 
-        # Apply template, if necessary
-        if self.template:
-            formatter = TemplateFormatter()
-            texts = [formatter.format(self.template, text=x) for x in texts]
-
         # Run pipeline
         results = self.pipeline(texts, max_length=maxlength, num_workers=workers, **kwargs)
 
-        # Get generated text
-        results = [self.clean(texts[x], result) for x, result in enumerate(results)]
+        # Extract generated text
+        results = [self.extract(result) for result in results]
 
         return results[0] if isinstance(text, str) else results
 
-    def clean(self, prompt, result):
+    def extract(self, result):
         """
-        Applies a series of rules to clean generated text.
+        Extracts generated text from a pipeline result.
 
         Args:
-            prompt: original input prompt
-            result: input result
+            result: pipeline result
 
         Returns:
-            clean text
+            generated text
         """
 
         # Extract output from list, if necessary
         result = result[0] if isinstance(result, list) else result
-
-        # Get generated text field
-        text = result["generated_text"]
-
-        # Replace input prompt
-        text = text.replace(prompt, "")
-
-        # Apply text cleaning rules
-        return text.replace("$=", "<=").strip()
+        return result["generated_text"]
 
     def task(self, path, task, **kwargs):
         """
@@ -104,3 +104,21 @@ class LLM(HFPipeline):
 
         # Map to Hugging Face task. Default to text2text-generation pipeline when task not resolved.
         return mapping.get(task, "text2text-generation")
+
+
+class Generator(HFLLM):
+    """
+    Generate text with a causal language model.
+    """
+
+    def __init__(self, path=None, quantize=False, gpu=True, model=None, **kwargs):
+        super().__init__(path, quantize, gpu, model, "language-generation", **kwargs)
+
+
+class Sequences(HFLLM):
+    """
+    Generate text with a sequence-sequence model.
+    """
+
+    def __init__(self, path=None, quantize=False, gpu=True, model=None, **kwargs):
+        super().__init__(path, quantize, gpu, model, "sequence-sequence", **kwargs)

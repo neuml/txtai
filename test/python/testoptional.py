@@ -28,9 +28,11 @@ class TestOptional(unittest.TestCase):
             "fasttext",
             "hnswlib",
             "imagehash",
-            "nltk",
             "libcloud.storage.providers",
+            "litellm",
+            "llama_cpp",
             "networkx",
+            "nltk",
             "onnxmltools",
             "onnxruntime",
             "onnxruntime.quantization",
@@ -152,6 +154,8 @@ class TestOptional(unittest.TestCase):
             Caption,
             HFOnnx,
             ImageHash,
+            LiteLLM,
+            LlamaCpp,
             MLOnnx,
             Objects,
             Segmentation,
@@ -170,6 +174,12 @@ class TestOptional(unittest.TestCase):
 
         with self.assertRaises(ImportError):
             ImageHash()
+
+        with self.assertRaises(ImportError):
+            LiteLLM("huggingface/t5-small")
+
+        with self.assertRaises(ImportError):
+            LlamaCpp("TheBloke/TinyLlama-1.1B-Chat-v0.3-GGUF/tinyllama-1.1b-chat-v0.3.Q2_K.gguf")
 
         with self.assertRaises(ImportError):
             MLOnnx()

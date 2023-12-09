@@ -195,6 +195,14 @@ class TestExtractor(unittest.TestCase):
 
         self.assertEqual(self.extractor.snippet(None, None), None)
 
+    def testStringInput(self):
+        """
+        Test extractor with single string input
+        """
+
+        result = self.extractor("How many home runs?", self.data)
+        self.assertEqual(result["answer"], "3")
+
     def testTasks(self):
         """
         Test loading models with task parameter

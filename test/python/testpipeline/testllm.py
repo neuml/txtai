@@ -8,7 +8,7 @@ import torch
 
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from txtai.pipeline import LLM
+from txtai.pipeline import LLM, Generation
 
 
 class TestLLM(unittest.TestCase):
@@ -30,6 +30,22 @@ class TestLLM(unittest.TestCase):
         model = LLM("hf-internal-testing/tiny-random-gpt2", task="language-generation", torch_dtype=torch.float32)
         self.assertIsNotNone(model(start))
 
+    def testCustom(self):
+        """
+        Test custom LLM framework
+        """
+
+        model = LLM("hf-internal-testing/tiny-random-gpt2", task="language-generation", method="txtai.pipeline.HFGeneration")
+        self.assertIsNotNone(model("Hello, how are"))
+
+    def testCustomNotFound(self):
+        """
+        Test resolving an unresolvable LLM framework
+        """
+
+        with self.assertRaises(ImportError):
+            LLM("hf-internal-testing/tiny-random-gpt2", method="notfound.generation")
+
     def testExternal(self):
         """
         Test externally loaded model
@@ -43,3 +59,11 @@ class TestLLM(unittest.TestCase):
 
         # Test that text is generated
         self.assertIsNotNone(model(start))
+
+    def testNotImplemented(self):
+        """
+        Test exceptions for non-implemented methods
+        """
+
+        generation = Generation()
+        self.assertRaises(NotImplementedError, generation.execute, None, None)
