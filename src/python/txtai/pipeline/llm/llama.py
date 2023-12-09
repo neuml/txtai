@@ -40,13 +40,13 @@ class LlamaCpp(Generation):
         super().__init__(path, template, **kwargs)
 
         if not LLAMA_CPP:
-            raise ImportError('llama.cpp is not available - install "llm" extra to enable')
+            raise ImportError('llama.cpp is not available - install "pipeline" extra to enable')
 
         # Check if this is a local path, otherwise download from the HF Hub
         path = path if os.path.exists(path) else self.download(path)
 
         # Create llama.cpp instance
-        self.llm = Llama(path, verbose=kwargs.get("verbose", False), **kwargs)
+        self.llm = Llama(path, verbose=kwargs.pop("verbose", False), **kwargs)
 
     def execute(self, texts, maxlength, **kwargs):
         results = []

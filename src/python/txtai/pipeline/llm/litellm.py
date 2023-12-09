@@ -46,7 +46,7 @@ class LiteLLM(Generation):
         super().__init__(path, template, **kwargs)
 
         if not LITELLM:
-            raise ImportError('LiteLLM is not available - install "llm" extra to enable')
+            raise ImportError('LiteLLM is not available - install "pipeline" extra to enable')
 
         # Register prompt template
         self.register(path)
