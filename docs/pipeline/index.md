@@ -24,7 +24,7 @@ The following is a list of the default pipelines available in txtai. All pipelin
     - [Objects](image/objects)
 - Text
     - [Entity](text/entity)
-    - [Extractive QA](text/extractor)
+    - [Extractor](text/extractor)
     - [Labeling](text/labels)
     - [LLM](text/llm)
     - [Similarity](text/similarity)

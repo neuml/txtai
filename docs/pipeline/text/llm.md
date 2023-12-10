@@ -3,7 +3,7 @@
 ![pipeline](../../images/pipeline.png#only-light)
 ![pipeline](../../images/pipeline-dark.png#only-dark)
 
-The LLM pipeline runs prompts through a large language model (LLM). This pipeline autodetects if the model path is a text generation or sequence to sequence model. 
+The LLM pipeline runs prompts through a large language model (LLM). This pipeline autodetects the LLM framework based on the model path.
 
 ## Example
 
@@ -28,22 +28,17 @@ llm(
 )
 ```
 
-The LLM pipeline automatically detects the underlying model type (`text-generation` or `sequence-sequence`). This can also be manually set.
+The LLM pipeline automatically detects the underlying LLM framework. This can also be manually set.
 
 ```python
-from txtai.pipeline import LLM, Generator, Sequences
+from txtai.pipeline import LLM
 
-# Set model type via task parameter
-llm = LLM("google/flan-t5-xl", task="sequence-sequence")
+# Set method as litellm
+llm = LLM("vllm/Open-Orca/Mistral-7B-OpenOrca", method="litellm")
 
-# Create sequences pipeline (same as previous statement)
-sequences = Sequences("google/flan-t5-xl")
-
-# Set model type via task parameter
-llm = LLM("openlm-research/open_llama_3b", task="language-generation")
-
-# Create generator pipeline (same as previous statement)
-generator = Generator("openlm-research/open_llama_3b")
+# Set method as llama.cpp
+llm = LLM("TheBloke/Mistral-7B-OpenOrca-GGUF/mistral-7b-openorca.Q4_K_M.gguf",
+           method="llama.cpp")
 ```
 
 Models can be externally loaded and passed to pipelines. This is useful for models that are not yet supported by Transformers and/or need special initialization.
@@ -71,6 +66,8 @@ See the links below for more detailed examples.
 |:----------|:-------------|------:|
 | [Prompt-driven search with LLMs](https://github.com/neuml/txtai/blob/master/examples/42_Prompt_driven_search_with_LLMs.ipynb) | Embeddings-guided and Prompt-driven search with Large Language Models (LLMs) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/42_Prompt_driven_search_with_LLMs.ipynb) |
 | [Prompt templates and task chains](https://github.com/neuml/txtai/blob/master/examples/44_Prompt_templates_and_task_chains.ipynb) | Build model prompts and connect tasks together with workflows | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/44_Prompt_templates_and_task_chains.ipynb) |
+| [Build RAG pipelines with txtai](https://github.com/neuml/txtai/blob/master/examples/52_Build_RAG_pipelines_with_txtai.ipynb) | Guide on retrieval augmented generation including how to create citations | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/52_Build_RAG_pipelines_with_txtai.ipynb) |
+| [Integrate LLM frameworks](https://github.com/neuml/txtai/blob/master/examples/53_Integrate_LLM_Frameworks.ipynb) | Integrate llama.cpp, LiteLLM and custom generation frameworks | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/53_Integrate_LLM_Frameworks.ipynb) |
 
 ## Configuration-driven example
 
