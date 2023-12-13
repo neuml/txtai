@@ -218,16 +218,23 @@ class TestTrainer(unittest.TestCase):
         # Training data
         data = [
             {"question": "What ingredient?", "context": "1 can whole tomatoes", "answers": "tomatoes"},
+            {"question": "What ingredient?", "context": "Crush 1 tomato", "answers": "tomato"},
             {"question": "What ingredient?", "context": "1 yellow onion", "answers": "onion"},
+            {"question": "What ingredient?", "context": "Unwrap 2 red onions", "answers": "onions"},
             {"question": "What ingredient?", "context": "1 red pepper", "answers": "pepper"},
+            {"question": "What ingredient?", "context": "Clean 3 red peppers", "answers": "peppers"},
             {"question": "What ingredient?", "context": "1 clove garlic", "answers": "garlic"},
+            {"question": "What ingredient?", "context": "Unwrap 3 cloves of garlic", "answers": "garlic"},
+            {"question": "What ingredient?", "context": "3 pieces of ginger", "answers": "ginger"},
+            {"question": "What ingredient?", "context": "Peel 1 orange", "answers": "orange"},
             {"question": "What ingredient?", "context": "1/2 lb beef", "answers": "beef"},
-            {"question": "What ingredient?", "context": "a " * 500 + "1/2 lb beef", "answers": "beef"},
+            {"question": "What ingredient?", "context": "Roast 3 lbs of beef", "answers": "beef"},
+            {"question": "What ingredient?", "context": "1 pack of chicken", "answers": "chicken"},
             {"question": "What ingredient?", "context": "Forest through the trees", "answers": None},
         ]
 
         trainer = HFTrainer()
-        model, tokenizer = trainer("google/bert_uncased_L-2_H-128_A-2", data, data, task="question-answering", num_train_epochs=10)
+        model, tokenizer = trainer("google/bert_uncased_L-2_H-128_A-2", data, data, task="question-answering", num_train_epochs=40)
 
         questions = Questions((model, tokenizer), gpu=True)
         self.assertEqual(questions(["What ingredient?"], ["Peel 1 onion"])[0], "onion")
