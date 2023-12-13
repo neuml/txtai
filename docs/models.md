@@ -2,17 +2,15 @@
 
 ![models](images/models.png)
 
-See the table below for the current recommended models. These models all allow commercial use and offer a blend of speed and performance. 
+See the table below for the current recommended models. These models all allow commercial use and offer a blend of speed and performance.
 
 | Component                                            | Model(s)                                                                 |
 | ---------------------------------------------------- | ------------------------------------------------------------------------ |
 | [Embeddings](../embeddings)                          | [all-MiniLM-L6-v2](https://hf.co/sentence-transformers/all-MiniLM-L6-v2) | 
-|                                                      | [E5-base-v2](https://hf.co/intfloat/e5-base-v2)                          |
 | [Image Captions](./pipeline/image/caption.md)        | [BLIP](https://hf.co/Salesforce/blip-image-captioning-base)              |
 | [Labels - Zero Shot](./pipeline/text/labels.md)      | [BART-Large-MNLI](https://hf.co/facebook/bart-large)                     |
 | [Labels - Fixed](./pipeline/text/labels.md)          | Fine-tune with [training pipeline](./pipeline/train/trainer.md)          |
-| [Large Language Model (LLM)](./pipeline/text/llm.md) | [Flan T5 XL](https://hf.co/google/flan-t5-xl)                            | 
-|                                                      | [Mistral 7B OpenOrca](https://hf.co/Open-Orca/Mistral-7B-OpenOrca)       |
+| [Large Language Model (LLM)](./pipeline/text/llm.md) | [Mistral 7B OpenOrca](https://hf.co/Open-Orca/Mistral-7B-OpenOrca)       |
 | [Summarization](./pipeline/text/summary.md)          | [DistilBART](https://hf.co/sshleifer/distilbart-cnn-12-6)                |
 | [Text-to-Speech](./pipeline/audio/texttospeech.md)   | [ESPnet JETS](https://hf.co/NeuML/ljspeech-jets-onnx)                    |
 | [Transcription](./pipeline/audio/transcription.md)   | [Whisper](https://hf.co/openai/whisper-base)                             | 

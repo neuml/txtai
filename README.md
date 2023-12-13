@@ -171,17 +171,15 @@ See the detailed [install instructions](https://neuml.github.io/txtai/install) f
 
 ![models](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/models.png)
 
-See the table below for the current recommended models. These models all allow commercial use and offer a blend of speed and performance. 
+See the table below for the current recommended models. These models all allow commercial use and offer a blend of speed and performance.
 
 | Component                                                                     | Model(s)                                                                 |
 | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
 | [Embeddings](https://neuml.github.io/txtai/embeddings)                        | [all-MiniLM-L6-v2](https://hf.co/sentence-transformers/all-MiniLM-L6-v2) | 
-|                                                                               | [E5-base-v2](https://hf.co/intfloat/e5-base-v2)                          |
 | [Image Captions](https://neuml.github.io/txtai/pipeline/image/caption)        | [BLIP](https://hf.co/Salesforce/blip-image-captioning-base)              |
 | [Labels - Zero Shot](https://neuml.github.io/txtai/pipeline/text/labels)      | [BART-Large-MNLI](https://hf.co/facebook/bart-large)                     |
 | [Labels - Fixed](https://neuml.github.io/txtai/pipeline/text/labels)          | Fine-tune with [training pipeline](https://neuml.github.io/txtai/pipeline/train/trainer)          |
-| [Large Language Model (LLM)](https://neuml.github.io/txtai/pipeline/text/llm) | [Flan T5 XL](https://hf.co/google/flan-t5-xl)                            | 
-|                                                                               | [Mistral 7B OpenOrca](https://hf.co/Open-Orca/Mistral-7B-OpenOrca)       |
+| [Large Language Model (LLM)](https://neuml.github.io/txtai/pipeline/text/llm) | [Mistral 7B OpenOrca](https://hf.co/Open-Orca/Mistral-7B-OpenOrca)       |
 | [Summarization](https://neuml.github.io/txtai/pipeline/text/summary)          | [DistilBART](https://hf.co/sshleifer/distilbart-cnn-12-6)                |
 | [Text-to-Speech](https://neuml.github.io/txtai/pipeline/audio/texttospeech)   | [ESPnet JETS](https://hf.co/NeuML/ljspeech-jets-onnx)                    |
 | [Transcription](https://neuml.github.io/txtai/pipeline/audio/transcription)   | [Whisper](https://hf.co/openai/whisper-base)                             | 
