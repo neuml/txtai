@@ -33,11 +33,12 @@ class LiteLLM(Generation):
             True if this is a LiteLLM model, False otherwise
         """
 
+        # pylint: disable=W0702
         if isinstance(path, str) and LITELLM:
             with open(os.devnull, "w", encoding="utf-8") as f, contextlib.redirect_stdout(f):
                 try:
                     return api.get_llm_provider(path)
-                except ValueError:
+                except:
                     return False
 
         return False
