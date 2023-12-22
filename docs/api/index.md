@@ -122,6 +122,7 @@ The API can be containerized and run. This will bring up an API instance without
 
 The following programming languages have bindings with the txtai API:
 
+- [Python](https://github.com/neuml/txtai.py)
 - [JavaScript](https://github.com/neuml/txtai.js)
 - [Java](https://github.com/neuml/txtai.java)
 - [Rust](https://github.com/neuml/txtai.rs)
