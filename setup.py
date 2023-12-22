@@ -53,7 +53,7 @@ extras["pipeline-llm"] = ["litellm>=1.12.0", "llama-cpp-python>=0.2.20"]
 
 extras["pipeline-text"] = ["fasttext>=0.9.2", "sentencepiece>=0.1.91"]
 
-extras["pipeline-train"] = ["accelerate>=0.19.0", "onnx>=1.11.0", "onnxmltools>=1.9.1", "onnxruntime>=1.11.0"]
+extras["pipeline-train"] = ["accelerate>=0.19.0", "onnx>=1.11.0", "onnxmltools>=1.9.1", "onnxruntime>=1.11.0", "skl2onnx>=1.9.1"]
 
 extras["pipeline"] = (
     extras["pipeline-audio"]
