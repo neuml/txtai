@@ -107,7 +107,7 @@ Disable OpenMP threading via the environment variable `export OMP_NUM_THREADS=1`
 
 __Issue__
 
-`ContextualVersionConflict` exception when importing certain libraries while running one of the [examples](../examples) notebooks on Google Colab
+`ContextualVersionConflict` and/or package METADATA exception while running one of the [examples](../examples) notebooks on Google Colab
 
 __Solution__
 
