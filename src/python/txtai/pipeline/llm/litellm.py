@@ -2,9 +2,6 @@
 LiteLLM module
 """
 
-import os
-import contextlib
-
 # Conditional import
 try:
     import litellm as api
@@ -35,11 +32,16 @@ class LiteLLM(Generation):
 
         # pylint: disable=W0702
         if isinstance(path, str) and LITELLM:
-            with open(os.devnull, "w", encoding="utf-8") as f, contextlib.redirect_stdout(f):
-                try:
-                    return api.get_llm_provider(path)
-                except:
-                    return False
+            debug = api.suppress_debug_info
+            try:
+                # Suppress debug messages for this test
+                api.suppress_debug_info = True
+                return api.get_llm_provider(path)
+            except:
+                return False
+            finally:
+                # Restore debug info value to original value
+                api.suppress_debug_info = debug
 
         return False
 
