@@ -58,7 +58,7 @@ class TestAuthorization(unittest.TestCase):
         Test invalid authorization
         """
 
-        response = self.client.get("count")
+        response = self.client.get("search?query=test")
         self.assertEqual(response.status_code, 401)
 
         response = self.client.get("search?query=test", headers={"Authorization": "Bearer invalid"})
