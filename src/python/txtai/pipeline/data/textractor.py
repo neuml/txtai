@@ -69,7 +69,7 @@ class Textractor(Segmentation):
 
         # Get path to java executable if path not set
         if not path:
-            path = os.getenv("TIKA_JAVA", "java")
+            path = os.environ.get("TIKA_JAVA", "java")
 
         # pylint: disable=R1732,W0702,W1514
         # Check if java binary is available on path

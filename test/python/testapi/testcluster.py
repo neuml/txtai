@@ -14,7 +14,7 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-from txtai.api import app, start
+from txtai.api import application
 
 # Configuration for an embeddings cluster
 CLUSTER = """
@@ -109,8 +109,10 @@ class TestCluster(unittest.TestCase):
         with open(config, "w", encoding="utf-8") as output:
             output.write(CLUSTER)
 
-        client = TestClient(app)
-        start()
+        # Create new application and set on client
+        application.app = application.create()
+        client = TestClient(application.app)
+        application.start()
 
         return client
 

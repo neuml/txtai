@@ -11,7 +11,7 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-from txtai.api import API, app, start
+from txtai.api import API, application
 
 # pylint: disable = C0411
 from utils import Utils
@@ -76,8 +76,10 @@ class TestPipelines(unittest.TestCase):
         with open(config, "w", encoding="utf-8") as output:
             output.write(PIPELINES)
 
-        client = TestClient(app)
-        start()
+        # Create new application and set on client
+        application.app = application.create()
+        client = TestClient(application.app)
+        application.start()
 
         return client
 

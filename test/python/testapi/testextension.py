@@ -85,6 +85,8 @@ class TestExtension(unittest.TestCase):
         with open(config, "w", encoding="utf-8") as output:
             output.write(PIPELINES)
 
+        # Create new application and set on client
+        application.app = application.create()
         client = TestClient(application.app)
         application.start()
 

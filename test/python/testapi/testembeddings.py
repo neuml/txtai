@@ -11,7 +11,7 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-from txtai.api import API, app, start
+from txtai.api import API, application
 
 # Configuration for a read/write embeddings index
 INDEX = """
@@ -41,6 +41,9 @@ path: %s
 
 # Allow indexing of documents
 writable: False
+
+# Embeddings settings
+embeddings:
 """
 
 # Configuration for an index with custom functions
@@ -85,8 +88,10 @@ class TestEmbeddings(unittest.TestCase):
         with open(config, "w", encoding="utf-8") as output:
             output.write(yaml % index)
 
-        client = TestClient(app)
-        start()
+        # Create new application and set on client
+        application.app = application.create()
+        client = TestClient(application.app)
+        application.start()
 
         return client
 

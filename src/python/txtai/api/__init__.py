@@ -4,6 +4,7 @@ API imports
 
 # Conditional import
 try:
+    from .authorization import Authorization
     from .application import app, start
     from .base import API
     from .cluster import Cluster

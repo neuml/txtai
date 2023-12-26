@@ -29,7 +29,7 @@ extras["dev"] = [
 
 extras["api"] = [
     "aiohttp>=3.8.1",
-    "fastapi>=0.61.1",
+    "fastapi>=0.94.0",
     "uvicorn>=0.12.1",
 ]
 
