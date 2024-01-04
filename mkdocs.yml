@@ -113,8 +113,9 @@ nav:
         - api/index.md
         - Cluster: api/cluster.md
         - Configuration: api/configuration.md
-        - Extensions: api/extensions.md
+        - Customization: api/customization.md
         - Methods: api/methods.md
+        - Security: api/security.md
     - Cloud: cloud.md
     - Examples: examples.md
     - FAQ: faq.md

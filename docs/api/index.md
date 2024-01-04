@@ -88,14 +88,6 @@ curl \
   -d '{"name":"sumfrench", "elements": ["https://github.com/neuml/txtai"]}'
 ```
 
-## HTTPS
-
-The API service command specified earlier starts a Uvicorn server as a HTTP service on port 8000. To run a HTTPS service, consider the following options.
-
-- [TLS Proxy Server](https://fastapi.tiangolo.com/deployment/https/). *Recommended choice*. With this configuration, the txtai API service runs as a HTTP service only accessible on the localhost/local network. The proxy server handles all encryption and redirects requests to local services. See this [example configuration](https://www.uvicorn.org/deployment/#running-behind-nginx) for more.
-
-- [Uvicorn SSL Certificate](https://www.uvicorn.org/deployment/). Another option is setting the SSL certificate on the Uvicorn service. This works in simple situations but gets complex when hosting multiple txtai or other related services.
-
 ## Local instance
 
 A local instance can be instantiated. In this case, a txtai application runs internally, without any network connections, providing the same consolidated functionality. This enables running txtai in Python with configuration.
