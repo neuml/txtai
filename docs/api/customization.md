@@ -8,7 +8,7 @@ Extensions add a custom endpoint. Dependencies add middleware that executes with
 
 While the API is extremely flexible and complex logic can be executed through YAML-driven workflows, some may prefer to create an endpoint in Python. API extensions define custom Python endpoints that interact with txtai applications. 
 
-See the link below for a detailed example covering how to create an API extension.
+See the link below for a detailed example.
 
 | Notebook  | Description  |       |
 |:----------|:-------------|------:|
@@ -17,3 +17,9 @@ See the link below for a detailed example covering how to create an API extensio
 ## Dependencies
 
 txtai has a default API token authorization method that works well in many cases. Dependencies can also add custom logic with each request. This could be an additional authorization step and/or an authentication method. 
+
+See the link below for a detailed example.
+
+| Notebook  | Description  |       |
+|:----------|:-------------|------:|
+| [API Authorization and Authentication](https://github.com/neuml/txtai/blob/master/examples/54_API_Authorization_and_Authentication.ipynb) | Add authorization, authentication and middleware dependencies to the API | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/54_API_Authorization_and_Authentication.ipynb) |
