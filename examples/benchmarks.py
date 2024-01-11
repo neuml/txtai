@@ -69,7 +69,10 @@ class Index:
         offset, results = 0, {}
         for batch in self.batch(queries, 256):
             for i, r in enumerate(self.search(batch, limit + 1)):
+                # Get result as list of (id, score) tuples
                 r = list(r)
+                r = [(x["id"], x["score"]) for x in r] if r and isinstance(r[0], dict) else r
+
                 if filterscores:
                     r = [(uid, score) for uid, score in r if uid != uids[offset + i]][:limit]
 
@@ -193,7 +196,7 @@ class Embed(Index):
     """
 
     def index(self):
-        path = f"{self.path}/embeddings"
+        path = f"{self.path}/embed"
         if os.path.exists(path) and not self.refresh:
             embeddings = Embeddings()
             embeddings.load(path)
@@ -563,7 +566,10 @@ if __name__ == "__main__":
     parser.add_argument("-m", "--methods", help="comma separated list of methods", metavar="METHODS")
     parser.add_argument("-n", "--name", help="name to assign to this run, defaults to method name", metavar="NAME")
     parser.add_argument(
-        "-r", "--refresh", help="refreshes index if set, otherwise uses existing index if available", action="store_true", default=True
+        "-r",
+        "--refresh",
+        help="refreshes index if set, otherwise uses existing index if available",
+        action="store_true",
     )
     parser.add_argument("-s", "--sources", help="comma separated list of data sources", metavar="SOURCES")
     parser.add_argument("-t", "--topk", help="top k results to use for the evaluation", metavar="TOPK", default=10)
