@@ -201,8 +201,8 @@ The following applications are powered by txtai.
 ![apps](https://raw.githubusercontent.com/neuml/txtai/master/apps.jpg)
 
 | Application  | Description  |
-|:----------|:-------------|
-| [txtchat](https://github.com/neuml/txtchat) | Conversational search and workflows for all |
+|:------------ |:-------------|
+| [txtchat](https://github.com/neuml/txtchat) | Retrieval Augmented Generation (RAG) powered search |
 | [paperai](https://github.com/neuml/paperai) | Semantic search and workflows for medical/scientific papers |
 | [codequestion](https://github.com/neuml/codequestion) | Semantic search for developers |
 | [tldrstory](https://github.com/neuml/tldrstory) | Semantic search for headlines and story text |
