@@ -25,7 +25,7 @@ from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
 
 from txtai.embeddings import Embeddings
-from txtai.pipeline import Tokenizer
+from txtai.pipeline import Extractor, LLM, Tokenizer
 from txtai.scoring import ScoringFactory
 
 
@@ -34,18 +34,20 @@ class Index:
     Base index definition. Defines methods to index and search a dataset.
     """
 
-    def __init__(self, path, config, refresh):
+    def __init__(self, path, config, output, refresh):
         """
         Creates a new index.
 
         Args:
             path: path to dataset
             config: path to config file
+            output: path to store index
             refresh: overwrites existing index if True, otherwise existing index is loaded
         """
 
         self.path = path
         self.config = config
+        self.output = output
         self.refresh = refresh
 
         # Build and save index
@@ -180,12 +182,11 @@ class Score(Index):
         # Create scoring instance
         scoring = ScoringFactory.create(config)
 
-        path = f"{self.path}/scoring"
-        if os.path.exists(path) and not self.refresh:
-            scoring.load(path)
+        if os.path.exists(self.output) and not self.refresh:
+            scoring.load(self.output)
         else:
             scoring.index(self.rows())
-            scoring.save(path)
+            scoring.save(self.output)
 
         return scoring
 
@@ -196,10 +197,9 @@ class Embed(Index):
     """
 
     def index(self):
-        path = f"{self.path}/embed"
-        if os.path.exists(path) and not self.refresh:
+        if os.path.exists(self.output) and not self.refresh:
             embeddings = Embeddings()
-            embeddings.load(path)
+            embeddings.load(self.output)
         else:
             # Read configuration
             config = self.readconfig("embeddings", {"batch": 8192, "encodebatch": 128, "faiss": {"quantize": True, "sample": 0.05}})
@@ -207,7 +207,7 @@ class Embed(Index):
             # Build index
             embeddings = Embeddings(config)
             embeddings.index(self.rows())
-            embeddings.save(path)
+            embeddings.save(self.output)
 
         return embeddings
 
@@ -218,10 +218,9 @@ class Hybrid(Index):
     """
 
     def index(self):
-        path = f"{self.path}/hybrid"
-        if os.path.exists(path) and not self.refresh:
+        if os.path.exists(self.output) and not self.refresh:
             embeddings = Embeddings()
-            embeddings.load(path)
+            embeddings.load(self.output)
         else:
             # Read configuration
             config = self.readconfig(
@@ -236,11 +235,34 @@ class Hybrid(Index):
 
             # Build index
             embeddings = Embeddings(config)
-
             embeddings.index(self.rows())
-            embeddings.save(path)
+            embeddings.save(self.output)
 
         return embeddings
+
+
+class RAG(Embed):
+    """
+    Retrieval augmented generation (RAG) using txtai.
+    """
+
+    def __init__(self, path, config, output, refresh):
+        # Parent logic
+        super().__init__(path, config, output, refresh)
+
+        # Read LLM configuration
+        llm = self.readconfig("llm", {})
+
+        # Read Extractor configuration
+        extractor = self.readconfig("extractor", {})
+
+        # Load Extractor
+        self.extractor = Extractor(self.backend, LLM(**llm), output="reference", **extractor)
+
+    def search(self, queries, limit):
+        # Set context window size to limit and run
+        self.extractor.context = limit
+        return [[(x["reference"], 1)] for x in self.extractor(queries, maxlength=4096)]
 
 
 class RankBM25(Index):
@@ -259,9 +281,8 @@ class RankBM25(Index):
         return results
 
     def index(self):
-        path = f"{self.path}/rankbm25"
-        if os.path.exists(path) and not self.refresh:
-            with open(path, "rb") as f:
+        if os.path.exists(self.output) and not self.refresh:
+            with open(self.output, "rb") as f:
                 ids, model = pickle.load(f)
         else:
             # Tokenize data
@@ -295,17 +316,16 @@ class SQLiteFTS(Index):
         return results
 
     def index(self):
-        path = f"{self.path}/fts.sqlite"
-        if os.path.exists(path) and not self.refresh:
+        if os.path.exists(self.output) and not self.refresh:
             # Load existing database
-            connection = sqlite3.connect(path)
+            connection = sqlite3.connect(self.output)
         else:
             # Delete existing database
-            if os.path.exists(path):
-                os.remove(path)
+            if os.path.exists(self.output):
+                os.remove(self.output)
 
             # Create new database
-            connection = sqlite3.connect(path)
+            connection = sqlite3.connect(self.output)
 
             # Tokenize data
             tokenizer, data = Tokenizer(), []
@@ -393,14 +413,15 @@ def relevance(path):
     return rel
 
 
-def create(method, path, config, refresh):
+def create(method, path, config, output, refresh):
     """
     Creates a new index.
 
     Args:
         method: indexing method
-        path: dataset path
+        path: path to dataset
         config: path to config file
+        output: path to store index
         refresh: overwrites existing index if True, otherwise existing index is loaded
 
     Returns:
@@ -408,18 +429,20 @@ def create(method, path, config, refresh):
     """
 
     if method == "es":
-        return Elastic(path, config, refresh)
+        return Elastic(path, config, output, refresh)
     if method == "hybrid":
-        return Hybrid(path, config, refresh)
+        return Hybrid(path, config, output, refresh)
+    if method == "rag":
+        return RAG(path, config, output, refresh)
     if method == "scoring":
-        return Score(path, config, refresh)
+        return Score(path, config, output, refresh)
     if method == "sqlite":
-        return SQLiteFTS(path, config, refresh)
+        return SQLiteFTS(path, config, output, refresh)
     if method == "rank":
-        return RankBM25(path, config, refresh)
+        return RankBM25(path, config, output, refresh)
 
     # Default
-    return Embed(path, config, refresh)
+    return Embed(path, config, output, refresh)
 
 
 def compute(results):
@@ -472,12 +495,13 @@ def evaluate(methods, path, args):
 
         # Create index and get results
         start = time.time()
-        index = create(method, path, args.config, args.refresh)
+        output = args.output if args.output else f"{path}/{method}"
+        index = create(method, path, args.config, output, args.refresh)
 
         # Add indexing metrics
         stats["index"] = round(time.time() - start, 2)
         stats["memory"] = int(psutil.Process().memory_info().rss / (1024 * 1024))
-        stats["disk"] = int(sum(d.stat().st_size for d in os.scandir(f"{path}/{method}") if d.is_file()) / 1024)
+        stats["disk"] = int(sum(d.stat().st_size for d in os.scandir(output) if d.is_file()) / 1024) if os.path.isdir(output) else 0
 
         print("INDEX TIME =", time.time() - start)
         print(f"MEMORY USAGE = {stats['memory']} MB")
@@ -565,6 +589,7 @@ if __name__ == "__main__":
     parser.add_argument("-d", "--directory", help="root directory path with datasets", metavar="DIRECTORY")
     parser.add_argument("-m", "--methods", help="comma separated list of methods", metavar="METHODS")
     parser.add_argument("-n", "--name", help="name to assign to this run, defaults to method name", metavar="NAME")
+    parser.add_argument("-o", "--output", help="index output directory path", metavar="OUTPUT")
     parser.add_argument(
         "-r",
         "--refresh",
@@ -572,7 +597,7 @@ if __name__ == "__main__":
         action="store_true",
     )
     parser.add_argument("-s", "--sources", help="comma separated list of data sources", metavar="SOURCES")
-    parser.add_argument("-t", "--topk", help="top k results to use for the evaluation", metavar="TOPK", default=10)
+    parser.add_argument("-t", "--topk", help="top k results to use for the evaluation", metavar="TOPK", type=int, default=10)
 
     # Calculate benchmarks
     benchmarks(parser.parse_args())
