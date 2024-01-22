@@ -20,7 +20,7 @@ from ..vectors import VectorsFactory
 from ..version import __pickle__
 
 from .index import Action, Functions, Indexes, Reducer, Stream, Transform
-from .search import Explain, Query, Search, Terms
+from .search import Explain, Ids, Query, Search, Terms
 
 
 # pylint: disable=C0302,R0904
@@ -145,7 +145,7 @@ class Embeddings:
 
         # Index graph, if necessary
         if self.graph:
-            self.graph.index(Search(self, True), self.batchsimilarity)
+            self.graph.index(Search(self, True), Ids(self), self.batchsimilarity)
 
     def upsert(self, documents):
         """
@@ -192,7 +192,7 @@ class Embeddings:
 
         # Graph upsert, if necessary
         if self.graph:
-            self.graph.upsert(Search(self, True), self.batchsimilarity)
+            self.graph.upsert(Search(self, True), Ids(self), self.batchsimilarity)
 
     def delete(self, ids):
         """

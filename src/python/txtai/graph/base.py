@@ -44,6 +44,10 @@ class Graph:
         self.text = columns.get("text", "text")
         self.object = columns.get("object", "object")
 
+        # Relationships are manually-provided edges
+        self.relationships = columns.get("relationships", "relationships")
+        self.relations = {}
+
     def create(self):
         """
         Creates the graph network.
@@ -355,7 +359,14 @@ class Graph:
         self.initialize()
 
         for _, document, _ in documents:
+            # Relationships are manually-provided edges
+            relations = None
+
+            # Extract data from dictionary
             if isinstance(document, dict):
+                # Extract relationships
+                relations = document.get(self.relationships)
+
                 # Require text or object field
                 document = document.get(self.text, document.get(self.object))
 
@@ -366,6 +377,10 @@ class Graph:
 
                 # Create node
                 self.addnode(index, data=document)
+
+                # Add relationships
+                self.addrelations(index, relations)
+
                 index += 1
 
     def delete(self, ids):
@@ -392,14 +407,18 @@ class Graph:
                 # Delete node
                 self.removenode(uid)
 
-    def index(self, search, similarity):
+    def index(self, search, ids, similarity):
         """
         Build relationships between graph nodes using a score-based search function.
 
         Args:
             search: batch search function - takes a list of queries and returns lists of (id, scores) to use as edge weights
+            ids: ids function - internal id resolver
             similarity: batch similarity function - takes a list of text and labels and returns best matches
         """
+
+        # Add relationship edges
+        self.resolverelations(ids)
 
         # Add node edges
         self.addedges(self.scan(), search)
@@ -408,17 +427,21 @@ class Graph:
         if "topics" in self.config:
             self.addtopics(similarity)
 
-    def upsert(self, search, similarity=None):
+    def upsert(self, search, ids, similarity=None):
         """
         Adds relationships for new graph nodes using a score-based search function.
 
         Args:
             search: batch search function - takes a list of queries and returns lists of (id, scores) to use as edge weights
+            ids: ids function - internal id resolver
             similarity: batch similarity function - takes a list of text and labels and returns best matches
         """
 
         # Detect if topics processing is enabled
         hastopics = "topics" in self.config
+
+        # Add relationship edges
+        self.resolverelations(ids)
 
         # Add node edges using new/updated nodes, set updated flag for topic processing, if necessary
         self.addedges(self.scan(attribute="data"), search, {"updated": True} if hastopics else None)
@@ -430,6 +453,59 @@ class Graph:
                 self.infertopics()
             else:
                 self.addtopics(similarity)
+
+    def addrelations(self, uid, relations):
+        """
+        Add manually-provided relationships.
+
+        Args:
+            uid: node id
+            relations: list of relationships to add
+        """
+
+        # Add relationships, if any
+        if relations:
+            if uid not in self.relations:
+                self.relations[uid] = []
+
+            # Add each relationship
+            for relation in relations:
+                # Support both dict and string ids
+                relation = {"id": relation} if not isinstance(relation, dict) else relation
+                self.relations[uid].append(relation)
+
+    def resolverelations(self, ids):
+        """
+        Resolves ids and creates edges for manually-provided relationships.
+
+        Args:
+            ids: internal id resolver
+        """
+
+        # Resolve ids and create edges for relationships
+        for uid, relations in self.relations.items():
+            # Resolve internal ids
+            iids = ids(y["id"] for y in relations)
+
+            # Add each edge
+            for relation in relations:
+                # Make copy of relation
+                relation = relation.copy()
+
+                # Lookup targets for relationship
+                targets = iids.get(str(relation.pop("id")))
+
+                # Create edge for each instance of id - internal id pair
+                if targets:
+                    for target in targets:
+                        # Add weight, if not provided
+                        relation["weight"] = relation.get("weight", 1.0)
+
+                        # Add edge and all other attributes
+                        self.addedge(uid, target, **relation)
+
+        # Clear temporary relationship storage
+        self.relations = {}
 
     def addedges(self, nodes, search, attributes=None):
         """

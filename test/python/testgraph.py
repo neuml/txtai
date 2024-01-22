@@ -201,6 +201,41 @@ class TestGraph(unittest.TestCase):
         self.assertRaises(NotImplementedError, graph.loadgraph, None)
         self.assertRaises(NotImplementedError, graph.savegraph, None)
 
+    def testRelationships(self):
+        """
+        Test manually-provided relationships
+        """
+
+        # Create relationships for id 0
+        relationships = [{"id": f"ID{x}"} for x in range(1, len(self.data))]
+
+        # Test with content enabled
+        self.embeddings.index({"id": f"ID{i}", "text": x, "relationships": relationships if i == 0 else None} for i, x in enumerate(self.data))
+        self.assertEqual(len(self.embeddings.graph.edges(0)), len(self.data) - 1)
+
+        # Test with content disabled
+        config = self.config.copy()
+        config["content"] = False
+
+        embeddings = Embeddings(config)
+        embeddings.index({"id": f"ID{i}", "text": x, "relationships": relationships if i == 0 else None} for i, x in enumerate(self.data))
+        self.assertEqual(len(embeddings.graph.edges(0)), len(self.data) - 1)
+
+    def testRelationshipsInvalid(self):
+        """
+        Test manually-provided relationships with no matching id
+        """
+
+        # Create relationships for id 0
+        relationships = [{"id": "INVALID"}]
+
+        # Index with invalid relationship
+        self.embeddings.index({"text": x, "relationships": relationships if i == 0 else None} for i, x in enumerate(self.data))
+
+        # Validate only relationship is semantically-derived
+        edges = list(self.embeddings.graph.edges(0))
+        self.assertTrue(len(edges) == 1 and edges[0] != "INVALID")
+
     def testResetTopics(self):
         """
         Test resetting of topics

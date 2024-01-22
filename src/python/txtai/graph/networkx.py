@@ -75,7 +75,7 @@ class NetworkX(Graph):
     def edges(self, uid):
         edges = self.backend.adj.get(uid)
         if edges:
-            return dict(sorted(edges.items(), key=lambda x: x[1]["weight"]), reverse="True").keys()
+            return dict(sorted(edges.items(), key=lambda x: x[1]["weight"], reverse=True)).keys()
 
         return None
 
