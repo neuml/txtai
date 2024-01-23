@@ -79,12 +79,12 @@ class Graph:
 
         raise NotImplementedError
 
-    def node(self, uid):
+    def node(self, node):
         """
-        Get node with id uid. Returns None if not found.
+        Get node by id. Returns None if not found.
 
         Args:
-            uid: node id
+            node: node id
 
         Returns:
             graph node
@@ -92,33 +92,33 @@ class Graph:
 
         raise NotImplementedError
 
-    def addnode(self, uid, **attrs):
+    def addnode(self, node, **attrs):
         """
         Adds a node to the graph.
 
         Args:
-            uid: node id
+            node: node id
             attrs: node attributes
         """
 
         raise NotImplementedError
 
-    def removenode(self, uid):
+    def removenode(self, node):
         """
         Removes a node and all it's edges from graph.
 
         Args:
-            uid: node id
+            node: node id
         """
 
         raise NotImplementedError
 
-    def hasnode(self, uid):
+    def hasnode(self, node):
         """
         Returns True if node found, False otherwise.
 
         Args:
-            uid: node id
+            node: node id
 
         Returns:
             True if node found, False otherwise
@@ -126,12 +126,12 @@ class Graph:
 
         raise NotImplementedError
 
-    def attribute(self, uid, field):
+    def attribute(self, node, field):
         """
         Gets a node attribute.
 
         Args:
-            uid: node id
+            node: node id
             field: attribute name
 
         Returns:
@@ -140,24 +140,24 @@ class Graph:
 
         raise NotImplementedError
 
-    def addattribute(self, uid, field, value):
+    def addattribute(self, node, field, value):
         """
         Adds an attribute to node.
 
         Args:
-            uid: node id
+            node: node id
             field: attribute name
             value: attribute value
         """
 
         raise NotImplementedError
 
-    def removeattribute(self, uid, field):
+    def removeattribute(self, node, field):
         """
         Removes an attribute from node.
 
         Args:
-            uid: node id
+            node: node id
             field: attribute name
 
         Returns:
@@ -176,12 +176,12 @@ class Graph:
 
         raise NotImplementedError
 
-    def edges(self, uid):
+    def edges(self, node):
         """
         Gets edges of node by id.
 
         Args:
-            uid: node id
+            node: node id
 
         Returns:
             list of edge node ids
@@ -358,7 +358,7 @@ class Graph:
         # Initialize graph backend
         self.initialize()
 
-        for _, document, _ in documents:
+        for uid, document, _ in documents:
             # Relationships are manually-provided edges
             relations = None
 
@@ -376,7 +376,7 @@ class Graph:
                     document = " ".join(document)
 
                 # Create node
-                self.addnode(index, data=document)
+                self.addnode(index, id=uid, data=document)
 
                 # Add relationships
                 self.addrelations(index, relations)
@@ -391,21 +391,21 @@ class Graph:
             ids: node ids to delete
         """
 
-        for uid in ids:
+        for node in ids:
             # Remove existing node, if it exists
-            if self.hasnode(uid):
+            if self.hasnode(node):
                 # Delete from topics
-                topic = self.attribute(uid, "topic")
+                topic = self.attribute(node, "topic")
                 if topic and self.topics:
                     # Delete id from topic
-                    self.topics[topic].remove(uid)
+                    self.topics[topic].remove(node)
 
                     # Also delete topic, if it's empty
                     if not self.topics[topic]:
                         self.topics.pop(topic)
 
                 # Delete node
-                self.removenode(uid)
+                self.removenode(node)
 
     def index(self, search, ids, similarity):
         """
@@ -454,25 +454,72 @@ class Graph:
             else:
                 self.addtopics(similarity)
 
-    def addrelations(self, uid, relations):
+    def filter(self, nodes):
+        """
+        Creates a subgraph of this graph using the list of input nodes. This method create a new graph
+        selecting only matching nodes, edges, topics and categories.
+
+        Args:
+            nodes: nodes to select as a list of (id, score) tuples
+
+        Returns:
+            graph
+        """
+
+        # Create a new empty graph of the same type
+        graph = type(self)(self.config)
+
+        # Initalize subgraph
+        graph.initialize()
+
+        nodeids = {node for node, _ in nodes}
+        for node, score in nodes:
+            # Add nodes
+            graph.addnode(node, **self.node(node))
+            graph.addattribute(node, "score", score)
+
+            # Add edges
+            edges = self.edges(node)
+            if edges:
+                for target, attributes in self.edges(node).items():
+                    if target in nodeids:
+                        graph.addedge(node, target, **attributes)
+
+        # Filter categories and topics
+        topics = {}
+        for i, (topic, ids) in enumerate(self.topics.items()):
+            ids = [x for x in ids if x in nodeids]
+            if ids:
+                topics[topic] = (self.categories[i] if self.categories else None, ids)
+
+        # Sort by number of nodes descending
+        topics = sorted(topics.items(), key=lambda x: len(x[1][1]), reverse=True)
+
+        # Copy filtered categories and topics
+        graph.categories = [category for _, (category, _) in topics] if self.categories else None
+        graph.topics = {topic: ids for topic, (_, ids) in topics}
+
+        return graph
+
+    def addrelations(self, node, relations):
         """
         Add manually-provided relationships.
 
         Args:
-            uid: node id
+            node: node id
             relations: list of relationships to add
         """
 
         # Add relationships, if any
         if relations:
-            if uid not in self.relations:
-                self.relations[uid] = []
+            if node not in self.relations:
+                self.relations[node] = []
 
             # Add each relationship
             for relation in relations:
                 # Support both dict and string ids
                 relation = {"id": relation} if not isinstance(relation, dict) else relation
-                self.relations[uid].append(relation)
+                self.relations[node].append(relation)
 
     def resolverelations(self, ids):
         """
@@ -483,7 +530,7 @@ class Graph:
         """
 
         # Resolve ids and create edges for relationships
-        for uid, relations in self.relations.items():
+        for node, relations in self.relations.items():
             # Resolve internal ids
             iids = ids(y["id"] for y in relations)
 
@@ -502,7 +549,7 @@ class Graph:
                         relation["weight"] = relation.get("weight", 1.0)
 
                         # Add edge and all other attributes
-                        self.addedge(uid, target, **relation)
+                        self.addedge(node, target, **relation)
 
         # Clear temporary relationship storage
         self.relations = {}
@@ -522,22 +569,22 @@ class Graph:
         approximate = self.config.get("approximate", True)
 
         batch = []
-        for uid in nodes:
+        for node in nodes:
             # Get data attribute
-            data = self.removeattribute(uid, "data")
+            data = self.removeattribute(node, "data")
 
             # Set text field when data is a string
             if isinstance(data, str):
-                self.addattribute(uid, "text", data)
+                self.addattribute(node, "text", data)
 
             # Add additional attributes, if specified
             if attributes:
                 for field, value in attributes.items():
-                    self.addattribute(uid, field, value)
+                    self.addattribute(node, field, value)
 
             # Skip nodes with existing edges when building an approximate network
-            if not self.hasedge(uid) or not approximate:
-                batch.append((uid, data))
+            if not self.hasedge(node) or not approximate:
+                batch.append((node, data))
 
             # Process batch
             if len(batch) == batchsize:
@@ -563,7 +610,7 @@ class Graph:
             # Get input node id
             x, _ = batch[x]
 
-            # Add edges for each input uid and result uid pair that meets specified criteria
+            # Add edges for each input node id and result node id pair that meets specified criteria
             for y, score in result:
                 if x != y and score > minscore and not self.hasedge(x, y):
                     self.addedge(x, y, weight=score)
@@ -593,12 +640,12 @@ class Graph:
 
         # Add topic-related node attributes
         for x, topic in enumerate(self.topics):
-            for r, uid in enumerate(self.topics[topic]):
-                self.addattribute(uid, "topic", topic)
-                self.addattribute(uid, "topicrank", r)
+            for r, node in enumerate(self.topics[topic]):
+                self.addattribute(node, "topic", topic)
+                self.addattribute(node, "topicrank", r)
 
                 if self.categories:
-                    self.addattribute(uid, "category", self.categories[x])
+                    self.addattribute(node, "category", self.categories[x])
 
     def cleartopics(self):
         """
@@ -607,12 +654,12 @@ class Graph:
 
         # Clear previous topics, if any
         if self.topics:
-            for uid in self.scan():
-                self.removeattribute(uid, "topic")
-                self.removeattribute(uid, "topicrank")
+            for node in self.scan():
+                self.removeattribute(node, "topic")
+                self.removeattribute(node, "topicrank")
 
                 if self.categories:
-                    self.removeattribute(uid, "category")
+                    self.removeattribute(node, "category")
 
             self.topics, self.categories = None, None
 
@@ -623,23 +670,24 @@ class Graph:
         """
 
         # Iterate over nodes missing topic attribute (only occurs for new nodes)
-        for uid in self.scan(attribute="updated"):
+        for node in self.scan(attribute="updated"):
             # Remove updated attribute
-            self.removeattribute(uid, "updated")
+            self.removeattribute(node, "updated")
 
             # Get list of neighboring nodes
-            ids = self.edges(uid)
+            ids = self.edges(node)
+            ids = ids.keys() if ids else None
 
             # Infer topic
             topic = Counter(self.attribute(x, "topic") for x in ids).most_common(1)[0][0] if ids else None
             if topic:
                 # Add id to topic list and set topic attribute
-                self.topics[topic].append(uid)
-                self.addattribute(uid, "topic", topic)
+                self.topics[topic].append(node)
+                self.addattribute(node, "topic", topic)
 
                 # Set topic rank
-                self.addattribute(uid, "topicrank", len(self.topics[topic]) - 1)
+                self.addattribute(node, "topicrank", len(self.topics[topic]) - 1)
 
                 # Infer category
                 category = Counter(self.attribute(x, "category") for x in ids).most_common(1)[0][0]
-                self.addattribute(uid, "category", category)
+                self.addattribute(node, "category", category)

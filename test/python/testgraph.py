@@ -123,6 +123,19 @@ class TestGraph(unittest.TestCase):
         self.assertEqual(sum((len(graph.topics[x]) for x in graph.topics)), 5)
         self.assertEqual(len(graph.categories), 6)
 
+    def testFilter(self):
+        """
+        Test creating filtered subgraphs
+        """
+
+        # Create an index for the list of text
+        self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        # Validate counts
+        graph = self.embeddings.search("feel good story", graph=True)
+        self.assertEqual(graph.count(), 3)
+        self.assertEqual(graph.edgecount(), 2)
+
     def testFunction(self):
         """
         Test running graph functions with SQL

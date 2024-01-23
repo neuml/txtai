@@ -46,36 +46,36 @@ class NetworkX(Graph):
         # Return all nodes
         return self.backend
 
-    def node(self, uid):
-        return self.backend.nodes.get(uid)
+    def node(self, node):
+        return self.backend.nodes.get(node)
 
-    def hasnode(self, uid):
-        return self.backend.has_node(uid)
+    def hasnode(self, node):
+        return self.backend.has_node(node)
 
-    def addnode(self, uid, **attrs):
-        self.backend.add_node(uid, **attrs)
+    def addnode(self, node, **attrs):
+        self.backend.add_node(node, **attrs)
 
-    def removenode(self, uid):
-        if self.hasnode(uid):
-            self.backend.remove_node(uid)
+    def removenode(self, node):
+        if self.hasnode(node):
+            self.backend.remove_node(node)
 
-    def attribute(self, uid, field):
-        return self.node(uid).get(field) if self.hasnode(uid) else None
+    def attribute(self, node, field):
+        return self.node(node).get(field) if self.hasnode(node) else None
 
-    def addattribute(self, uid, field, value):
-        if self.hasnode(uid):
-            self.node(uid)[field] = value
+    def addattribute(self, node, field, value):
+        if self.hasnode(node):
+            self.node(node)[field] = value
 
-    def removeattribute(self, uid, field):
-        return self.node(uid).pop(field, None) if self.hasnode(uid) else None
+    def removeattribute(self, node, field):
+        return self.node(node).pop(field, None) if self.hasnode(node) else None
 
     def edgecount(self):
         return self.backend.number_of_edges()
 
-    def edges(self, uid):
-        edges = self.backend.adj.get(uid)
+    def edges(self, node):
+        edges = self.backend.adj.get(node)
         if edges:
-            return dict(sorted(edges.items(), key=lambda x: x[1]["weight"], reverse=True)).keys()
+            return dict(sorted(edges.items(), key=lambda x: x[1]["weight"], reverse=True))
 
         return None
 

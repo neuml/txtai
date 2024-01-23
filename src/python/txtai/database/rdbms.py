@@ -178,13 +178,17 @@ class RDBMS(Database):
         return Statement.IDS_CLAUSE % batch
 
     # pylint: disable=R0912
-    def query(self, query, limit, parameters):
+    def query(self, query, limit, parameters, indexids):
         # Extract query components
         select = query.get("select", self.defaults())
         where = query.get("where")
         groupby, having = query.get("groupby"), query.get("having")
         orderby, qlimit, offset = query.get("orderby"), query.get("limit"), query.get("offset")
         similarity = query.get("similar")
+
+        # Select "indexid, score" when indexids is True
+        if indexids:
+            select = f"{self.resolve('indexid')}, {self.resolve('score')}"
 
         # Build query text
         query = Statement.TABLE_CLAUSE % select
@@ -236,7 +240,8 @@ class RDBMS(Database):
 
             results.append(result)
 
-        return results
+        # Transform results, if necessary
+        return [(x["indexid"], x["score"]) for x in results] if indexids else results
 
     def initialize(self):
         """

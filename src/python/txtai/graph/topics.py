@@ -99,7 +99,7 @@ class Topics:
 
         Args:
             graph: Graph instance
-            node: node uid
+            node: node id
 
         Returns:
             list of node tokens

@@ -344,7 +344,7 @@ class Embeddings:
         # Default to 0 when no suitable method found
         return 0
 
-    def search(self, query, limit=None, weights=None, index=None, parameters=None):
+    def search(self, query, limit=None, weights=None, index=None, parameters=None, graph=False):
         """
         Finds documents most similar to the input query. This method will run either an index search
         or an index + database search depending on if a database is available.
@@ -355,15 +355,18 @@ class Embeddings:
             weights: hybrid score weights, if applicable
             index: index name, if applicable
             parameters: dict of named parameters to bind to placeholders
+            graph: return graph results if True
 
         Returns:
-            list of (id, score) for index search, list of dict for an index + database search
+            list of (id, score) for index search
+            list of dict for an index + database search
+            graph when graph is set to True
         """
 
-        results = self.batchsearch([query], limit, weights, index, [parameters])
+        results = self.batchsearch([query], limit, weights, index, [parameters], graph)
         return results[0] if results else results
 
-    def batchsearch(self, queries, limit=None, weights=None, index=None, parameters=None):
+    def batchsearch(self, queries, limit=None, weights=None, index=None, parameters=None, graph=False):
         """
         Finds documents most similar to the input queries. This method will run either an index search
         or an index + database search depending on if a database is available.
@@ -374,12 +377,22 @@ class Embeddings:
             weights: hybrid score weights, if applicable
             index: index name, if applicable
             parameters: list of dicts of named parameters to bind to placeholders
+            graph: return graph results if True
 
         Returns:
-            list of (id, score) per query for index search, list of dict per query for an index + database search
+            list of (id, score) per query for index search
+            list of dict per query for an index + database search
+            list of graph per query when graph is set to True
         """
 
-        return Search(self)(queries, limit, weights, index, parameters)
+        # Determine if graphs should be returned
+        graph = graph if self.graph else False
+
+        # Execute search
+        results = Search(self, graph)(queries, limit, weights, index, parameters)
+
+        # Create subgraphs using results, if necessary
+        return [self.graph.filter(x) for x in results] if graph else results
 
     def similarity(self, query, data):
         """

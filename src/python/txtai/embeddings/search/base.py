@@ -66,7 +66,7 @@ class Search:
             index = self.indexes.default()
 
         # Database search
-        if not self.indexids and self.database:
+        if self.database:
             return self.dbsearch(queries, limit, weights, index, parameters)
 
         # Default vector index query (sparse, dense or hybrid)
@@ -238,7 +238,9 @@ class Search:
         results = []
         for x, query in enumerate(queries):
             # Run the database query, get matching bulk searches for current query
-            result = self.database.search(query, [r for y, r in scan if x == y], limit, parameters[x] if parameters and parameters[x] else None)
+            result = self.database.search(
+                query, [r for y, r in scan if x == y], limit, parameters[x] if parameters and parameters[x] else None, self.indexids
+            )
             results.append(result)
 
         return results
