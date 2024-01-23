@@ -456,7 +456,7 @@ class Graph:
 
     def filter(self, nodes):
         """
-        Creates a subgraph of this graph using the list of input nodes. This method create a new graph
+        Creates a subgraph of this graph using the list of input nodes. This method creates a new graph
         selecting only matching nodes, edges, topics and categories.
 
         Args:
