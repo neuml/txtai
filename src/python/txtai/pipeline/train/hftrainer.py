@@ -77,11 +77,11 @@ class HFTrainer(Tensors):
         # Data collator and list of labels (only for classification models)
         collator, labels = None, None
 
+        # Default tokenizer pad token if it's not set
+        tokenizer.pad_token = tokenizer.pad_token if tokenizer.pad_token is not None else tokenizer.eos_token
+
         # Prepare datasets
         if task == "language-generation":
-            # Default tokenizer pad token if it's not set
-            tokenizer.pad_token = tokenizer.pad_token if tokenizer.pad_token is not None else tokenizer.eos_token
-
             process = Texts(tokenizer, columns, maxlength)
             collator = DataCollatorForLanguageModeling(tokenizer, mlm=False, pad_to_multiple_of=8 if args.fp16 else None)
         elif task in ("language-modeling", "token-detection"):
