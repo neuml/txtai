@@ -31,8 +31,8 @@ class Search:
         # Alias embeddings attributes
         self.ann = embeddings.ann
         self.batchtransform = embeddings.batchtransform
-        self.config = embeddings.config
         self.database = embeddings.database
+        self.ids = embeddings.ids
         self.indexes = embeddings.indexes
         self.query = embeddings.query
         self.scoring = embeddings.scoring if embeddings.issparse() else None
@@ -203,10 +203,9 @@ class Search:
             results with resolved ids
         """
 
-        # Map indexids to ids if "ids" available
-        if not self.indexids and "ids" in self.config:
-            lookup = self.config["ids"]
-            return [[(lookup[i], score) for i, score in r] for r in results]
+        # Map indexids to ids if embeddings ids are available
+        if not self.indexids and self.ids:
+            return [[(self.ids[i], score) for i, score in r] for r in results]
 
         return results
 

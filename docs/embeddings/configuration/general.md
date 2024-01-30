@@ -41,7 +41,7 @@ Sets the `text` and `object` column names. Defaults to `text` and `object` if no
 
 ## format
 ```yaml
-format: pickle|json
+format: json|pickle
 ```
 
-Sets the configuration storage format. Defaults to `pickle`.
+Sets the configuration storage format. Defaults to `json`.

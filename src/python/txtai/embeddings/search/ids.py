@@ -16,8 +16,8 @@ class Ids:
             embeddings: embeddings instance
         """
 
-        self.config = embeddings.config
         self.database = embeddings.database
+        self.ids = embeddings.ids
 
     def __call__(self, ids):
         """
@@ -30,7 +30,7 @@ class Ids:
             internal ids
         """
 
-        # Resolve ids using database if available, otherwise fallback to config
+        # Resolve ids using database if available, otherwise fallback to embeddings ids
         results = self.database.ids(ids) if self.database else self.scan(ids)
 
         # Create dict of id: [iids] given there is a one to many relationship
@@ -44,7 +44,7 @@ class Ids:
 
     def scan(self, ids):
         """
-        Scans config ids array for matches when content is disabled.
+        Scans embeddings ids array for matches when content is disabled.
 
         Args:
             ids: search ids
@@ -56,6 +56,6 @@ class Ids:
         # Find existing ids
         indices = []
         for uid in ids:
-            indices.extend([(index, value) for index, value in enumerate(self.config["ids"]) if uid == value])
+            indices.extend([(index, value) for index, value in enumerate(self.ids) if uid == value])
 
         return indices

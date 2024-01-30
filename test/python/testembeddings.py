@@ -2,6 +2,7 @@
 Embeddings module tests
 """
 
+import json
 import os
 import tempfile
 import unittest
@@ -217,6 +218,38 @@ class TestEmbeddings(unittest.TestCase):
         uid = embeddings.search("feel good story", 1)[0][0]
         self.assertEqual(uid, 0)
 
+    def testIds(self):
+        """
+        Test legacy config ids loading
+        """
+
+        # Create an index for the list of text
+        self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        # Generate temp file path
+        index = os.path.join(tempfile.gettempdir(), "embeddings.ids")
+
+        # Save index
+        self.embeddings.save(index)
+
+        # Set ids on config to simulate legacy ids format
+        with open(f"{index}/config.json", "r", encoding="utf-8") as handle:
+            config = json.load(handle)
+            config["ids"] = list(range(len(self.data)))
+
+        with open(f"{index}/config.json", "w", encoding="utf-8") as handle:
+            json.dump(config, handle, default=str, indent=2)
+
+        # Reload index
+        self.embeddings.load(index)
+
+        # Run search
+        uid = self.embeddings.search("feel good story", 1)[0][0]
+        self.assertEqual(uid, 4)
+
+        # Check that ids is not in config
+        self.assertTrue("ids" not in self.embeddings.config)
+
     def testIndex(self):
         """
         Test index
@@ -396,7 +429,7 @@ class TestEmbeddings(unittest.TestCase):
 
         # Reset embeddings for test
         self.embeddings.ann = None
-        del self.embeddings.config["ids"]
+        self.embeddings.ids = None
 
         # Create an index for the list of text
         self.embeddings.upsert(data)

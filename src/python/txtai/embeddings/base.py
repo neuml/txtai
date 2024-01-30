@@ -19,7 +19,7 @@ from ..scoring import ScoringFactory
 from ..vectors import VectorsFactory
 from ..version import __pickle__
 
-from .index import Action, Functions, Indexes, Reducer, Stream, Transform
+from .index import Action, Functions, Indexes, IndexIds, Reducer, Stream, Transform
 from .search import Explain, Ids, Query, Search, Terms
 
 
@@ -53,6 +53,9 @@ class Embeddings:
 
         # Approximate nearest neighbor index
         self.ann = None
+
+        # Index ids when content is disabled
+        self.ids = None
 
         # Document database
         self.database = None
@@ -132,7 +135,7 @@ class Embeddings:
 
             # Save indexids-ids mapping for indexes with no database, except when this is a reindex
             if ids and not reindex and not self.database:
-                self.config["ids"] = ids
+                self.ids = self.createids(ids)
 
         # Index scoring, if necessary
         # This must occur before graph index in order to be available to the graph
@@ -179,7 +182,7 @@ class Embeddings:
 
             # Save indexids-ids mapping for indexes with no database
             if ids and not self.database:
-                self.config["ids"] = self.config["ids"] + ids
+                self.ids = self.createids(self.ids + ids)
 
         # Scoring upsert, if necessary
         # This must occur before graph upsert in order to be available to the graph
@@ -222,17 +225,14 @@ class Embeddings:
             # Delete ids from database
             self.database.delete(deletes)
         elif self.ann or self.scoring:
-            # Lookup indexids from config for indexes with no database
-            indexids = self.config["ids"]
-
             # Find existing ids
             for uid in ids:
-                indices.extend([index for index, value in enumerate(indexids) if uid == value])
+                indices.extend([index for index, value in enumerate(self.ids) if uid == value])
 
-            # Clear config ids
+            # Clear embeddings ids
             for index in indices:
-                deletes.append(indexids[index])
-                indexids[index] = None
+                deletes.append(self.ids[index])
+                self.ids[index] = None
 
         # Delete indices for all indexes and data stores
         if indices:
@@ -338,8 +338,8 @@ class Embeddings:
             return self.scoring.count()
         if self.database:
             return self.database.count()
-        if self.config.get("ids"):
-            return len([uid for uid in self.config["ids"] if uid is not None])
+        if self.ids:
+            return len([uid for uid in self.ids if uid is not None])
 
         # Default to 0 when no suitable method found
         return 0
@@ -554,6 +554,11 @@ class Embeddings:
             self.reducer = Reducer()
             self.reducer.load(f"{path}/lsa")
 
+        # Index ids when content is disabled
+        self.ids = self.createids()
+        if self.ids:
+            self.ids.load(f"{path}/ids")
+
         # Document database - stores document content
         self.database = self.createdatabase()
         if self.database:
@@ -615,6 +620,10 @@ class Embeddings:
             if self.reducer:
                 self.reducer.save(f"{path}/lsa")
 
+            # Save index ids
+            if self.ids:
+                self.ids.save(f"{path}/ids")
+
             # Save document database
             if self.database:
                 self.database.save(f"{path}/documents")
@@ -647,6 +656,7 @@ class Embeddings:
 
         self.ann, self.config, self.graph, self.archive = None, None, None, None
         self.reducer, self.query, self.model, self.models = None, None, None, None
+        self.ids = None
 
         # Close database connection if open
         if self.database:
@@ -743,6 +753,9 @@ class Embeddings:
         # Initialize default parameters, if necessary
         self.defaults()
 
+        # Initialize index ids, only created when content is disabled
+        self.ids = None
+
         # Create document database, if necessary
         if not reindex:
             self.database = self.createdatabase()
@@ -817,8 +830,11 @@ class Embeddings:
         name = "config.json" if jsonconfig else "config"
 
         # Load configuration
-        with open(f"{path}/{name}", "r" if jsonconfig else "rb") as handle:
+        with open(f"{path}/{name}", "r" if jsonconfig else "rb", encoding="utf-8" if jsonconfig else None) as handle:
             config = json.load(handle) if jsonconfig else pickle.load(handle)
+
+        # Add format parameter
+        config["format"] = "json" if jsonconfig else "pickle"
 
         # Build full path to embedding vectors file
         if config.get("storevectors"):
@@ -828,7 +844,7 @@ class Embeddings:
 
     def saveconfig(self, path):
         """
-        Saves index configuration. This method saves to JSON if possible, otherwise it falls back to pickle.
+        Saves index configuration. This method defaults to JSON and falls back to pickle.
 
         Args:
             path: path to directory
@@ -837,8 +853,8 @@ class Embeddings:
             dict
         """
 
-        # Default to pickle config
-        jsonconfig = self.config.get("format", "pickle") == "json"
+        # Default to JSON config
+        jsonconfig = self.config.get("format", "json") == "json"
 
         # Set config file name
         name = "config.json" if jsonconfig else "config"
@@ -977,6 +993,20 @@ class Embeddings:
             return GraphFactory.create(config)
 
         return None
+
+    def createids(self, ids=None):
+        """
+        Creates indexids when content is disabled.
+
+        Args:
+            ids: optional ids to add
+
+        Returns:
+            new indexids, if content disabled
+        """
+
+        # Load index ids when content is disabled
+        return IndexIds(self, ids) if not self.config.get("content") else None
 
     def createindexes(self):
         """

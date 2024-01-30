@@ -355,33 +355,6 @@ class Common:
             with self.assertRaises(ValueError):
                 self.embeddings.index([(0, {"text": "This is a test", "flag": float("NaN")}, None)])
 
-        def testJSON(self):
-            """
-            Test JSON configuration
-            """
-
-            embeddings = Embeddings(
-                {
-                    "format": "json",
-                    "path": "sentence-transformers/nli-mpnet-base-v2",
-                    "content": self.backend,
-                }
-            )
-
-            embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
-
-            # Generate temp file path
-            index = os.path.join(tempfile.gettempdir(), f"embeddings.{self.category()}.json")
-
-            embeddings.save(index)
-
-            # Check that config.json exists
-            self.assertTrue(os.path.exists(os.path.join(index, "config.json")))
-
-            # Check that index can be reloaded
-            embeddings.load(index)
-            self.assertEqual(embeddings.count(), 6)
-
         def testKeyword(self):
             """
             Test keyword only (sparse) search
@@ -520,6 +493,33 @@ class Common:
             # Decode and test extracted object
             obj = embeddings.search("select object from txtai where id = 0")[0]["object"]
             self.assertEqual(str(obj.getvalue(), "utf-8"), "binary data")
+
+        def testPickle(self):
+            """
+            Test pickle configuration
+            """
+
+            embeddings = Embeddings(
+                {
+                    "format": "pickle",
+                    "path": "sentence-transformers/nli-mpnet-base-v2",
+                    "content": self.backend,
+                }
+            )
+
+            embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+            # Generate temp file path
+            index = os.path.join(tempfile.gettempdir(), f"embeddings.{self.category()}.pickle")
+
+            embeddings.save(index)
+
+            # Check that config exists
+            self.assertTrue(os.path.exists(os.path.join(index, "config")))
+
+            # Check that index can be reloaded
+            embeddings.load(index)
+            self.assertEqual(embeddings.count(), 6)
 
         def testQuantize(self):
             """

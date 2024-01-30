@@ -42,7 +42,6 @@ class TestWordVectors(unittest.TestCase):
 
         self.assertFalse(model.initialized)
 
-        config["ids"] = ["0", "1"]
         config["dimensions"] = 10
         model = VectorsFactory.create(config, None)
 
