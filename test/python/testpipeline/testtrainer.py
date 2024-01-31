@@ -40,7 +40,7 @@ class TestTrainer(unittest.TestCase):
 
     def testCLM(self):
         """
-        Test training a model with causal language modeling.
+        Test training a model with causal language modeling
         """
 
         trainer = HFTrainer()
@@ -209,6 +209,24 @@ class TestTrainer(unittest.TestCase):
 
         labels = Labels((model, tokenizer), dynamic=False)
         self.assertEqual(labels("cat")[0][0], 1)
+
+    def testPEFT(self):
+        """
+        Test training a model with causal language modeling and PEFT
+        """
+
+        trainer = HFTrainer()
+        model, _ = trainer(
+            "hf-internal-testing/tiny-random-gpt2",
+            self.data,
+            maxlength=16,
+            task="language-generation",
+            quantize=True,
+            lora=True,
+        )
+
+        # Test model completed successfully
+        self.assertIsNotNone(model)
 
     def testQA(self):
         """

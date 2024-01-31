@@ -59,6 +59,45 @@ The HFTrainer pipeline builds and/or fine-tunes models for following training ta
 | text-classification | Classify text with a set of labels |
 | token-detection | ELECTRA-style pre-training with replaced token detection |
 
+## PEFT
+
+Parameter-Efficient Fine-Tuning (PEFT) is supported through [Hugging Face's PEFT library](https://github.com/huggingface/peft). Quantization is provided through [bitsandbytes](https://github.com/TimDettmers/bitsandbytes). See the examples below.
+
+```python
+from txtai.pipeline import HFTrainer
+
+trainer = HFTrainer()
+trainer(..., quantize=True, lora=True)
+```
+
+When these parameters are set to True, they use default configuration. This can also be customized.
+
+```python
+quantize = {
+    "load_in_4bit": True,
+    "bnb_4bit_use_double_quant": True,
+    "bnb_4bit_quant_type": "nf4",
+    "bnb_4bit_compute_dtype": "bfloat16"
+}
+
+lora = {
+    "r": 16,
+    "lora_alpha": 8,
+    "target_modules": "all-linear",
+    "lora_dropout": 0.05,
+    "bias": "none"
+}
+
+trainer(..., quantize=quantize, lora=lora)
+```
+
+The parameters also accept `transformers.BitsAndBytesConfig` and `peft.LoraConfig` instances.
+
+See the following PEFT documentation links for more information.
+
+- [Quantization](https://huggingface.co/docs/peft/developer_guides/quantization)
+- [LoRA](https://huggingface.co/docs/peft/developer_guides/lora)
+
 ## Methods 
 
 Python documentation for the pipeline.

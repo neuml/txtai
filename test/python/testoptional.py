@@ -37,6 +37,7 @@ class TestOptional(unittest.TestCase):
             "onnxruntime",
             "onnxruntime.quantization",
             "pandas",
+            "peft",
             "PIL",
             "rich",
             "sklearn.decomposition",
@@ -153,6 +154,7 @@ class TestOptional(unittest.TestCase):
         from txtai.pipeline import (
             Caption,
             HFOnnx,
+            HFTrainer,
             ImageHash,
             LiteLLM,
             LlamaCpp,
@@ -171,6 +173,9 @@ class TestOptional(unittest.TestCase):
 
         with self.assertRaises(ImportError):
             HFOnnx()("google/bert_uncased_L-2_H-128_A-2", quantize=True)
+
+        with self.assertRaises(ImportError):
+            HFTrainer()(None, None, lora=True)
 
         with self.assertRaises(ImportError):
             ImageHash()
