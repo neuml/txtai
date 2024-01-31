@@ -5,6 +5,8 @@ Hugging Face Transformers trainer wrapper module
 import os
 import sys
 
+import torch
+
 from transformers import (
     AutoConfig,
     AutoModelForCausalLM,
@@ -247,6 +249,9 @@ class HFTrainer(Tensors):
 
         # Format quantization configuration
         quantization = self.quantization(quantize)
+
+        # Clear quantization configuration if GPU is not available
+        quantization = quantization if torch.cuda.is_available() else None
 
         # pylint: disable=E1120
         # Unpack existing model or create new model from config
