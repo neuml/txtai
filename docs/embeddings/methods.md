@@ -1,13 +1,14 @@
 # Methods
 
 ::: txtai.embeddings.Embeddings
-    selection:
+    options:
         filters:
             - "!columns"
             - "!createann"
             - "!createcloud"
             - "!createdatabase"
             - "!creategraph"
+            - "!createids"
             - "!createindexes"
             - "!createscoring"
             - "!checkarchive"

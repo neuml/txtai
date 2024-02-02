@@ -22,7 +22,7 @@ extras["dev"] = [
     "httpx",
     "mkdocs-material",
     "mkdocs-redirects",
-    "mkdocstrings[python-legacy]",
+    "mkdocstrings[python]",
     "pre-commit",
     "pylint",
 ]
