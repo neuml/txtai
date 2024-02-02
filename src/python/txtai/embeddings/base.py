@@ -521,13 +521,14 @@ class Embeddings:
             and (os.path.exists(f"{path}/embeddings") or os.path.exists(f"{path}/scoring"))
         )
 
-    def load(self, path=None, cloud=None, **kwargs):
+    def load(self, path=None, cloud=None, config=None, **kwargs):
         """
         Loads an existing index from path.
 
         Args:
             path: input path
             cloud: cloud storage configuration
+            config: configuration overrides
             kwargs: additional configuration as keyword args
         """
 
@@ -543,6 +544,9 @@ class Embeddings:
 
         # Load index configuration
         self.config = self.loadconfig(path)
+
+        # Apply config overrides
+        self.config = {**self.config, **config} if config else self.config
 
         # Approximate nearest neighbor index - stores dense vectors
         self.ann = self.createann()
@@ -679,14 +683,8 @@ class Embeddings:
         """
 
         if self.config:
-            # Copy and edit config
-            config = self.config.copy()
-
-            # Remove ids array if present
-            config.pop("ids", None)
-
             # Print configuration
-            print(json.dumps(config, sort_keys=True, default=str, indent=2))
+            print(json.dumps(self.config, sort_keys=True, default=str, indent=2))
 
     def issparse(self):
         """

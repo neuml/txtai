@@ -143,11 +143,11 @@ class Application:
                 config = config.copy()
 
                 # Resolve callable functions
-                config["tasks"] = [self.resolve(task) for task in config["tasks"]]
+                config["tasks"] = [self.resolvetask(task) for task in config["tasks"]]
 
                 # Resolve stream functions
                 if "stream" in config:
-                    config["stream"] = self.resolve(config["stream"])
+                    config["stream"] = self.resolvetask(config["stream"])
 
                 # Get scheduler config
                 schedule = config.pop("schedule", None)
@@ -171,44 +171,26 @@ class Application:
             loaddata: If True (default), load existing index data, if available. Otherwise, only load models.
         """
 
-        # Resolve functions in embeddings config
-        config = self.config.get("embeddings") if self.config else None
+        # Get embeddings configuration
+        config = self.config.get("embeddings")
         if config:
-            # Create copy of config
-            config = config.copy()
-
-            if "functions" in config:
-                # Resolve callable functions
-                functions = []
-                for fn in config["functions"]:
-                    original = fn
-                    try:
-                        if isinstance(fn, dict):
-                            fn = fn.copy()
-                            fn["function"] = self.function(fn["function"])
-                        else:
-                            fn = self.function(fn)
-
-                    # pylint: disable=W0703
-                    except Exception:
-                        # Not a resolvable function, pipeline or workflow - further resolution will happen in embeddings
-                        fn = original
-
-                    functions.append(fn)
-
-                config["functions"] = functions
-
-            if "transform" in config:
-                # Resolve transform function
-                config["transform"] = self.function(config["transform"])
+            # Resolve application functions in embeddings config
+            config = self.resolveconfig(config.copy())
 
         # Load embeddings index if loaddata and index exists
         if loaddata and Embeddings().exists(self.config.get("path"), self.config.get("cloud")):
-            # Load existing index if available
-            self.embeddings = Embeddings()
-            self.embeddings.load(self.config.get("path"), self.config.get("cloud"))
-        elif "embeddings" in self.config:
             # Initialize empty embeddings
+            self.embeddings = Embeddings()
+
+            # Pass path and cloud settings. Set application functions as config overrides.
+            self.embeddings.load(
+                self.config.get("path"),
+                self.config.get("cloud"),
+                {key: config[key] for key in ["functions", "transform"] if key in config} if config else None,
+            )
+
+        elif "embeddings" in self.config:
+            # Create new embeddings with config
             self.embeddings = Embeddings(config)
 
         # If an extractor pipeline is defined and the similarity attribute is None, set to embeddings index
@@ -216,7 +198,7 @@ class Application:
         if extractor and not extractor.similarity:
             extractor.similarity = self.embeddings
 
-    def resolve(self, task):
+    def resolvetask(self, task):
         """
         Resolves callable functions for a task.
 
@@ -266,6 +248,44 @@ class Application:
             task["finalize"] = self.function(task["finalize"])
 
         return task
+
+    def resolveconfig(self, config):
+        """
+        Resolves callable functions stored in embeddings configuration.
+
+        Args:
+            config: embeddings config
+
+        Returns:
+            resolved config
+        """
+
+        if "functions" in config:
+            # Resolve callable functions
+            functions = []
+            for fn in config["functions"]:
+                original = fn
+                try:
+                    if isinstance(fn, dict):
+                        fn = fn.copy()
+                        fn["function"] = self.function(fn["function"])
+                    else:
+                        fn = self.function(fn)
+
+                # pylint: disable=W0703
+                except Exception:
+                    # Not a resolvable function, pipeline or workflow - further resolution will happen in embeddings
+                    fn = original
+
+                functions.append(fn)
+
+            config["functions"] = functions
+
+        if "transform" in config:
+            # Resolve transform function
+            config["transform"] = self.function(config["transform"])
+
+        return config
 
     def function(self, function):
         """
@@ -378,6 +398,9 @@ class Application:
 
         if self.embeddings and self.documents:
             with self.lock:
+                # Reset index
+                self.indexes(False)
+
                 # Build scoring index if term weighting is enabled
                 if self.embeddings.isweighted():
                     self.embeddings.score(self.documents)
