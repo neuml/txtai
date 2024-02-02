@@ -724,6 +724,43 @@ class Common:
             # Close embeddings
             embeddings.close()
 
+        def testSubindexEmpty(self):
+            """
+            Test loading an empty subindex
+            """
+
+            # Build data array
+            data = [(uid, {"column1": text}, None) for uid, text in enumerate(self.data)]
+
+            # Disable top-level indexing and create subindexes
+            embeddings = Embeddings(
+                {
+                    "content": self.backend,
+                    "defaults": False,
+                    "indexes": {
+                        "index1": {"path": "sentence-transformers/nli-mpnet-base-v2", "columns": {"text": "column1"}},
+                        "index2": {"path": "sentence-transformers/nli-mpnet-base-v2", "columns": {"text": "column2"}},
+                    },
+                }
+            )
+            embeddings.index(data)
+
+            # Generate temp file path
+            index = os.path.join(tempfile.gettempdir(), f"embeddings.{self.category()}.subindexempty")
+
+            # Save index
+            embeddings.save(index)
+
+            # Test exists
+            self.assertTrue(embeddings.exists(index))
+
+            # Load index
+            embeddings.load(index)
+
+            # Test search
+            result = embeddings.search("feel good story", 1)[0]
+            self.assertEqual(result["text"], data[4][1]["text"])
+
         def testTerms(self):
             """
             Test extracting keyword terms from query

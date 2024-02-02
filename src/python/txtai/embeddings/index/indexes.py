@@ -155,7 +155,10 @@ class Indexes:
         """
 
         for name, index in self.indexes.items():
-            index.load(os.path.join(path, name))
+            # Load subindex if it exists, subindexes aren't required to have data
+            directory = os.path.join(path, name)
+            if index.exists(directory):
+                index.load(directory)
 
     def save(self, path):
         """

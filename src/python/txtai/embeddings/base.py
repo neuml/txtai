@@ -514,12 +514,8 @@ class Embeddings:
         if apath:
             return os.path.exists(apath)
 
-        # Return true if path has a config or config.json file and an embeddings (dense) or scoring (sparse) file
-        return (
-            path
-            and (os.path.exists(f"{path}/config") or os.path.exists(f"{path}/config.json"))
-            and (os.path.exists(f"{path}/embeddings") or os.path.exists(f"{path}/scoring"))
-        )
+        # Return true if path has a config.json or config file with an offset set
+        return path and (os.path.exists(f"{path}/config.json") or os.path.exists(f"{path}/config")) and "offset" in self.loadconfig(path)
 
     def load(self, path=None, cloud=None, config=None, **kwargs):
         """
@@ -809,7 +805,7 @@ class Embeddings:
 
     def loadconfig(self, path):
         """
-        Loads index configuration. This method supports both config pickle files and config.json files.
+        Loads index configuration. This method supports both config.json and config pickle files.
 
         Args:
             path: path to directory
