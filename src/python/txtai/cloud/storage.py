@@ -61,7 +61,6 @@ class ObjectStorage(Cloud):
                 config.get("secret", os.environ.get("ACCESS_SECRET")),
                 host=config.get("host"),
                 port=config.get("port"),
-                region=config.get("region"),
             )
 
     def metadata(self, path=None):
