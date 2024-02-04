@@ -45,15 +45,24 @@ class ObjectStorage(Cloud):
         # Get driver for provider
         driver = get_driver(config["provider"])
 
-        # Get client connection
-        self.client = driver(
-            config.get("key", os.environ.get("ACCESS_KEY")),
-            config.get("secret", os.environ.get("ACCESS_SECRET")),
-            host=config.get("host"),
-            port=config.get("port"),
-            token=config.get("token"),
-            region=config.get("region"),
-        )
+        if config.get("token"):
+            # Get client connection
+            self.client = driver(
+                config.get("key", os.environ.get("ACCESS_KEY")),
+                config.get("secret", os.environ.get("ACCESS_SECRET")),
+                host=config.get("host"),
+                port=config.get("port"),
+                token=config.get("token"),
+                region=config.get("region"),
+            )
+        else:
+            self.client = driver(
+                config.get("key", os.environ.get("ACCESS_KEY")),
+                config.get("secret", os.environ.get("ACCESS_SECRET")),
+                host=config.get("host"),
+                port=config.get("port"),
+                region=config.get("region"),
+            )
 
     def metadata(self, path=None):
         try:
