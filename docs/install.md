@@ -130,7 +130,7 @@ The [txtai build workflow](https://github.com/neuml/txtai/blob/master/.github/wo
 
 txtai can also be installed directly from GitHub to access the latest, unreleased features.
 
-    pip install git+https://github.com/neuml/txtai
+    pip install git+https://github.com/neuml/txtai#egg=txtai[all]
 
 ## Conda
 
