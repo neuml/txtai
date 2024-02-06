@@ -387,6 +387,36 @@ class Application:
         # Return unmodified input documents
         return documents
 
+    def addobject(self, data, uid, field):
+        """
+        Helper method that builds a batch of object documents.
+
+        Args:
+            data: object content
+            uid: optional list of corresponding uids
+            field: optional field to set
+
+        Returns:
+            documents
+        """
+
+        # Raise error if index is not writable
+        if not self.config.get("writable"):
+            raise ReadOnlyError("Attempting to add documents to a read-only index (writable != True)")
+
+        documents = []
+        for x, content in enumerate(data):
+            if field:
+                row = {"id": uid[x], field: content} if uid else {field: content}
+            elif uid:
+                row = (uid[x], content)
+            else:
+                row = content
+
+            documents.append(row)
+
+        return self.add(documents)
+
     def index(self):
         """
         Builds an embeddings index for previously batched documents.

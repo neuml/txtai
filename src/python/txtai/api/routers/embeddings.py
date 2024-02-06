@@ -2,14 +2,21 @@
 Defines API paths for embeddings endpoints.
 """
 
+from io import BytesIO
 from typing import List
 
-from fastapi import APIRouter, Body, HTTPException, Request
+import PIL
+
+from fastapi import APIRouter, Body, File, Form, HTTPException, Request, UploadFile
+from fastapi.encoders import jsonable_encoder
 
 from .. import application
+from ..responses import ResponseFactory
+from ..route import EncodingAPIRoute
+
 from ...app import ReadOnlyError
 
-router = APIRouter()
+router = APIRouter(route_class=EncodingAPIRoute)
 
 
 @router.get("/search")
@@ -26,13 +33,25 @@ def search(query: str, request: Request):
         list of {id: value, score: value} for index search, list of dict for an index + database search
     """
 
-    return application.get().search(query, request=request)
+    # Execute search
+    results = application.get().search(query, request=request)
+
+    # Encode using standard FastAPI encoder but skip certain classes
+    results = jsonable_encoder(results, custom_encoder={bytes: lambda x: x, BytesIO: lambda x: x, PIL.Image.Image: lambda x: x})
+
+    # Return raw response to prevent duplicate encoding
+    response = ResponseFactory.create(request)
+    return response(results)
 
 
 # pylint: disable=W0621
 @router.post("/batchsearch")
 def batchsearch(
-    queries: List[str] = Body(...), limit: int = Body(default=None), weights: float = Body(default=None), index: str = Body(default=None)
+    request: Request,
+    queries: List[str] = Body(...),
+    limit: int = Body(default=None),
+    weights: float = Body(default=None),
+    index: str = Body(default=None),
 ):
     """
     Finds documents most similar to the input queries. This method will run either an index search
@@ -48,7 +67,15 @@ def batchsearch(
         list of {id: value, score: value} per query for index search, list of dict per query for an index + database search
     """
 
-    return application.get().batchsearch(queries, limit, weights, index)
+    # Execute search
+    results = application.get().batchsearch(queries, limit, weights, index)
+
+    # Encode using standard FastAPI encoder but skip certain classes
+    results = jsonable_encoder(results, custom_encoder={bytes: lambda x: x, BytesIO: lambda x: x, PIL.Image.Image: lambda x: x})
+
+    # Return raw response to prevent duplicate encoding
+    response = ResponseFactory.create(request)
+    return response(results)
 
 
 @router.post("/add")
@@ -62,6 +89,48 @@ def add(documents: List[dict] = Body(...)):
 
     try:
         application.get().add(documents)
+    except ReadOnlyError as e:
+        raise HTTPException(status_code=403, detail=e.args[0]) from e
+
+
+@router.post("/addobject")
+def addobject(data: List[bytes] = File(), uid: List[str] = Form(default=None), field: str = Form(default=None)):
+    """
+    Adds a batch of binary documents for indexing.
+
+    Args:
+        data: list of binary objects
+        uid: list of corresponding ids
+        field: optional object field name
+    """
+
+    if uid and len(data) != len(uid):
+        raise HTTPException(status_code=422, detail="Length of data and document lists must match")
+
+    try:
+        # Add objects
+        application.get().addobject(data, uid, field)
+    except ReadOnlyError as e:
+        raise HTTPException(status_code=403, detail=e.args[0]) from e
+
+
+@router.post("/addimage")
+def addimage(data: List[UploadFile] = File(), uid: List[str] = Form(), field: str = Form(default=None)):
+    """
+    Adds a batch of images for indexing.
+
+    Args:
+        data: list of images
+        uid: list of corresponding ids
+        field: optional object field name
+    """
+
+    if uid and len(data) != len(uid):
+        raise HTTPException(status_code=422, detail="Length of data and uid lists must match")
+
+    try:
+        # Add images
+        application.get().addobject([PIL.Image.open(content.file) for content in data], uid, field)
     except ReadOnlyError as e:
         raise HTTPException(status_code=403, detail=e.args[0]) from e
 

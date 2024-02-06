@@ -7,8 +7,9 @@ from typing import List
 from fastapi import APIRouter, Body
 
 from .. import application
+from ..route import EncodingAPIRoute
 
-router = APIRouter()
+router = APIRouter(route_class=EncodingAPIRoute)
 
 
 @router.get("/textract")

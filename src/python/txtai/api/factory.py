@@ -5,7 +5,7 @@ API factory module
 from ..util import Resolver
 
 
-class Factory:
+class APIFactory:
     """
     API factory. Creates new API instances.
     """
@@ -37,4 +37,4 @@ class Factory:
             API instance
         """
 
-        return Factory.get(api)(config)
+        return APIFactory.get(api)(config)

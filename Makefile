@@ -33,7 +33,8 @@ test:
 # Run tests while calculating code coverage
 coverage:
 	coverage run -m unittest discover -v -k testann -s ${TEST_DIR}
-	coverage run -m unittest discover -v -k testapi.testauthorization -k testapi.testcluster -k testapi.testextension -s ${TEST_DIR}
+	coverage run -m unittest discover -v -k testapi.testauthorization -k testapi.testcluster -s ${TEST_DIR}
+	coverage run -m unittest discover -v -k testapi.testencoding -k testapi.testextension -s ${TEST_DIR}
 	coverage run -m unittest discover -v -k testapp -s ${TEST_DIR}
 	coverage run -m unittest discover -v -k testarchive -s ${TEST_DIR}
 	coverage run -m unittest discover -v -k testcloud -s ${TEST_DIR}
