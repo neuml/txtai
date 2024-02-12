@@ -112,3 +112,17 @@ __Issue__
 __Solution__
 
 Restart the kernel. See issue [#409](https://github.com/neuml/txtai/issues/409) for more on this issue. 
+
+----------
+
+__Issue__
+
+Error installing optional/extra dependencies such as `pipeline`
+
+__Solution__
+
+The default MacOS shell (zsh) and Windows Powershell require escaping square brackets
+
+```
+pip install 'txtai[pipeline]'
+```
