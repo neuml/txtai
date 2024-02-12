@@ -121,7 +121,7 @@ Error installing optional/extra dependencies such as `pipeline`
 
 __Solution__
 
-The default MacOS shell (zsh) and Windows Powershell require escaping square brackets
+The default MacOS shell (zsh) and Windows PowerShell require escaping square brackets
 
 ```
 pip install 'txtai[pipeline]'
