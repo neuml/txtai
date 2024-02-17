@@ -82,7 +82,7 @@ All pipelines - default install comes with most common pipelines.
 pip install txtai[pipeline]
 ```
 
-More granular extras are available for pipeline categories: `pipeline-audio`, `pipeline-data`, `pipeline-image`, `pipeline-text`, and `pipeline-train`.
+More granular extras are available for pipeline categories: `pipeline-audio`, `pipeline-data`, `pipeline-image`, `pipeline-llm`, `pipeline-text`, and `pipeline-train`.
 
 ### Similarity
 
