@@ -3,6 +3,7 @@ Cluster module
 """
 
 import asyncio
+import json
 import random
 import urllib.parse
 import zlib
@@ -37,7 +38,7 @@ class Cluster:
         # Query aggregator
         self.aggregate = Aggregate()
 
-    def search(self, query, limit=None, weights=None, index=None):
+    def search(self, query, limit=None, weights=None, index=None, parameters=None, graph=False):
         """
         Finds documents most similar to the input query. This method will run either an index search
         or an index + database search depending on if a database is available.
@@ -47,6 +48,8 @@ class Cluster:
             limit: maximum results
             weights: hybrid score weights, if applicable
             index: index name, if applicable
+            parameters: dict of named parameters to bind to placeholders
+            graph: return graph results if True
 
         Returns:
             list of {id: value, score: value} for index search, list of dict for an index + database search
@@ -60,6 +63,10 @@ class Cluster:
             action += f"&weights={weights}"
         if index:
             action += f"&index={index}"
+        if parameters:
+            action += f"&parameters={json.dumps(parameters) if isinstance(parameters, dict) else parameters}"
+        if graph is not None:
+            action += f"&graph={graph}"
 
         # Run query and flatten results into single results list
         results = []
@@ -72,7 +79,7 @@ class Cluster:
         # Limit results
         return results[: (limit if limit else 10)]
 
-    def batchsearch(self, queries, limit=None, weights=None, index=None):
+    def batchsearch(self, queries, limit=None, weights=None, index=None, parameters=None, graph=False):
         """
         Finds documents most similar to the input queries. This method will run either an index search
         or an index + database search depending on if a database is available.
@@ -82,6 +89,8 @@ class Cluster:
             limit: maximum results
             weights: hybrid score weights, if applicable
             index: index name, if applicable
+            parameters: list of dicts of named parameters to bind to placeholders
+            graph: return graph results if True
 
         Returns:
             list of {id: value, score: value} per query for index search, list of dict per query for an index + database search
@@ -95,6 +104,10 @@ class Cluster:
             params["weights"] = weights
         if index:
             params["index"] = index
+        if parameters:
+            params["parameters"] = parameters
+        if graph is not None:
+            params["graph"] = graph
 
         # Run query
         batch = self.execute("post", "batchsearch", [params] * len(self.shards))

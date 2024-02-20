@@ -41,7 +41,7 @@ extras["console"] = ["rich>=12.0.1"]
 
 extras["database"] = ["duckdb>=0.7.1", "pillow>=7.1.2", "sqlalchemy>=2.0.20"]
 
-extras["graph"] = ["networkx>=2.6.3", "python-louvain>=0.16"]
+extras["graph"] = ["grand-cypher>=0.6.0", "networkx>=2.6.3", "python-louvain>=0.16"]
 
 extras["model"] = ["onnx>=1.11.0", "onnxruntime>=1.11.0"]
 

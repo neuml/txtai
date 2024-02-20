@@ -11,6 +11,7 @@ from txtai.embeddings import Embeddings
 from txtai.graph import Graph, GraphFactory
 
 
+# pylint: disable=R0904
 class TestGraph(unittest.TestCase):
     """
     Graph tests.
@@ -210,9 +211,12 @@ class TestGraph(unittest.TestCase):
         self.assertRaises(NotImplementedError, graph.centrality)
         self.assertRaises(NotImplementedError, graph.pagerank)
         self.assertRaises(NotImplementedError, graph.showpath, None, None)
+        self.assertRaises(NotImplementedError, graph.search, None)
         self.assertRaises(NotImplementedError, graph.communities, None)
         self.assertRaises(NotImplementedError, graph.loadgraph, None)
         self.assertRaises(NotImplementedError, graph.savegraph, None)
+        self.assertRaises(NotImplementedError, graph.loaddict, None)
+        self.assertRaises(NotImplementedError, graph.savedict)
 
     def testRelationships(self):
         """
@@ -280,6 +284,91 @@ class TestGraph(unittest.TestCase):
         self.assertEqual(graph.edgecount(), 2)
         self.assertEqual(sum((len(graph.topics[x]) for x in graph.topics)), 6)
         self.assertEqual(len(graph.categories), 6)
+
+    def testSaveDict(self):
+        """
+        Test loading and saving to dictionaries
+        """
+
+        # Create an index for the list of text
+        self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        # Validate counts
+        graph = self.embeddings.graph
+        count, edgecount = graph.count(), graph.edgecount()
+
+        # Save and reload graph as dict
+        data = graph.savedict()
+        graph.loaddict(data)
+
+        # Validate counts
+        self.assertEqual(graph.count(), count)
+        self.assertEqual(graph.edgecount(), edgecount)
+
+    def testSearch(self):
+        """
+        Test search
+        """
+
+        # Create an index for the list of text
+        self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        # Run standard search
+        results = self.embeddings.graph.search(
+            """
+            MATCH (A)-[]->(B)
+            RETURN A, B
+        """
+        )
+        self.assertEqual(len(results), 3)
+
+        # Run path search
+        results = self.embeddings.graph.search(
+            """
+            MATCH P=()-[]->()
+            RETURN P
+        """
+        )
+        self.assertEqual(len(results), 3)
+
+        # Run graph search
+        g = self.embeddings.graph.search(
+            """
+            MATCH (A)-[]->(B)
+            RETURN A, B
+        """,
+            graph=True,
+        )
+        self.assertEqual(g.count(), 3)
+
+        # Run path search
+        results = self.embeddings.graph.search(
+            """
+            MATCH P=()-[]->()
+            RETURN P
+        """,
+            graph=True,
+        )
+        self.assertEqual(g.count(), 3)
+
+    def testSearchBatch(self):
+        """
+        Test batch search
+        """
+
+        # Create an index for the list of text
+        self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        # Run standard search
+        results = self.embeddings.graph.batchsearch(
+            [
+                """
+            MATCH (A)-[]->(B)
+            RETURN A, B
+        """
+            ]
+        )
+        self.assertEqual(len(results[0]), 3)
 
     def testSimple(self):
         """

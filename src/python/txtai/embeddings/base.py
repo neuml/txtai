@@ -314,8 +314,11 @@ class Embeddings:
         # Initialize default parameters, if necessary
         self.defaults()
 
+        # Default vector model, if necessary
+        model = self.model if self.model else next(iter(self.models.values()))
+
         # Convert documents into sentence embeddings
-        embeddings = self.model.batchtransform(Stream(self)(documents), category)
+        embeddings = model.batchtransform(Stream(self)(documents), category)
 
         # Reduce the dimensionality of the embeddings. Scale the embeddings using this
         # model to reduce the noise of common but less relevant terms.

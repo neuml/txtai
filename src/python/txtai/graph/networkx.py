@@ -9,7 +9,9 @@ try:
     import networkx as nx
 
     from community import community_louvain
+    from grandcypher import GrandCypher
     from networkx.algorithms.community import asyn_lpa_communities, greedy_modularity_communities
+    from networkx.readwrite import json_graph
 
     NETWORKX = True
 except ImportError:
@@ -101,6 +103,33 @@ class NetworkX(Graph):
         # pylint: disable=E1121
         return nx.shortest_path(self.backend, source, target, self.distance)
 
+    def search(self, query, limit=None, graph=False):
+        # Run openCypher query
+        results = GrandCypher(self.backend, limit if limit else 3).run(query)
+
+        # Transform into filtered graph
+        if graph:
+            nodes = set()
+            for column in results.values():
+                for value in column:
+                    if isinstance(value, list):
+                        # Path group
+                        nodes.update([node for node in value if node and not isinstance(node, dict)])
+                    elif value is not None:
+                        # Single result
+                        nodes.add(value)
+
+            return self.filter(list(nodes))
+
+        # Transform columnar structure into rows
+        keys = list(results.keys())
+        rows, count = [], len(results[keys[0]])
+
+        for x in range(count):
+            rows.append({str(key): results[key][x] for key in keys})
+
+        return rows
+
     def communities(self, config):
         # Get community detection algorithm
         algorithm = config.get("algorithm")
@@ -123,6 +152,17 @@ class NetworkX(Graph):
         # Save graph
         with open(path, "wb") as handle:
             pickle.dump(self.backend, handle, protocol=__pickle__)
+
+    def loaddict(self, data):
+        self.backend = json_graph.node_link_graph(data)
+        self.categories, self.topics = data.get("categories"), data.get("topics")
+
+    def savedict(self):
+        data = json_graph.node_link_data(self.backend)
+        data["categories"] = self.categories
+        data["topics"] = self.topics
+
+        return data
 
     def louvain(self, config):
         """

@@ -15,6 +15,7 @@ from ..responses import ResponseFactory
 from ..route import EncodingAPIRoute
 
 from ...app import ReadOnlyError
+from ...graph import Graph
 
 router = APIRouter(route_class=EncodingAPIRoute)
 
@@ -37,7 +38,9 @@ def search(query: str, request: Request):
     results = application.get().search(query, request=request)
 
     # Encode using standard FastAPI encoder but skip certain classes
-    results = jsonable_encoder(results, custom_encoder={bytes: lambda x: x, BytesIO: lambda x: x, PIL.Image.Image: lambda x: x})
+    results = jsonable_encoder(
+        results, custom_encoder={bytes: lambda x: x, BytesIO: lambda x: x, PIL.Image.Image: lambda x: x, Graph: lambda x: x.savedict()}
+    )
 
     # Return raw response to prevent duplicate encoding
     response = ResponseFactory.create(request)
@@ -52,6 +55,8 @@ def batchsearch(
     limit: int = Body(default=None),
     weights: float = Body(default=None),
     index: str = Body(default=None),
+    parameters: List[dict] = Body(default=None),
+    graph: bool = Body(default=False),
 ):
     """
     Finds documents most similar to the input queries. This method will run either an index search
@@ -62,16 +67,20 @@ def batchsearch(
         limit: maximum results
         weights: hybrid score weights, if applicable
         index: index name, if applicable
+        parameters: list of dicts of named parameters to bind to placeholders
+        graph: return graph results if True
 
     Returns:
         list of {id: value, score: value} per query for index search, list of dict per query for an index + database search
     """
 
     # Execute search
-    results = application.get().batchsearch(queries, limit, weights, index)
+    results = application.get().batchsearch(queries, limit, weights, index, parameters, graph)
 
     # Encode using standard FastAPI encoder but skip certain classes
-    results = jsonable_encoder(results, custom_encoder={bytes: lambda x: x, BytesIO: lambda x: x, PIL.Image.Image: lambda x: x})
+    results = jsonable_encoder(
+        results, custom_encoder={bytes: lambda x: x, BytesIO: lambda x: x, PIL.Image.Image: lambda x: x, Graph: lambda x: x.savedict()}
+    )
 
     # Return raw response to prevent duplicate encoding
     response = ResponseFactory.create(request)

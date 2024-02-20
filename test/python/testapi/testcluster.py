@@ -195,8 +195,11 @@ class TestCluster(unittest.TestCase):
         Test cluster search
         """
 
+        # Encode parameters
+        params = json.dumps({"x": 1})
+
         query = urllib.parse.quote("feel good story")
-        uid = self.client.get(f"search?query={query}&limit=1&weights=0.5&index=default").json()[0]["id"]
+        uid = self.client.get(f"search?query={query}&limit=1&weights=0.5&index=default&parameters={params}&graph=False").json()[0]["id"]
         self.assertEqual(uid, 4)
 
     def testSearchBatch(self):
@@ -205,7 +208,15 @@ class TestCluster(unittest.TestCase):
         """
 
         results = self.client.post(
-            "batchsearch", json={"queries": ["feel good story", "climate change"], "limit": 1, "weights": 0.5, "index": "default"}
+            "batchsearch",
+            json={
+                "queries": ["feel good story", "climate change"],
+                "limit": 1,
+                "weights": 0.5,
+                "index": "default",
+                "parameters": [{"x": 1}, {"x": 2}],
+                "graph": False,
+            },
         ).json()
 
         uids = [result[0]["id"] for result in results]
