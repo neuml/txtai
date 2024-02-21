@@ -195,6 +195,23 @@ embeddings.search("query", weights=0.5)
 embeddings.search("select id, text, score from txtai where similar('query', 0.5)")
 ```
 
+## Graph search
+
+If an embeddings database has an associated graph network, graph searches can be run. The search syntax below uses [openCypher](https://opencypher.org/resources/). Follow the preceding link to learn more about this syntax.
+
+Additionally, standard embeddings searches can be returned as graphs.
+
+```python
+# Find all paths between id: 0 and id: 5 between 1 and 3 hops away
+embeddings.graph.search("""
+MATCH P=({id: 0})-[*1..3]->({id: 5})
+RETURN P
+""")
+
+# Standard embeddings search as graph
+embeddings.search("query", graph=True)
+```
+
 ## Subindexes
 
 Subindexes can be queried as follows:
