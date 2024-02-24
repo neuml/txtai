@@ -45,7 +45,7 @@ class ObjectStorage(Cloud):
         # Get driver for provider
         driver = get_driver(config["provider"])
 
-        if config.get("token"):
+        if config.get("token") and config.get("region"):
             # Get client connection
             self.client = driver(
                 config.get("key", os.environ.get("ACCESS_KEY")),
@@ -53,6 +53,22 @@ class ObjectStorage(Cloud):
                 host=config.get("host"),
                 port=config.get("port"),
                 token=config.get("token"),
+                region=config.get("region"),
+            )
+        elif config.get("token"):
+            self.client = driver(
+                config.get("key", os.environ.get("ACCESS_KEY")),
+                config.get("secret", os.environ.get("ACCESS_SECRET")),
+                host=config.get("host"),
+                port=config.get("port"),
+                token=config.get("token"),
+            )
+        elif config.get("region"):
+            self.client = driver(
+                config.get("key", os.environ.get("ACCESS_KEY")),
+                config.get("secret", os.environ.get("ACCESS_SECRET")),
+                host=config.get("host"),
+                port=config.get("port"),
                 region=config.get("region"),
             )
         else:
