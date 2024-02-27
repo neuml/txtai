@@ -26,21 +26,30 @@ Container/bucket/directory/repository name.
 
 ## Cloud object storage configuration
 
-In addition to the above common configuration, the cloud object storage provider has the following additional configuration parameters.
+In addition to the above common configuration, the cloud object storage provider has the following additional configuration parameters. The number of these configs which are need depend upon your cloud provider. Some cloud providers do not need any of these configurations and can use implicit authorization with service accounts.
+
+These parameters are defined in the [libcloud documentation](https://libcloud.readthedocs.io/en/stable/apidocs/libcloud.common.html#module-libcloud.common.base).
 
 ### key
 ```yaml
 key: string
 ```
 
-Provider-specific access key. Can also be set via ACCESS_KEY environment variable. Ensure the configuration file is secured if added to the file.
+Optional provider-specific access key. Can also be set via `ACCESS_KEY` environment variable. Ensure the configuration file is secured if added to the file.
 
 ### secret
 ```yaml
 secret: string
 ```
 
-Provider-specific access secret. Can also be set via ACCESS_SECRET environment variable. Ensure the configuration file is secured if added to the file.
+Optional provider-specific access secret. Can also be set via `ACCESS_SECRET` environment variable. Ensure the configuration file is secured if added to the file.
+
+### secure
+```yaml
+secure: bool
+```
+
+Optional choice of whether to use HTTPS or HTTP. Note: Some providers only support HTTPS, and it is on by default.
 
 ### host
 ```yaml

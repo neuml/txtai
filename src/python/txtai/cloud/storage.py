@@ -2,6 +2,7 @@
 Object storage module
 """
 
+import logging
 import os
 
 # Conditional import
@@ -16,6 +17,8 @@ except ImportError:
 
 from .base import Cloud
 
+# Logging configuration
+logger = logging.getLogger(__name__)
 
 class ObjectStorage(Cloud):
     """
@@ -45,39 +48,16 @@ class ObjectStorage(Cloud):
         # Get driver for provider
         driver = get_driver(config["provider"])
 
-        if config.get("token") and config.get("region"):
-            # Get client connection
-            self.client = driver(
-                config.get("key", os.environ.get("ACCESS_KEY")),
-                config.get("secret", os.environ.get("ACCESS_SECRET")),
-                host=config.get("host"),
-                port=config.get("port"),
-                token=config.get("token"),
-                region=config.get("region"),
-            )
-        elif config.get("token"):
-            self.client = driver(
-                config.get("key", os.environ.get("ACCESS_KEY")),
-                config.get("secret", os.environ.get("ACCESS_SECRET")),
-                host=config.get("host"),
-                port=config.get("port"),
-                token=config.get("token"),
-            )
-        elif config.get("region"):
-            self.client = driver(
-                config.get("key", os.environ.get("ACCESS_KEY")),
-                config.get("secret", os.environ.get("ACCESS_SECRET")),
-                host=config.get("host"),
-                port=config.get("port"),
-                region=config.get("region"),
-            )
-        else:
-            self.client = driver(
-                config.get("key", os.environ.get("ACCESS_KEY")),
-                config.get("secret", os.environ.get("ACCESS_SECRET")),
-                host=config.get("host"),
-                port=config.get("port"),
-            )
+        # A key is required to set by libcloud, but not actually required for implicit auth with a service account
+        key = os.environ.get("ACCESS_KEY") if os.environ.get("ACCESS_KEY") else "default-key-for-implicit-auth"
+        if key is None:
+            logger.warning("No ACCESS_KEY defined. Implicit auth without a key is being assumed for {}.", config["provider"])
+
+        # Get client connection
+        self.client = driver(
+            config.get("key", key),
+            config.get("secret", os.environ.get("ACCESS_SECRET")),
+            **{field: config.get(field) for field in ["secure", "host", "port", "api_version", "region", "token"] if config.get(field)})
 
     def metadata(self, path=None):
         try:
