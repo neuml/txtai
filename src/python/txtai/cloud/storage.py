@@ -17,9 +17,6 @@ except ImportError:
 
 from .base import Cloud
 
-# Logging configuration
-logger = logging.getLogger(__name__)
-
 class ObjectStorage(Cloud):
     """
     Object storage cloud provider backed by Apache libcloud.
