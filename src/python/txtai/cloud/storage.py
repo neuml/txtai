@@ -50,8 +50,8 @@ class ObjectStorage(Cloud):
 
         # Get client connection
         self.client = driver(
-            config.get("key", config.get("key") if config.get("key") else os.environ.get("ACCESS_KEY")),
-            config.get("secret", config.get("secret") if config.get("secret") else os.environ.get("ACCESS_SECRET")),
+            config.get("key", os.environ.get("ACCESS_KEY")),
+            config.get("secret", os.environ.get("ACCESS_SECRET")),
             **{field: config.get(field) for field in ["secure", "host", "port", "api_version", "region", "token"] if config.get(field)})
 
     def metadata(self, path=None):
