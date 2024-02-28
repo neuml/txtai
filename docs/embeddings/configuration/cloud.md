@@ -22,11 +22,11 @@ Cloud provider. Can be one of the following:
 container: string
 ```
 
-Container/bucket/directory/repository name.
+Container/bucket/directory/repository name. Your embeddings will be stored in the container with the filename specified by the `path` configuration.
 
 ## Cloud object storage configuration
 
-In addition to the above common configuration, the cloud object storage provider has the following additional configuration parameters. The number of these configs which are need depend upon your cloud provider. Some cloud providers do not need any of these configurations and can use implicit authorization with service accounts.
+In addition to the above common configuration, the cloud object storage provider has the following additional configuration parameters. Note that some cloud providers do not need any of these parameters and can use implicit authentication with service accounts.
 
 These parameters are defined in the [libcloud documentation](https://libcloud.readthedocs.io/en/stable/apidocs/libcloud.common.html#module-libcloud.common.base).
 
@@ -35,7 +35,7 @@ These parameters are defined in the [libcloud documentation](https://libcloud.re
 key: string
 ```
 
-Optional provider-specific access key. Can also be set via `ACCESS_KEY` environment variable. Ensure the configuration file is secured if added to the file.
+Required provider-specific access key. Can also be set via `ACCESS_KEY` environment variable. Ensure the configuration file is secured if added to the file. When using implicit authentication, set this to a value such as 'using-implicit-auth'.
 
 ### secret
 ```yaml

@@ -48,15 +48,10 @@ class ObjectStorage(Cloud):
         # Get driver for provider
         driver = get_driver(config["provider"])
 
-        # A key is required to set by libcloud, but not actually required for implicit auth with a service account
-        key = os.environ.get("ACCESS_KEY") if os.environ.get("ACCESS_KEY") else "default-key-for-implicit-auth"
-        if key is None:
-            logger.warning("No ACCESS_KEY defined. Implicit auth without a key is being assumed for {}.", config["provider"])
-
         # Get client connection
         self.client = driver(
-            config.get("key", key),
-            config.get("secret", os.environ.get("ACCESS_SECRET")),
+            config.get("key", config.get("key") if config.get("key") else os.environ.get("ACCESS_KEY")),
+            config.get("secret", config.get("secret") if config.get("secret") else os.environ.get("ACCESS_SECRET")),
             **{field: config.get(field) for field in ["secure", "host", "port", "api_version", "region", "token"] if config.get(field)})
 
     def metadata(self, path=None):
