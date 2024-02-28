@@ -44,13 +44,6 @@ secret: string
 
 Optional provider-specific access secret. Can also be set via `ACCESS_SECRET` environment variable. Ensure the configuration file is secured if added to the file.
 
-### secure
-```yaml
-secure: bool
-```
-
-Optional choice of whether to use HTTPS or HTTP. Note: Some providers only support HTTPS, and it is on by default.
-
 ### host
 ```yaml
 host: string

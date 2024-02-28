@@ -32,7 +32,6 @@ class StorageTask(Task):
         Args:
             key: provider-specific access key
             secret: provider-specific access secret
-            secure: true or false, true => https
             host: server host name
             port: server port
             token: temporary session token
@@ -45,7 +44,6 @@ class StorageTask(Task):
         # pylint: disable=W0201
         self.key = key
         self.secret = secret
-        self.secure = secure
         self.host = host
         self.port = port
         self.token = token
