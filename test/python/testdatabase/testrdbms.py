@@ -685,6 +685,9 @@ class Common:
             )
             embeddings.index(data)
 
+            # Test transform
+            self.assertEqual(embeddings.transform("feel good story").shape, (768,))
+
             # Run search
             result = embeddings.search("feel good story", 1)[0]
             self.assertEqual(result["text"], data[4][1])

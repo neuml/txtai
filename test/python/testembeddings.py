@@ -388,6 +388,9 @@ class TestEmbeddings(unittest.TestCase):
         embeddings = Embeddings({"defaults": False, "indexes": {"index1": {"path": "sentence-transformers/nli-mpnet-base-v2"}}})
         embeddings.index(data)
 
+        # Test transform
+        self.assertEqual(embeddings.transform("feel good story").shape, (768,))
+
         # Run search
         uid = embeddings.search("feel good story", 1)[0][0]
         self.assertEqual(uid, 4)

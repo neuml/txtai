@@ -315,7 +315,7 @@ class Embeddings:
         self.defaults()
 
         # Default vector model, if necessary
-        model = self.model if self.model else next(iter(self.models.values()))
+        model = self.model if self.model else self.indexes.model()
 
         # Convert documents into sentence embeddings
         embeddings = model.batchtransform(Stream(self)(documents), category)
@@ -877,7 +877,7 @@ class Embeddings:
         if "indexes" in self.config and self.models is None:
             self.models = {}
 
-        # Load and store uncached model
+        # Load vector model
         return VectorsFactory.create(self.config, self.scoring, self.models)
 
     def loadquery(self):
