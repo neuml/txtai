@@ -15,18 +15,20 @@ class Vectors:
     Base class for sentence embeddings/vector models. Vector models transform input content into numeric vectors.
     """
 
-    def __init__(self, config, scoring):
+    def __init__(self, config, scoring, models):
         """
         Creates a new vectors instance.
 
         Args:
             config: vector configuration
             scoring: optional scoring instance for term weighting
+            models: models cache
         """
 
         # Store parameters
         self.config = config
         self.scoring = scoring
+        self.models = models
 
         if config:
             # Detect if this is an initialized configuration
@@ -44,11 +46,14 @@ class Vectors:
             # Embeddings instructions
             self.instructions = config.get("instructions")
 
+            # Truncate embeddings to this dimensionality
+            self.dimensionality = config.get("dimensionality")
+
             # Scalar quantization - supports 1-bit through 8-bit quantization
             quantize = config.get("quantize")
             self.qbits = max(min(quantize, 8), 1) if isinstance(quantize, int) and not isinstance(quantize, bool) else None
 
-    def load(self, path):
+    def loadmodel(self, path):
         """
         Loads vector model at path.
 
@@ -73,6 +78,28 @@ class Vectors:
         """
 
         raise NotImplementedError
+
+    def load(self, path):
+        """
+        Loads a model using the current configuration. This method will return previously cached models
+        if available.
+
+        Returns:
+            model
+        """
+
+        # Check if model is cached
+        if self.models and path in self.models:
+            return self.models[path]
+
+        # Create new model
+        model = self.loadmodel(path)
+
+        # Store model in cache
+        if self.models is not None and path:
+            self.models[path] = model
+
+        return model
 
     def index(self, documents, batchsize=500):
         """
@@ -199,8 +226,9 @@ class Vectors:
         Runs data vectorization, which consists of the following steps.
 
           1. Encode data into vectors using underlying model
-          2. Normalize vectors
-          3. Quantize vectors, if necessary
+          2. Truncate vectors, if necessary
+          3. Normalize vectors
+          4. Quantize vectors, if necessary
 
         Args:
             data: input data
@@ -213,6 +241,10 @@ class Vectors:
         embeddings = self.encode(data)
 
         if embeddings is not None:
+            # Truncate embeddings, if necessary
+            if self.dimensionality and self.dimensionality < embeddings.shape[1]:
+                embeddings = self.truncate(embeddings)
+
             # Normalize data
             self.normalize(embeddings)
 
@@ -221,6 +253,22 @@ class Vectors:
                 embeddings = self.quantize(embeddings)
 
         return embeddings
+
+    def truncate(self, embeddings):
+        """
+        Truncates embeddings to the configured dimensionality.
+
+        This is only useful for models trained to store more important information in
+        earlier dimensions such as Matryoshka Representation Learning (MRL).
+
+        Args:
+            embeddings: input embeddings
+
+        Returns:
+            truncated embeddings
+        """
+
+        return embeddings[:, : self.dimensionality]
 
     def normalize(self, embeddings):
         """

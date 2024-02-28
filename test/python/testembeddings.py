@@ -419,6 +419,19 @@ class TestEmbeddings(unittest.TestCase):
         # Close embeddings
         embeddings.close()
 
+    def testTruncate(self):
+        """
+        Test dimensionality truncation
+        """
+
+        # Truncate vectors to a specified number of dimensions
+        embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2", "dimensionality": 750, "vectors": {"revision": "main"}})
+        embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        # Search for best match
+        uid = embeddings.search("feel good story", 1)[0][0]
+        self.assertEqual(uid, 4)
+
     def testUpsert(self):
         """
         Test upsert

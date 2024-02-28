@@ -877,19 +877,8 @@ class Embeddings:
         if "indexes" in self.config and self.models is None:
             self.models = {}
 
-        # Model path
-        path = self.config.get("path")
-
-        # Check if model is cached
-        if self.models and path in self.models:
-            return self.models[path]
-
         # Load and store uncached model
-        model = VectorsFactory.create(self.config, self.scoring)
-        if self.models is not None and path:
-            self.models[path] = model
-
-        return model
+        return VectorsFactory.create(self.config, self.scoring, self.models)
 
     def loadquery(self):
         """

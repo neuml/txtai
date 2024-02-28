@@ -769,6 +769,21 @@ class Common:
             result = self.embeddings.terms("select * from txtai where similar('keyword terms')")
             self.assertEqual(result, "keyword terms")
 
+        def testTruncate(self):
+            """
+            Test dimensionality truncation
+            """
+
+            # Truncate vectors to a specified number of dimensions
+            embeddings = Embeddings(
+                {"path": "sentence-transformers/nli-mpnet-base-v2", "dimensionality": 750, "content": self.backend, "vectors": {"revision": "main"}}
+            )
+            embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+            # Search for best match
+            result = self.embeddings.search("feel good story", 1)[0]
+            self.assertEqual(result["text"], self.data[4])
+
         def testUpsert(self):
             """
             Test upsert

@@ -170,7 +170,7 @@ class Models:
         return next((device for device in ["xpu"] if hasattr(torch, device) and getattr(torch, device).is_available()), None)
 
     @staticmethod
-    def load(path, config=None, task="default"):
+    def load(path, config=None, task="default", modelargs=None):
         """
         Loads a machine learning model. Handles multiple model frameworks (ONNX, Transformers).
 
@@ -200,8 +200,11 @@ class Models:
             "zero-shot-classification": AutoModelForSequenceClassification.from_pretrained,
         }
 
+        # Pass modelargs as keyword arguments
+        modelargs = modelargs if modelargs else {}
+
         # Load model for supported tasks. Return path for unsupported tasks.
-        return models[task](path) if task in models else path
+        return models[task](path, **modelargs) if task in models else path
 
     @staticmethod
     def tokenizer(path, **kwargs):

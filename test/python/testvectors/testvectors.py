@@ -19,7 +19,7 @@ class TestVectors(unittest.TestCase):
         Test exceptions for non-implemented methods
         """
 
-        vectors = Vectors(None, None)
+        vectors = Vectors(None, None, None)
 
         self.assertRaises(NotImplementedError, vectors.load, None)
         self.assertRaises(NotImplementedError, vectors.encode, None)
@@ -29,7 +29,7 @@ class TestVectors(unittest.TestCase):
         Test batch normalize and single input normalize are equal
         """
 
-        vectors = Vectors(None, None)
+        vectors = Vectors(None, None, None)
 
         # Generate data
         data1 = np.random.rand(5, 5).astype(np.float32)

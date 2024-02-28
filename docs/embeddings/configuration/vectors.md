@@ -78,6 +78,13 @@ encodebatch: int
 
 Sets the encode batch size. This parameter controls the underlying vector model batch size. This often corresponds to a GPU batch size, which controls GPU memory usage.
 
+## dimensionality
+```yaml
+dimensionality: int
+```
+
+Enables truncation of vectors to this dimensionality. This is only useful for models trained to store more important information in earlier dimensions such as [Matryoshka Representation Learning (MRL)](https://huggingface.co/blog/matryoshka).
+
 ## quantize
 ```yaml
 quantize: int|bool

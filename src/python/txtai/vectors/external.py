@@ -17,13 +17,13 @@ class ExternalVectors(Vectors):
     test different model configurations without having to recompute vectors.
     """
 
-    def __init__(self, config, scoring):
-        super().__init__(config, scoring)
+    def __init__(self, config, scoring, models):
+        super().__init__(config, scoring, models)
 
         # Lookup and resolve transform function
         self.transform = self.resolve(config.get("transform"))
 
-    def load(self, path):
+    def loadmodel(self, path):
         return None
 
     def encode(self, data):
