@@ -2,7 +2,6 @@
 Object storage module
 """
 
-import logging
 import os
 
 # Conditional import
@@ -49,7 +48,7 @@ class ObjectStorage(Cloud):
         self.client = driver(
             config.get("key", os.environ.get("ACCESS_KEY")),
             config.get("secret", os.environ.get("ACCESS_SECRET")),
-            **{field: config.get(field) for field in ["host", "port", "api_version", "region", "token"] if config.get(field)})
+            **{field: config.get(field) for field in ["host", "port", "region", "token"] if config.get(field)})
 
     def metadata(self, path=None):
         try:

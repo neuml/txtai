@@ -25,7 +25,7 @@ class StorageTask(Task):
     PREFIX = r"(\w+):\/\/.*"
     PATH = r"\w+:\/\/(.*)"
 
-    def register(self, key=None, secret=None, secure=None, host=None, port=None, token=None, region=None):
+    def register(self, key=None, secret=None, host=None, port=None, token=None, region=None):
         """
         Checks if required dependencies are installed. Reads in cloud storage parameters.
 
@@ -107,7 +107,7 @@ class StorageTask(Task):
         client = driver(
             key,
             secret,
-            **{field: getattr(self, field) for field in ["secure", "host", "port", "api_version", "region", "token"] if getattr(self, field)})
+            **{field: getattr(self, field) for field in ["host", "port", "region", "token"] if getattr(self, field)})
 
         container = client.get_container(container_name=container)
         return [client.get_object_cdn_url(obj) for obj in client.list_container_objects(container=container, prefix=prefix)]
