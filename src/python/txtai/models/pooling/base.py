@@ -15,7 +15,7 @@ class Pooling(nn.Module):
     Builds pooled vectors usings outputs from a transformers model.
     """
 
-    def __init__(self, path, device, tokenizer=None, maxlength=None):
+    def __init__(self, path, device, tokenizer=None, maxlength=None, modelargs=None):
         """
         Creates a new Pooling model.
 
@@ -24,11 +24,12 @@ class Pooling(nn.Module):
             device: tensor device id
             tokenizer: optional path to tokenizer
             maxlength: max sequence length
+            modelargs: additional model arguments
         """
 
         super().__init__()
 
-        self.model = Models.load(path)
+        self.model = Models.load(path, modelargs=modelargs)
         self.tokenizer = Models.tokenizer(tokenizer if tokenizer else path)
         self.device = Models.device(device)
 

@@ -18,7 +18,7 @@ class Indexes:
 
         Args:
             embeddings: embeddings instance
-            indexes: list of subindexes to add
+            indexes: dict of subindexes to add
         """
 
         self.embeddings = embeddings
@@ -82,6 +82,18 @@ class Indexes:
         """
 
         return list(self.indexes.keys())[0]
+
+    def model(self):
+        """
+        Scans indexes and gets the first vector model.
+
+        Returns:
+            Vectors
+        """
+
+        # Return first vector model
+        matches = [index.model for index in self.indexes.values() if index.model]
+        return matches[0] if matches else None
 
     def insert(self, documents, index=None):
         """

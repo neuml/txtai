@@ -249,6 +249,37 @@ class Graph:
 
         raise NotImplementedError
 
+    def search(self, query, limit=None, graph=False):
+        """
+        Searches graph for nodes matching query.
+
+        Args:
+            query: graph query
+            limit: maximum results
+            graph: return graph results if True
+
+        Returns:
+            list of dict if graph is set to False
+            filtered graph if graph is set to True
+        """
+
+        raise NotImplementedError
+
+    def batchsearch(self, queries, limit=None, graph=False):
+        """
+        Searches graph for nodes matching query.
+
+        Args:
+            query: graph query
+            limit: maximum results
+            graph: return graph results if True
+
+        Returns:
+            list of dict
+        """
+
+        return [self.search(query, limit, graph) for query in queries]
+
     def communities(self, config):
         """
         Run community detection on the graph.
@@ -278,6 +309,26 @@ class Graph:
 
         Args:
             path: path to save graph backend
+        """
+
+        raise NotImplementedError
+
+    def loaddict(self, data):
+        """
+        Loads data from input dictionary into this graph.
+
+        Args:
+            data: input dictionary
+        """
+
+        raise NotImplementedError
+
+    def savedict(self):
+        """
+        Saves graph data to a dictionary.
+
+        Returns:
+            dict
         """
 
         raise NotImplementedError
@@ -460,7 +511,7 @@ class Graph:
         selecting only matching nodes, edges, topics and categories.
 
         Args:
-            nodes: nodes to select as a list of (id, score) tuples
+            nodes: nodes to select as a list of ids or list of (id, score) tuples
 
         Returns:
             graph
@@ -472,11 +523,17 @@ class Graph:
         # Initalize subgraph
         graph.initialize()
 
-        nodeids = {node for node, _ in nodes}
-        for node, score in nodes:
+        nodeids = {node[0] if isinstance(node, tuple) else node for node in nodes}
+        for node in nodes:
+            # Unpack node and score, if available
+            node, score = node if isinstance(node, tuple) else (node, None)
+
             # Add nodes
             graph.addnode(node, **self.node(node))
-            graph.addattribute(node, "score", score)
+
+            # Add score if present
+            if score is not None:
+                graph.addattribute(node, "score", score)
 
             # Add edges
             edges = self.edges(node)
@@ -486,18 +543,19 @@ class Graph:
                         graph.addedge(node, target, **attributes)
 
         # Filter categories and topics
-        topics = {}
-        for i, (topic, ids) in enumerate(self.topics.items()):
-            ids = [x for x in ids if x in nodeids]
-            if ids:
-                topics[topic] = (self.categories[i] if self.categories else None, ids)
+        if self.topics:
+            topics = {}
+            for i, (topic, ids) in enumerate(self.topics.items()):
+                ids = [x for x in ids if x in nodeids]
+                if ids:
+                    topics[topic] = (self.categories[i] if self.categories else None, ids)
 
-        # Sort by number of nodes descending
-        topics = sorted(topics.items(), key=lambda x: len(x[1][1]), reverse=True)
+            # Sort by number of nodes descending
+            topics = sorted(topics.items(), key=lambda x: len(x[1][1]), reverse=True)
 
-        # Copy filtered categories and topics
-        graph.categories = [category for _, (category, _) in topics] if self.categories else None
-        graph.topics = {topic: ids for topic, (_, ids) in topics}
+            # Copy filtered categories and topics
+            graph.categories = [category for _, (category, _) in topics] if self.categories else None
+            graph.topics = {topic: ids for topic, (_, ids) in topics}
 
         return graph
 

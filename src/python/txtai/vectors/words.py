@@ -46,7 +46,7 @@ def create(config, scoring):
     global VECTORS
 
     # Create a global embedding object using configuration and saved
-    VECTORS = WordVectors(config, scoring)
+    VECTORS = WordVectors(config, scoring, None)
 
 
 def transform(document):
@@ -68,7 +68,7 @@ class WordVectors(Vectors):
     Builds sentence embeddings/vectors using weighted word embeddings.
     """
 
-    def load(self, path):
+    def loadmodel(self, path):
         # Ensure that vector path exists
         if not path or not os.path.isfile(path):
             raise IOError(ENOENT, "Vector model file not found", path)

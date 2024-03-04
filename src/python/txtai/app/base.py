@@ -309,7 +309,7 @@ class Application:
         # Attempt to resolve action as a callable function
         return PipelineFactory.create({}, function)
 
-    def search(self, query, limit=10, weights=None, index=None):
+    def search(self, query, limit=10, weights=None, index=None, parameters=None, graph=False):
         """
         Finds documents most similar to the input query. This method will run either an index search
         or an index + database search depending on if a database is available.
@@ -319,6 +319,8 @@ class Application:
             limit: maximum results
             weights: hybrid score weights, if applicable
             index: index name, if applicable
+            parameters: dict of named parameters to bind to placeholders
+            graph: return graph results if True
 
         Returns:
             list of {id: value, score: value} for index search, list of dict for an index + database search
@@ -326,14 +328,14 @@ class Application:
 
         if self.embeddings:
             with self.lock:
-                results = self.embeddings.search(query, limit, weights, index)
+                results = self.embeddings.search(query, limit, weights, index, parameters, graph)
 
             # Unpack (id, score) tuple, if necessary. Otherwise, results are dictionaries.
-            return [{"id": r[0], "score": float(r[1])} if isinstance(r, tuple) else r for r in results]
+            return results if graph else [{"id": r[0], "score": float(r[1])} if isinstance(r, tuple) else r for r in results]
 
         return None
 
-    def batchsearch(self, queries, limit=10, weights=None, index=None):
+    def batchsearch(self, queries, limit=10, weights=None, index=None, parameters=None, graph=False):
         """
         Finds documents most similar to the input queries. This method will run either an index search
         or an index + database search depending on if a database is available.
@@ -343,6 +345,8 @@ class Application:
             limit: maximum results
             weights: hybrid score weights, if applicable
             index: index name, if applicable
+            parameters: list of dicts of named parameters to bind to placeholders
+            graph: return graph results if True
 
         Returns:
             list of {id: value, score: value} per query for index search, list of dict per query for an index + database search
@@ -350,12 +354,12 @@ class Application:
 
         if self.embeddings:
             with self.lock:
-                search = self.embeddings.batchsearch(queries, limit, weights, index)
+                search = self.embeddings.batchsearch(queries, limit, weights, index, parameters, graph)
 
             results = []
             for result in search:
                 # Unpack (id, score) tuple, if necessary. Otherwise, results are dictionaries.
-                results.append([{"id": r[0], "score": float(r[1])} if isinstance(r, tuple) else r for r in result])
+                results.append(result if graph else [{"id": r[0], "score": float(r[1])} if isinstance(r, tuple) else r for r in result])
             return results
 
         return None
@@ -386,6 +390,36 @@ class Application:
 
         # Return unmodified input documents
         return documents
+
+    def addobject(self, data, uid, field):
+        """
+        Helper method that builds a batch of object documents.
+
+        Args:
+            data: object content
+            uid: optional list of corresponding uids
+            field: optional field to set
+
+        Returns:
+            documents
+        """
+
+        # Raise error if index is not writable
+        if not self.config.get("writable"):
+            raise ReadOnlyError("Attempting to add documents to a read-only index (writable != True)")
+
+        documents = []
+        for x, content in enumerate(data):
+            if field:
+                row = {"id": uid[x], field: content} if uid else {field: content}
+            elif uid:
+                row = (uid[x], content)
+            else:
+                row = content
+
+            documents.append(row)
+
+        return self.add(documents)
 
     def index(self):
         """

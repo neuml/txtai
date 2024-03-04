@@ -5,6 +5,8 @@
 
 The Textractor pipeline extracts and splits text from documents. This pipeline uses either an [Apache Tika](https://github.com/chrismattmann/tika-python) backend (if Java is available) or [BeautifulSoup4](https://pypi.org/project/beautifulsoup4/).
 
+_Note: BeautifulSoup4 only supports HTML documents, anything else requires Tika and Java to be installed._
+
 ## Example
 
 The following shows a simple example using this pipeline.

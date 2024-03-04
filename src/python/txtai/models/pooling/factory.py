@@ -32,10 +32,11 @@ class PoolingFactory:
 
         # Unpack parameters
         path, device, tokenizer, method = config["path"], config["device"], config.get("tokenizer"), config.get("method")
+        modelargs = config.get("modelargs")
 
         # Default pooling returns hidden state
         if isinstance(path, bytes) or (isinstance(path, str) and os.path.isfile(path)) or method == "pooling":
-            return Pooling(path, device=device, tokenizer=tokenizer)
+            return Pooling(path, device=device, tokenizer=tokenizer, modelargs=modelargs)
 
         # Derive pooling method if it's not specified, path is a string and path is not a local path
         if (not method or method not in ("clspooling", "meanpooling")) and (isinstance(path, str) and not os.path.exists(path)):
@@ -43,10 +44,10 @@ class PoolingFactory:
 
         # Check for cls pooling
         if method == "clspooling":
-            return ClsPooling(path, device, tokenizer)
+            return ClsPooling(path, device, tokenizer, modelargs=modelargs)
 
         # Default to mean pooling
-        return MeanPooling(path, device, tokenizer)
+        return MeanPooling(path, device, tokenizer, modelargs=modelargs)
 
     @staticmethod
     def method(path):

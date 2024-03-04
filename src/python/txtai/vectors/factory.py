@@ -13,13 +13,14 @@ class VectorsFactory:
     """
 
     @staticmethod
-    def create(config, scoring):
+    def create(config, scoring=None, models=None):
         """
         Create a Vectors model instance.
 
         Args:
             config: vector configuration
             scoring: scoring instance
+            models: models cache
 
         Returns:
             Vectors
@@ -28,7 +29,7 @@ class VectorsFactory:
         # Determine vector method
         method = VectorsFactory.method(config)
         if method == "external":
-            return ExternalVectors(config, scoring)
+            return ExternalVectors(config, scoring, models)
 
         if method == "words":
             if not WORDS:
@@ -38,10 +39,10 @@ class VectorsFactory:
                     + 'method="transformers" to use transformer backed models'
                 )
 
-            return WordVectors(config, scoring)
+            return WordVectors(config, scoring, models)
 
         # Default to TransformersVectors when configuration available
-        return TransformersVectors(config, scoring) if config and "path" in config else None
+        return TransformersVectors(config, scoring, models) if config and "path" in config else None
 
     @staticmethod
     def method(config):

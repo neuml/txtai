@@ -103,7 +103,7 @@ query = "SELECT id, text, score FROM txtai WHERE similar(:x)"
 results = embeddings.search(query, parameters={"x": "feel good story"})
 
 # Query with a bind parameter for column filter
-query = "select text, flag, actiondate from txtai where flag = :x"
+query = "SELECT text, flag, actiondate FROM txtai WHERE flag = :x"
 results = embeddings.search(query, parameters={"x": 1})
 ```
 
@@ -136,11 +136,11 @@ embeddings.index([("txtai", {"text": "txtai executes machine-learning workflows.
                              "object": request.read()})])
 
 # Query txtai and get associated object
-query = "select object from txtai where similar('machine learning') limit 1"
+query = "SELECT object FROM txtai WHERE similar('machine learning') LIMIT 1"
 result = embeddings.search(query)[0]["object"]
 
 # Query binary content with a bind parameter
-query = "select object from txtai where similar(:x) limit 1"
+query = "SELECT object FROM txtai WHERE similar(:x) LIMIT 1"
 results = embeddings.search(query, parameters={"x": request.read()})
 ```
 
@@ -159,13 +159,13 @@ embeddings = Embeddings(path="sentence-transformers/nli-mpnet-base-v2",
 
 # Run a search using a custom SQL function
 embeddings.search("""
-select
+SELECT
   text,
   translation(text, 'de', null) 'text (DE)',
   translation(text, 'es', null) 'text (ES)',
   translation(text, 'fr', null) 'text (FR)'
-from txtai where similar('feel good story')
-limit 1
+FROM txtai WHERE similar('feel good story')
+LIMIT 1
 """)
 ```
 
@@ -192,7 +192,24 @@ When an embeddings database has both a sparse and dense index, both indexes will
 
 ```python
 embeddings.search("query", weights=0.5)
-embeddings.search("select id, text, score from txtai where similar('query', 0.5)")
+embeddings.search("SELECT id, text, score FROM txtai WHERE similar('query', 0.5)")
+```
+
+## Graph search
+
+If an embeddings database has an associated graph network, graph searches can be run. The search syntax below uses [openCypher](https://github.com/opencypher/openCypher). Follow the preceding link to learn more about this syntax.
+
+Additionally, standard embeddings searches can be returned as graphs.
+
+```python
+# Find all paths between id: 0 and id: 5 between 1 and 3 hops away
+embeddings.graph.search("""
+MATCH P=({id: 0})-[*1..3]->({id: 5})
+RETURN P
+""")
+
+# Standard embeddings search as graph
+embeddings.search("query", graph=True)
 ```
 
 ## Subindexes
@@ -200,8 +217,14 @@ embeddings.search("select id, text, score from txtai where similar('query', 0.5)
 Subindexes can be queried as follows:
 
 ```python
+# Query with index parameter
 embeddings.search("query", index="subindex1")
-embeddings.search("select id, text, score from txtai where similar('query', 'subindex1')")
+
+# Specify with SQL
+embeddings.search("""
+SELECT id, text, score FROM txtai
+WHERE similar('query', 'subindex1')
+""")
 ```
 
 ## Combined index architecture

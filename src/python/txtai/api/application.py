@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, FastAPI
 
 from .authorization import Authorization
 from .base import API
-from .factory import Factory
+from .factory import APIFactory
 
 from ..app import Application
 
@@ -44,7 +44,7 @@ def create():
     if deps:
         for dep in deps.split(","):
             # Create and add dependency
-            dep = Factory.get(dep.strip())()
+            dep = APIFactory.get(dep.strip())()
             dependencies.append(Depends(dep))
 
     # Create FastAPI application
@@ -86,7 +86,7 @@ def lifespan(application):
 
     # Instantiate API instance
     api = os.environ.get("API_CLASS")
-    INSTANCE = Factory.create(config, api) if api else API(config)
+    INSTANCE = APIFactory.create(config, api) if api else API(config)
 
     # Get all known routers
     routers = apirouters()
@@ -109,7 +109,7 @@ def lifespan(application):
     if extensions:
         for extension in extensions.split(","):
             # Create instance and execute extension
-            extension = Factory.get(extension.strip())()
+            extension = APIFactory.get(extension.strip())()
             extension(application)
 
     yield

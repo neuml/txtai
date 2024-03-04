@@ -30,6 +30,8 @@ extras["dev"] = [
 extras["api"] = [
     "aiohttp>=3.8.1",
     "fastapi>=0.94.0",
+    "msgpack>=1.0.7",
+    "python-multipart>=0.0.7",
     "uvicorn>=0.12.1",
 ]
 
@@ -39,7 +41,7 @@ extras["console"] = ["rich>=12.0.1"]
 
 extras["database"] = ["duckdb>=0.7.1", "pillow>=7.1.2", "sqlalchemy>=2.0.20"]
 
-extras["graph"] = ["networkx>=2.6.3", "python-louvain>=0.16"]
+extras["graph"] = ["grand-cypher>=0.6.0", "networkx>=2.6.3", "python-louvain>=0.16"]
 
 extras["model"] = ["onnx>=1.11.0", "onnxruntime>=1.11.0"]
 
@@ -105,7 +107,7 @@ extras["all"] = (
 
 setup(
     name="txtai",
-    version="6.4.0",
+    version="7.1.0",
     author="NeuML",
     description="All-in-one open-source embeddings database for semantic search, LLM orchestration and language model workflows",
     long_description=DESCRIPTION,
