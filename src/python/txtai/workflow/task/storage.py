@@ -104,10 +104,7 @@ class StorageTask(Task):
         driver = get_driver(provider)
 
         # Get client connection
-        client = driver(
-            key,
-            secret,
-            **{field: getattr(self, field) for field in ["host", "port", "region", "token"] if getattr(self, field)})
+        client = driver(key, secret, **{field: getattr(self, field) for field in ["host", "port", "region", "token"] if getattr(self, field)})
 
         container = client.get_container(container_name=container)
         return [client.get_object_cdn_url(obj) for obj in client.list_container_objects(container=container, prefix=prefix)]
