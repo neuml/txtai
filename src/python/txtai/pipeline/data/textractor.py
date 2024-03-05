@@ -234,7 +234,7 @@ class Extract:
             True if this is a container element, False otherwise
         """
 
-        return node.name in ("div", "body") or (children and not any(isinstance(x, NavigableString) for x in children))
+        return children and (node.name in ("div", "body") or not any(isinstance(x, NavigableString) for x in children))
 
     def children(self, node):
         """
