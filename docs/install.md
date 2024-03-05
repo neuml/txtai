@@ -132,6 +132,8 @@ txtai can also be installed directly from GitHub to access the latest, unrelease
 
     pip install git+https://github.com/neuml/txtai
 
+Extras can be installed from GitHub by adding `#egg=txtai[<name-of-extra>]` to the end of the above URL.
+
 ## Conda
 
 A [community-supported txtai package](https://anaconda.org/conda-forge/txtai) is available via conda-forge.

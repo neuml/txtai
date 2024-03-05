@@ -16,7 +16,6 @@ except ImportError:
 
 from .base import Cloud
 
-
 class ObjectStorage(Cloud):
     """
     Object storage cloud provider backed by Apache libcloud.
@@ -49,11 +48,7 @@ class ObjectStorage(Cloud):
         self.client = driver(
             config.get("key", os.environ.get("ACCESS_KEY")),
             config.get("secret", os.environ.get("ACCESS_SECRET")),
-            host=config.get("host"),
-            port=config.get("port"),
-            token=config.get("token"),
-            region=config.get("region"),
-        )
+            **{field: config.get(field) for field in ["host", "port", "region", "token"] if config.get(field)})
 
     def metadata(self, path=None):
         try:
