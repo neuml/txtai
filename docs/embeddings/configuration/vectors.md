@@ -24,6 +24,9 @@ Sentence embeddings method to use. If the method is not provided, it is inferred
 Builds sentence embeddings using a transformers model. While this can be any transformers model, it works best with
 [models trained](https://huggingface.co/models?pipeline_tag=sentence-similarity) to build sentence embeddings.
 
+Both `mean` and `cls` pooling are supported and automatically infered from the model. The pooling method can be overwritten by changing the method
+from `transformers` to `meanpooling` or `clspooling` respectively.
+
 ### sentence-transformers
 
 Same as transformers but loads models with the [sentence-transformers](https://github.com/UKPLab/sentence-transformers) library.
@@ -57,7 +60,7 @@ transform: function
 
 When method is `external`, this function transforms input content into embeddings. The input to this function is a list of data. This method must return either a numpy array or list of numpy arrays.
 
-#### gpu
+## gpu
 ```yaml
 gpu: boolean|int|string|device
 ```
