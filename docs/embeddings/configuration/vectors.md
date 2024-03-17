@@ -122,3 +122,10 @@ tokenize: boolean
 ```
 
 Enables string tokenization (defaults to false). This method applies tokenization rules that only work with English language text. It's not recommended for use with recent vector models.
+
+## vectors
+```yaml
+vectors: dict
+```
+
+Passes these additional parameters to the underlying vector model.
