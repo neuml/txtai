@@ -31,6 +31,7 @@ extras["api"] = [
     "aiohttp>=3.8.1",
     "fastapi>=0.94.0",
     "msgpack>=1.0.7",
+    "pillow>=7.1.2",
     "python-multipart>=0.0.7",
     "uvicorn>=0.12.1",
 ]
