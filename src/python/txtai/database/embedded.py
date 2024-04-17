@@ -43,12 +43,8 @@ class Embedded(RDBMS):
             self.connection.close()
 
             # Point connection to new connection
-            self.connection = connection
-            self.cursor = self.getcursor()
+            self.session(connection=connection)
             self.path = path
-
-            # Register custom functions
-            self.addfunctions()
 
         # Paths are equal, commit changes
         elif self.path == path:

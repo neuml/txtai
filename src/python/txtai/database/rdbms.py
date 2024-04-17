@@ -32,11 +32,7 @@ class RDBMS(Database):
 
     def load(self, path):
         # Load an existing database. Thread locking must be handled externally.
-        self.connection = self.connect(path)
-        self.cursor = self.getcursor()
-
-        # Register custom functions
-        self.addfunctions()
+        self.session(path)
 
     def insert(self, documents, index=0):
         # Initialize connection if not open
@@ -250,14 +246,30 @@ class RDBMS(Database):
 
         if not self.connection:
             # Create temporary database. Thread locking must be handled externally.
-            self.connection = self.connect()
-            self.cursor = self.getcursor()
-
-            # Register custom functions
-            self.addfunctions()
+            self.session()
 
             # Create initial table schema
             self.createtables()
+
+    def session(self, path=None, connection=None):
+        """
+        Starts a new database session.
+
+        Args:
+            path: path to database file
+            connection: existing connection to use
+        """
+
+        # Create database connection and cursor
+        self.connection = connection if connection else self.connect(path) if path else self.connect()
+        self.cursor = self.getcursor()
+
+        # Register custom functions - session scope
+        self.addfunctions()
+
+        # Create temporary tables - session scope
+        self.createbatch()
+        self.createscores()
 
     def createtables(self):
         """
@@ -412,9 +424,6 @@ class RDBMS(Database):
             batch: batch index, used when statement has multiple subselects
         """
 
-        # Create or replace batch table
-        self.createbatch()
-
         # Delete batch when batch id is empty or for batch 0
         if not batch:
             self.cursor.execute(Statement.DELETE_BATCH)
@@ -447,9 +456,6 @@ class RDBMS(Database):
         Args:
             similarity: similarity results as [(indexid, score)]
         """
-
-        # Create or replace scores table
-        self.createscores()
 
         # Delete scores
         self.cursor.execute(Statement.DELETE_SCORES)

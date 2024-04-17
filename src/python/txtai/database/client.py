@@ -65,7 +65,7 @@ class Client(RDBMS):
 
     def createtables(self):
         # Create tables
-        Base.metadata.create_all(self.connection.bind)
+        Base.metadata.create_all(self.connection.bind, checkfirst=True)
 
         # Clear existing data - table schema is created upon connecting to database
         for table in ["sections", "documents", "objects"]:
@@ -128,7 +128,7 @@ class Client(RDBMS):
 
 class Cursor:
     """
-    Implements basic compatability with the Python DB-API.
+    Implements basic compatibility with the Python DB-API.
     """
 
     def __init__(self, connection):
