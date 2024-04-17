@@ -51,15 +51,18 @@ class NetworkX(Graph):
     def node(self, node):
         return self.backend.nodes.get(node)
 
-    def hasnode(self, node):
-        return self.backend.has_node(node)
-
     def addnode(self, node, **attrs):
         self.backend.add_node(node, **attrs)
+
+    def addnodes(self, nodes):
+        self.backend.add_nodes_from(nodes)
 
     def removenode(self, node):
         if self.hasnode(node):
             self.backend.remove_node(node)
+
+    def hasnode(self, node):
+        return self.backend.has_node(node)
 
     def attribute(self, node, field):
         return self.node(node).get(field) if self.hasnode(node) else None
@@ -81,15 +84,18 @@ class NetworkX(Graph):
 
         return None
 
+    def addedge(self, source, target, **attrs):
+        self.backend.add_edge(source, target, **attrs)
+
+    def addedges(self, edges):
+        self.backend.add_edges_from(edges)
+
     def hasedge(self, source, target=None):
         if not target:
             edges = self.backend.adj.get(source)
             return len(edges) > 0 if edges else False
 
         return self.backend.has_edge(source, target)
-
-    def addedge(self, source, target, **attrs):
-        self.backend.add_edge(source, target, **attrs)
 
     def centrality(self):
         rank = nx.degree_centrality(self.backend)

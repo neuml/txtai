@@ -124,6 +124,20 @@ class TestGraph(unittest.TestCase):
         self.assertEqual(sum((len(graph.topics[x]) for x in graph.topics)), 5)
         self.assertEqual(len(graph.categories), 6)
 
+    def testEdges(self):
+        """
+        Test edges
+        """
+
+        # Create graph
+        graph = GraphFactory.create({})
+        graph.initialize()
+        graph.addedge(0, 1)
+
+        # Test edge exists
+        self.assertTrue(graph.hasedge(0))
+        self.assertTrue(graph.hasedge(0, 1))
+
     def testFilter(self):
         """
         Test creating filtered subgraphs
@@ -199,6 +213,7 @@ class TestGraph(unittest.TestCase):
         self.assertRaises(NotImplementedError, graph.scan, None)
         self.assertRaises(NotImplementedError, graph.node, None)
         self.assertRaises(NotImplementedError, graph.addnode, None)
+        self.assertRaises(NotImplementedError, graph.addnodes, None)
         self.assertRaises(NotImplementedError, graph.removenode, None)
         self.assertRaises(NotImplementedError, graph.hasnode, None)
         self.assertRaises(NotImplementedError, graph.attribute, None, None)
@@ -207,6 +222,7 @@ class TestGraph(unittest.TestCase):
         self.assertRaises(NotImplementedError, graph.edgecount)
         self.assertRaises(NotImplementedError, graph.edges, None)
         self.assertRaises(NotImplementedError, graph.addedge, None, None)
+        self.assertRaises(NotImplementedError, graph.addedges, None)
         self.assertRaises(NotImplementedError, graph.hasedge, None, None)
         self.assertRaises(NotImplementedError, graph.centrality)
         self.assertRaises(NotImplementedError, graph.pagerank)

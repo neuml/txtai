@@ -103,6 +103,16 @@ class Graph:
 
         raise NotImplementedError
 
+    def addnodes(self, nodes):
+        """
+        Adds nodes to the graph.
+
+        Args:
+            nodes: list of (node, attributes) to add
+        """
+
+        raise NotImplementedError
+
     def removenode(self, node):
         """
         Removes a node and all it's edges from graph.
@@ -196,6 +206,16 @@ class Graph:
         Args:
             source: node 1 id
             target: node 2 id
+        """
+
+        raise NotImplementedError
+
+    def addedges(self, edges):
+        """
+        Adds an edge to graph.
+
+        Args:
+            edges: list of (source, target, attributes) to add
         """
 
         raise NotImplementedError
@@ -409,6 +429,7 @@ class Graph:
         # Initialize graph backend
         self.initialize()
 
+        nodes = []
         for uid, document, _ in documents:
             # Relationships are manually-provided edges
             relations = None
@@ -427,12 +448,14 @@ class Graph:
                     document = " ".join(document)
 
                 # Create node
-                self.addnode(index, id=uid, data=document)
+                nodes.append((index, {"id": uid, "data": document}))
 
                 # Add relationships
                 self.addrelations(index, relations)
 
                 index += 1
+
+        self.addnodes(nodes)
 
     def delete(self, ids):
         """
@@ -471,8 +494,8 @@ class Graph:
         # Add relationship edges
         self.resolverelations(ids)
 
-        # Add node edges
-        self.addedges(self.scan(), search)
+        # Infer node edges using search function
+        self.inferedges(self.scan(), search)
 
         # Label categories/topics
         if "topics" in self.config:
@@ -494,8 +517,8 @@ class Graph:
         # Add relationship edges
         self.resolverelations(ids)
 
-        # Add node edges using new/updated nodes, set updated flag for topic processing, if necessary
-        self.addedges(self.scan(attribute="data"), search, {"updated": True} if hastopics else None)
+        # Infer node edges using new/updated nodes, set updated flag for topic processing, if necessary
+        self.inferedges(self.scan(attribute="data"), search, {"updated": True} if hastopics else None)
 
         # Infer topics with topics of connected nodes
         if hastopics:
@@ -505,20 +528,21 @@ class Graph:
             else:
                 self.addtopics(similarity)
 
-    def filter(self, nodes):
+    def filter(self, nodes, graph=None):
         """
         Creates a subgraph of this graph using the list of input nodes. This method creates a new graph
         selecting only matching nodes, edges, topics and categories.
 
         Args:
             nodes: nodes to select as a list of ids or list of (id, score) tuples
+            graph: optional graph used to store filtered results
 
         Returns:
             graph
         """
 
-        # Create a new empty graph of the same type
-        graph = type(self)(self.config)
+        # Set graph if available, otherwise create a new empty graph of the same type
+        graph = graph if graph else type(self)(self.config)
 
         # Initalize subgraph
         graph.initialize()
@@ -587,6 +611,9 @@ class Graph:
             ids: internal id resolver
         """
 
+        # Relationship edges
+        edges = []
+
         # Resolve ids and create edges for relationships
         for node, relations in self.relations.items():
             # Resolve internal ids
@@ -607,14 +634,17 @@ class Graph:
                         relation["weight"] = relation.get("weight", 1.0)
 
                         # Add edge and all other attributes
-                        self.addedge(node, target, **relation)
+                        edges.append((node, target, relation))
+
+        # Add relationships
+        self.addedges(edges)
 
         # Clear temporary relationship storage
         self.relations = {}
 
-    def addedges(self, nodes, search, attributes=None):
+    def inferedges(self, nodes, search, attributes=None):
         """
-        Adds edges for a list of nodes using a score-based search function.
+        Infers edges for a list of nodes using a score-based search function.
 
         Args:
             nodes: list of nodes
@@ -641,7 +671,7 @@ class Graph:
                     self.addattribute(node, field, value)
 
             # Skip nodes with existing edges when building an approximate network
-            if not self.hasedge(node) or not approximate:
+            if not approximate or not self.hasedge(node):
                 batch.append((node, data))
 
             # Process batch
@@ -664,14 +694,17 @@ class Graph:
             minscore: min score to add node edge
         """
 
+        edges = []
         for x, result in enumerate(search([data for _, data in batch], limit)):
             # Get input node id
             x, _ = batch[x]
 
             # Add edges for each input node id and result node id pair that meets specified criteria
             for y, score in result:
-                if x != y and score > minscore and not self.hasedge(x, y):
-                    self.addedge(x, y, weight=score)
+                if str(x) != str(y) and score > minscore:
+                    edges.append((x, y, {"weight": score}))
+
+        self.addedges(edges)
 
     def addtopics(self, similarity=None):
         """
