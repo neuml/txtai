@@ -16,17 +16,19 @@ class Search:
     Executes a batch search action. A search can be both index and/or database driven.
     """
 
-    def __init__(self, embeddings, indexids=False):
+    def __init__(self, embeddings, indexids=False, indexonly=False):
         """
         Creates a new search action.
 
         Args:
             embeddings: embeddings instance
             indexids: searches return indexids when True, otherwise run standard search
+            indexonly: always runs an index search even when a database is available
         """
 
         self.embeddings = embeddings
-        self.indexids = indexids
+        self.indexids = indexids or indexonly
+        self.indexonly = indexonly
 
         # Alias embeddings attributes
         self.ann = embeddings.ann
@@ -66,7 +68,7 @@ class Search:
             index = self.indexes.default()
 
         # Database search
-        if self.database:
+        if not self.indexonly and self.database:
             return self.dbsearch(queries, limit, weights, index, parameters)
 
         # Default vector index query (sparse, dense or hybrid)

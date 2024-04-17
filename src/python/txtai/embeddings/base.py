@@ -87,6 +87,13 @@ class Embeddings:
         # Set initial configuration
         self.configure(config)
 
+    def __del__(self):
+        """
+        Clean resources when embeddings is deleted.
+        """
+
+        self.close()
+
     def score(self, documents):
         """
         Builds a term weighting scoring index. Only used by word vectors models.
@@ -148,7 +155,7 @@ class Embeddings:
 
         # Index graph, if necessary
         if self.graph:
-            self.graph.index(Search(self, True), Ids(self), self.batchsimilarity)
+            self.graph.index(Search(self, indexonly=True), Ids(self), self.batchsimilarity)
 
     def upsert(self, documents):
         """
@@ -195,7 +202,7 @@ class Embeddings:
 
         # Graph upsert, if necessary
         if self.graph:
-            self.graph.upsert(Search(self, True), Ids(self), self.batchsimilarity)
+            self.graph.upsert(Search(self, indexonly=True), Ids(self), self.batchsimilarity)
 
     def delete(self, ids):
         """
@@ -392,7 +399,7 @@ class Embeddings:
         graph = graph if self.graph else False
 
         # Execute search
-        results = Search(self, graph)(queries, limit, weights, index, parameters)
+        results = Search(self, indexids=graph)(queries, limit, weights, index, parameters)
 
         # Create subgraphs using results, if necessary
         return [self.graph.filter(x) for x in results] if graph else results
