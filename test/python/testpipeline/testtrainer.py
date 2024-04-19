@@ -283,7 +283,7 @@ class TestTrainer(unittest.TestCase):
         output = os.path.join(tempfile.gettempdir(), "trainer.rtd")
 
         trainer = HFTrainer()
-        model, _ = trainer("hf-internal-testing/tiny-random-electra", self.data, task="token-detection", output_dir=output)
+        model, _ = trainer("hf-internal-testing/tiny-random-electra", self.data, task="token-detection", save_safetensors=False, output_dir=output)
 
         # Test model completed successfully
         self.assertIsNotNone(model)

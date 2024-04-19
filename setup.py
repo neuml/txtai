@@ -6,7 +6,7 @@ with open("README.md", "r", encoding="utf-8") as f:
     DESCRIPTION = "".join([line for line in f if "gh-dark-mode-only" not in line])
 
 # Required dependencies
-install = ["faiss-cpu>=1.7.1.post2", "torch>=1.12.1", "transformers>=4.27.0"]
+install = ["faiss-cpu>=1.7.1.post2", "torch>=1.12.1", "transformers>=4.28.0"]
 
 # Required dependencies that are also transformers dependencies
 install += ["huggingface-hub>=0.9.0", "numpy>=1.18.4", "pyyaml>=5.3", "regex>=2022.8.17"]
@@ -57,7 +57,7 @@ extras["pipeline-llm"] = ["litellm>=1.31.2", "llama-cpp-python>=0.2.20"]
 extras["pipeline-text"] = ["fasttext>=0.9.2", "sentencepiece>=0.1.91"]
 
 extras["pipeline-train"] = [
-    "accelerate>=0.19.0",
+    "accelerate>=0.26.0",
     "bitsandbytes>=0.42.0",
     "onnx>=1.11.0",
     "onnxmltools>=1.9.1",
