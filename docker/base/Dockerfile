@@ -27,7 +27,7 @@ RUN \
     # Install txtai project and dependencies
     ln -s /usr/bin/python${PYTHON_VERSION} /usr/bin/python && \
     python -m pip install --no-cache-dir -U pip wheel setuptools && \
-    if [ -z ${GPU} ] && { [ -z ${TARGETARCH} ] || [ ${TARGETARCH} = "amd64" ] ;}; then pip install --no-cache-dir torch==2.2.0+cpu torchvision==0.17.0+cpu -f https://download.pytorch.org/whl/torch_stable.html; fi && \
+    if [ -z ${GPU} ] && { [ -z ${TARGETARCH} ] || [ ${TARGETARCH} = "amd64" ] ;}; then pip install --no-cache-dir torch==2.2.2+cpu torchvision==0.17.2+cpu -f https://download.pytorch.org/whl/torch_stable.html; fi && \
     python -m pip install --no-cache-dir txtai${COMPONENTS} && \
     python -c "import sys, importlib.util as util; 1 if util.find_spec('nltk') else sys.exit(); import nltk; nltk.download('punkt')" && \
     \
