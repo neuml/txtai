@@ -27,6 +27,11 @@ extras["dev"] = [
     "pylint",
 ]
 
+extras["ann"] = [
+    "annoy>=1.16.3",
+    "hnswlib>=0.5.0",
+]
+
 extras["api"] = [
     "aiohttp>=3.8.1",
     "fastapi>=0.94.0",
@@ -75,10 +80,8 @@ extras["pipeline"] = (
     + extras["pipeline-train"]
 )
 
-extras["similarity"] = [
-    "annoy>=1.16.3",
+extras["vectors"] = [
     "fasttext>=0.9.2",
-    "hnswlib>=0.5.0",
     "pymagnitude-lite>=0.1.43",
     "scikit-learn>=0.23.1",
     "sentence-transformers>=2.2.0",
@@ -93,6 +96,8 @@ extras["workflow"] = [
     "requests>=2.26.0",
     "xmltodict>=0.12.0",
 ]
+
+extras["similarity"] = extras["ann"] + extras["vectors"]
 
 extras["all"] = (
     extras["api"]

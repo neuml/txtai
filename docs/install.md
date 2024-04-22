@@ -26,6 +26,14 @@ Install all dependencies.
 pip install txtai[all]
 ```
 
+### ANN
+
+Additional ANN backends.
+
+```
+pip install txtai[ann]
+```
+
 ### API
 
 Serve txtai via a web API.
@@ -84,12 +92,12 @@ pip install txtai[pipeline]
 
 More granular extras are available for pipeline categories: `pipeline-audio`, `pipeline-data`, `pipeline-image`, `pipeline-llm`, `pipeline-text`, and `pipeline-train`.
 
-### Similarity
+### Vectors
 
-Word vectors, support for sentence-transformers models not on the HF Hub and additional ANN libraries.
+Support for sentence-transformers models not on the HF Hub and word vectors.
 
 ```
-pip install txtai[similarity]
+pip install txtai[vectors]
 ```
 
 ### Workflow
