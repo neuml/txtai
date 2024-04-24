@@ -105,7 +105,7 @@ class Client(RDBMS):
 
     def connect(self, path=None):
         # Connection URL
-        content = self.config["content"]
+        content = self.config.get("content")
 
         # Read ENV variable, if necessary
         content = os.environ.get("CLIENT_URL") if content == "client" else content

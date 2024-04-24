@@ -80,7 +80,7 @@ class NetworkX(Graph):
     def edges(self, node):
         edges = self.backend.adj.get(node)
         if edges:
-            return dict(sorted(edges.items(), key=lambda x: x[1]["weight"], reverse=True))
+            return dict(sorted(edges.items(), key=lambda x: x[1].get("weight", 0), reverse=True))
 
         return None
 

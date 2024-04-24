@@ -26,6 +26,8 @@ class TestOptional(unittest.TestCase):
             "duckdb",
             "fastapi",
             "fasttext",
+            "grand-cypher",
+            "grand-graph",
             "hnswlib",
             "imagehash",
             "libcloud.storage.providers",
@@ -38,6 +40,7 @@ class TestOptional(unittest.TestCase):
             "onnxruntime.quantization",
             "pandas",
             "peft",
+            "pgvector",
             "PIL",
             "rich",
             "sklearn.decomposition",
@@ -77,6 +80,22 @@ class TestOptional(unittest.TestCase):
                 sys.modules[key] = value
             else:
                 del sys.modules[key]
+
+    def testANN(self):
+        """
+        Test missing ANN dependencies
+        """
+
+        from txtai.ann import ANNFactory
+
+        with self.assertRaises(ImportError):
+            ANNFactory.create({"backend": "annoy"})
+
+        with self.assertRaises(ImportError):
+            ANNFactory.create({"backend": "hnsw"})
+
+        with self.assertRaises(ImportError):
+            ANNFactory.create({"backend": "pgvector"})
 
     def testApi(self):
         """
@@ -131,6 +150,9 @@ class TestOptional(unittest.TestCase):
 
         with self.assertRaises(ImportError):
             GraphFactory.create({"backend": "networkx"})
+
+        with self.assertRaises(ImportError):
+            GraphFactory.create({"backend": "rdbms"})
 
     def testModel(self):
         """
@@ -210,19 +232,12 @@ class TestOptional(unittest.TestCase):
         with self.assertRaises(ImportError):
             Translation().detect(["test"])
 
-    def testSimilarity(self):
+    def testVectors(self):
         """
-        Test missing similarity dependencies
+        Test missing vector dependencies
         """
 
-        from txtai.ann import ANNFactory
         from txtai.vectors import VectorsFactory
-
-        with self.assertRaises(ImportError):
-            ANNFactory.create({"backend": "annoy"})
-
-        with self.assertRaises(ImportError):
-            ANNFactory.create({"backend": "hnsw"})
 
         with self.assertRaises(ImportError):
             VectorsFactory.create({"method": "words"}, None)

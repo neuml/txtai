@@ -106,6 +106,34 @@ class TestGraph(unittest.TestCase):
             graph = GraphFactory.create({"backend": "notfound.graph"})
             graph.initialize()
 
+    def testDatabase(self):
+        """
+        Test creating a Graph backed by a relational database
+        """
+
+        # Generate graph database
+        path = os.path.join(tempfile.gettempdir(), "graph.sqlite")
+        graph = GraphFactory.create({"backend": "rdbms", "url": f"sqlite:///{path}"})
+
+        # Initialize the graph
+        graph.initialize()
+
+        for x in range(5):
+            graph.addnode(x, field=x)
+
+        for x, y in itertools.combinations(range(5), 2):
+            graph.addedge(x, y)
+
+        # Test methods
+        self.assertEqual(list(graph.scan()), [str(x) for x in range(5)])
+        self.assertEqual(list(graph.scan(attribute="field")), [str(x) for x in range(5)])
+        self.assertEqual(list(graph.filter([0]).scan()), [0])
+
+        # Test save/load
+        graph.save(None)
+        graph.load(None)
+        self.assertEqual(list(graph.scan()), [str(x) for x in range(5)])
+
     def testDelete(self):
         """
         Test delete

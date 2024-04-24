@@ -637,7 +637,8 @@ class Graph:
                         edges.append((node, target, relation))
 
         # Add relationships
-        self.addedges(edges)
+        if edges:
+            self.addedges(edges)
 
         # Clear temporary relationship storage
         self.relations = {}
