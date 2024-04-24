@@ -25,7 +25,7 @@ class HNSW(ANN):
         super().__init__(config)
 
         if not HNSWLIB:
-            raise ImportError('HNSW is not available - install "similarity" extra to enable')
+            raise ImportError('HNSW is not available - install "ann" extra to enable')
 
     def load(self, path):
         # Load index

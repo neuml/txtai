@@ -30,7 +30,7 @@ class Reducer:
         """
 
         if not REDUCER:
-            raise ImportError('Dimensionality reduction is not available - install "similarity" extra to enable')
+            raise ImportError('Dimensionality reduction is not available - install "vectors" extra to enable')
 
         self.model = self.build(embeddings, components) if embeddings is not None and components else None
 

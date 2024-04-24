@@ -39,7 +39,7 @@ class TransformersVectors(Vectors):
 
         # Otherwise, use sentence-transformers library
         if not SENTENCE_TRANSFORMERS:
-            raise ImportError('sentence-transformers is not available - install "similarity" extra to enable')
+            raise ImportError('sentence-transformers is not available - install "vectors" extra to enable')
 
         # Build embeddings with sentence-transformers
         return SentenceTransformer(path, device=Models.device(deviceid), **modelargs)

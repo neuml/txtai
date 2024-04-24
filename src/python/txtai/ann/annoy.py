@@ -23,7 +23,7 @@ class Annoy(ANN):
         super().__init__(config)
 
         if not ANNOY:
-            raise ImportError('Annoy is not available - install "similarity" extra to enable')
+            raise ImportError('Annoy is not available - install "ann" extra to enable')
 
     def load(self, path):
         # Load index
