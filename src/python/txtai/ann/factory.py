@@ -8,6 +8,7 @@ from .annoy import Annoy
 from .faiss import Faiss
 from .hnsw import HNSW
 from .numpy import NumPy
+from .pgvector import PGVector
 from .torch import Torch
 
 
@@ -41,6 +42,8 @@ class ANNFactory:
             ann = HNSW(config)
         elif backend == "numpy":
             ann = NumPy(config)
+        elif backend == "pgvector":
+            ann = PGVector(config)
         elif backend == "torch":
             ann = Torch(config)
         else:

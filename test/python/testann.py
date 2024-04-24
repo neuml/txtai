@@ -6,6 +6,8 @@ import os
 import tempfile
 import unittest
 
+from unittest.mock import patch
+
 import numpy as np
 
 from txtai.ann import ANNFactory, ANN
@@ -107,6 +109,40 @@ class TestANN(unittest.TestCase):
         """
 
         self.runTests("numpy")
+
+    @patch("sqlalchemy.orm.Query.limit")
+    def testPGVector(self, query):
+        """
+        Test PGVector backend
+        """
+
+        # Generate test record
+        data = np.random.rand(1, 300).astype(np.float32)
+
+        # Mock database query
+        query.return_value = [(x, -1.0) for x in range(data.shape[0])]
+
+        # Create ANN
+        path = os.path.join(tempfile.gettempdir(), "graph.sqlite")
+        ann = ANNFactory.create({"backend": "pgvector", "pgvector": {"url": f"sqlite:///{path}"}, "dimensions": 300})
+
+        # Test indexing
+        ann.index(data)
+        ann.append(data)
+
+        # Validate search results
+        self.assertEqual(ann.search(data, 1), [[(0, 1.0)]])
+
+        # Validate save/load/delete
+        ann.save(None)
+        ann.load(None)
+
+        # Validate count
+        self.assertEqual(ann.count(), 2)
+
+        # Test delete
+        ann.delete([0])
+        self.assertEqual(ann.count(), 1)
 
     def testTorch(self):
         """
