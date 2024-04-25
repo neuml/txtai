@@ -84,7 +84,7 @@ Train NLP models.
 | [Export and run models with ONNX](https://github.com/neuml/txtai/blob/master/examples/18_Export_and_run_models_with_ONNX.ipynb) | Export models with ONNX, run natively in JavaScript, Java and Rust | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/18_Export_and_run_models_with_ONNX.ipynb) |
 | [Export and run other machine learning models](https://github.com/neuml/txtai/blob/master/examples/21_Export_and_run_other_machine_learning_models.ipynb) | Export and run models from scikit-learn, PyTorch and more | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/21_Export_and_run_other_machine_learning_models.ipynb) |
 
-## Scale
+## API
 
 Run distributed txtai, integrate with the API and cloud endpoints.
 
@@ -98,7 +98,7 @@ Run distributed txtai, integrate with the API and cloud endpoints.
 
 ## Architecture
 
-Deep dives into project architecture, data formats, benchmarks, and performance.
+Project architecture, data formats, external integrations, scale to production, benchmarks, and performance.
 
 | Notebook  | Description  |       |
 |:----------|:-------------|------:|
@@ -110,6 +110,7 @@ Deep dives into project architecture, data formats, benchmarks, and performance.
 | [External database integration](https://github.com/neuml/txtai/blob/master/examples/49_External_database_integration.ipynb) | Store metadata in PostgreSQL, MariaDB, MySQL and more | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/49_External_database_integration.ipynb) |
 | [All about vector quantization](https://github.com/neuml/txtai/blob/master/examples/50_All_about_vector_quantization.ipynb) | Benchmarking scalar and product quantization methods | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/50_All_about_vector_quantization.ipynb) |
 | [External vectorization](https://github.com/neuml/txtai/blob/master/examples/56_External_vectorization.ipynb) | Vectorization with precomputed embeddings datasets and APIs | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/56_External_vectorization.ipynb) |
+| [Integrate txtai with Postgres](https://github.com/neuml/txtai/blob/master/examples/61_Integrate_txtai_with_Postgres.ipynb) | Persist content, vectors and graph data in Postgres | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/61_Integrate_txtai_with_Postgres.ipynb) |
 
 ## Releases
 
