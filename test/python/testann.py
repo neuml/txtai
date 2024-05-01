@@ -10,6 +10,7 @@ from unittest.mock import patch
 
 import numpy as np
 
+from utils import qdrant_server_running
 from txtai.ann import ANNFactory, ANN
 
 
@@ -61,7 +62,11 @@ class TestANN(unittest.TestCase):
         """
 
         # Test with custom settings
-        self.runTests("faiss", {"faiss": {"nprobe": 2, "components": "PCA16,IDMap,SQ8", "sample": 1.0}}, False)
+        self.runTests(
+            "faiss",
+            {"faiss": {"nprobe": 2, "components": "PCA16,IDMap,SQ8", "sample": 1.0}},
+            False,
+        )
         self.runTests("faiss", {"faiss": {"components": "IVF,SQ8"}}, False)
 
     @unittest.skipIf(os.name == "nt", "mmap not supported on Windows")
@@ -86,7 +91,10 @@ class TestANN(unittest.TestCase):
         """
 
         # Test with custom settings
-        self.runTests("hnsw", {"hnsw": {"efconstruction": 100, "m": 4, "randomseed": 0, "efsearch": 5}})
+        self.runTests(
+            "hnsw",
+            {"hnsw": {"efconstruction": 100, "m": 4, "randomseed": 0, "efsearch": 5}},
+        )
 
     def testNotImplemented(self):
         """
@@ -124,7 +132,13 @@ class TestANN(unittest.TestCase):
 
         # Create ANN
         path = os.path.join(tempfile.gettempdir(), "graph.sqlite")
-        ann = ANNFactory.create({"backend": "pgvector", "pgvector": {"url": f"sqlite:///{path}"}, "dimensions": 300})
+        ann = ANNFactory.create(
+            {
+                "backend": "pgvector",
+                "pgvector": {"url": f"sqlite:///{path}"},
+                "dimensions": 300,
+            }
+        )
 
         # Test indexing
         ann.index(data)
@@ -150,6 +164,35 @@ class TestANN(unittest.TestCase):
         """
 
         self.runTests("torch")
+
+    def testQdrantInMemory(self):
+        """
+        Test Qdrant backend with in-memory storage
+        """
+        dimensions = 300
+        data = np.random.rand(1, dimensions).astype(np.float32)
+
+        ann = ANNFactory.create({"backend": "qdrant", "qdrant": {"location": ":memory:"}, "dimensions": dimensions})
+
+        ann.index(data)
+
+        self.assertEqual(ann.count(), 1)
+
+        ann.append(data)
+        self.assertEqual(ann.count(), 2)
+
+        self.assertEqual(len(ann.search(data, 1)), 1)
+
+        ann.delete([0])
+        self.assertEqual(ann.count(), 1)
+
+    @unittest.skipIf(not qdrant_server_running(), "Qdrant not running at port 6333")
+    def testQdrantServer(self):
+        """
+        Test Qdrant backend with a server running at localhost:6333
+        """
+
+        self.runTests("qdrant", {"qdrant": {"url": "http://localhost:6333"}})
 
     def runTests(self, name, params=None, update=True):
         """

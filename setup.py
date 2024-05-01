@@ -32,6 +32,7 @@ extras["ann"] = [
     "hnswlib>=0.5.0",
     "pgvector>=0.2.5",
     "sqlalchemy>=2.0.20",
+    "qdrant-client>=1.9.0",
 ]
 
 extras["api"] = [

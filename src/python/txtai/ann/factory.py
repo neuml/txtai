@@ -9,6 +9,7 @@ from .faiss import Faiss
 from .hnsw import HNSW
 from .numpy import NumPy
 from .pgvector import PGVector
+from .qdrant import Qdrant
 from .torch import Torch
 
 
@@ -44,6 +45,8 @@ class ANNFactory:
             ann = NumPy(config)
         elif backend == "pgvector":
             ann = PGVector(config)
+        elif backend == "qdrant":
+            ann = Qdrant(config)
         elif backend == "torch":
             ann = Torch(config)
         else:

@@ -3,17 +3,19 @@
 The following covers the available vector index configuration options.
 
 ## backend
+
 ```yaml
-backend: faiss|hnsw|annoy|numpy|torch|custom
+backend: faiss|hnsw|annoy|numpy|torch|qdrant|custom
 ```
 
 Approximate Nearest Neighbor (ANN) index backend for storing generated sentence embeddings. `Defaults to faiss`. Additional backends require the
 [similarity](../../../install/#similarity) extras package to be installed. Add custom backends via setting this parameter to the fully resolvable
 class string.
 
-Backend-specific settings are set with a corresponding configuration object having the same name as the backend (i.e. annoy, faiss, or hnsw). None of these are required and are set to defaults if omitted.
+Backend-specific settings are set with a corresponding configuration object having the same name as the backend (i.e. annoy, faiss, hnsw or qdrant). These are optional and are set to defaults if omitted.
 
 ### faiss
+
 ```yaml
 faiss:
     components: comma separated list of components - defaults to "IDMap,Flat" for small
@@ -43,6 +45,7 @@ See the following Faiss documentation links for more information.
 - [Search Tuning](https://github.com/facebookresearch/faiss/wiki/Faster-search)
 
 ### hnsw
+
 ```yaml
 hnsw:
     efconstruction:  ef_construction param for init_index (int) - defaults to 200
@@ -54,6 +57,7 @@ hnsw:
 See [Hnswlib documentation](https://github.com/nmslib/hnswlib/blob/master/ALGO_PARAMS.md) for more information on these parameters.
 
 ### annoy
+
 ```yaml
 annoy:
     ntrees: number of trees (int) - defaults to 10
@@ -61,3 +65,23 @@ annoy:
 ```
 
 See [Annoy documentation](https://github.com/spotify/annoy#full-python-api) for more information on these parameters. Note that annoy indexes can not be modified after creation, upserts/deletes and other modifications are not supported.
+
+### qdrant
+
+```yaml
+embeddings:
+  path: sentence-transformers/all-MiniLM-L6-v2
+  backend: qdrant
+  metric: l1 # allowed values: l2 / cosine / ip / l1
+  qdrant:
+    url: http://localhost:6333/
+    collection: my-collection-name
+    api_key: XYZ # for Qdrant Cloud
+    collection_config:  # Reference: https://api.qdrant.tech/api-reference/collections/create-collection#request
+        on_disk_payload: true
+    search_params:  # Reference: https://api.qdrant.tech/api-reference/points/search-points#request.body.params
+        indexed_only: false
+
+```
+
+Refer to the [Qdrant documentation](https://qdrant.tech/documentation/) for more information on these parameters and setting up a Qdrant instance.
