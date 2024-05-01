@@ -741,7 +741,7 @@ class Embeddings:
         self.scoring = self.createscoring() if scoring and (not isinstance(scoring, dict) or not scoring.get("terms")) else None
 
         # Dense vectors - transforms data to embeddings vectors
-        self.model = self.loadvectors() if self.config else None
+        self.model = self.loadvectors() if self.config and self.config.get("path") else None
 
         # Query model
         self.query = self.loadquery() if self.config else None
