@@ -50,6 +50,16 @@ jobs:
         run: choco install wget
         if: matrix.os == 'windows-latest'
 
+      - name: Run Qdrant
+        run: |
+          docker run -d --rm --network=host qdrant/qdrant:v1.9.0
+          until curl --silent --fail http://localhost:6333/readyz; do
+          echo "Waiting for Qdrant server"
+          sleep 5
+          done
+          echo "\nQdrant server started!"
+        if: matrix.os == 'ubuntu-latest'
+
       - name: Build
         run: |
           pip install -U wheel
