@@ -17,7 +17,7 @@ from ..pipeline import Tokenizer
 
 class TransformersVectors(Vectors):
     """
-    Builds sentence embeddings/vectors using the transformers library.
+    Builds vectors using the transformers library.
     """
 
     def loadmodel(self, path):

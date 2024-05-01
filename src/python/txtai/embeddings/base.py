@@ -324,7 +324,7 @@ class Embeddings:
         # Default vector model, if necessary
         model = self.model if self.model else self.indexes.model()
 
-        # Convert documents into sentence embeddings
+        # Convert documents into embeddings
         embeddings = model.batchtransform(Stream(self)(documents), category)
 
         # Reduce the dimensionality of the embeddings. Scale the embeddings using this
@@ -613,7 +613,7 @@ class Embeddings:
             # Create output directory, if necessary
             os.makedirs(path, exist_ok=True)
 
-            # Copy sentence vectors model
+            # Copy vectors model
             if self.config.get("storevectors"):
                 shutil.copyfile(self.config["path"], os.path.join(path, os.path.basename(self.config["path"])))
 

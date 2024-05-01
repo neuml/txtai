@@ -65,7 +65,7 @@ def transform(document):
 
 class WordVectors(Vectors):
     """
-    Builds sentence embeddings/vectors using weighted word embeddings.
+    Builds vectors using weighted word embeddings.
     """
 
     def loadmodel(self, path):
