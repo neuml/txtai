@@ -124,12 +124,12 @@ class TestExtractor(unittest.TestCase):
         question = "How many home runs?"
 
         # Test flatten to list of answers
-        extractor = Extractor(self.embeddings, "distilbert-base-cased-distilled-squad", True, output="flatten")
+        extractor = Extractor(self.embeddings, "distilbert-base-cased-distilled-squad", output="flatten")
         answers = extractor([(question, question, question, True)], self.data)
         self.assertTrue(answers[0].startswith("Giants hit 3 HRs"))
 
         # Test reference field
-        extractor = Extractor(self.embeddings, "distilbert-base-cased-distilled-squad", True, output="reference")
+        extractor = Extractor(self.embeddings, "distilbert-base-cased-distilled-squad", output="reference")
         answers = extractor([(question, question, question, True)], self.data)
         self.assertTrue(self.data[answers[0][2]].startswith("Giants hit 3 HRs"))
 

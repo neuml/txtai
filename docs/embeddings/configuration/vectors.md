@@ -15,14 +15,14 @@ Sets the path for a vectors model. When using a transformers/sentence-transforme
 method: transformers|sentence-transformers|words|external
 ```
 
-Sentence embeddings method to use. If the method is not provided, it is inferred using the `path`.
+Embeddings method to use. If the method is not provided, it is inferred using the `path`.
 
-`sentence-transformers` and `words` require the [similarity](../../../install/#similarity) extras package to be installed.
+`sentence-transformers` and `words` require the [vectors](../../../install/#vectors) extras package to be installed.
 
 ### transformers
 
-Builds sentence embeddings using a transformers model. While this can be any transformers model, it works best with
-[models trained](https://huggingface.co/models?pipeline_tag=sentence-similarity) to build sentence embeddings.
+Builds embeddings using a transformers model. While this can be any transformers model, it works best with
+[models trained](https://huggingface.co/models?pipeline_tag=sentence-similarity) to build embeddings.
 
 Both `mean` and `cls` pooling are supported and automatically infered from the model. The pooling method can be overwritten by changing the method
 from `transformers` to `meanpooling` or `clspooling` respectively.
@@ -33,7 +33,7 @@ Same as transformers but loads models with the [sentence-transformers](https://g
 
 ### words
 
-Builds sentence embeddings using a word embeddings model. Transformers models are the preferred vector backend in most cases. Word embeddings models may be deprecated in the future.
+Builds embeddings using a word embeddings model. Transformers models are the preferred vector backend in most cases. Word embeddings models may be deprecated in the future.
 
 #### storevectors
 ```yaml
@@ -47,11 +47,11 @@ Enables copying of a vectors model set in path into the embeddings models output
 pca: int
 ```
 
-Removes _n_ principal components from generated sentence embeddings. When enabled, a TruncatedSVD model is built to help with dimensionality reduction. After pooling of vectors creates a single sentence embedding, this method is applied.
+Removes _n_ principal components from generated embeddings. When enabled, a TruncatedSVD model is built to help with dimensionality reduction. After pooling of vectors creates a single embedding, this method is applied.
 
 ### external
 
-Sentence embeddings are loaded via an external model or API. Requires setting the [transform](#transform) parameter to a function that translates data into vectors.
+Embeddings are created via an external model or API. Requires setting the [transform](#transform) parameter to a function that translates data into embeddings.
 
 #### transform
 ```yaml
@@ -90,7 +90,7 @@ Enables truncation of vectors to this dimensionality. This is only useful for mo
 
 ## quantize
 ```yaml
-quantize: int|bool
+quantize: int|boolean
 ```
 
 Enables scalar quantization at the specified precision. Supports 1-bit through 8-bit quantization. Scalar quantization transforms continuous floating point values

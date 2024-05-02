@@ -1,18 +1,16 @@
 # ANN
 
-The following covers the available vector index configuration options.
+Approximate Nearest Neighbor (ANN) index configuration for storing vector embeddings.
 
 ## backend
 
 ```yaml
-backend: faiss|hnsw|annoy|numpy|torch|qdrant|custom
+backend: faiss|hnsw|annoy|numpy|torch|pgvector|qdrant|custom
 ```
 
-Approximate Nearest Neighbor (ANN) index backend for storing generated sentence embeddings. `Defaults to faiss`. Additional backends require the
-[similarity](../../../install/#similarity) extras package to be installed. Add custom backends via setting this parameter to the fully resolvable
-class string.
+Sets the ANN backend. Defaults to `faiss`. Additional backends are available via the [ann](../../../install/#ann) extras package. Set custom backends via setting this parameter to the fully resolvable class string.
 
-Backend-specific settings are set with a corresponding configuration object having the same name as the backend (i.e. annoy, faiss, hnsw or qdrant). These are optional and are set to defaults if omitted.
+Backend-specific settings are set with a corresponding configuration object having the same name as the backend (i.e. annoy, faiss, qdrant or hnsw). These are optional and set to defaults if omitted.
 
 ### faiss
 
@@ -25,7 +23,7 @@ faiss:
     nprobe: search probe setting (int) - defaults to x/16 (as defined above)
             for larger indexes
     nflip: same as nprobe - only used with binary hash indexes
-    quantize: store vectors with x-bit precision vs 32-bit (bool|int)
+    quantize: store vectors with x-bit precision vs 32-bit (boolean|int)
               true sets 8-bit precision, false disables, int sets specified
               precision
     mmap: load as on-disk index (boolean) - trade query response time for a
@@ -65,6 +63,28 @@ annoy:
 ```
 
 See [Annoy documentation](https://github.com/spotify/annoy#full-python-api) for more information on these parameters. Note that annoy indexes can not be modified after creation, upserts/deletes and other modifications are not supported.
+
+### numpy
+```yaml
+numpy:
+    quantize: number of quantized bits when working with quantized vectors (int)
+```
+
+The NumPy backend is a k-nearest neighbors backend. It's designed for simplicity and works well with smaller datasets.
+
+The `torch` backend supports the same options. The only difference is that the vectors can be search using GPUs.
+
+### pgvector
+```yaml
+pgvector:
+    url: database url connection string, alternatively can be set via
+         ANN_URL environment variable
+    table: database table to store vectors - defaults to `vectors`
+    efconstruction:  ef_construction param (int) - defaults to 200
+    m: M param for init_index (int) - defaults to 16
+```
+
+The pgvector backend stores embeddings in a Postgres database. See the [pgvector documentation](https://github.com/pgvector/pgvector-python?tab=readme-ov-file#sqlalchemy) for more information on these parameters. See the [SQLAlchemy](https://docs.sqlalchemy.org/en/20/core/engines.html#database-urls) documentation for more information on how to construct url connection strings.
 
 ### qdrant
 

@@ -1,12 +1,14 @@
 # Scoring
 
-An embeddings instance can optionally have an associated scoring instance. This scoring instance can serve two purposes, depending on the settings.
+Enable scoring support via the `scoring` parameter.
+
+This scoring instance can serve two purposes, depending on the settings.
 
 One use case is building sparse/keyword indexes. This occurs when the `terms` parameter is set to `True`.
 
 The other use case is with word vector term weighting. This feature has been available since the initial version but isn't quite as common anymore.
 
-The following covers the available options
+The following covers the available options.
 
 ## method
 ```yaml

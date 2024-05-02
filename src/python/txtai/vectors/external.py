@@ -13,8 +13,7 @@ from .base import Vectors
 
 class ExternalVectors(Vectors):
     """
-    Loads pre-computed vectors. Pre-computed vectors allow integrating other vector models. They can also be used to efficiently
-    test different model configurations without having to recompute vectors.
+    Builds vectors using an external method. This can be a local function or an external API call.
     """
 
     def __init__(self, config, scoring, models):

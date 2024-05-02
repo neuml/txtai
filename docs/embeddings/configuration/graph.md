@@ -1,29 +1,57 @@
 # Graph
 
-The following covers available graph configuration options.
+Enable graph storage via the `graph` parameter. This component requires the [graph](../../../install/#graph) extras package.
 
-## graph
+When enabled, a graph network is built using the embeddings index. Graph nodes are synced with each embeddings index operation (index/upsert/delete). Graph edges are created using the embeddings index upon completion of each index/upsert/delete embeddings index call.
+
+## backend
 ```yaml
-graph:
-    backend: graph network backend (string), defaults to "networkx"
-    batchsize: batch query size, used to query embeddings index (int)
-               defaults to 256
-    limit: maximum number of results to return per embeddings query (int)
-           defaults to 15
-    minscore: minimum score required to consider embeddings query matches (float)
-              defaults to 0.1
-    approximate: when true, queries only run for nodes without edges (boolean)
-                 defaults to true
-    topics: see below
+backend: networkx|rdbms|custom
 ```
 
-Enables graph storage. When set, a graph network is built using the embeddings index. Graph nodes are synced with each embeddings index operation (index/upsert/delete). Graph edges are created using the embeddings index upon completion of each index/upsert/delete embeddings index call.
+Sets the graph backend. Defaults to `networkx`.
 
-Add custom graph storage engines via setting the `graph.backend` parameter to the fully resolvable class string.
+Add custom graph storage engines via setting this parameter to the fully resolvable class string.
 
-Defaults are tuned so that in most cases these values don't need to be changed. 
+The `rdbms` backend has the following additional settings.
 
-### topics
+### rdbms
+```yaml
+url: database url connection string, alternatively can be set via the
+     GRAPH_URL environment variable
+nodes: table to store node data, defaults to `nodes`
+edges: table to store edge data, defaults to `edges`
+```
+
+## batchsize
+```yaml
+batchsize: int
+```
+
+Batch query size, used to query embeddings index - defaults to 256.
+
+## limit
+```yaml
+limit: int
+```
+
+Maximum number of results to return per embeddings query - defaults to 15.
+
+## minscore
+```yaml
+minscore: float
+```
+
+Minimum score required to consider embeddings query matches - defaults to 0.1.
+
+## approximate
+```yaml
+approximate: boolean
+```
+
+When true, queries only run for nodes without edges - defaults to true.
+
+## topics
 ```yaml
 topics:
     algorithm: community detection algorithm (string), options are

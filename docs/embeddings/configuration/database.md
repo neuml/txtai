@@ -1,19 +1,19 @@
 # Database
 
-The following covers available content storage configuration options.
+Databases store metadata, text and binary content.
 
 ## content
 ```yaml
 content: boolean|sqlite|duckdb|client|url|custom
 ```
 
-Enables content storage. When true, the default storage engine, `sqlite` will be used to save metadata alongside embeddings vectors.
+Enables content storage. When true, the default storage engine, `sqlite` will be used to save metadata.
 
 Client-server connections are supported with either `client` or a full connection URL. When set to `client`, the CLIENT_URL environment variable must be set to the full connection URL. See the [SQLAlchemy](https://docs.sqlalchemy.org/en/20/core/engines.html#database-urls) documentation for more information on how to construct connection strings for client-server databases.
 
 Add custom storage engines via setting this parameter to the fully resolvable class string.
 
-Content storage specific settings are set with a corresponding configuration object having the same name as the content storage engine (i.e. duckdb or sqlite). None of these are required and are set to defaults if omitted.
+Content storage specific settings are set with a corresponding configuration object having the same name as the content storage engine (i.e. duckdb or sqlite). These are optional and set to defaults if omitted.
 
 ### sqlite
 ```yaml
@@ -27,7 +27,7 @@ sqlite:
 objects: boolean|image|pickle
 ```
 
-Enables object storage. Supports storing binary content alongside embeddings vectors and metadata. Requires content storage to also be enabled.
+Enables object storage. Supports storing binary content. Requires content storage to also be enabled.
 
 Object encoding options are:
 
