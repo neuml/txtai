@@ -40,10 +40,6 @@ class PGVector(ANN):
         # Table instance
         self.table = None
 
-    def __del__(self):
-        if self.database:
-            self.database.close()
-
     def load(self, path):
         # Reset database to original checkpoint
         self.database.rollback()
@@ -88,6 +84,13 @@ class PGVector(ANN):
 
     def save(self, path):
         self.database.commit()
+
+    def close(self):
+        # Parent logic
+        super().close()
+
+        # Close database connection
+        self.database.close()
 
     def initialize(self, recreate=False):
         """

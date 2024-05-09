@@ -102,6 +102,13 @@ class ANN:
 
         raise NotImplementedError
 
+    def close(self):
+        """
+        Closes this ANN.
+        """
+
+        self.backend = None
+
     def setting(self, name, default=None):
         """
         Looks up backend specific setting.
