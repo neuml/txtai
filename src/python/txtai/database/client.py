@@ -101,7 +101,8 @@ class Client(RDBMS):
 
     def insertscores(self, scores):
         # Average scores by id
-        self.connection.execute(insert(Score), [{"indexid": i, "score": sum(s) / len(s)} for i, s in scores.items()])
+        if scores:
+            self.connection.execute(insert(Score), [{"indexid": i, "score": sum(s) / len(s)} for i, s in scores.items()])
 
     def connect(self, path=None):
         # Connection URL

@@ -245,7 +245,7 @@ class RDBMS(Database):
         """
 
         if not self.connection:
-            # Create temporary database. Thread locking must be handled externally.
+            # Create database session. Thread locking must be handled externally.
             self.session()
 
             # Create initial table schema
@@ -489,7 +489,8 @@ class RDBMS(Database):
         """
 
         # Average scores by id
-        self.cursor.executemany(Statement.INSERT_SCORE, [(i, sum(s) / len(s)) for i, s in scores.items()])
+        if scores:
+            self.cursor.executemany(Statement.INSERT_SCORE, [(i, sum(s) / len(s)) for i, s in scores.items()])
 
     def defaults(self):
         """

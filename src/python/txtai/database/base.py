@@ -84,7 +84,7 @@ class Database:
 
     def close(self):
         """
-        Closes the database.
+        Closes this database.
         """
 
         raise NotImplementedError
