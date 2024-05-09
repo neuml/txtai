@@ -123,7 +123,7 @@ class TestANN(unittest.TestCase):
         query.return_value = [(x, -1.0) for x in range(data.shape[0])]
 
         # Create ANN
-        path = os.path.join(tempfile.gettempdir(), "graph.sqlite")
+        path = os.path.join(tempfile.gettempdir(), "pgvector.sqlite")
         ann = ANNFactory.create({"backend": "pgvector", "pgvector": {"url": f"sqlite:///{path}"}, "dimensions": 300})
 
         # Test indexing
@@ -143,6 +143,9 @@ class TestANN(unittest.TestCase):
         # Test delete
         ann.delete([0])
         self.assertEqual(ann.count(), 1)
+
+        # Close ANN
+        ann.close()
 
     def testTorch(self):
         """

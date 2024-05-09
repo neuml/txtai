@@ -232,6 +232,16 @@ class TestOptional(unittest.TestCase):
         with self.assertRaises(ImportError):
             Translation().detect(["test"])
 
+    def testScoring(self):
+        """
+        Test missing scoring dependencies
+        """
+
+        from txtai.scoring import ScoringFactory
+
+        with self.assertRaises(ImportError):
+            ScoringFactory.create({"method": "pgtext"})
+
     def testVectors(self):
         """
         Test missing vector dependencies

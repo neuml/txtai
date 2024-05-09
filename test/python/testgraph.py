@@ -134,6 +134,9 @@ class TestGraph(unittest.TestCase):
         graph.load(None)
         self.assertEqual(list(graph.scan()), [str(x) for x in range(5)])
 
+        # Close graph
+        graph.close()
+
     def testDelete(self):
         """
         Test delete
@@ -281,6 +284,7 @@ class TestGraph(unittest.TestCase):
         embeddings = Embeddings(config)
         embeddings.index({"id": f"ID{i}", "text": x, "relationships": relationships if i == 0 else None} for i, x in enumerate(self.data))
         self.assertEqual(len(embeddings.graph.edges(0)), len(self.data) - 1)
+        embeddings.close()
 
     def testRelationshipsInvalid(self):
         """

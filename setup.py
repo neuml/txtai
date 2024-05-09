@@ -82,6 +82,8 @@ extras["pipeline"] = (
     + extras["pipeline-train"]
 )
 
+extras["scoring"] = ["sqlalchemy>=2.0.20"]
+
 extras["vectors"] = [
     "fasttext>=0.9.2",
     "pymagnitude-lite>=0.1.43",
@@ -110,6 +112,7 @@ extras["all"] = (
     + extras["graph"]
     + extras["model"]
     + extras["pipeline"]
+    + extras["scoring"]
     + extras["similarity"]
     + extras["workflow"]
 )

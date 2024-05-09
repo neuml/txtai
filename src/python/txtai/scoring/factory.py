@@ -4,9 +4,10 @@ Factory module
 
 from ..util import Resolver
 
-from .base import Scoring
 from .bm25 import BM25
 from .sif import SIF
+from .pgtext import PGText
+from .tfidf import TFIDF
 
 
 class ScoringFactory:
@@ -40,9 +41,10 @@ class ScoringFactory:
             scoring = BM25(config)
         elif method == "sif":
             scoring = SIF(config)
+        elif method == "pgtext":
+            scoring = PGText(config)
         elif method == "tfidf":
-            # Default scoring class implements tf-idf
-            scoring = Scoring(config)
+            scoring = TFIDF(config)
         else:
             # Resolve custom method
             scoring = ScoringFactory.resolve(method, config)
