@@ -87,13 +87,6 @@ class Embeddings:
         # Set initial configuration
         self.configure(config)
 
-    def __del__(self):
-        """
-        Clean resources when embeddings is deleted.
-        """
-
-        self.close()
-
     def score(self, documents):
         """
         Builds a term weighting scoring index. Only used by word vectors models.
@@ -664,21 +657,31 @@ class Embeddings:
         Closes this embeddings index and frees all resources.
         """
 
-        self.ann, self.config, self.graph, self.archive = None, None, None, None
+        self.config, self.archive = None, None
         self.reducer, self.query, self.model, self.models = None, None, None, None
         self.ids = None
 
-        # Close database connection if open
+        # Close ANN
+        if self.ann:
+            self.ann.close()
+            self.ann = None
+
+        # Close database
         if self.database:
             self.database.close()
             self.database, self.functions = None, None
 
-        # Close scoring instance if open
+        # Close scoring
         if self.scoring:
             self.scoring.close()
             self.scoring = None
 
-        # Close indexes if open
+        # Close graph
+        if self.graph:
+            self.graph.close()
+            self.graph = None
+
+        # Close indexes
         if self.indexes:
             self.indexes.close()
             self.indexes = None

@@ -67,6 +67,13 @@ class RDBMS(NetworkX):
     def save(self, path):
         self.database.commit()
 
+    def close(self):
+        # Parent logic
+        super().close()
+
+        # Close database connection
+        self.database.close()
+
     def filter(self, nodes, graph=None):
         return super().filter(nodes, graph if graph else NetworkX(self.config))
 

@@ -8,7 +8,7 @@ import unittest
 
 from unittest.mock import patch
 
-from txtai.scoring import ScoringFactory
+from txtai.scoring import ScoringFactory, Scoring
 
 
 class TestScoring(unittest.TestCase):
@@ -55,6 +55,65 @@ class TestScoring(unittest.TestCase):
 
         with self.assertRaises(ImportError):
             ScoringFactory.create("notfound.scoring")
+
+    def testNotImplemented(self):
+        """
+        Test exceptions for non-implemented methods
+        """
+
+        scoring = Scoring()
+
+        self.assertRaises(NotImplementedError, scoring.insert, None, None)
+        self.assertRaises(NotImplementedError, scoring.delete, None)
+        self.assertRaises(NotImplementedError, scoring.weights, None)
+        self.assertRaises(NotImplementedError, scoring.search, None, None)
+        self.assertRaises(NotImplementedError, scoring.batchsearch, None, None, None)
+        self.assertRaises(NotImplementedError, scoring.count)
+        self.assertRaises(NotImplementedError, scoring.load, None)
+        self.assertRaises(NotImplementedError, scoring.save, None)
+        self.assertRaises(NotImplementedError, scoring.close)
+        self.assertRaises(NotImplementedError, scoring.hasterms)
+        self.assertRaises(NotImplementedError, scoring.isnormalized)
+
+    @patch("sqlalchemy.orm.Query.params")
+    def testPGText(self, query):
+        """
+        Test PGText
+        """
+
+        # Mock database query
+        query.return_value = [(3, 1.0)]
+
+        # Create scoring
+        path = os.path.join(tempfile.gettempdir(), "pgtext.sqlite")
+        scoring = ScoringFactory.create({"method": "pgtext", "url": f"sqlite:///{path}"})
+        scoring.index((uid, {"text": text}, tags) for uid, text, tags in self.data)
+
+        # Run search and validate correct result returned
+        index, _ = scoring.search("bear", 1)[0]
+        self.assertEqual(index, 3)
+
+        # Run batch search
+        index, _ = scoring.batchsearch(["bear"], 1)[0][0]
+        self.assertEqual(index, 3)
+
+        # Validate save/load/delete
+        scoring.save(None)
+        scoring.load(None)
+
+        # Validate count
+        self.assertEqual(scoring.count(), len(self.data))
+
+        # Test delete
+        scoring.delete([0])
+        self.assertEqual(scoring.count(), len(self.data) - 1)
+
+        # PGText is a normalized terms index
+        self.assertTrue(scoring.hasterms() and scoring.isnormalized())
+        self.assertIsNone(scoring.weights("This is a test".split()))
+
+        # Close scoring
+        scoring.close()
 
     def testSIF(self):
         """

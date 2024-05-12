@@ -417,6 +417,13 @@ class Graph:
             archive = ArchiveFactory.create(directory)
             archive.save(path, "tar")
 
+    def close(self):
+        """
+        Closes this graph.
+        """
+
+        self.backend, self.categories, self.topics = None, None, None
+
     def insert(self, documents, index=0):
         """
         Insert graph nodes for each document.

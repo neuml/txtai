@@ -4,10 +4,10 @@ SIF module
 
 import numpy as np
 
-from .base import Scoring
+from .tfidf import TFIDF
 
 
-class SIF(Scoring):
+class SIF(TFIDF):
     """
     Smooth Inverse Frequency (SIF) scoring.
     """

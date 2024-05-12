@@ -92,6 +92,14 @@ pip install txtai[pipeline]
 
 More granular extras are available for pipeline categories: `pipeline-audio`, `pipeline-data`, `pipeline-image`, `pipeline-llm`, `pipeline-text`, and `pipeline-train`.
 
+### Scoring
+
+Additional scoring methods.
+
+```
+pip install txtai[scoring]
+```
+
 ### Vectors
 
 Support for sentence-transformers models not on the HF Hub and word vectors.

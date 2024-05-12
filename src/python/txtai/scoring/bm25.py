@@ -4,10 +4,10 @@ BM25 module
 
 import numpy as np
 
-from .base import Scoring
+from .tfidf import TFIDF
 
 
-class BM25(Scoring):
+class BM25(TFIDF):
     """
     Best matching (BM25) scoring.
     """
