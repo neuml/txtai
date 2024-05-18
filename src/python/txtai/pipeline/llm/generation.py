@@ -26,7 +26,10 @@ class Generation:
 
     def __call__(self, text, maxlength, **kwargs):
         """
-        Generates text using input text
+        Generates text. Supports the following input formats:
+
+          - String or list of strings
+          - List of dictionaries with `role` and `content` key-values or lists of lists
 
         Args:
             text: text|list
@@ -37,8 +40,8 @@ class Generation:
             generated text
         """
 
-        # List of texts
-        texts = text if isinstance(text, list) else [text]
+        # Format inputs
+        texts = [text] if isinstance(text, str) or isinstance(text[0], dict) else text
 
         # Apply template, if necessary
         if self.template:
@@ -51,7 +54,8 @@ class Generation:
         # Clean generated text
         results = [self.clean(texts[x], result) for x, result in enumerate(results)]
 
-        return results[0] if isinstance(text, str) else results
+        # Extract results based on inputs
+        return results[0] if isinstance(text, str) or isinstance(text[0], dict) else results
 
     def execute(self, texts, maxlength, **kwargs):
         """
@@ -78,7 +82,7 @@ class Generation:
         """
 
         # Replace input prompt
-        text = result.replace(prompt, "")
+        text = result.replace(prompt, "") if isinstance(prompt, str) else result
 
         # Apply text cleaning rules
         return text.replace("$=", "<=").strip()

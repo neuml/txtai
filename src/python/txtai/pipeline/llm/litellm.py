@@ -51,23 +51,15 @@ class LiteLLM(Generation):
         if not LITELLM:
             raise ImportError('LiteLLM is not available - install "pipeline" extra to enable')
 
-        # Register prompt template
-        self.register(path)
-
     def execute(self, texts, maxlength, **kwargs):
         results = []
         for text in texts:
-            result = api.completion(model=self.path, messages=[{"content": text, "role": "user"}], max_tokens=maxlength, **{**kwargs, **self.kwargs})
+            result = api.completion(
+                model=self.path,
+                messages=[{"content": text, "role": "prompt"}] if isinstance(text, str) else text,
+                max_tokens=maxlength,
+                **{**kwargs, **self.kwargs}
+            )
             results.append(result["choices"][0]["message"]["content"])
 
         return results
-
-    def register(self, path):
-        """
-        Registers a custom prompt template for path.
-
-        Args:
-            path: model path
-        """
-
-        api.register_prompt_template(model=path, roles={"user": {"pre_message": "", "post_message": ""}})

@@ -35,7 +35,10 @@ class LLM(Pipeline):
 
     def __call__(self, text, maxlength=512, **kwargs):
         """
-        Generates text using input text
+        Generates text. Supports the following input formats:
+
+          - String or list of strings
+          - List of dictionaries with `role` and `content` key-values or lists of lists
 
         Args:
             text: text|list

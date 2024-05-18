@@ -39,7 +39,10 @@ class HFLLM(HFPipeline):
 
     def __call__(self, text, prefix=None, maxlength=512, workers=0, **kwargs):
         """
-        Generates text using input text
+        Generates text. Supports the following input formats:
+
+          - String or list of strings
+          - List of dictionaries with `role` and `content` key-values or lists of lists
 
         Args:
             text: text|list
@@ -80,7 +83,8 @@ class HFLLM(HFPipeline):
 
         # Extract output from list, if necessary
         result = result[0] if isinstance(result, list) else result
-        return result["generated_text"]
+        text = result["generated_text"]
+        return text[-1]["content"] if isinstance(text, list) else text
 
     def task(self, path, task, **kwargs):
         """

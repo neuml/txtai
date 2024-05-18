@@ -51,8 +51,7 @@ class LlamaCpp(Generation):
     def execute(self, texts, maxlength, **kwargs):
         results = []
         for text in texts:
-            result = self.llm(text, max_tokens=maxlength, **kwargs)
-            results.append(result["choices"][0]["text"])
+            results.append(self.messages(text, maxlength, **kwargs) if isinstance(text, list) else self.prompt(text, maxlength, **kwargs))
 
         return results
 
@@ -75,3 +74,33 @@ class LlamaCpp(Generation):
 
         # Download and cache file
         return hf_hub_download(repo_id="/".join(parts[:repo]), filename="/".join(parts[repo:]))
+
+    def messages(self, messages, maxlength, **kwargs):
+        """
+        Processes a list of messages.
+
+        Args:
+            messages: list of dictionaries with `role` and `content` key-values
+            maxlength: maximum sequence length
+            kwargs: additional generation keyword arguments
+
+        Returns:
+            generated text
+        """
+
+        return self.llm.create_chat_completion(messages=messages, max_tokens=maxlength, **kwargs)["choices"][0]["message"]["content"]
+
+    def prompt(self, text, maxlength, **kwargs):
+        """
+        Processes a prompt.
+
+        Args:
+            prompt: prompt text
+            maxlength: maximum sequence length
+            kwargs: additional generation keyword arguments
+
+        Returns:
+            generated text
+        """
+
+        return self.llm(text, max_tokens=maxlength, **kwargs)["choices"][0]["text"]
