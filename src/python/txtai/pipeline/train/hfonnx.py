@@ -29,7 +29,7 @@ class HFOnnx(Tensors):
     Exports a Hugging Face Transformer model to ONNX.
     """
 
-    def __call__(self, path, task="default", output=None, quantize=False, opset=12):
+    def __call__(self, path, task="default", output=None, quantize=False, opset=14):
         """
         Exports a Hugging Face Transformer model to ONNX.
 
@@ -38,7 +38,7 @@ class HFOnnx(Tensors):
             task: optional model task or category, determines the model type and outputs, defaults to export hidden state
             output: optional output model path, defaults to return byte array if None
             quantize: if model should be quantized (requires onnx to be installed), defaults to False
-            opset: onnx opset, defaults to 12
+            opset: onnx opset, defaults to 14
 
         Returns:
             path to model output or model as bytes depending on output parameter
