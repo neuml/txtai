@@ -13,6 +13,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 
 from txtai.embeddings import Embeddings
+from txtai.models import OnnxModel
 from txtai.pipeline import HFOnnx, HFTrainer, Labels, MLOnnx, Questions
 
 
@@ -40,6 +41,9 @@ class TestOnnx(unittest.TestCase):
 
         # Validate model has data
         self.assertGreater(len(model), 0)
+
+        # Validate model device properly works
+        self.assertEqual(OnnxModel(model).device, -1)
 
     def testClassification(self):
         """

@@ -48,6 +48,17 @@ class OnnxModel(PreTrainedModel):
         # Add references for this class to supported AutoModel classes
         Registry.register(self)
 
+    @property
+    def device(self):
+        """
+        Returns model device id.
+
+        Returns:
+            model device id
+        """
+
+        return -1
+
     def providers(self):
         """
         Returns a list of available and usable providers.
