@@ -82,7 +82,7 @@ class Application:
         Close threadpool when this object is garbage collected.
         """
 
-        if self.pool:
+        if hasattr(self, "pool") and self.pool:
             self.pool.close()
             self.pool = None
 

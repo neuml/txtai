@@ -35,7 +35,7 @@ class RDBMS(NetworkX):
         self.database = None
 
     def __del__(self):
-        if self.database:
+        if hasattr(self, "database") and self.database:
             self.database.close()
 
     def create(self):

@@ -88,12 +88,12 @@ class Execute:
         Closes concurrent processing pools.
         """
 
-        if self.thread:
+        if hasattr(self, "thread") and self.thread:
             self.thread.close()
             self.thread.join()
             self.thread = None
 
-        if self.process:
+        if hasattr(self, "process") and self.process:
             self.process.close()
             self.process.join()
             self.process = None
