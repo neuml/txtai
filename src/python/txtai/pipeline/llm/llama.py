@@ -45,6 +45,9 @@ class LlamaCpp(Generation):
         # Check if this is a local path, otherwise download from the HF Hub
         path = path if os.path.exists(path) else self.download(path)
 
+        # Default GPU layers if not already set
+        kwargs["n_gpu_layers"] = kwargs.get("n_gpu_layers", -1 if kwargs.get("gpu", True) else 0)
+
         # Create llama.cpp instance
         self.llm = Llama(path, verbose=kwargs.pop("verbose", False), **kwargs)
 
