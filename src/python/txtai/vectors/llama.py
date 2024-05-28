@@ -53,7 +53,7 @@ class LlamaCpp(Vectors):
         modelargs = self.config.get("vectors", {})
 
         # Default GPU layers if not already set
-        modelargs["n_gpu_layers"] = modelargs.get("n_gpu_layers", -1 if modelargs.get("gpu", os.environ.get("LLAMA_NO_METAL") != "1") else 0)
+        modelargs["n_gpu_layers"] = modelargs.get("n_gpu_layers", -1 if self.config.get("gpu", os.environ.get("LLAMA_NO_METAL") != "1") else 0)
 
         # Create llama.cpp instance
         return Llama(path, verbose=modelargs.pop("verbose", False), embedding=True, **modelargs)
