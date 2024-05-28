@@ -1,5 +1,5 @@
 """
-Vectors module tests
+Huggingface module tests
 """
 
 import os
@@ -11,15 +11,15 @@ import numpy as np
 from txtai.vectors import VectorsFactory
 
 
-class TestTransformersVectors(unittest.TestCase):
+class TestHFVectors(unittest.TestCase):
     """
-    TransformerVectors tests
+    HFVectors tests
     """
 
     @classmethod
     def setUpClass(cls):
         """
-        Create single TransformersVectors instance.
+        Create HFVectors instance.
         """
 
         cls.model = VectorsFactory.create({"path": "sentence-transformers/nli-mpnet-base-v2"}, None)

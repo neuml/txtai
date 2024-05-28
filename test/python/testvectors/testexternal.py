@@ -8,18 +8,18 @@ import unittest
 
 import numpy as np
 
-from txtai.vectors import ExternalVectors, VectorsFactory
+from txtai.vectors import External, VectorsFactory
 
 
-class TestExternalVectors(unittest.TestCase):
+class TestExternal(unittest.TestCase):
     """
-    ExternalVectors tests
+    External vectors tests
     """
 
     @classmethod
     def setUpClass(cls):
         """
-        Create single ExternalVectors instance.
+        Create External vectors instance.
         """
 
         cls.model = VectorsFactory.create({"method": "external"}, None)
@@ -52,4 +52,4 @@ class TestExternalVectors(unittest.TestCase):
         """
 
         model = VectorsFactory.create({"transform": lambda x: x}, None)
-        self.assertTrue(isinstance(model, ExternalVectors))
+        self.assertTrue(isinstance(model, External))

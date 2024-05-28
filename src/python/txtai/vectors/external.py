@@ -11,7 +11,7 @@ from ..util import Resolver
 from .base import Vectors
 
 
-class ExternalVectors(Vectors):
+class External(Vectors):
     """
     Builds vectors using an external method. This can be a local function or an external API call.
     """

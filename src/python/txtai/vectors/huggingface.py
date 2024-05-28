@@ -1,5 +1,5 @@
 """
-Transformers module
+Hugging Face module
 """
 
 # Conditional import
@@ -15,10 +15,24 @@ from ..models import Models, PoolingFactory
 from ..pipeline import Tokenizer
 
 
-class TransformersVectors(Vectors):
+class HFVectors(Vectors):
     """
-    Builds vectors using the transformers library.
+    Builds vectors using the Hugging Face transformers library. Also supports the sentence-transformers library.
     """
+
+    @staticmethod
+    def ismethod(method):
+        """
+        Checks if this method uses local transformers-based models.
+
+        Args:
+            method: input method
+
+        Returns:
+            True if this is a local transformers-based model, False otherwise
+        """
+
+        return method in ("transformers", "sentence-transformers", "pooling", "clspooling", "meanpooling")
 
     def loadmodel(self, path):
         # Flag that determines if transformers or sentence-transformers should be used to build embeddings

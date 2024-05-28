@@ -250,10 +250,16 @@ class TestOptional(unittest.TestCase):
         from txtai.vectors import VectorsFactory
 
         with self.assertRaises(ImportError):
-            VectorsFactory.create({"method": "words"}, None)
+            VectorsFactory.create({"method": "litellm", "path": "huggingface/sentence-transformers/all-MiniLM-L6-v2"}, None)
+
+        with self.assertRaises(ImportError):
+            VectorsFactory.create({"method": "llama.cpp", "path": "nomic-ai/nomic-embed-text-v1.5-GGUF/nomic-embed-text-v1.5.Q2_K.gguf"}, None)
 
         with self.assertRaises(ImportError):
             VectorsFactory.create({"method": "sentence-transformers", "path": "sentence-transformers/nli-mpnet-base-v2"}, None)
+
+        with self.assertRaises(ImportError):
+            VectorsFactory.create({"method": "words"}, None)
 
     def testWorkflow(self):
         """

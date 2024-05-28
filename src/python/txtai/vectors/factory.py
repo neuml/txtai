@@ -2,8 +2,12 @@
 Factory module
 """
 
-from .external import ExternalVectors
-from .transformers import TransformersVectors
+from ..util import Resolver
+
+from .external import External
+from .huggingface import HFVectors
+from .litellm import LiteLLM
+from .llama import LlamaCpp
 from .words import WordVectors, WORDS
 
 
@@ -28,9 +32,20 @@ class VectorsFactory:
 
         # Determine vector method
         method = VectorsFactory.method(config)
-        if method == "external":
-            return ExternalVectors(config, scoring, models)
 
+        # External vectors
+        if method == "external":
+            return External(config, scoring, models)
+
+        # LiteLLM vectors
+        if method == "litellm":
+            return LiteLLM(config, scoring, models)
+
+        # llama.cpp vectors
+        if method == "llama.cpp":
+            return LlamaCpp(config, scoring, models)
+
+        # Word vectors
         if method == "words":
             if not WORDS:
                 # Raise error if trying to create Word Vectors without vectors extra
@@ -41,8 +56,12 @@ class VectorsFactory:
 
             return WordVectors(config, scoring, models)
 
-        # Default to TransformersVectors when configuration available
-        return TransformersVectors(config, scoring, models) if config and config.get("path") else None
+        # Transformers vectors
+        if HFVectors.ismethod(method):
+            return HFVectors(config, scoring, models) if config and config.get("path") else None
+
+        # Resolve custom method
+        return VectorsFactory.resolve(method, config, scoring, models) if method else None
 
     @staticmethod
     def method(config):
@@ -56,15 +75,42 @@ class VectorsFactory:
             vector method
         """
 
-        # Determine vector type (external, transformers or words)
+        # Determine vector method (external, litellm, llama.cpp, transformers or words)
         method = config.get("method")
         path = config.get("path")
 
         # Infer method from path, if blank
         if not method:
             if path:
-                method = "words" if WordVectors.isdatabase(path) else "transformers"
+                if LiteLLM.ismodel(path):
+                    method = "litellm"
+                elif LlamaCpp.ismodel(path):
+                    method = "llama.cpp"
+                elif WordVectors.isdatabase(path):
+                    method = "words"
+                else:
+                    method = "transformers"
             elif config.get("transform"):
                 method = "external"
 
         return method
+
+    @staticmethod
+    def resolve(backend, config, scoring, models):
+        """
+        Attempt to resolve a custom backend.
+
+        Args:
+            backend: backend class
+            config: vector configuration
+            scoring: scoring instance
+            models: models cache
+
+        Returns:
+            Vectors
+        """
+
+        try:
+            return Resolver()(backend)(config, scoring, models)
+        except Exception as e:
+            raise ImportError(f"Unable to resolve vectors backend: '{backend}'") from e

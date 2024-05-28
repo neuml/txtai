@@ -3,7 +3,9 @@ Vectors import
 """
 
 from .base import Vectors
-from .external import ExternalVectors
+from .external import External
 from .factory import VectorsFactory
-from .transformers import TransformersVectors
+from .huggingface import HFVectors
+from .litellm import LiteLLM
+from .llama import LlamaCpp
 from .words import WordVectors

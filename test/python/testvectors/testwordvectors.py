@@ -1,5 +1,5 @@
 """
-Vectors module tests
+WordVectors module tests
 """
 
 import os
