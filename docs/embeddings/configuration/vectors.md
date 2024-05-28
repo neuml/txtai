@@ -12,12 +12,12 @@ Sets the path for a vectors model. When using a transformers/sentence-transforme
 
 ## method
 ```yaml
-method: transformers|sentence-transformers|words|external
+method: transformers|sentence-transformers|llama.cpp|litellm|external|words
 ```
 
 Embeddings method to use. If the method is not provided, it is inferred using the `path`.
 
-`sentence-transformers` and `words` require the [vectors](../../../install/#vectors) extras package to be installed.
+`sentence-transformers`, `llama.cpp`, `litellm` and `words` require the [vectors](../../../install/#vectors) extras package to be installed.
 
 ### transformers
 
@@ -30,6 +30,14 @@ from `transformers` to `meanpooling` or `clspooling` respectively.
 ### sentence-transformers
 
 Same as transformers but loads models with the [sentence-transformers](https://github.com/UKPLab/sentence-transformers) library.
+
+### llama.cpp
+
+Builds embeddings using a llama.cpp model. Supports both local and remote GGUF paths on the HF Hub.
+
+### litellm
+
+Builds embeddings using a LiteLLM model. See the [LiteLLM documentation](https://litellm.vercel.app/docs/providers) for the options available with LiteLLM models.
 
 ### words
 

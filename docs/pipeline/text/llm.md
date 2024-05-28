@@ -30,6 +30,8 @@ llm(
 
 The LLM pipeline automatically detects the underlying LLM framework. This can also be manually set.
 
+See the [LiteLLM documentation](https://litellm.vercel.app/docs/providers) for the options available with LiteLLM models. Models with llama.cpp support both local and remote GGUF paths on the HF Hub.
+
 ```python
 from txtai.pipeline import LLM
 

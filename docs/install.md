@@ -102,7 +102,7 @@ pip install txtai[scoring]
 
 ### Vectors
 
-Support for sentence-transformers models not on the HF Hub and word vectors.
+Additional vector methods.
 
 ```
 pip install txtai[vectors]
