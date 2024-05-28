@@ -46,7 +46,7 @@ class LlamaCpp(Generation):
         path = path if os.path.exists(path) else self.download(path)
 
         # Default GPU layers if not already set
-        kwargs["n_gpu_layers"] = kwargs.get("n_gpu_layers", -1 if kwargs.get("gpu", True) else 0)
+        kwargs["n_gpu_layers"] = kwargs.get("n_gpu_layers", -1 if kwargs.get("gpu", os.environ.get("LLAMA_NO_METAL") != "1") else 0)
 
         # Create llama.cpp instance
         self.llm = Llama(path, verbose=kwargs.pop("verbose", False), **kwargs)
