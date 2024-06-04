@@ -91,7 +91,7 @@ SQLError: no such function: json_extract
 
 __Solution__
 
-Upgrade Python version as it doesn't have SQLite support for json_extract
+Upgrade Python version as it doesn't have SQLite support for `json_extract`
 
 ----------
 
@@ -101,7 +101,15 @@ Segmentation faults and similar errors on macOS
 
 __Solution__
 
-Disable OpenMP threading via the environment variable `export OMP_NUM_THREADS=1` or downgrade PyTorch to <= 1.12. See issue [#377](https://github.com/neuml/txtai/issues/377) for more.
+Set the following environment parameters.
+
+- Disable OpenMP threading via the environment variable `export OMP_NUM_THREADS=1`
+- Disable PyTorch MPS device via `export PYTORCH_MPS_DISABLE=1`
+- Disable llama.cpp metal via `export LLAMA_NO_METAL=1`
+
+If the issue is with a training pipeline.
+
+- Disable GPU training via `export ACCELERATE_USE_CPU=1`
 
 ----------
 

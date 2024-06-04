@@ -9,12 +9,16 @@ keyword: boolean
 
 Enables sparse keyword indexing for this embeddings.
 
+When enabled, this parameter creates a BM25 index for full text search. It also implicitly disables the [defaults](../vectors/#defaults) setting for vector search.
+
 ## hybrid
 ```yaml
 hybrid: boolean
 ```
 
 Enables hybrid (sparse + dense) indexing for this embeddings.
+
+When enabled, this parameter creates a BM25 index for full text search. It has no effect on the [defaults](../vectors/#defaults) or [path](../vectors/#path) settings.
 
 ## indexes
 ```yaml
