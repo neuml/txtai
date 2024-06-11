@@ -317,8 +317,8 @@ class Embeddings:
         # Initialize default parameters, if necessary
         self.defaults()
 
-        # Default vector model, if necessary
-        model = self.indexes[index] if index and self.indexes else self.model if self.model else self.indexes.model()
+        # Get vector model
+        model = self.indexes.model(index) if index and self.indexes else self.model if self.model else self.indexes.model()
 
         # Convert documents into embeddings
         embeddings = model.batchtransform(Stream(self)(documents), category)

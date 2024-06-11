@@ -83,16 +83,16 @@ class Indexes:
 
         return list(self.indexes.keys())[0]
 
-    def model(self):
+    def model(self, index=None):
         """
-        Scans indexes and gets the first vector model.
+        Lookups a vector model. If index is empty, the first vector model is returned.
 
         Returns:
             Vectors
         """
 
-        # Return first vector model
-        matches = [index.model for index in self.indexes.values() if index.model]
+        # Find vector model
+        matches = [self.indexes[index]] if index else [index.model for index in self.indexes.values() if index.model]
         return matches[0] if matches else None
 
     def insert(self, documents, index=None):
