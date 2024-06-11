@@ -390,6 +390,9 @@ class TestEmbeddings(unittest.TestCase):
 
         # Test transform
         self.assertEqual(embeddings.transform("feel good story").shape, (768,))
+        self.assertEqual(embeddings.transform("feel good story", index="index1").shape, (768,))
+        with self.assertRaises(KeyError):
+            embeddings.transform("feel good story", index="index2")
 
         # Run search
         uid = embeddings.search("feel good story", 1)[0][0]

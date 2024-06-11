@@ -3,7 +3,7 @@ Defines API paths for embeddings endpoints.
 """
 
 from io import BytesIO
-from typing import List
+from typing import List, Optional
 
 import PIL
 
@@ -250,30 +250,34 @@ def batchexplain(queries: List[str] = Body(...), texts: List[str] = Body(default
 
 
 @router.get("/transform")
-def transform(text: str):
+def transform(text: str, category: Optional[str] = None, index: Optional[str] = None):
     """
     Transforms text into an embeddings array.
 
     Args:
         text: input text
+        category: category for instruction-based embeddings
+        index: index name, if applicable
 
     Returns:
         embeddings array
     """
 
-    return application.get().transform(text)
+    return application.get().transform(text, category, index)
 
 
 @router.post("/batchtransform")
-def batchtransform(texts: List[str] = Body(...)):
+def batchtransform(texts: List[str] = Body(...), category: Optional[str] = None, index: Optional[str] = None):
     """
     Transforms list of text into embeddings arrays.
 
     Args:
         texts: list of text
+        category: category for instruction-based embeddings
+        index: index name, if applicable
 
     Returns:
         embeddings arrays
     """
 
-    return application.get().batchtransform(texts)
+    return application.get().batchtransform(texts, category, index)

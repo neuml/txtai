@@ -621,36 +621,39 @@ class Application:
 
         return None
 
-    def transform(self, text):
+    def transform(self, text, category=None, index=None):
         """
         Transforms text into embeddings arrays.
 
         Args:
             text: input text
+            category: category for instruction-based embeddings
+            index: index name, if applicable
 
         Returns:
             embeddings array
         """
 
         if self.embeddings:
-            return [float(x) for x in self.embeddings.transform((None, text, None))]
+            return [float(x) for x in self.embeddings.transform(text, category, index)]
 
         return None
 
-    def batchtransform(self, texts):
+    def batchtransform(self, texts, category=None, index=None):
         """
         Transforms list of text into embeddings arrays.
 
         Args:
             texts: list of text
+            category: category for instruction-based embeddings
+            index: index name, if applicable
 
         Returns:
             embeddings arrays
         """
 
         if self.embeddings:
-            documents = [(None, text, None) for text in texts]
-            return [[float(x) for x in result] for result in self.embeddings.batchtransform(documents)]
+            return [[float(x) for x in result] for result in self.embeddings.batchtransform(texts, category, index)]
 
         return None
 

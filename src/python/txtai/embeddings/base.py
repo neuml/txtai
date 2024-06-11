@@ -286,26 +286,29 @@ class Embeddings:
             else:
                 self.index(self.database.reindex(self.config), True)
 
-    def transform(self, document):
+    def transform(self, document, category=None, index=None):
         """
         Transforms document into an embeddings vector.
 
         Args:
             documents: iterable of (id, data, tags), (id, data) or data
+            category: category for instruction-based embeddings
+            index: index name, if applicable
 
         Returns:
             embeddings vector
         """
 
-        return self.batchtransform([document])[0]
+        return self.batchtransform([document], category, index)[0]
 
-    def batchtransform(self, documents, category=None):
+    def batchtransform(self, documents, category=None, index=None):
         """
         Transforms documents into embeddings vectors.
 
         Args:
             documents: iterable of (id, data, tags), (id, data) or data
             category: category for instruction-based embeddings
+            index: index name, if applicable
 
         Returns:
             embeddings vectors
@@ -315,7 +318,7 @@ class Embeddings:
         self.defaults()
 
         # Default vector model, if necessary
-        model = self.model if self.model else self.indexes.model()
+        model = self.indexes[index] if index and self.indexes else self.model if self.model else self.indexes.model()
 
         # Convert documents into embeddings
         embeddings = model.batchtransform(Stream(self)(documents), category)
