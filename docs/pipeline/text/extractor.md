@@ -3,7 +3,7 @@
 ![pipeline](../../images/pipeline.png#only-light)
 ![pipeline](../../images/pipeline-dark.png#only-dark)
 
-The Extractor pipeline joins a prompt, context data store and generative model together to extract knowledge.
+The Extractor pipeline (aka RAG) joins a prompt, context data store and generative model together to extract knowledge.
 
 The data store can be an embeddings database or a similarity instance with associated input text. The generative model can be a prompt-driven large language model (LLM), an extractive question-answering model or a custom pipeline. This is known as prompt-driven search or retrieval augmented generation (RAG).
 

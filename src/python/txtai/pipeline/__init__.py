@@ -12,5 +12,6 @@ from .image import *
 from .llm import *
 from .nop import Nop
 from .text import *
+from .text import Extractor as RAG
 from .tensors import Tensors
 from .train import *
