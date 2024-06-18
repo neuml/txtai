@@ -49,7 +49,7 @@ class LlamaCpp(Generation):
         kwargs["n_gpu_layers"] = kwargs.get("n_gpu_layers", -1 if kwargs.get("gpu", os.environ.get("LLAMA_NO_METAL") != "1") else 0)
 
         # Create llama.cpp instance
-        self.llm = Llama(path, verbose=kwargs.pop("verbose", False), **kwargs)
+        self.llm = Llama(path, n_ctx=0, verbose=kwargs.pop("verbose", False), **kwargs)
 
     def execute(self, texts, maxlength, **kwargs):
         results = []

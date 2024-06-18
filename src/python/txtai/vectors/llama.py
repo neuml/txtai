@@ -56,7 +56,7 @@ class LlamaCpp(Vectors):
         modelargs["n_gpu_layers"] = modelargs.get("n_gpu_layers", -1 if self.config.get("gpu", os.environ.get("LLAMA_NO_METAL") != "1") else 0)
 
         # Create llama.cpp instance
-        return Llama(path, verbose=modelargs.pop("verbose", False), embedding=True, **modelargs)
+        return Llama(path, n_ctx=0, verbose=modelargs.pop("verbose", False), embedding=True, **modelargs)
 
     def encode(self, data):
         # Generate embeddings and return as a NumPy array
