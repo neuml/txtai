@@ -6,7 +6,7 @@ from ...models import Models
 
 from ..base import Pipeline
 from ..data import Tokenizer
-from ..llm import LLM
+from ..llm import GenerationFactory, LLM
 
 from .questions import Questions
 from .similarity import Similarity
@@ -159,7 +159,8 @@ class Extractor(Pipeline):
             return path
 
         # Attempt to resolve task if not provided
-        task = task if task else Models.task(path, **kwargs)
+        task = GenerationFactory.method(path, task)
+        task = Models.task(path, **kwargs) if task == "transformers" else task
 
         # Load Questions pipeline
         if task == "question-answering":
