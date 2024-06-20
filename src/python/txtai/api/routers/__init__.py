@@ -7,7 +7,9 @@ from . import embeddings
 from . import entity
 from . import extractor
 from . import labels
+from . import llm
 from . import objects
+from . import rag
 from . import segmentation
 from . import similarity
 from . import summary

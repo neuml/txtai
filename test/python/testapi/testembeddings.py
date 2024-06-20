@@ -48,8 +48,10 @@ embeddings:
 
 # Configuration for an index with custom functions
 FUNCTIONS = """
+# Ignore existing index
 pathignore: %s
 
+# Allow indexing of documents
 writable: True
 
 # Embeddings settings
@@ -64,6 +66,30 @@ embeddings:
         - name: ann
           function: ann
     transform: testapi.testembeddings.transform
+"""
+
+# Configuration for RAG
+RAG = """
+# Ignore existing index
+pathignore: %s
+
+# Allow indexing of documents
+writable: True
+
+# Embeddings settings
+embeddings:
+    path: sentence-transformers/nli-mpnet-base-v2
+    content: True
+
+# LLM
+llm:
+    path: hf-internal-testing/tiny-random-gpt2
+    task: language-generation
+
+# RAG settings
+rag:
+    path: llm
+    output: flatten
 """
 
 
@@ -356,6 +382,24 @@ class TestEmbeddings(unittest.TestCase):
         text = [result[0]["text"] for result in results]
         self.assertEqual(text, [self.data[4], self.data[1]])
         self.assertIsNotNone(results[0][0].get("tokens"))
+
+    def testXRAG(self):
+        """
+        Test RAG via API
+        """
+
+        # Re-create model with custom functions
+        self.client = TestEmbeddings.start(RAG)
+
+        # Index data
+        self.client.post("add", json=[{"id": x, "text": row} for x, row in enumerate(self.data)])
+        self.client.get("index")
+
+        response = self.client.get("rag?query=bear").json()
+        self.assertIsInstance(response, str)
+
+        response = self.client.post("batchrag", json={"queries": ["bear", "bear"]}).json()
+        self.assertEqual(len(response), 2)
 
 
 class Elements:

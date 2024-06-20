@@ -103,7 +103,8 @@ class Application:
                 pipelines.append(key)
 
         # Move dependent pipelines to end of list
-        pipelines = sorted(pipelines, key=lambda x: x in ["similarity", "extractor"])
+        dependent = ["similarity", "extractor", "rag"]
+        pipelines = sorted(pipelines, key=lambda x: dependent.index(x) + 1 if x in dependent else 0)
 
         # Create pipelines
         for pipeline in pipelines:
@@ -115,11 +116,15 @@ class Application:
                     config["application"] = self
 
                 # Custom pipeline parameters
-                if pipeline == "extractor" and "similarity" not in config:
-                    # Add placeholder, will be set to embeddings index once initialized
-                    config["similarity"] = None
+                if pipeline in ["extractor", "rag"]:
+                    if "similarity" not in config:
+                        # Add placeholder, will be set to embeddings index once initialized
+                        config["similarity"] = None
 
-                    # Resolve reference pipeline, if necessary
+                    # Resolve reference pipelines
+                    if config.get("similarity") in self.pipelines:
+                        config["similarity"] = self.pipelines[config["similarity"]]
+
                     if config.get("path") in self.pipelines:
                         config["path"] = self.pipelines[config["path"]]
 
@@ -194,9 +199,12 @@ class Application:
             self.embeddings = Embeddings(config)
 
         # If an extractor pipeline is defined and the similarity attribute is None, set to embeddings index
-        extractor = self.pipelines.get("extractor")
-        if extractor and not extractor.similarity:
-            extractor.similarity = self.embeddings
+        for key in ["extractor", "rag"]:
+            pipeline = self.pipelines.get(key)
+            config = self.config.get(key)
+
+            if pipeline and config is not None and config["similarity"] is None:
+                pipeline.similarity = self.embeddings
 
     def resolvetask(self, task):
         """
@@ -701,20 +709,24 @@ class Application:
 
         return None
 
-    def pipeline(self, name, args):
+    def pipeline(self, name, *args, **kwargs):
         """
         Generic pipeline execution method.
 
         Args:
             name: pipeline name
-            args: pipeline arguments
+            args: pipeline positional arguments
+            kwargs: pipeline keyword arguments
 
         Returns:
             pipeline results
         """
 
+        # Backwards compatible with previous pipeline function arguments
+        args = args[0] if args and len(args) == 1 and isinstance(args[0], tuple) else args
+
         if name in self.pipelines:
-            return self.pipelines[name](*args)
+            return self.pipelines[name](*args, **kwargs)
 
         return None
 

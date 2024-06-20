@@ -25,9 +25,19 @@ caption:
 entity:
     path: dslim/bert-base-NER
 
+# Extractor settings
+extractor:
+    similarity: similarity
+    path: llm
+
 # Label settings
 labels:
     path: prajjwal1/bert-medium-mnli
+
+# LLM settings
+llm:
+    path: hf-internal-testing/tiny-random-gpt2
+    task: language-generation
 
 # Image objects
 objects:
@@ -174,6 +184,22 @@ class TestPipelines(unittest.TestCase):
 
         results = [l[0]["id"] for l in labels]
         self.assertEqual(results, [0, 1])
+
+    def testLLM(self):
+        """
+        Test LLM inference via API
+        """
+
+        response = self.client.get("llm?text=test").json()
+        self.assertIsInstance(response, str)
+
+    def testLLMBatch(self):
+        """
+        Test batch LLM inference via API
+        """
+
+        response = self.client.post("batchllm", json={"texts": ["test", "test"]}).json()
+        self.assertEqual(len(response), 2)
 
     def testObjects(self):
         """
