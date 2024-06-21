@@ -1,5 +1,5 @@
 """
-Extractor module
+RAG module
 """
 
 from ...models import Models
@@ -12,12 +12,11 @@ from .questions import Questions
 from .similarity import Similarity
 
 
-class Extractor(Pipeline):
+class RAG(Pipeline):
     """
     Extracts knowledge from content by joining a prompt, context data store and generative model together. The data store can be
     an embeddings database or a similarity instance with associated input text. The generative model can be a prompt-driven large
-    language model (LLM), an extractive question-answering model or a custom pipeline. This is known as prompt-driven search or
-    retrieval augmented generation (RAG).
+    language model (LLM), an extractive question-answering model or a custom pipeline. This is known as retrieval augmented generation (RAG).
     """
 
     # pylint: disable=R0913
@@ -39,7 +38,7 @@ class Extractor(Pipeline):
         **kwargs,
     ):
         """
-        Builds a new extractor.
+        Builds a new RAG pipeline.
 
         Args:
             similarity: similarity instance (embeddings or similarity pipeline)

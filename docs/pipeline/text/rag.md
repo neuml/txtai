@@ -1,11 +1,11 @@
-# Extractor
+# RAG
 
 ![pipeline](../../images/pipeline.png#only-light)
 ![pipeline](../../images/pipeline-dark.png#only-dark)
 
-The Extractor pipeline (aka RAG) joins a prompt, context data store and generative model together to extract knowledge.
+The RAG pipeline (aka Extractor) joins a prompt, context data store and generative model together to extract knowledge.
 
-The data store can be an embeddings database or a similarity instance with associated input text. The generative model can be a prompt-driven large language model (LLM), an extractive question-answering model or a custom pipeline. This is known as prompt-driven search or retrieval augmented generation (RAG).
+The data store can be an embeddings database or a similarity instance with associated input text. The generative model can be a prompt-driven large language model (LLM), an extractive question-answering model or a custom pipeline. This is known as retrieval augmented generation (RAG).
 
 ## Example
 
@@ -13,7 +13,7 @@ The following shows a simple example using this pipeline.
 
 ```python
 from txtai.embeddings import Embeddings
-from txtai.pipeline import Extractor
+from txtai.pipeline import RAG
 
 # LLM prompt
 def prompt(question):
@@ -43,7 +43,7 @@ embeddings = Embeddings({"content": True})
 embeddings.index([(uid, text, None) for uid, text in enumerate(data)])
 
 # Create and run pipeline
-extractor = Extractor(embeddings, "google/flan-t5-base")
+extractor = RAG(embeddings, "google/flan-t5-base")
 extractor([{"query": "What was won?", "question": prompt("What was won?")}])
 ```
 
@@ -128,5 +128,5 @@ curl \
 
 Python documentation for the pipeline.
 
-### ::: txtai.pipeline.Extractor.__init__
-### ::: txtai.pipeline.Extractor.__call__
+### ::: txtai.pipeline.RAG.__init__
+### ::: txtai.pipeline.RAG.__call__
