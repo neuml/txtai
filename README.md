@@ -32,7 +32,7 @@ txtai is an all-in-one embeddings database for semantic search, LLM orchestratio
 ![architecture](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/architecture.png#gh-light-mode-only)
 ![architecture](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/architecture-dark.png#gh-dark-mode-only)
 
-Embeddings databases are a union of vector indexes (sparse and dense), graph networks and relational databases. This enables vector search with SQL, topic modeling, retrieval augmented generation and more.
+Embeddings databases are a union of vector indexes (sparse and dense), graph networks and relational databases. This enables vector search with SQL, topic modeling, retrieval augmented generation (RAG) and more.
 
 Embeddings databases can stand on their own and/or serve as a powerful knowledge source for large language model (LLM) prompts.
 
