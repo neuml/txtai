@@ -31,7 +31,7 @@ Embeddings method to use. If the method is not provided, it is inferred using th
 Builds embeddings using a transformers model. While this can be any transformers model, it works best with
 [models trained](https://huggingface.co/models?pipeline_tag=sentence-similarity) to build embeddings.
 
-Both `mean` and `cls` pooling are supported and automatically infered from the model. The pooling method can be overwritten by changing the method
+Both `mean` and `cls` pooling are supported and automatically inferred from the model. The pooling method can be overwritten by changing the method
 from `transformers` to `meanpooling` or `clspooling` respectively.
 
 ### sentence-transformers
