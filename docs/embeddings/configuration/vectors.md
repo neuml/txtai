@@ -34,6 +34,8 @@ Builds embeddings using a transformers model. While this can be any transformers
 Both `mean` and `cls` pooling are supported and automatically inferred from the model. The pooling method can be overwritten by changing the method
 from `transformers` to `meanpooling` or `clspooling` respectively.
 
+Setting `maxlength` to `True` enables truncating inputs to the `max_seq_length`. Setting `maxlength` to an integer will truncate inputs to that value. When omitted (default), the `maxlength` will be set to either the model or tokenizer maxlength.
+
 ### sentence-transformers
 
 Same as transformers but loads models with the [sentence-transformers](https://github.com/UKPLab/sentence-transformers) library.

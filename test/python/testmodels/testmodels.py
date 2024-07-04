@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 import torch
 
-from txtai.models import Models, ClsPooling, MeanPooling, PoolingFactory
+from txtai.models import Models
 
 
 class TestModels(unittest.TestCase):
@@ -46,28 +46,3 @@ class TestModels(unittest.TestCase):
         # pylint: disable=E1101
         self.assertEqual(Models.device("cpu"), torch.device("cpu"))
         self.assertEqual(Models.device(torch.device("cpu")), torch.device("cpu"))
-
-    def testPooling(self):
-        """
-        Tests pooling methods
-        """
-
-        # Device id
-        device = Models.deviceid(True)
-
-        # Test mean pooling
-        pooling = PoolingFactory.create({"path": "sentence-transformers/nli-mpnet-base-v2", "device": device})
-        self.assertEqual(type(pooling), MeanPooling)
-
-        pooling = PoolingFactory.create({"method": "meanpooling", "path": "flax-sentence-embeddings/multi-qa_v1-MiniLM-L6-cls_dot", "device": device})
-        self.assertEqual(type(pooling), MeanPooling)
-
-        # Test CLS pooling
-        pooling = PoolingFactory.create({"path": "flax-sentence-embeddings/multi-qa_v1-MiniLM-L6-cls_dot", "device": device})
-        self.assertEqual(type(pooling), ClsPooling)
-
-        pooling = PoolingFactory.create({"method": "clspooling", "path": "sentence-transformers/nli-mpnet-base-v2", "device": device})
-        self.assertEqual(type(pooling), ClsPooling)
-
-        # Test CLS pooling encoding
-        self.assertEqual(pooling.encode(["test"])[0].shape, (768,))

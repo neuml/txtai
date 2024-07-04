@@ -48,7 +48,14 @@ class HFVectors(Vectors):
         # Build embeddings with transformers (default)
         if transformers:
             return PoolingFactory.create(
-                {"path": path, "device": deviceid, "tokenizer": self.config.get("tokenizer"), "method": method, "modelargs": modelargs}
+                {
+                    "method": method,
+                    "path": path,
+                    "device": deviceid,
+                    "tokenizer": self.config.get("tokenizer"),
+                    "maxlength": self.config.get("maxlength"),
+                    "modelargs": modelargs,
+                }
             )
 
         # Otherwise, use sentence-transformers library
