@@ -142,11 +142,23 @@ Optional dependencies require [C++ Build Tools](https://visualstudio.microsoft.c
 
 The [txtai build workflow](https://github.com/neuml/txtai/blob/master/.github/workflows/build.yml) occasionally has work arounds for other known but temporary dependency issues. The [FAQ](../faq) also has a list of common problems, including common installation issues.
 
+## CPU-only
+
+The default install adds PyTorch with GPU support. There are a number of dependencies that come with that. When running in a CPU-only environment or using Embeddings/LLM models without PyTorch (i.e. llama.cpp or API services), the CPU-only PyTorch package can be installed with txtai as follows.
+
+```
+pip install txtai torch==[version]+cpu -f https://download.pytorch.org/whl/torch_stable.html
+```
+
+Where `[version]` is the version of PyTorch (such as 2.3.1). The [txtai-cpu](https://hub.docker.com/r/neuml/txtai-cpu) image on Docker Hub uses this method to reduce the image size.
+
 ## Install from source
 
 txtai can also be installed directly from GitHub to access the latest, unreleased features.
 
-    pip install git+https://github.com/neuml/txtai
+```
+pip install git+https://github.com/neuml/txtai
+```
 
 Extras can be installed from GitHub by adding `#egg=txtai[<name-of-extra>]` to the end of the above URL.
 
@@ -154,7 +166,9 @@ Extras can be installed from GitHub by adding `#egg=txtai[<name-of-extra>]` to t
 
 A [community-supported txtai package](https://anaconda.org/conda-forge/txtai) is available via conda-forge.
 
-    conda install -c conda-forge txtai
+```
+conda install -c conda-forge txtai
+```
 
 ## Run with containers
 

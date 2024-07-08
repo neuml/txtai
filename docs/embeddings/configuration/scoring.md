@@ -19,10 +19,18 @@ Sets the scoring method. Add custom scoring via setting this parameter to the fu
 
 ## terms
 ```yaml
-terms: boolean
+terms: boolean|dict
 ```
 
 Enables term frequency sparse arrays for a scoring instance. This is the backend for sparse keyword indexes.
+
+Supports a `dict` with the parameters `cachelimit` and `cutoff`.
+
+`cachelimit` is the maximum amount of resident memory in bytes to use during indexing before flushing to disk. This parameter is an `int`.
+
+`cutoff` is used during search to determine what constitutes a common term. This parameter is a `float`, i.e. 0.1 for a cutoff of 10%.
+
+When `terms` is set to `True`, default parameters are used for the `cachelimit` and `cutoff`. Normally, these defaults are sufficient.
 
 ## normalize
 ```yaml
