@@ -21,12 +21,22 @@ class RequestHandler(BaseHTTPRequestHandler):
         POST request handler.
         """
 
-        # Generate mock response
-        response = [{"generated_text": "blue"}]
-        response = json.dumps(response).encode("utf-8")
+        # Parse input headers
+        length = int(self.headers["content-length"])
+        data = json.loads(self.rfile.read(length))
+
+        if data.get("stream"):
+            # Mock streaming response
+            content = "application/octet-stream"
+            response = """data: {"token": {"text": "blue"}}""".encode("utf-8")
+        else:
+            # Mock standard response
+            content = "application/json"
+            response = [{"generated_text": "blue"}]
+            response = json.dumps(response).encode("utf-8")
 
         self.send_response(200)
-        self.send_header("content-type", "application/json")
+        self.send_header("content-type", content)
         self.send_header("content-length", len(response))
         self.end_headers()
 
@@ -67,3 +77,6 @@ class TestLiteLLM(unittest.TestCase):
         # Test model generation with llama.cpp
         model = LLM("huggingface/t5-small", api_base="http://127.0.0.1:8000")
         self.assertEqual(model("The sky is"), "blue")
+
+        # Test streaming
+        self.assertEqual(" ".join(x for x in model("The sky is", stream=True)), "blue")

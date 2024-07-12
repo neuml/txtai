@@ -33,7 +33,7 @@ class LLM(Pipeline):
         # Generation instance
         self.generator = GenerationFactory.create(path, method, **kwargs)
 
-    def __call__(self, text, maxlength=512, **kwargs):
+    def __call__(self, text, maxlength=512, stream=False, **kwargs):
         """
         Generates text. Supports the following input formats:
 
@@ -43,6 +43,7 @@ class LLM(Pipeline):
         Args:
             text: text|list
             maxlength: maximum sequence length
+            stream: stream response if True, defaults to False
             kwargs: additional generation keyword arguments
 
         Returns:
@@ -50,4 +51,4 @@ class LLM(Pipeline):
         """
 
         # Run LLM generation
-        return self.generator(text, maxlength, **kwargs)
+        return self.generator(text, maxlength, stream, **kwargs)

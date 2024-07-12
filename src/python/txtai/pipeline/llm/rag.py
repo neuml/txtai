@@ -6,10 +6,11 @@ from ...models import Models
 
 from ..base import Pipeline
 from ..data import Tokenizer
-from ..llm import GenerationFactory, LLM
+from ..text import Questions
+from ..text import Similarity
 
-from .questions import Questions
-from .similarity import Similarity
+from .factory import GenerationFactory
+from .llm import LLM
 
 
 class RAG(Pipeline):
@@ -35,6 +36,7 @@ class RAG(Pipeline):
         output="default",
         template=None,
         separator=" ",
+        system=None,
         **kwargs,
     ):
         """
@@ -54,6 +56,7 @@ class RAG(Pipeline):
             output: output format, 'default' returns (name, answer), 'flatten' returns answers and 'reference' returns (name, answer, reference)
             template: prompt template, it must have a parameter for {question} and {context}, defaults to "{question} {context}"
             separator: context separator
+            system: system prompt, defaults to None
             kwargs: additional keyword arguments to pass to pipeline model
         """
 
@@ -84,6 +87,9 @@ class RAG(Pipeline):
         # Context separator
         self.separator = separator
 
+        # System prompt template
+        self.system = system
+
     def __call__(self, queue, texts=None, **kwargs):
         """
         Finds answers to input questions. This method runs queries to find the top n best matches and uses that as the context.
@@ -108,6 +114,7 @@ class RAG(Pipeline):
         if queue and isinstance(queue[0], dict):
             # Convert dict to tuple
             queue = [tuple(row.get(x) for x in ["name", "query", "question", "snippet"]) for row in queue]
+
         if queue and isinstance(queue[0], str):
             # Convert string questions to tuple
             queue = [(None, row, row, None) for row in queue]
@@ -132,10 +139,10 @@ class RAG(Pipeline):
             snippets.append(snippet)
 
         # Run pipeline and return answers
-        answers = self.answers(names, questions, contexts, [[text for _, text, _ in topn] for topn in topns], snippets, **kwargs)
+        answers = self.answers(questions, contexts, **kwargs)
 
         # Apply output formatting to answers and return
-        return self.apply(inputs, queries, answers, topns)
+        return self.apply(inputs, names, queries, answers, topns, snippets) if isinstance(answers, list) else answers
 
     def load(self, path, quantize, gpu, model, task, **kwargs):
         """
@@ -296,63 +303,55 @@ class RAG(Pipeline):
 
         return self.tokenizer(text) if self.tokenizer else text
 
-    def answers(self, names, questions, contexts, topns, snippets, **kwargs):
+    def answers(self, questions, contexts, **kwargs):
         """
         Executes pipeline and formats extracted answers.
 
         Args:
-            names: question identifiers/names
             questions: questions
             contexts: question context
-            topns: same as question context but as a list with each candidate element
-            snippets: flags to enable answer snippets per answer
-            kwargs: additional keyword arguments to pass to pipeline model
 
         Returns:
-            list of (name, answer)
+            answers
         """
 
-        results = []
-
-        # Run model inference for question-context pairs
+        # Run model inference with questions pipeline
         if isinstance(self.model, Questions):
-            # Questions pipeline takes questions and contexts separately
-            answers = self.model(questions, contexts)
-        else:
-            # Combine question and context into single text field for generative pipelines
-            answers = self.model([self.template.format(question=questions[x], context=context) for x, context in enumerate(contexts)], **kwargs)
+            return self.model(questions, contexts)
 
-        # Extract and format answer
-        for x, answer in enumerate(answers):
-            # Resolve snippet if necessary
-            if answer and snippets[x]:
-                answer = self.snippet(topns[x], answer)
+        # Run generator pipeline
+        return self.model(self.prompts(questions, contexts), **kwargs)
 
-            results.append((names[x], answer))
-
-        return results
-
-    def snippet(self, topn, answer):
+    def prompts(self, questions, contexts):
         """
-        Extracts text surrounding the answer within context.
+        Builds a list of prompts using the passed in questions and contexts.
 
         Args:
-            topn: topn items used as a context
-            answer: answer within context
+            questions: questions
+            contexts: question context
 
         Returns:
-            text surrounding answer as a snippet
+            prompts
         """
 
-        # Searches for first sentence to contain answer
-        if answer:
-            for x in topn:
-                if answer in x:
-                    return x
+        # Format prompts for generator pipeline
+        prompts = []
+        for x, context in enumerate(contexts):
+            # Create input prompt
+            prompt = self.template.format(question=questions[x], context=context)
 
-        return answer
+            # Add system prompt, if necessary
+            if self.system:
+                prompt = [
+                    {"role": "system", "content": self.system.format(question=questions[x], context=context)},
+                    {"role": "user", "content": prompt},
+                ]
 
-    def apply(self, inputs, queries, answers, topns):
+            prompts.append(prompt)
+
+        return prompts
+
+    def apply(self, inputs, names, queries, answers, topns, snippets):
         """
         Applies the following formatting rules to answers.
             - each answer row matches input format (tuple or dict)
@@ -362,13 +361,18 @@ class RAG(Pipeline):
 
         Args:
             inputs: original inputs
+            names: question identifiers/names
             queries: list of input queries
             answers: list of generated answers
             topns: top n records used for context
+            snippets: flags to enable answer snippets per answer
 
         Returns:
             list of answers matching input format (tuple or dict) containing fields as specified by output format
         """
+
+        # Resolve answers as snippets
+        answers = self.snippets(names, answers, topns, snippets)
 
         # Flatten to list of answers and return
         if self.output == "flatten":
@@ -379,13 +383,44 @@ class RAG(Pipeline):
                 answers = self.reference(queries, answers, topns)
 
             # Ensure output format matches input format
-            if inputs and isinstance(inputs[0], (dict, str)):
+            first = inputs[0] if inputs and isinstance(inputs, list) else inputs
+            if isinstance(first, (dict, str)):
                 # Add name if input queue had name field
-                fields = ["name", "answer", "reference"] if isinstance(inputs[0], dict) and "name" in inputs[0] else [None, "answer", "reference"]
+                fields = ["name", "answer", "reference"] if isinstance(first, dict) and "name" in first else [None, "answer", "reference"]
                 answers = [{fields[x]: column for x, column in enumerate(row) if fields[x]} for row in answers]
 
         # Unpack single answer, if necessary
         return answers[0] if answers and isinstance(inputs, (tuple, dict, str)) else answers
+
+    def snippets(self, names, answers, topns, snippets):
+        """
+        Extracts text surrounding the answer within context.
+
+        Args:
+            names: question identifiers/names
+            answers: list of generated answers
+            topns: top n records used for context
+            snippets: flags to enable answer snippets per answer
+
+        Returns:
+            answers resolved as snippets per question, if necessary
+        """
+
+        # Extract and format answer
+        results = []
+
+        for x, answer in enumerate(answers):
+            # Resolve snippet if necessary
+            if answer and snippets[x]:
+                # Searches for first text element to contain answer
+                for _, text, _ in topns[x]:
+                    if answer in text:
+                        answer = text
+                        break
+
+            results.append((names[x], answer))
+
+        return results
 
     def reference(self, queries, answers, topns):
         """

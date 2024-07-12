@@ -60,10 +60,26 @@ class TestLLM(unittest.TestCase):
         # Test that text is generated
         self.assertIsNotNone(model(start))
 
+    def testMaxLength(self):
+        """
+        Test max length
+        """
+
+        model = LLM("sshleifer/tiny-gpt2")
+        self.assertIsNotNone(model("Hello, how are", maxlength=10))
+
     def testNotImplemented(self):
         """
         Test exceptions for non-implemented methods
         """
 
         generation = Generation()
-        self.assertRaises(NotImplementedError, generation.execute, None, None)
+        self.assertRaises(NotImplementedError, generation.stream, None, None, None)
+
+    def testStream(self):
+        """
+        Test streaming generation
+        """
+
+        model = LLM("sshleifer/tiny-gpt2")
+        self.assertIsInstance(" ".join(x for x in model("Hello, how are", stream=True)), str)

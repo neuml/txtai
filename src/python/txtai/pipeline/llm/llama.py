@@ -51,12 +51,9 @@ class LlamaCpp(Generation):
         # Create llama.cpp instance
         self.llm = Llama(path, n_ctx=0, verbose=kwargs.pop("verbose", False), **kwargs)
 
-    def execute(self, texts, maxlength, **kwargs):
-        results = []
+    def stream(self, texts, maxlength, stream, **kwargs):
         for text in texts:
-            results.append(self.messages(text, maxlength, **kwargs) if isinstance(text, list) else self.prompt(text, maxlength, **kwargs))
-
-        return results
+            yield from self.messages(text, maxlength, stream, **kwargs) if isinstance(text, list) else self.prompt(text, maxlength, stream, **kwargs)
 
     def download(self, path):
         """
@@ -78,32 +75,42 @@ class LlamaCpp(Generation):
         # Download and cache file
         return hf_hub_download(repo_id="/".join(parts[:repo]), filename="/".join(parts[repo:]))
 
-    def messages(self, messages, maxlength, **kwargs):
+    def messages(self, messages, maxlength, stream, **kwargs):
         """
         Processes a list of messages.
 
         Args:
             messages: list of dictionaries with `role` and `content` key-values
             maxlength: maximum sequence length
+            stream: stream response if True, defaults to False
             kwargs: additional generation keyword arguments
 
         Returns:
             generated text
         """
 
-        return self.llm.create_chat_completion(messages=messages, max_tokens=maxlength, **kwargs)["choices"][0]["message"]["content"]
+        # LLM call with messages
+        result = self.llm.create_chat_completion(messages=messages, max_tokens=maxlength, stream=stream, **kwargs)
 
-    def prompt(self, text, maxlength, **kwargs):
+        # Stream response
+        yield from self.response(result if stream else [result])
+
+    def prompt(self, text, maxlength, stream, **kwargs):
         """
         Processes a prompt.
 
         Args:
             prompt: prompt text
             maxlength: maximum sequence length
+            stream: stream response if True, defaults to False
             kwargs: additional generation keyword arguments
 
         Returns:
             generated text
         """
 
-        return self.llm(text, max_tokens=maxlength, **kwargs)["choices"][0]["text"]
+        # LLM call with prompt
+        result = self.llm(text, max_tokens=maxlength, stream=stream, **kwargs)
+
+        # Stream response
+        yield from self.response(result if stream else [result])

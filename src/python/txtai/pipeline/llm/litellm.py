@@ -51,15 +51,19 @@ class LiteLLM(Generation):
         if not LITELLM:
             raise ImportError('LiteLLM is not available - install "pipeline" extra to enable')
 
-    def execute(self, texts, maxlength, **kwargs):
-        results = []
+        # Ignore common pipeline parameters
+        self.kwargs = {k: v for k, v in self.kwargs.items() if k not in ["quantize", "gpu", "model", "task"]}
+
+    def stream(self, texts, maxlength, stream, **kwargs):
         for text in texts:
+            # LLM API call
             result = api.completion(
                 model=self.path,
                 messages=[{"content": text, "role": "prompt"}] if isinstance(text, str) else text,
                 max_tokens=maxlength,
-                **{**kwargs, **self.kwargs}
+                stream=stream,
+                **{**self.kwargs, **kwargs}
             )
-            results.append(result["choices"][0]["message"]["content"])
 
-        return results
+            # Stream response
+            yield from self.response(result if stream else [result])

@@ -21,9 +21,9 @@ from txtai.workflow import (
     Task,
     ConsoleTask,
     ExportTask,
-    ExtractorTask,
     FileTask,
     ImageTask,
+    RAGTask,
     RetrieveTask,
     StorageTask,
     TemplateTask,
@@ -438,23 +438,23 @@ class TestWorkflow(unittest.TestCase):
         results = list(workflow([{"text": "prompt"}]))
         self.assertEqual(results[0], "This is a prompt")
 
-    def testTemplateExtractor(self):
+    def testTemplateRAG(self):
         """
-        Test extractor template task
+        Test rag template task
         """
 
-        # Test extractor outputs
-        workflow = Workflow([ExtractorTask(template="This is a {text}")])
+        # Test outputs
+        workflow = Workflow([RAGTask(template="This is a {text}")])
         results = list(workflow(["prompt"]))
         self.assertEqual(results[0], {"query": "prompt", "question": "This is a prompt"})
 
-        # Test partial extractor outputs
-        workflow = Workflow([ExtractorTask(template="This is a {text}")])
+        # Test partial outputs
+        workflow = Workflow([RAGTask(template="This is a {text}")])
         results = list(workflow([{"query": "query", "question": "prompt"}]))
         self.assertEqual(results[0], {"query": "query", "question": "This is a prompt"})
 
         # Test additional template parameters
-        workflow = Workflow([ExtractorTask(template="This is a {text} with another {param}")])
+        workflow = Workflow([RAGTask(template="This is a {text} with another {param}")])
         results = list(workflow([{"query": "query", "question": "prompt", "param": "value"}]))
         self.assertEqual(results[0], {"query": "query", "question": "This is a prompt with another value", "param": "value"})
 

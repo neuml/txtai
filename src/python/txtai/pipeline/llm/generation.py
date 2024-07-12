@@ -24,7 +24,7 @@ class Generation:
         self.template = template
         self.kwargs = kwargs
 
-    def __call__(self, text, maxlength, **kwargs):
+    def __call__(self, text, maxlength, stream, **kwargs):
         """
         Generates text. Supports the following input formats:
 
@@ -34,6 +34,7 @@ class Generation:
         Args:
             text: text|list
             maxlength: maximum sequence length
+            stream: stream response if True, defaults to False
             kwargs: additional generation keyword arguments
 
         Returns:
@@ -49,7 +50,11 @@ class Generation:
             texts = [formatter.format(self.template, text=x) for x in texts]
 
         # Run pipeline
-        results = self.execute(texts, maxlength, **kwargs)
+        results = self.execute(texts, maxlength, stream, **kwargs)
+
+        # Streaming generation
+        if stream:
+            return results
 
         # Clean generated text
         results = [self.clean(texts[x], result) for x, result in enumerate(results)]
@@ -57,17 +62,23 @@ class Generation:
         # Extract results based on inputs
         return results[0] if isinstance(text, str) or isinstance(text[0], dict) else results
 
-    def execute(self, texts, maxlength, **kwargs):
+    def execute(self, texts, maxlength, stream, **kwargs):
         """
         Runs a list of prompts through a generative model.
 
         Args:
             texts: list of prompts to run
             maxlength: maximum sequence length
+            stream: stream response if True, defaults to False
             kwargs: additional generation keyword arguments
         """
 
-        raise NotImplementedError
+        # Streaming generation
+        if stream:
+            return self.stream(texts, maxlength, stream, **kwargs)
+
+        # Full response as content elements
+        return list(self.stream(texts, maxlength, stream, **kwargs))
 
     def clean(self, prompt, result):
         """
@@ -86,3 +97,49 @@ class Generation:
 
         # Apply text cleaning rules
         return text.replace("$=", "<=").strip()
+
+    def response(self, result):
+        """
+        Parses response content from the result. This supports both standard and streaming
+        generation.
+
+        For standard generation, the full response is returned. For streaming generation,
+        this method will stream chunks of content.
+
+        Args:
+            result: LLM response
+
+        Returns:
+            response
+        """
+
+        streamed = False
+        for chunk in result:
+            # Expects one of the following parameter paths
+            #  - text
+            #  - message.content
+            #  - delta.content
+            data = chunk["choices"][0]
+            text = data.get("text", data.get("message", data.get("delta")))
+            text = text if isinstance(text, str) else text.get("content")
+
+            # Yield result if there is text AND it's not leading stream whitespace
+            if text is not None and (streamed or text.strip()):
+                yield (text.lstrip() if not streamed else text)
+                streamed = True
+
+    def stream(self, texts, maxlength, stream, **kwargs):
+        """
+        Streams LLM responses.
+
+        Args:
+            texts: list of prompts to run
+            maxlength: maximum sequence length
+            stream: stream response if True, defaults to False
+            kwargs: additional generation keyword arguments
+
+        Returns:
+            list of responses
+        """
+
+        raise NotImplementedError

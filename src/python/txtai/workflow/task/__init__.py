@@ -12,6 +12,7 @@ from .retrieve import RetrieveTask
 from .service import ServiceTask
 from .storage import StorageTask
 from .stream import StreamTask
-from .template import ExtractorTask, TemplateTask
+from .template import *
+from .template import RAGTask as ExtractorTask
 from .url import UrlTask
 from .workflow import WorkflowTask

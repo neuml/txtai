@@ -32,16 +32,14 @@ class Application:
         # Load LLM
         self.llm = LLM(os.environ.get("LLM", "TheBloke/Mistral-7B-OpenOrca-AWQ"))
 
-        self.template = """<|im_start|>system
-You are a friendly assistant. You answer questions from users.<|im_end|>
-<|im_start|>user
+        # Prompts
+        self.system = "You are a friendly assistant. You answer questions from users."
+        self.template = """
 Answer the following question using only the context below. Only include information
 specifically discussed.
 
 question: {question}
-context: {context} <|im_end|>
-<|im_start|>assistant
-"""
+context: {context} """
 
     def run(self):
         """
@@ -60,13 +58,12 @@ context: {context} <|im_end|>
 
         if st.session_state.messages and st.session_state.messages[-1]["role"] != "assistant":
             with st.chat_message("assistant"):
-                with st.spinner("Researching..."):
-                    # Run RAG
-                    response = self.rag(question)
+                # Run RAG
+                response = self.rag(question)
 
-                    # Render response
-                    st.write(response)
-                    st.session_state.messages.append({"role": "assistant", "content": response})
+                # Render response
+                response = st.write_stream(response)
+                st.session_state.messages.append({"role": "assistant", "content": response})
 
     def rag(self, question):
         """
@@ -82,12 +79,15 @@ context: {context} <|im_end|>
         # Generate context
         context = "\n".join([x["text"] for x in self.embeddings.search(question)])
 
-        # Build prompt
-        prompt = self.template.format(question=question, context=context)
-        logger.debug(prompt)
+        # Build prompt text
+        text = self.template.format(question=question, context=context)
+        logger.debug(text)
+
+        # Build prompts
+        prompts = [{"role": "system", "content": self.system}, {"role": "user", "content": text}]
 
         # Run RAG
-        return self.llm(prompt, maxlength=2048)
+        return self.llm(prompts, maxlength=2048, stream=True)
 
 
 @st.cache_resource(show_spinner="Downloading models...")

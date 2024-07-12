@@ -2,6 +2,10 @@
 Hugging Face module
 """
 
+from threading import Thread
+
+from transformers import TextIteratorStreamer
+
 from ...models import Models
 
 from ..hfpipeline import HFPipeline
@@ -21,8 +25,8 @@ class HFGeneration(Generation):
         # Create HuggingFace LLM pipeline
         self.llm = HFLLM(path, **kwargs)
 
-    def execute(self, texts, maxlength, **kwargs):
-        return self.llm(texts, maxlength=maxlength, **kwargs)
+    def stream(self, texts, maxlength, stream, **kwargs):
+        yield from self.llm(texts, maxlength=maxlength, stream=stream, **kwargs)
 
 
 class HFLLM(HFPipeline):
@@ -37,7 +41,7 @@ class HFLLM(HFPipeline):
         # Load tokenizer, if necessary
         self.pipeline.tokenizer = self.pipeline.tokenizer if self.pipeline.tokenizer else Models.tokenizer(path, **kwargs)
 
-    def __call__(self, text, prefix=None, maxlength=512, workers=0, **kwargs):
+    def __call__(self, text, prefix=None, maxlength=512, workers=0, stream=False, **kwargs):
         """
         Generates text. Supports the following input formats:
 
@@ -49,6 +53,7 @@ class HFLLM(HFPipeline):
             prefix: optional prefix to prepend to text elements
             maxlength: maximum sequence length
             workers: number of concurrent workers to use for processing data, defaults to None
+            stream: stream response if True, defaults to False
             kwargs: additional generation keyword arguments
 
         Returns:
@@ -62,8 +67,21 @@ class HFLLM(HFPipeline):
         if prefix:
             texts = [f"{prefix}{x}" for x in texts]
 
+        # Combine all keyword arguments
+        kwargs = {
+            **{
+                "max_length": maxlength,
+                "num_workers": workers,
+            },
+            **kwargs,
+        }
+
+        # Stream response
+        if stream:
+            return StreamingResponse(self.pipeline, texts, **kwargs)()
+
         # Run pipeline
-        results = self.pipeline(texts, max_length=maxlength, num_workers=workers, **kwargs)
+        results = self.pipeline(texts, **kwargs)
 
         # Extract generated text
         results = [self.extract(result) for result in results]
@@ -126,3 +144,30 @@ class Sequences(HFLLM):
 
     def __init__(self, path=None, quantize=False, gpu=True, model=None, **kwargs):
         super().__init__(path, quantize, gpu, model, "sequence-sequence", **kwargs)
+
+
+class StreamingResponse:
+    """
+    Generate text as a streaming response.
+    """
+
+    def __init__(self, pipeline, texts, **kwargs):
+        # Create streamer
+        self.stream = TextIteratorStreamer(pipeline.tokenizer, skip_prompt=True, skip_special_tokens=True, timeout=5)
+        kwargs["streamer"] = self.stream
+
+        # Create thread
+        self.thread = Thread(target=pipeline, args=[texts], kwargs=kwargs)
+
+        # Store number of inputs
+        self.length = len(texts)
+
+    def __call__(self):
+        # Start the process
+        self.thread.start()
+
+        return self
+
+    def __iter__(self):
+        for _ in range(self.length):
+            yield from self.stream

@@ -96,9 +96,9 @@ class TemplateTask(Task):
         return None
 
 
-class ExtractorTask(TemplateTask):
+class RAGTask(TemplateTask):
     """
-    Template task that prepares input for an extractor pipeline.
+    Template task that prepares input for a rag pipeline.
     """
 
     def prepare(self, element):
