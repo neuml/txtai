@@ -139,7 +139,7 @@ class Generation:
             kwargs: additional generation keyword arguments
 
         Returns:
-            list of responses
+            responses
         """
 
         raise NotImplementedError
