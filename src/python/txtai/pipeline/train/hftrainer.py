@@ -300,7 +300,7 @@ class HFTrainer(Tensors):
             if isinstance(quantize, dict):
                 quantize = BitsAndBytesConfig(**quantize)
 
-        return quantize
+        return quantize if quantize else None
 
     def peft(self, task, lora, model):
         """
