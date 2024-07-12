@@ -71,6 +71,9 @@ class Generation:
             maxlength: maximum sequence length
             stream: stream response if True, defaults to False
             kwargs: additional generation keyword arguments
+
+        Returns:
+            generated text
         """
 
         # Streaming generation
