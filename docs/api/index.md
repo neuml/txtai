@@ -95,7 +95,7 @@ A local instance can be instantiated. In this case, a txtai application runs int
 The configuration above can be run in Python with:
 
 ```python
-from txtai.app import Application
+from txtai import Application
 
 # Load and run workflow
 app = Application(config.yml)

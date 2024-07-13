@@ -10,10 +10,12 @@ The LLM pipeline runs prompts through a large language model (LLM). This pipelin
 The following shows a simple example using this pipeline.
 
 ```python
-from txtai.pipeline import LLM
+from txtai import LLM
 
-# Create and run LLM pipeline
+# Create LLM pipeline
 llm = LLM()
+
+# Run prompt
 llm(
   """
   Answer the following question using the provided context.
@@ -26,21 +28,38 @@ llm(
   workflows powered by language models.
   """
 )
+
+# Chat messages are also supported
+llm([
+  {"role": "system", "content": "You are a friendly assistant."},
+  {"role": "user", "content": "Answer the following question..."}
+])
+
 ```
 
 The LLM pipeline automatically detects the underlying LLM framework. This can also be manually set.
 
-See the [LiteLLM documentation](https://litellm.vercel.app/docs/providers) for the options available with LiteLLM models. Models with llama.cpp support both local and remote GGUF paths on the HF Hub.
+See the [LiteLLM documentation](https://litellm.vercel.app/docs/providers) for the options available with LiteLLM models. llama.cpp models support both local and remote GGUF paths on the HF Hub.
 
 ```python
-from txtai.pipeline import LLM
+from txtai import LLM
 
-# Set method as litellm
-llm = LLM("vllm/Open-Orca/Mistral-7B-OpenOrca", method="litellm")
+# Transformers
+llm = LLM("google/gemma-2-9b")
+llm = LLM("google/gemma-2-9b", method="transformers")
 
-# Set method as llama.cpp
-llm = LLM("TheBloke/Mistral-7B-OpenOrca-GGUF/mistral-7b-openorca.Q4_K_M.gguf",
+# llama.cpp
+llm = LLM("microsoft/Phi-3-mini-4k-instruct-gguf/microsoft/Phi-3-mini-4k-instruct-gguf")
+llm = LLM("microsoft/Phi-3-mini-4k-instruct-gguf/microsoft/Phi-3-mini-4k-instruct-gguf",
            method="llama.cpp")
+
+# LiteLLM
+llm = LLM("ollama/llama3")
+llm = LLM("ollama/llama3", method="litellm")
+
+# LLM APIs - must also set API key via environment variable
+llm = LLM("gpt-4o")
+llm = LLM("claude-3-5-sonnet-20240620")
 ```
 
 Models can be externally loaded and passed to pipelines. This is useful for models that are not yet supported by Transformers and/or need special initialization.
@@ -49,7 +68,7 @@ Models can be externally loaded and passed to pipelines. This is useful for mode
 import torch
 
 from transformers import AutoModelForCausalLM, AutoTokenizer
-from txtai.pipeline import LLM
+from txtai import LLM
 
 # Load Mistral-7B-OpenOrca
 path = "Open-Orca/Mistral-7B-OpenOrca"
@@ -84,7 +103,6 @@ Pipelines are run with Python or configuration. Pipelines can be instantiated in
 ### config.yml
 ```yaml
 # Create pipeline using lower case class name
-# Use `generator` or `sequences` to force model type
 llm:
 
 # Run pipeline with workflow
@@ -131,7 +149,7 @@ CONFIG=config.yml uvicorn "txtai.api:app" &
 curl \
   -X POST "http://localhost:8000/workflow" \
   -H "Content-Type: application/json" \
-  -d '{"name":"sequences", "elements": ["Answer the following question..."]}'
+  -d '{"name":"llm", "elements": ["Answer the following question..."]}'
 ```
 
 ## Methods

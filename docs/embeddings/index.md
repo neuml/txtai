@@ -8,7 +8,7 @@ Embeddings databases are the engine that delivers semantic search. Data is trans
 The following code snippet shows how to build and search an embeddings index.
 
 ```python
-from txtai.embeddings import Embeddings
+from txtai import Embeddings
 
 # Create embeddings model, backed by sentence-transformers & transformers
 embeddings = Embeddings(path="sentence-transformers/nli-mpnet-base-v2")

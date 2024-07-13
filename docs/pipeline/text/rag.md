@@ -12,19 +12,8 @@ The data store can be an embeddings database or a similarity instance with assoc
 The following shows a simple example using this pipeline.
 
 ```python
-from txtai.embeddings import Embeddings
-from txtai.pipeline import RAG
-
-# LLM prompt
-def prompt(question):
-  return f"""
-  Answer the following question using the provided context.
-
-  Question:
-  {question}
-
-  Context:
-  """
+from txtai import Embeddings
+from txtai import RAG
 
 # Input data
 data = [
@@ -40,11 +29,20 @@ data = [
 
 # Build embeddings index
 embeddings = Embeddings({"content": True})
-embeddings.index([(uid, text, None) for uid, text in enumerate(data)])
+embeddings.index(data)
 
 # Create and run pipeline
-extractor = RAG(embeddings, "google/flan-t5-base")
-extractor([{"query": "What was won?", "question": prompt("What was won?")}])
+rag = RAG(embeddings, "google/flan-t5-base", template="""
+  Answer the following question using the provided context.
+
+  Question:
+  {question}
+
+  Context:
+  {context}
+""")
+
+rag("What was won?")
 ```
 
 See the links below for more detailed examples.
@@ -78,21 +76,21 @@ writable: True
 embeddings:
   content: True
 
-extractor:
+rag:
   path: google/flan-t5-base
+  template: |
+    Answer the following question using the provided context.
+
+    Question:
+    {question}
+
+    Context:
+    {context}
 
 workflow:
   search:
     tasks:
-      - task: extractor
-        template: |
-          Answer the following question using the provided context.
-
-          Question:
-          {text}
-
-          Context:
-        action: extractor
+      - action: rag
 ```
 
 ### Run with Workflows
