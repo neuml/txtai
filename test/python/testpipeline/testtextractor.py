@@ -32,6 +32,17 @@ class TestTextractor(unittest.TestCase):
         textractor = Textractor()
         self.assertFalse(textractor.checkjava("1112444abc"))
 
+    def testHTML(self):
+        """
+        Tests input as HTML strings
+        """
+
+        textractor = Textractor()
+
+        # Extract from HTML string
+        text = textractor("<html><body><p>This is a test</p></body></html>")
+        self.assertEqual(text, "This is a test")
+
     def testLines(self):
         """
         Test extraction to lines
@@ -110,3 +121,12 @@ class TestTextractor(unittest.TestCase):
 
             # Check for table header
             self.assertTrue("|---|" in text)
+
+    def testURL(self):
+        """
+        Test parsing a remote URL
+        """
+
+        textractor = Textractor(sections=True, join=True)
+        text = textractor("https://github.com/neuml/txtai")
+        self.assertTrue("txtai is an all-in-one embeddings database" in text)
