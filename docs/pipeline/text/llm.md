@@ -49,8 +49,8 @@ llm = LLM("google/gemma-2-9b")
 llm = LLM("google/gemma-2-9b", method="transformers")
 
 # llama.cpp
-llm = LLM("microsoft/Phi-3-mini-4k-instruct-gguf/microsoft/Phi-3-mini-4k-instruct-gguf")
-llm = LLM("microsoft/Phi-3-mini-4k-instruct-gguf/microsoft/Phi-3-mini-4k-instruct-gguf",
+llm = LLM("microsoft/Phi-3-mini-4k-instruct-gguf/Phi-3-mini-4k-instruct-gguf")
+llm = LLM("microsoft/Phi-3-mini-4k-instruct-gguf/Phi-3-mini-4k-instruct-gguf",
            method="llama.cpp")
 
 # LiteLLM

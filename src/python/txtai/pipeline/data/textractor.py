@@ -186,7 +186,7 @@ class Extract:
         Create a new Extract instance.
 
         Args:
-            paragraphs: True if paragraph parsing enable, False otherwise
+            paragraphs: True if paragraph parsing enabled, False otherwise
             sections: True if section parsing enabled, False otherwise
         """
 
