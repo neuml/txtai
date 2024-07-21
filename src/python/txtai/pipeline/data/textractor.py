@@ -237,6 +237,10 @@ class Extract:
 
         if node.name == "table":
             return self.table(node, article)
+
+        if node.name == "pre":
+            return self.block(node)
+
         if node.name in ("ul", "ol"):
             return self.items(node, article)
 
@@ -339,6 +343,21 @@ class Extract:
         # Join elements together as string
         return "\n".join(elements)
 
+    def block(self, node):
+        """
+        Pre-formatted block handler. This method transforms a HTML pre block into a Markdown formatted
+        code block.
+
+        Args:
+            node: input node
+
+        Returns:
+            block as markdown
+        """
+
+        text = f"```\n{node.text}\n```"
+        return f"{text}\n\n" if self.paragraphs else f"{text}\n"
+
     def items(self, node, article):
         """
         List handler. This method transforms a HTML ordered/unordered list into a Markdown formatted list.
@@ -414,8 +433,8 @@ class Extract:
         # Check if text is valid article text
         text = text if (node.name in ["p", "th", "td", "li", "a"] or self.isheader(node)) and not self.islink(node) else ""
         if text:
-            # Replace non-breaking space with newline
-            text = text.replace("\xa0", "\n")
+            # Replace non-breaking space plus newline with double newline
+            text = text.replace("\xa0\n", "\n\n")
 
             # Format paragraph whitespace
             if node.name == "p":
