@@ -112,7 +112,7 @@ class Translation(HFModel):
             list of source-target language model ids
         """
 
-        ids = [x.modelId for x in HfApi().list_models(author="Helsinki-NLP")] if self.findmodels else []
+        ids = [x.id for x in HfApi().list_models(author="Helsinki-NLP")] if self.findmodels else []
         return set(ids)
 
     def detect(self, texts):

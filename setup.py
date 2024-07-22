@@ -9,7 +9,7 @@ with open("README.md", "r", encoding="utf-8") as f:
 install = ["faiss-cpu>=1.7.1.post2", "torch>=1.12.1", "transformers>=4.28.0"]
 
 # Required dependencies that are also transformers dependencies
-install += ["huggingface-hub>=0.9.0", "numpy>=1.18.4", "pyyaml>=5.3", "regex>=2022.8.17"]
+install += ["huggingface-hub>=0.19.0", "numpy>=1.18.4", "pyyaml>=5.3", "regex>=2022.8.17"]
 
 # Optional dependencies
 extras = {}
