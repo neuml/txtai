@@ -84,7 +84,7 @@ class HFLLM(HFPipeline):
 
     def parameters(self, maxlength, workers, **kwargs):
         """
-        Builds a combined map of parameters.
+        Builds a combined parameter dictionary.
 
         Args:
             maxlength: maximum sequence length
