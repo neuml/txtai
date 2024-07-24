@@ -30,6 +30,14 @@ class TestLLM(unittest.TestCase):
         model = LLM("hf-internal-testing/tiny-random-gpt2", task="language-generation", torch_dtype=torch.float32)
         self.assertIsNotNone(model(start))
 
+    def testBatchSize(self):
+        """
+        Test batch size
+        """
+
+        model = LLM("sshleifer/tiny-gpt2")
+        self.assertIsNotNone(model(["Hello, how are"] * 2, batch_size=2))
+
     def testCustom(self):
         """
         Test custom LLM framework

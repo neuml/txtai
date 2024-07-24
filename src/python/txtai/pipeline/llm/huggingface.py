@@ -68,13 +68,7 @@ class HFLLM(HFPipeline):
             texts = [f"{prefix}{x}" for x in texts]
 
         # Combine all keyword arguments
-        kwargs = {
-            **{
-                "max_length": maxlength,
-                "num_workers": workers,
-            },
-            **kwargs,
-        }
+        kwargs = self.parameters(maxlength, workers, **kwargs)
 
         # Stream response
         if stream:
@@ -87,6 +81,41 @@ class HFLLM(HFPipeline):
         results = [self.extract(result) for result in results]
 
         return results[0] if isinstance(text, str) else results
+
+    def parameters(self, maxlength, workers, **kwargs):
+        """
+        Builds a combined map of parameters.
+
+        Args:
+            maxlength: maximum sequence length
+            workers: number of concurrent workers to use for processing data, defaults to None
+            kwargs: additional generation keyword arguments
+
+        Returns:
+            dict of parameters
+        """
+
+        # Default parameters
+        defaults = {
+            "max_length": maxlength,
+            "num_workers": workers,
+        }
+
+        # Add pad token if it's missing from model config
+        model = self.pipeline.model
+        if not model.config.pad_token_id:
+            tokenid = model.config.eos_token_id
+            tokenid = tokenid[0] if isinstance(tokenid, list) else tokenid
+
+            # Set pad_token_id parameter
+            defaults["pad_token_id"] = tokenid
+
+            # Update tokenizer for batching
+            if "batch_size" in kwargs and self.pipeline.tokenizer.pad_token_id is None:
+                self.pipeline.tokenizer.pad_token_id = tokenid
+                self.pipeline.tokenizer.padding_side = "left"
+
+        return {**defaults, **kwargs}
 
     def extract(self, result):
         """
