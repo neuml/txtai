@@ -80,9 +80,19 @@ embeddings.reindex(path="sentence-transformers/all-MiniLM-L6-v2", backend="hnsw"
 
 ## Graph
 
-Dimensionality reduction with UMAP combined with HDBSCAN is a popular topic modeling method found in a number of libraries. txtai takes a different approach with a semantic graph.
+Enabling a [graph network](../configuration/graph) adds a semantic graph at index time as data is being vectorized. Vector embeddings are used to automatically create relationships in the graph. Relationships can also be manually specified at index time.
 
-Enabling a [graph network](../configuration/graph) adds a semantic graph at index time as data is being vectorized. Vector embeddings are used to create relationships in the graph. Finally, community detection algorithms build topic clusters. Semantic graphs can also be used to analyze data connectivity.
+```python
+# Manual relationships by id
+embeddings.index([{"id": "0", "text": "...", "relationships": ["2"]}])
+
+# Manual relationships with additional edge attributes
+embeddings.index(["id": "0", "text": "...", "relationships": [
+    {"id": "2", "type": "MEMBER_OF"}
+]])
+```
+
+Additionally, graphs can be used for topic modeling. Dimensionality reduction with UMAP combined with HDBSCAN is a popular topic modeling method found in a number of libraries. txtai takes a different approach using community detection algorithms to build topic clusters.
 
 This approach has the advantage of only having to vectorize data once. It also has the advantage of better topic precision given there isn't a dimensionality reduction operation (UMAP). Semantic graph examples are shown below.
 
@@ -96,12 +106,6 @@ Show the most central nodes in the index.
 
 ```python
 embeddings.graph.centrality()
-```
-
-Show how node 1 and node 2 are connected in the graph.
-
-```python
-embeddings.graph.showpath(id1, id2)
 ```
 
 Graphs are persisted alongside an embeddings index. Each save and load will also save and load the graph.
