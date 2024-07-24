@@ -114,7 +114,7 @@ class Index:
         with open(f"{self.path}/corpus.jsonl", encoding="utf-8") as f:
             for line in f:
                 row = json.loads(line)
-                text = f'{row["title"]}. {row["text"]}' if row["title"] else row["text"]
+                text = f'{row["title"]}. {row["text"]}' if row.get("title") else row["text"]
                 if text:
                     yield (row["_id"], text, None)
 
@@ -563,7 +563,7 @@ def benchmarks(args):
             "climate-fever",
             "scifact",
         ]
-        methods = ["bm25", "embed", "es", "hybrid", "rank", "sqlite"]
+        methods = ["embed", "es", "hybrid", "rank", "scoring", "sqlite"]
         mode = "w"
 
     # Run and save benchmarks
