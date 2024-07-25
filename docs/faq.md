@@ -107,10 +107,6 @@ Set the following environment parameters.
 - Disable PyTorch MPS device via `export PYTORCH_MPS_DISABLE=1`
 - Disable llama.cpp metal via `export LLAMA_NO_METAL=1`
 
-If the issue is with a training pipeline.
-
-- Disable GPU training via `export ACCELERATE_USE_CPU=1`
-
 ----------
 
 __Issue__

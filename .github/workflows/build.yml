@@ -42,7 +42,6 @@ jobs:
           echo "OMP_NUM_THREADS=1" >> $GITHUB_ENV
           echo "PYTORCH_MPS_DISABLE=1" >> $GITHUB_ENV
           echo "LLAMA_NO_METAL=1" >> $GITHUB_ENV
-          echo "ACCELERATE_USE_CPU=1" >> $GITHUB_ENV
           echo "TIKA_STARTUP_SLEEP=30" >> $GITHUB_ENV
           echo "TIKA_STARTUP_MAX_RETRY=10" >> $GITHUB_ENV
         if: matrix.os == 'macos-latest'
