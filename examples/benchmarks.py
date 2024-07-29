@@ -424,14 +424,19 @@ class BM25S(Index):
 
         self.corpus_ids = corpus_ids
 
-        corpus_tokens = bm25s.tokenize(
-            corpus_lst, stemmer=self.stemmer, leave=False
-        )
+        if os.path.exists(self.output) and not self.refresh:
+            model = bm25s.BM25.load(self.output)
+        else:
+            corpus_tokens = bm25s.tokenize(
+                corpus_lst, stemmer=self.stemmer, leave=False
+            )
 
-        del corpus_lst
+            del corpus_lst
 
-        model = bm25s.BM25(method="lucene", k1=1.2, b=0.75)
-        model.index(corpus_tokens, leave_progress=False)
+            model = bm25s.BM25(method="lucene", k1=1.2, b=0.75)
+            model.index(corpus_tokens, leave_progress=False)
+
+            model.save(self.output)
 
         return model
 
