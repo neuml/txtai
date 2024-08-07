@@ -305,7 +305,7 @@ class TestPipelines(unittest.TestCase):
         text = self.client.get(f"textract?file={Utils.PATH}/article.pdf").json()
 
         # Check length of text is as expected
-        self.assertEqual(len(text), 2333)
+        self.assertEqual(len(text), 2471)
 
     def testTextractorBatch(self):
         """
@@ -315,7 +315,7 @@ class TestPipelines(unittest.TestCase):
         path = Utils.PATH + "/article.pdf"
 
         texts = self.client.post("batchtextract", json=[path, path]).json()
-        self.assertEqual((len(texts[0]), len(texts[1])), (2333, 2333))
+        self.assertEqual((len(texts[0]), len(texts[1])), (2471, 2471))
 
     def testTranscribe(self):
         """

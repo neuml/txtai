@@ -4,6 +4,7 @@ Textractor module
 
 import contextlib
 import os
+import re
 import tempfile
 
 from subprocess import Popen
@@ -165,9 +166,9 @@ class Textractor(Segmentation):
             html
         """
 
-        # Skip if file is already HTML
+        # Skip parsing if input is plain text or HTML
         mimetype = detector.from_file(path)
-        if mimetype in ("text/html", "text/xhtml"):
+        if mimetype in ("text/plain", "text/html", "text/xhtml"):
             return self.retrieve(path)
 
         # Parse content to XHTML
@@ -177,8 +178,8 @@ class Textractor(Segmentation):
 
 class Extract:
     """
-    HTML to Text extractor. A limited set of Markdown is applied for organizing container elements such as tables and lists.
-    Visual formatting is not included (bold, italic, styling etc).
+    HTML to Text extractor. Markdown formatting is applied for headings, blockquotes, lists, code, tables and text.
+    Visual formatting is also included (bold, italic etc).
     """
 
     def __init__(self, paragraphs, sections):
@@ -195,13 +196,13 @@ class Extract:
 
     def __call__(self, html):
         """
-        Transforms input HTML into formatted text.
+        Transforms input HTML into Markdown formatted text.
 
         Args:
             html: input html
 
         Returns:
-            formatted text
+            markdown formatted text
         """
 
         # HTML Parser
@@ -211,20 +212,22 @@ class Extract:
         for script in soup.find_all(["script", "style"]):
             script.decompose()
 
-        # Check if articles are embedded in this html
-        article = soup.find("article") is not None
+        # Check for article sections
+        article = next((x for x in ["article", "main"] if soup.find(x)), None)
 
         # Extract text from each section element
         nodes = []
-        for node in soup.find_all("article" if article else "body"):
-            nodes.append(self.process(node, article))
+        for node in soup.find_all(article if article else "body"):
+            # Skip article sections without at least 1 paragraph
+            if not article or node.find("p"):
+                nodes.append(self.process(node, article))
 
         # Return extracted text, fallback to default text extraction if no nodes found
-        return "\n".join(self.metadata(soup) + nodes) if nodes else soup.get_text()
+        return "\n".join(self.metadata(soup) + nodes) if nodes else self.default(soup)
 
     def process(self, node, article):
         """
-        Extracts text from a node. This method applies transforms for containers, tables, lists and text.
+        Extracts text from a node. This method applies transforms for headings, blockquotes, lists, code, tables and text.
         Page breaks are detected and reflected in the output text as a page break character.
 
         Args:
@@ -235,14 +238,24 @@ class Extract:
             node text
         """
 
-        if node.name == "table":
-            return self.table(node, article)
+        if self.isheader(node):
+            return self.header(node, article)
 
-        if node.name == "pre":
+        if node.name in ("blockquote", "q"):
             return self.block(node)
 
         if node.name in ("ul", "ol"):
             return self.items(node, article)
+
+        if node.name in ("code", "pre"):
+            return self.code(node)
+
+        if node.name == "table":
+            return self.table(node, article)
+
+        # Nodes to skip
+        if node.name in ("aside",) + (() if article else ("header", "footer")):
+            return ""
 
         # Get page break symbol, if available
         page = node.name and node.get("class") and "page" in node.get("class")
@@ -273,17 +286,35 @@ class Extract:
         """
 
         title = node.find("title")
-        metadata = [title.text] if title else []
+        metadata = [f"**{title.text.strip()}**"] if title and title.text else []
 
         description = node.find("meta", attrs={"name": "description"})
         if description and description["content"]:
-            metadata.append(f"\n{description['content']}")
+            metadata.append(f"\n*{description['content'].strip()}*")
 
         # Add separator
         if metadata:
             metadata.append("\f" if self.sections else "\n\n")
 
         return metadata
+
+    def default(self, soup):
+        """
+        Default text handler when valid HTML isn't detected.
+
+        Args:
+            soup: BeautifulSoup object
+
+        Returns:
+            text
+        """
+
+        lines = []
+        for line in soup.get_text().split("\n"):
+            # Detect markdown headings and add page breaks
+            lines.append(f"\f{line}" if self.sections and re.search(r"^#+ ", line) else line)
+
+        return "\n".join(lines)
 
     def text(self, node, article):
         """
@@ -301,8 +332,23 @@ class Extract:
         items = self.children(node)
         items = items if items else [node]
 
+        # Apply emphasis and link formatting
+        texts = []
+        for x in items:
+            target, text = x if x.name else node, x.text
+
+            if text.strip():
+                if target.name in ("b", "strong"):
+                    text = f"**{text.strip()}** "
+                elif target.name in ("i", "em"):
+                    text = f"*{text.strip()}* "
+                elif target.name == "a":
+                    text = f"[{text.strip()}]({target.get('href')}) "
+
+            texts.append(text)
+
         # Join text elements
-        text = "".join(x.text for x in items)
+        text = "".join(texts)
 
         # Article text processing
         text = self.articletext(node, text) if article else text
@@ -311,6 +357,85 @@ class Extract:
         text = text if node.name and text else text.strip()
 
         return text
+
+    def header(self, node, article):
+        """
+        Header handler. This method transforms a HTML heading into a Markdown formatted heading.
+
+        Args:
+            node: input node
+            article: True if the main section node is an article
+
+        Returns:
+            heading as markdown
+        """
+
+        # Get heading level and text
+        level = "#" * int(node.name[1])
+        text = self.text(node, article)
+
+        # Add section break or newline, if necessary
+        level = f"\f{level}" if self.sections else f"\n{level}"
+
+        # Return formatted header. Remove leading whitespace as it was added before level in step above.
+        return f"{level} {text.lstrip()}" if text.strip() else ""
+
+    def block(self, node):
+        """
+        Blockquote handler. This method transforms a HTML blockquote or q block into a Markdown formatted
+        blockquote
+
+        Args:
+            node: input node
+
+        Returns:
+            block as markdown
+        """
+
+        text = "\n".join(f"> {x}" for x in node.text.strip().split("\n"))
+        return f"{text}\n\n" if self.paragraphs else f"{text}\n"
+
+    def items(self, node, article):
+        """
+        List handler. This method transforms a HTML ordered/unordered list into a Markdown formatted list.
+
+        Args:
+            node: input node
+            article: True if the main section node is an article
+
+        Returns:
+            list as markdown
+        """
+
+        elements = []
+        for x, element in enumerate(node.find_all("li")):
+            # Unordered lists use dashes. Ordered lists use numbers.
+            prefix = "-" if node.name == "ul" else f"{x + 1}."
+
+            # List item text
+            text = self.process(element, article)
+
+            # Add list element
+            if text:
+                elements.append(f"{prefix} {text}")
+
+        # Join elements together as string
+        return "\n".join(elements)
+
+    def code(self, node):
+        """
+        Code block handler. This method transforms a HTML pre or code block into a Markdown formatted
+        code block.
+
+        Args:
+            node: input node
+
+        Returns:
+            code as markdown
+        """
+
+        text = f"```\n{node.text.strip()}\n```"
+        return f"{text}\n\n" if self.paragraphs else f"{text}\n"
 
     def table(self, node, article):
         """
@@ -343,52 +468,10 @@ class Extract:
         # Join elements together as string
         return "\n".join(elements)
 
-    def block(self, node):
-        """
-        Pre-formatted block handler. This method transforms a HTML pre block into a Markdown formatted
-        code block.
-
-        Args:
-            node: input node
-
-        Returns:
-            block as markdown
-        """
-
-        text = f"```\n{node.text}\n```"
-        return f"{text}\n\n" if self.paragraphs else f"{text}\n"
-
-    def items(self, node, article):
-        """
-        List handler. This method transforms a HTML ordered/unordered list into a Markdown formatted list.
-
-        Args:
-            node: input node
-            article: True if the main section node is an article
-
-        Returns:
-            list as markdown
-        """
-
-        elements = []
-        for x, element in enumerate(node.find_all("li")):
-            # Unordered lists use dashes. Ordered lists use numbers.
-            prefix = "-" if node.name == "ul" else f"{x + 1}."
-
-            # List item text
-            text = self.process(element, article)
-
-            # Add list element
-            if text:
-                elements.append(f"  {prefix} {text}")
-
-        # Join elements together as string
-        return "\n".join(elements)
-
     def iscontainer(self, node, children):
         """
         Analyzes a node and it's children to determine if this is a container element. A container
-        element is defined as being a div, body or not having any string elements as children.
+        element is defined as being a div, body, article or not having any string elements as children.
 
         Args:
             node: input node
@@ -430,8 +513,11 @@ class Extract:
             article text
         """
 
+        # List of valid text nodes
+        valid = ["p", "th", "td", "li", "a", "b", "strong", "i", "em"]
+
         # Check if text is valid article text
-        text = text if (node.name in ["p", "th", "td", "li", "a"] or self.isheader(node)) and not self.islink(node) else ""
+        text = text if (node.name in valid or self.isheader(node)) and not self.islink(node) else ""
         if text:
             # Replace non-breaking space plus newline with double newline
             text = text.replace("\xa0\n", "\n\n")
@@ -439,10 +525,6 @@ class Extract:
             # Format paragraph whitespace
             if node.name == "p":
                 text = f"{text.strip()}\n\n" if self.paragraphs else f"{text.strip()}\n"
-
-            # Format header whitespace
-            if self.sections and self.isheader(node):
-                text = f"\f{text.strip()}\n"
 
         return text
 
