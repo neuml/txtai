@@ -3,9 +3,9 @@
 ![pipeline](../../images/pipeline.png#only-light)
 ![pipeline](../../images/pipeline-dark.png#only-dark)
 
-The Textractor pipeline extracts and splits text from documents. This pipeline uses either an [Apache Tika](https://github.com/chrismattmann/tika-python) backend (if Java is available) or [BeautifulSoup4](https://pypi.org/project/beautifulsoup4/).
+The Textractor pipeline extracts and splits text from documents. This pipeline uses either an [Apache Tika](https://github.com/chrismattmann/tika-python) backend (if Java is available) or [BeautifulSoup4](https://pypi.org/project/beautifulsoup4/). The output text is Markdown formatted.
 
-_Note: BeautifulSoup4 only supports HTML documents, anything else requires Tika and Java to be installed._
+_Note: BeautifulSoup4 only supports HTML and plain text documents, anything else requires Tika and Java to be installed._
 
 ## Example
 
