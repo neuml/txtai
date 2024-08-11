@@ -2,7 +2,7 @@
 Runs benchmark evaluations with the BEIR dataset.
 
 Install txtai and the following dependencies to run:
-    pip install txtai pytrec_eval rank-bm25 elasticsearch psutil bm25s[full]
+    pip install txtai pytrec_eval rank-bm25 elasticsearch psutil bm25s
 """
 
 import argparse
@@ -28,7 +28,6 @@ from txtai.embeddings import Embeddings
 from txtai.pipeline import Extractor, LLM, Tokenizer
 from txtai.scoring import ScoringFactory
 
-import Stemmer
 import bm25s
 
 
@@ -396,9 +395,9 @@ class BM25S(Index):
     """
 
     def search(self, queries, limit):
-        query_tokens = bm25s.tokenize(
-            queries, stemmer=self.stemmer, leave=False
-        )
+        tokenizer = Tokenizer()
+
+        query_tokens = [tokenizer(x) for x in queries]
 
         queried_results, queried_scores = self.backend.retrieve(
             query_tokens, corpus=self.corpus_ids, k=limit, n_threads=4
@@ -413,8 +412,7 @@ class BM25S(Index):
         return x
 
     def index(self):
-        self.stemmer = Stemmer.Stemmer("english")
-
+        tokenizer = Tokenizer()
         corpus_ids = []
         corpus_lst = []
 
@@ -427,9 +425,7 @@ class BM25S(Index):
         if os.path.exists(self.output) and not self.refresh:
             model = bm25s.BM25.load(self.output)
         else:
-            corpus_tokens = bm25s.tokenize(
-                corpus_lst, stemmer=self.stemmer, leave=False
-            )
+            corpus_tokens = [tokenizer(x) for x in corpus_lst]
 
             del corpus_lst
 
