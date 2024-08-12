@@ -397,14 +397,14 @@ class BM25S(Index):
     def search(self, queries, limit):
         tokenizer = Tokenizer()
 
-        query_tokens = [tokenizer(x) for x in queries]
+        tokens = [tokenizer(x) for x in queries]
 
-        queried_results, queried_scores = self.backend.retrieve(query_tokens, corpus=self.corpus_ids, k=limit, n_threads=4)
+        results, scores = self.backend.retrieve(tokens, corpus=self.corpus_ids, k=limit, n_threads=4)
 
         # List of queries => list of matches (docid, score)
         x = []
 
-        for a, b in zip(queried_results, queried_scores):
+        for a, b in zip(results, scores):
             x.append([(str(c), float(d)) for c, d in zip(a, b)])
 
         return x
@@ -423,12 +423,12 @@ class BM25S(Index):
         if os.path.exists(self.output) and not self.refresh:
             model = bm25s.BM25.load(self.output)
         else:
-            corpus_tokens = [tokenizer(x) for x in corpus_lst]
+            tokens = [tokenizer(x) for x in corpus_lst]
 
             del corpus_lst
 
             model = bm25s.BM25(method="lucene", k1=1.2, b=0.75)
-            model.index(corpus_tokens, leave_progress=False)
+            model.index(tokens, leave_progress=False)
 
             model.save(self.output)
 
