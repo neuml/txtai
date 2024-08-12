@@ -2,7 +2,7 @@
 Runs benchmark evaluations with the BEIR dataset.
 
 Install txtai and the following dependencies to run:
-    pip install txtai pytrec_eval rank-bm25 elasticsearch psutil
+    pip install txtai pytrec_eval rank-bm25 elasticsearch psutil bm25s
 """
 
 import argparse
@@ -23,6 +23,8 @@ from pytrec_eval import RelevanceEvaluator
 
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
+
+import bm25s
 
 from txtai.embeddings import Embeddings
 from txtai.pipeline import Extractor, LLM, Tokenizer
@@ -387,6 +389,50 @@ class Elastic(Index):
         return es
 
 
+class BM25S(Index):
+    """
+    BM25 as implemented by BM25S
+    """
+
+    def search(self, queries, limit):
+        tokenizer = Tokenizer()
+
+        tokens = [tokenizer(x) for x in queries]
+
+        results, scores = self.backend.retrieve(tokens, corpus=self.corpus_ids, k=limit, n_threads=4)
+
+        # List of queries => list of matches (docid, score)
+        x = []
+
+        for a, b in zip(results, scores):
+            x.append([(str(c), float(d)) for c, d in zip(a, b)])
+
+        return x
+
+    def index(self):
+        tokenizer = Tokenizer()
+        corpus_ids = []
+        corpus_lst = []
+
+        for uid, text, _ in self.rows():
+            corpus_ids.append(uid)
+            corpus_lst.append(text)
+
+        self.corpus_ids = corpus_ids
+
+        if os.path.exists(self.output) and not self.refresh:
+            model = bm25s.BM25.load(self.output)
+        else:
+            tokens = [tokenizer(x) for x in corpus_lst]
+
+            model = bm25s.BM25(method="lucene", k1=1.2, b=0.75)
+            model.index(tokens, leave_progress=False)
+
+            model.save(self.output)
+
+        return model
+
+
 def relevance(path):
     """
     Loads relevance data for evaluation.
@@ -440,6 +486,8 @@ def create(method, path, config, output, refresh):
         return SQLiteFTS(path, config, output, refresh)
     if method == "rank":
         return RankBM25(path, config, output, refresh)
+    if method == "bm25s":
+        return BM25S(path, config, output, refresh)
 
     # Default
     return Embed(path, config, output, refresh)
@@ -563,7 +611,7 @@ def benchmarks(args):
             "climate-fever",
             "scifact",
         ]
-        methods = ["embed", "es", "hybrid", "rank", "scoring", "sqlite"]
+        methods = ["embed", "es", "hybrid", "rank", "scoring", "sqlite", "bm25s"]
         mode = "w"
 
     # Run and save benchmarks
