@@ -425,8 +425,6 @@ class BM25S(Index):
         else:
             tokens = [tokenizer(x) for x in corpus_lst]
 
-            del corpus_lst
-
             model = bm25s.BM25(method="lucene", k1=1.2, b=0.75)
             model.index(tokens, leave_progress=False)
 
