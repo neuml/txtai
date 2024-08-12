@@ -2,7 +2,7 @@
 Runs benchmark evaluations with the BEIR dataset.
 
 Install txtai and the following dependencies to run:
-    pip install txtai pytrec_eval rank-bm25 elasticsearch psutil bm25s
+    pip install txtai pytrec_eval rank-bm25 bm25s elasticsearch psutil
 """
 
 import argparse
@@ -18,16 +18,14 @@ import yaml
 
 import numpy as np
 
-from rank_bm25 import BM25Okapi
-from pytrec_eval import RelevanceEvaluator
-
+from bm25s import BM25 as BM25Sparse
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
-
-import bm25s
+from pytrec_eval import RelevanceEvaluator
+from rank_bm25 import BM25Okapi
 
 from txtai.embeddings import Embeddings
-from txtai.pipeline import Extractor, LLM, Tokenizer
+from txtai.pipeline import LLM, RAG, Tokenizer
 from txtai.scoring import ScoringFactory
 
 
@@ -172,27 +170,6 @@ class Index:
         return default
 
 
-class Score(Index):
-    """
-    BM25 index using txtai.
-    """
-
-    def index(self):
-        # Read configuration
-        config = self.readconfig("scoring", {"method": "bm25", "terms": True})
-
-        # Create scoring instance
-        scoring = ScoringFactory.create(config)
-
-        if os.path.exists(self.output) and not self.refresh:
-            scoring.load(self.output)
-        else:
-            scoring.index(self.rows())
-            scoring.save(self.output)
-
-        return scoring
-
-
 class Embed(Index):
     """
     Embeddings index using txtai.
@@ -243,7 +220,7 @@ class Hybrid(Index):
         return embeddings
 
 
-class RAG(Embed):
+class RetrievalAugmentedGeneration(Embed):
     """
     Retrieval augmented generation (RAG) using txtai.
     """
@@ -255,16 +232,38 @@ class RAG(Embed):
         # Read LLM configuration
         llm = self.readconfig("llm", {})
 
-        # Read Extractor configuration
-        extractor = self.readconfig("extractor", {})
+        # Read RAG configuration
+        rag = self.readconfig("rag", {})
 
-        # Load Extractor
-        self.extractor = Extractor(self.backend, LLM(**llm), output="reference", **extractor)
+        # Load RAG pipeline
+        self.rag = RAG(self.backend, LLM(**llm), output="reference", **rag)
 
     def search(self, queries, limit):
         # Set context window size to limit and run
-        self.extractor.context = limit
-        return [[(x["reference"], 1)] for x in self.extractor(queries, maxlength=4096)]
+        self.rag.context = limit
+        return [[(x["reference"], 1)] for x in self.rag(queries, maxlength=4096)]
+
+
+class Score(Index):
+    """
+    BM25 index using txtai.
+    """
+
+    def index(self):
+        # Read configuration
+        config = self.readconfig("scoring", {"method": "bm25", "terms": True})
+
+        # Create scoring instance
+        scoring = ScoringFactory.create(config)
+
+        output = os.path.join(self.output, "scoring")
+        if os.path.exists(output) and not self.refresh:
+            scoring.load(output)
+        else:
+            scoring.index(self.rows())
+            scoring.save(output)
+
+        return scoring
 
 
 class RankBM25(Index):
@@ -283,8 +282,9 @@ class RankBM25(Index):
         return results
 
     def index(self):
-        if os.path.exists(self.output) and not self.refresh:
-            with open(self.output, "rb") as f:
+        output = os.path.join(self.output, "rank")
+        if os.path.exists(output) and not self.refresh:
+            with open(output, "rb") as f:
                 ids, model = pickle.load(f)
         else:
             # Tokenize data
@@ -295,7 +295,54 @@ class RankBM25(Index):
             ids = [uid for uid, _ in data]
             model = BM25Okapi([text for _, text in data])
 
+            # Save model
+            with open(output, "wb") as out:
+                pickle.dump(model, out)
+
         return ids, model
+
+
+class BM25S(Index):
+    """
+    BM25 as implemented by bm25s
+    """
+
+    def __init__(self, path, config, output, refresh):
+        # Corpus ids
+        self.ids = None
+
+        # Parent logic
+        super().__init__(path, config, output, refresh)
+
+    def search(self, queries, limit):
+        tokenizer = Tokenizer()
+        results, scores = self.backend.retrieve([tokenizer(x) for x in queries], corpus=self.ids, k=limit)
+
+        # List of queries => list of matches (id, score)
+        x = []
+        for a, b in zip(results, scores):
+            x.append([(str(c), float(d)) for c, d in zip(a, b)])
+
+        return x
+
+    def index(self):
+        tokenizer = Tokenizer()
+        ids, texts = [], []
+
+        for uid, text, _ in self.rows():
+            ids.append(uid)
+            texts.append(text)
+
+        self.ids = ids
+
+        if os.path.exists(self.output) and not self.refresh:
+            model = BM25Sparse.load(self.output)
+        else:
+            model = BM25Sparse(method="lucene", k1=1.2, b=0.75)
+            model.index([tokenizer(x) for x in texts], leave_progress=False)
+            model.save(self.output)
+
+        return model
 
 
 class SQLiteFTS(Index):
@@ -389,50 +436,6 @@ class Elastic(Index):
         return es
 
 
-class BM25S(Index):
-    """
-    BM25 as implemented by BM25S
-    """
-
-    def search(self, queries, limit):
-        tokenizer = Tokenizer()
-
-        tokens = [tokenizer(x) for x in queries]
-
-        results, scores = self.backend.retrieve(tokens, corpus=self.corpus_ids, k=limit, n_threads=4)
-
-        # List of queries => list of matches (docid, score)
-        x = []
-
-        for a, b in zip(results, scores):
-            x.append([(str(c), float(d)) for c, d in zip(a, b)])
-
-        return x
-
-    def index(self):
-        tokenizer = Tokenizer()
-        corpus_ids = []
-        corpus_lst = []
-
-        for uid, text, _ in self.rows():
-            corpus_ids.append(uid)
-            corpus_lst.append(text)
-
-        self.corpus_ids = corpus_ids
-
-        if os.path.exists(self.output) and not self.refresh:
-            model = bm25s.BM25.load(self.output)
-        else:
-            tokens = [tokenizer(x) for x in corpus_lst]
-
-            model = bm25s.BM25(method="lucene", k1=1.2, b=0.75)
-            model.index(tokens, leave_progress=False)
-
-            model.save(self.output)
-
-        return model
-
-
 def relevance(path):
     """
     Loads relevance data for evaluation.
@@ -474,20 +477,20 @@ def create(method, path, config, output, refresh):
         Index
     """
 
-    if method == "es":
-        return Elastic(path, config, output, refresh)
     if method == "hybrid":
         return Hybrid(path, config, output, refresh)
     if method == "rag":
-        return RAG(path, config, output, refresh)
+        return RetrievalAugmentedGeneration(path, config, output, refresh)
     if method == "scoring":
         return Score(path, config, output, refresh)
-    if method == "sqlite":
-        return SQLiteFTS(path, config, output, refresh)
     if method == "rank":
         return RankBM25(path, config, output, refresh)
     if method == "bm25s":
         return BM25S(path, config, output, refresh)
+    if method == "sqlite":
+        return SQLiteFTS(path, config, output, refresh)
+    if method == "es":
+        return Elastic(path, config, output, refresh)
 
     # Default
     return Embed(path, config, output, refresh)
@@ -611,7 +614,7 @@ def benchmarks(args):
             "climate-fever",
             "scifact",
         ]
-        methods = ["embed", "es", "hybrid", "rank", "scoring", "sqlite", "bm25s"]
+        methods = ["embed", "hybrid", "rag", "scoring", "rank", "bm25s", "sqlite", "es"]
         mode = "w"
 
     # Run and save benchmarks
