@@ -24,11 +24,11 @@ from pytrec_eval import RelevanceEvaluator
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
 
+import bm25s
+
 from txtai.embeddings import Embeddings
 from txtai.pipeline import Extractor, LLM, Tokenizer
 from txtai.scoring import ScoringFactory
-
-import bm25s
 
 
 class Index:
@@ -399,15 +399,13 @@ class BM25S(Index):
 
         query_tokens = [tokenizer(x) for x in queries]
 
-        queried_results, queried_scores = self.backend.retrieve(
-            query_tokens, corpus=self.corpus_ids, k=limit, n_threads=4
-        )
+        queried_results, queried_scores = self.backend.retrieve(query_tokens, corpus=self.corpus_ids, k=limit, n_threads=4)
 
         # List of queries => list of matches (docid, score)
         x = []
 
         for a, b in zip(queried_results, queried_scores):
-            x.append( [ (str(c), float(d)) for c,d in zip(a, b) ] )
+            x.append([(str(c), float(d)) for c, d in zip(a, b)])
 
         return x
 
