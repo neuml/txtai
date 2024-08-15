@@ -54,7 +54,7 @@ jobs:
         run: |
           pip install -U wheel
           pip install .[all,dev] fasttext==0.9.2 faiss-cpu==1.8.0 "numpy < 2.0.0"
-          python -c "import nltk; nltk.download(['punkt_tab', 'averaged_perceptron_tagger_eng'])"
+          python -c "import nltk; nltk.download('punkt')"
           python --version
           make data coverage
 
