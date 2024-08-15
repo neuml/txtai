@@ -96,7 +96,7 @@ class TemplateTask(Task):
         return None
 
 
-class RAGTask(TemplateTask):
+class RagTask(TemplateTask):
     """
     Template task that prepares input for a rag pipeline.
     """

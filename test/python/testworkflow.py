@@ -23,7 +23,7 @@ from txtai.workflow import (
     ExportTask,
     FileTask,
     ImageTask,
-    RAGTask,
+    RagTask,
     RetrieveTask,
     StorageTask,
     TemplateTask,
@@ -438,23 +438,23 @@ class TestWorkflow(unittest.TestCase):
         results = list(workflow([{"text": "prompt"}]))
         self.assertEqual(results[0], "This is a prompt")
 
-    def testTemplateRAG(self):
+    def testTemplateRag(self):
         """
         Test rag template task
         """
 
         # Test outputs
-        workflow = Workflow([RAGTask(template="This is a {text}")])
+        workflow = Workflow([RagTask(template="This is a {text}")])
         results = list(workflow(["prompt"]))
         self.assertEqual(results[0], {"query": "prompt", "question": "This is a prompt"})
 
         # Test partial outputs
-        workflow = Workflow([RAGTask(template="This is a {text}")])
+        workflow = Workflow([RagTask(template="This is a {text}")])
         results = list(workflow([{"query": "query", "question": "prompt"}]))
         self.assertEqual(results[0], {"query": "query", "question": "This is a prompt"})
 
         # Test additional template parameters
-        workflow = Workflow([RAGTask(template="This is a {text} with another {param}")])
+        workflow = Workflow([RagTask(template="This is a {text} with another {param}")])
         results = list(workflow([{"query": "query", "question": "prompt", "param": "value"}]))
         self.assertEqual(results[0], {"query": "query", "question": "This is a prompt with another value", "param": "value"})
 
