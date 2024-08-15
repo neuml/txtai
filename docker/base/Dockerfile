@@ -29,7 +29,7 @@ RUN \
     python -m pip install --no-cache-dir -U pip wheel setuptools && \
     if [ -z ${GPU} ] && { [ -z ${TARGETARCH} ] || [ ${TARGETARCH} = "amd64" ] ;}; then pip install --no-cache-dir torch==2.3.1+cpu torchvision==0.18.1+cpu -f https://download.pytorch.org/whl/torch_stable.html; fi && \
     python -m pip install --no-cache-dir txtai${COMPONENTS} && \
-    python -c "import sys, importlib.util as util; 1 if util.find_spec('nltk') else sys.exit(); import nltk; nltk.download(['punkt'])" && \
+    python -c "import sys, importlib.util as util; 1 if util.find_spec('nltk') else sys.exit(); import nltk; nltk.download('punkt')" && \
     \
     # Cleanup build packages
     apt-get -y purge gcc g++ python${PYTHON_VERSION}-dev && apt-get -y autoremove
