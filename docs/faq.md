@@ -48,7 +48,7 @@ Embeddings example.
 
 ```python
 from transformers import AutoModel, AutoTokenizer
-from txtai.embeddings import Embeddings
+from txtai import Embeddings
 
 # Load model externally
 model = AutoModel.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
@@ -64,7 +64,7 @@ LLM pipeline example.
 import torch
 
 from transformers import AutoModelForCausalLM, AutoTokenizer
-from txtai.pipeline import LLM
+from txtai import LLM
 
 # Load Mistral-7B-OpenOrca
 path = "Open-Orca/Mistral-7B-OpenOrca"

@@ -5,7 +5,7 @@ The following describes available embeddings configuration. These parameters are
 Configuration is designed to be optional and set only when needed. Out of the box, sensible defaults are picked to get up and running fast. For example:
 
 ```python
-from txtai.embeddings import Embeddings
+from txtai import Embeddings
 
 embeddings = Embeddings()
 ```
@@ -13,7 +13,7 @@ embeddings = Embeddings()
 Creates a new embeddings instance, using [all-MiniLM-L6-v2](https://hf.co/sentence-transformers/all-MiniLM-L6-v2) as the vector model, [Faiss](https://faiss.ai/) as the ANN index backend and content disabled.
 
 ```python
-from txtai.embeddings import Embeddings
+from txtai import Embeddings
 
 embeddings = Embeddings(content=True)
 ```

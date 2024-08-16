@@ -38,7 +38,7 @@ Workflows are run with Python or configuration. Examples of both methods are sho
 A full-featured example is shown below in Python. This workflow transcribes a set of audio files, translates the text into French and indexes the data.
 
 ```python
-from txtai.embeddings import Embeddings
+from txtai import Embeddings
 from txtai.pipeline import Transcription, Translation
 from txtai.workflow import FileTask, Task, Workflow
 
@@ -108,7 +108,7 @@ workflow:
 
 ```python
 # Create and run the workflow
-from txtai.app import Application
+from txtai import Application
 
 # Create and run the workflow
 app = Application("workflow.yml")
@@ -153,7 +153,7 @@ workflow:
 ```
 
 ```python
-from txtai.app import Application
+from txtai import Application
 
 app = Application("workflow.yml")
 list(app.workflow("llm", [

@@ -52,7 +52,7 @@ workflow:
 
 ```python
 # Create and run the workflow
-from txtai.app import Application
+from txtai import Application
 
 # Create and run the workflow
 app = Application("workflow.yml")

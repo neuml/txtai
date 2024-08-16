@@ -43,7 +43,7 @@ workflow:
 ### Run with Workflows
 
 ```python
-from txtai.app import Application
+from txtai import Application
 
 # Create and run pipeline with workflow
 app = Application("config.yml")

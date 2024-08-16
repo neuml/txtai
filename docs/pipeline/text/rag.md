@@ -12,8 +12,7 @@ The data store can be an embeddings database or a similarity instance with assoc
 The following shows a simple example using this pipeline.
 
 ```python
-from txtai import Embeddings
-from txtai import RAG
+from txtai import Embeddings, RAG
 
 # Input data
 data = [
@@ -98,7 +97,7 @@ workflow:
 Built in tasks make using the extractor pipeline easier.
 
 ```python
-from txtai.app import Application
+from txtai import Application
 
 # Create and run pipeline with workflow
 app = Application("config.yml")
