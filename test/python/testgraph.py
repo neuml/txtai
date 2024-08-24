@@ -7,8 +7,12 @@ import itertools
 import tempfile
 import unittest
 
+from unittest.mock import patch
+
+from txtai.archive import ArchiveFactory
 from txtai.embeddings import Embeddings
 from txtai.graph import Graph, GraphFactory
+from txtai.serialize import SerializeFactory
 
 
 # pylint: disable=R0904
@@ -232,6 +236,48 @@ class TestGraph(unittest.TestCase):
         self.assertEqual(len(graph.topics), 6)
         self.assertEqual(len(graph.categories), 6)
 
+    @patch.dict(os.environ, {"ALLOW_PICKLE": "True"})
+    def testLegacy(self):
+        """
+        Test loading a legacy graph in TAR format
+        """
+
+        # Create graph
+        graph = GraphFactory.create({})
+        graph.initialize()
+        graph.addedge(0, 1)
+
+        categories = ["C1"]
+        topics = {"T1": [0, 1]}
+
+        serializer = SerializeFactory.create("pickle", allowpickle=True)
+
+        # Save files to temporary directory and combine into TAR
+        path = os.path.join(tempfile.gettempdir(), "graph.tar")
+        with tempfile.TemporaryDirectory() as directory:
+            # Save graph
+            serializer.save(graph.backend, f"{directory}/graph")
+
+            # Save categories, if necessary
+            serializer.save(categories, f"{directory}/categories")
+
+            # Save topics, if necessary
+            serializer.save(topics, f"{directory}/topics")
+
+            # Pack files
+            archive = ArchiveFactory.create(directory)
+            archive.save(path, "tar")
+
+        # Load loading legacy format
+        graph = GraphFactory.create({})
+        graph.load(path)
+
+        # Validate graph data is correct
+        self.assertEqual(graph.count(), 2)
+        self.assertEqual(graph.edgecount(), 1)
+        self.assertEqual(graph.topics, topics)
+        self.assertEqual(graph.categories, categories)
+
     def testNotImplemented(self):
         """
         Test exceptions for non-implemented methods
@@ -260,8 +306,8 @@ class TestGraph(unittest.TestCase):
         self.assertRaises(NotImplementedError, graph.showpath, None, None)
         self.assertRaises(NotImplementedError, graph.search, None)
         self.assertRaises(NotImplementedError, graph.communities, None)
-        self.assertRaises(NotImplementedError, graph.loadgraph, None)
-        self.assertRaises(NotImplementedError, graph.savegraph, None)
+        self.assertRaises(NotImplementedError, graph.load, None)
+        self.assertRaises(NotImplementedError, graph.save, None)
         self.assertRaises(NotImplementedError, graph.loaddict, None)
         self.assertRaises(NotImplementedError, graph.savedict)
 

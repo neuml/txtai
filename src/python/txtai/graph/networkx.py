@@ -2,7 +2,9 @@
 NetworkX module
 """
 
-import pickle
+import os
+
+from tempfile import TemporaryDirectory
 
 # Conditional import
 try:
@@ -17,7 +19,8 @@ try:
 except ImportError:
     NETWORKX = False
 
-from ..version import __pickle__
+from ..archive import ArchiveFactory
+from ..serialize import SerializeError, SerializeFactory
 
 from .base import Graph
 
@@ -149,22 +152,44 @@ class NetworkX(Graph):
 
         return communities
 
-    def loadgraph(self, path):
-        # Load graph network
-        with open(path, "rb") as handle:
-            self.backend = pickle.load(handle)
+    def load(self, path):
+        try:
+            # Load graph data
+            data = SerializeFactory.create().load(path)
 
-    def savegraph(self, path):
-        # Save graph
-        with open(path, "wb") as handle:
-            pickle.dump(self.backend, handle, protocol=__pickle__)
+            # Add data to graph
+            self.backend = self.create()
+            self.backend.add_nodes_from(data["nodes"])
+            self.backend.add_edges_from(data["edges"])
+
+            # Load categories
+            self.categories = data.get("categories")
+
+            # Load topics
+            self.topics = data.get("topics")
+
+        except SerializeError:
+            # Backwards compatible support for legacy TAR format
+            self.loadtar(path)
+
+    def save(self, path):
+        # Save graph data
+        SerializeFactory.create().save(
+            {
+                "nodes": [(uid, self.node(uid)) for uid in self.scan()],
+                "edges": list(self.backend.edges(data=True)),
+                "categories": self.categories,
+                "topics": self.topics,
+            },
+            path,
+        )
 
     def loaddict(self, data):
-        self.backend = json_graph.node_link_graph(data)
+        self.backend = json_graph.node_link_graph(data, name="indexid")
         self.categories, self.topics = data.get("categories"), data.get("topics")
 
     def savedict(self):
-        data = json_graph.node_link_data(self.backend)
+        data = json_graph.node_link_data(self.backend, name="indexid")
         data["categories"] = self.categories
         data["topics"] = self.topics
 
@@ -214,3 +239,33 @@ class NetworkX(Graph):
         # Distance is 1 - score. Skip minimal distances as they are near duplicates.
         distance = max(1.0 - attrs["weight"], 0.0)
         return distance if distance >= 0.15 else 1.00
+
+    def loadtar(self, path):
+        """
+        Loads a graph from the legacy TAR file.
+
+        Args:
+            path: path to graph
+        """
+
+        # Pickle serialization - backwards compatible
+        serializer = SerializeFactory.create("pickle")
+
+        # Extract files to temporary directory and load content
+        with TemporaryDirectory() as directory:
+            # Unpack files
+            archive = ArchiveFactory.create(directory)
+            archive.load(path, "tar")
+
+            # Load graph backend
+            self.backend = serializer.load(f"{directory}/graph")
+
+            # Load categories, if necessary
+            path = f"{directory}/categories"
+            if os.path.exists(path):
+                self.categories = serializer.load(path)
+
+            # Load topics, if necessary
+            path = f"{directory}/topics"
+            if os.path.exists(path):
+                self.topics = serializer.load(path)

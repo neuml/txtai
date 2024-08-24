@@ -2,14 +2,7 @@
 Graph module
 """
 
-import os
-import pickle
-
 from collections import Counter
-from tempfile import TemporaryDirectory
-
-from ..archive import ArchiveFactory
-from ..version import __pickle__
 
 from .topics import Topics
 
@@ -30,7 +23,7 @@ class Graph:
         """
 
         # Graph configuration
-        self.config = config if config else {}
+        self.config = config if config is not None else {}
 
         # Graph backend
         self.backend = None
@@ -313,22 +306,22 @@ class Graph:
 
         raise NotImplementedError
 
-    def loadgraph(self, path):
+    def load(self, path):
         """
-        Loads a graph backend at path.
+        Loads a graph at path.
 
         Args:
-            path: path to graph backend
+            path: path to graph
         """
 
         raise NotImplementedError
 
-    def savegraph(self, path):
+    def save(self, path):
         """
-        Saves graph backend to path.
+        Saves a graph at path.
 
         Args:
-            path: path to save graph backend
+            path: path to save graph
         """
 
         raise NotImplementedError
@@ -360,62 +353,6 @@ class Graph:
 
         if not self.backend:
             self.backend = self.create()
-
-    def load(self, path):
-        """
-        Loads a graph at path.
-
-        Args:
-            path: path to graph
-        """
-
-        # Extract files to temporary directory and load content
-        with TemporaryDirectory() as directory:
-            # Unpack files
-            archive = ArchiveFactory.create(directory)
-            archive.load(path, "tar")
-
-            # Load graph backend
-            self.loadgraph(f"{directory}/graph")
-
-            # Load categories, if necessary
-            path = f"{directory}/categories"
-            if os.path.exists(path):
-                with open(path, "rb") as handle:
-                    self.categories = pickle.load(handle)
-
-            # Load topics, if necessary
-            path = f"{directory}/topics"
-            if os.path.exists(path):
-                with open(path, "rb") as handle:
-                    self.topics = pickle.load(handle)
-
-    def save(self, path):
-        """
-        Saves a graph at path.
-
-        Args:
-            path: path to save graph
-        """
-
-        # Save files to temporary directory and combine into TAR
-        with TemporaryDirectory() as directory:
-            # Save graph
-            self.savegraph(f"{directory}/graph")
-
-            # Save categories, if necessary
-            if self.categories:
-                with open(f"{directory}/categories", "wb") as handle:
-                    pickle.dump(self.categories, handle, protocol=__pickle__)
-
-            # Save topics, if necessary
-            if self.topics:
-                with open(f"{directory}/topics", "wb") as handle:
-                    pickle.dump(self.topics, handle, protocol=__pickle__)
-
-            # Pack files
-            archive = ArchiveFactory.create(directory)
-            archive.save(path, "tar")
 
     def close(self):
         """

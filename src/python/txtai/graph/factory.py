@@ -16,7 +16,7 @@ class GraphFactory:
     @staticmethod
     def create(config):
         """
-        Create a graph.
+        Create a Graph.
 
         Args:
             config: graph configuration
