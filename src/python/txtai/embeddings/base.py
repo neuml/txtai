@@ -3,7 +3,6 @@ Embeddings module
 """
 
 import json
-import pickle
 import os
 import shutil
 import tempfile
@@ -17,9 +16,8 @@ from ..database import DatabaseFactory
 from ..graph import GraphFactory
 from ..scoring import ScoringFactory
 from ..vectors import VectorsFactory
-from ..version import __pickle__
 
-from .index import Action, Functions, Indexes, IndexIds, Reducer, Stream, Transform
+from .index import Action, Configuration, Functions, Indexes, IndexIds, Reducer, Stream, Transform
 from .search import Explain, Ids, Query, Search, Terms
 
 
@@ -521,7 +519,7 @@ class Embeddings:
             return os.path.exists(apath)
 
         # Return true if path has a config.json or config file with an offset set
-        return path and (os.path.exists(f"{path}/config.json") or os.path.exists(f"{path}/config")) and "offset" in self.loadconfig(path)
+        return path and (os.path.exists(f"{path}/config.json") or os.path.exists(f"{path}/config")) and "offset" in Configuration().load(path)
 
     def load(self, path=None, cloud=None, config=None, **kwargs):
         """
@@ -545,7 +543,7 @@ class Embeddings:
             self.archive.load(apath)
 
         # Load index configuration
-        self.config = self.loadconfig(path)
+        self.config = Configuration().load(path)
 
         # Apply config overrides
         self.config = {**self.config, **config} if config else self.config
@@ -616,7 +614,7 @@ class Embeddings:
                 self.config["path"] = os.path.basename(self.config["path"])
 
             # Save index configuration
-            self.saveconfig(path)
+            Configuration().save(self.config, path)
 
             # Save approximate nearest neighbor index
             if self.ann:
@@ -819,65 +817,6 @@ class Embeddings:
         params = [("keyword", False), ("defaults", True)]
         return all(self.config.get(key, default) == default for key, default in params)
 
-    def loadconfig(self, path):
-        """
-        Loads index configuration. This method supports both config.json and config pickle files.
-
-        Args:
-            path: path to directory
-
-        Returns:
-            dict
-        """
-
-        # Configuration
-        config = None
-
-        # Determine if config is json or pickle
-        jsonconfig = os.path.exists(f"{path}/config.json")
-
-        # Set config file name
-        name = "config.json" if jsonconfig else "config"
-
-        # Load configuration
-        with open(f"{path}/{name}", "r" if jsonconfig else "rb", encoding="utf-8" if jsonconfig else None) as handle:
-            config = json.load(handle) if jsonconfig else pickle.load(handle)
-
-        # Add format parameter
-        config["format"] = "json" if jsonconfig else "pickle"
-
-        # Build full path to embedding vectors file
-        if config.get("storevectors"):
-            config["path"] = os.path.join(path, config["path"])
-
-        return config
-
-    def saveconfig(self, path):
-        """
-        Saves index configuration. This method defaults to JSON and falls back to pickle.
-
-        Args:
-            path: path to directory
-
-        Returns:
-            dict
-        """
-
-        # Default to JSON config
-        jsonconfig = self.config.get("format", "json") == "json"
-
-        # Set config file name
-        name = "config.json" if jsonconfig else "config"
-
-        # Write configuration
-        with open(f"{path}/{name}", "w" if jsonconfig else "wb", encoding="utf-8" if jsonconfig else None) as handle:
-            if jsonconfig:
-                # Write config as JSON
-                json.dump(self.config, handle, default=str, indent=2)
-            else:
-                # Write config as pickle format
-                pickle.dump(self.config, handle, protocol=__pickle__)
-
     def loadvectors(self):
         """
         Loads a vector model set in config.
@@ -985,7 +924,7 @@ class Embeddings:
 
         if "graph" in self.config:
             # Get or create graph configuration
-            config = self.config["graph"] if self.config["graph"] else {}
+            config = self.config["graph"] if "graph" in self.config else {}
 
             # Create configuration with custom columns, if necessary
             config = self.columns(config)
