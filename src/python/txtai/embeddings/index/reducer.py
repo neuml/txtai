@@ -2,17 +2,19 @@
 Reducer module
 """
 
-import pickle
+from zipfile import BadZipFile
 
 # Conditionally import dimensionality reduction libraries as they aren't installed by default
 try:
+    import skops.io as sio
+
     from sklearn.decomposition import TruncatedSVD
 
     REDUCER = True
 except ImportError:
     REDUCER = False
 
-from ...version import __pickle__
+from ...serialize import SerializeFactory
 
 
 class Reducer:
@@ -85,8 +87,11 @@ class Reducer:
         """
 
         # Dimensionality reduction
-        with open(path, "rb") as handle:
-            self.model = pickle.load(handle)
+        try:
+            self.model = sio.load(path)
+        except (BadZipFile, KeyError):
+            # Backwards compatible support for pickled models
+            self.model = SerializeFactory.create("pickle").load(path)
 
     def save(self, path):
         """
@@ -96,5 +101,4 @@ class Reducer:
             path: directory path to save model
         """
 
-        with open(path, "wb") as handle:
-            pickle.dump(self.model, handle, protocol=__pickle__)
+        sio.dump(self.model, path)
