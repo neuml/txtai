@@ -319,8 +319,8 @@ class Database:
             logger.debug(" ".join(["%s"] * len(args)), *args)
 
             return function(*args)
-        except Exception as ex:
-            raise SQLError(ex) from None
+        except Exception as e:
+            raise SQLError(e) from None
 
     def setting(self, name, default=None):
         """
