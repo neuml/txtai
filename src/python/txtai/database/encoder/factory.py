@@ -5,6 +5,7 @@ Encoder factory module
 from ...util import Resolver
 
 from .base import Encoder
+from .serialize import SerializeEncoder
 
 
 class EncoderFactory:
@@ -46,6 +47,10 @@ class EncoderFactory:
         # Return default encoder
         if encoder is True:
             return Encoder()
+
+        # Supported serialization methods
+        if encoder in ["messagepack", "pickle"]:
+            return SerializeEncoder(encoder)
 
         # Get Encoder instance
         return EncoderFactory.get(encoder)()

@@ -3,10 +3,9 @@ Documents module
 """
 
 import os
-import pickle
 import tempfile
 
-from ...version import __pickle__
+from ...serialize import SerializeFactory
 
 
 class Documents:
@@ -22,6 +21,9 @@ class Documents:
         self.documents = None
         self.batch = 0
         self.size = 0
+
+        # Pickle serialization - local temporary data
+        self.serializer = SerializeFactory.create("pickle", allowpickle=True)
 
     def __len__(self):
         """
@@ -42,7 +44,7 @@ class Documents:
         with open(self.documents.name, "rb") as queue:
             # Read each batch
             for _ in range(self.batch):
-                documents = pickle.load(queue)
+                documents = self.serializer.loadstream(queue)
 
                 # Yield each document
                 yield from documents
@@ -64,7 +66,7 @@ class Documents:
             self.documents = tempfile.NamedTemporaryFile(mode="wb", suffix=".docs", delete=False)
 
         # Add batch
-        pickle.dump(documents, self.documents, protocol=__pickle__)
+        self.serializer.savestream(documents, self.documents)
         self.batch += 1
         self.size += len(documents)
 
