@@ -16,7 +16,5 @@
             - "!defaultallowed"
             - "!defaults"
             - "!initindex"
-            - "!loadconfig"
             - "!loadquery"
             - "!loadvectors"
-            - "!saveconfig"
