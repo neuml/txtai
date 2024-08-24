@@ -3,8 +3,9 @@ Llama module tests
 """
 
 import os
-import pickle
 import unittest
+
+import numpy as np
 
 from txtai.vectors import VectorsFactory
 
@@ -36,4 +37,4 @@ class TestLlamaCpp(unittest.TestCase):
 
         # Test shape of serialized embeddings
         with open(stream, "rb") as queue:
-            self.assertEqual(pickle.load(queue).shape, (1, 768))
+            self.assertEqual(np.load(queue).shape, (1, 768))

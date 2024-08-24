@@ -3,11 +3,12 @@ WordVectors module tests
 """
 
 import os
-import pickle
 import tempfile
 import unittest
 
 from unittest.mock import patch
+
+import numpy as np
 
 from txtai.vectors import WordVectors, VectorsFactory
 
@@ -70,7 +71,7 @@ class TestWordVectors(unittest.TestCase):
 
         # Test shape of serialized embeddings
         with open(stream, "rb") as queue:
-            self.assertEqual(pickle.load(queue).shape, (1, 10))
+            self.assertEqual(np.load(queue).shape, (1, 10))
 
     @patch("os.cpu_count")
     def testIndexBatch(self, cpucount):
@@ -95,8 +96,8 @@ class TestWordVectors(unittest.TestCase):
 
         # Test shape of serialized embeddings
         with open(stream, "rb") as queue:
-            self.assertEqual(pickle.load(queue).shape, (512, 10))
-            self.assertEqual(pickle.load(queue).shape, (488, 10))
+            self.assertEqual(np.load(queue).shape, (512, 10))
+            self.assertEqual(np.load(queue).shape, (488, 10))
 
     def testIndexSerial(self):
         """
@@ -117,7 +118,7 @@ class TestWordVectors(unittest.TestCase):
 
         # Test shape of serialized embeddings
         with open(stream, "rb") as queue:
-            self.assertEqual(pickle.load(queue).shape, (1, 10))
+            self.assertEqual(np.load(queue).shape, (1, 10))
 
     def testIndexSerialBatch(self):
         """
@@ -138,8 +139,8 @@ class TestWordVectors(unittest.TestCase):
 
         # Test shape of serialized embeddings
         with open(stream, "rb") as queue:
-            self.assertEqual(pickle.load(queue).shape, (512, 10))
-            self.assertEqual(pickle.load(queue).shape, (488, 10))
+            self.assertEqual(np.load(queue).shape, (512, 10))
+            self.assertEqual(np.load(queue).shape, (488, 10))
 
     def testLookup(self):
         """

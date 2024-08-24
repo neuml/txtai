@@ -4,11 +4,12 @@ LiteLLM module tests
 
 import json
 import os
-import pickle
 import unittest
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from threading import Thread
+
+import numpy as np
 
 from txtai.vectors import VectorsFactory
 
@@ -80,4 +81,4 @@ class TestLiteLLM(unittest.TestCase):
 
         # Test shape of serialized embeddings
         with open(stream, "rb") as queue:
-            self.assertEqual(pickle.load(queue).shape, (1, 768))
+            self.assertEqual(np.load(queue).shape, (1, 768))

@@ -4,7 +4,6 @@ Word Vectors module
 
 import logging
 import os
-import pickle
 import tempfile
 
 from errno import ENOENT
@@ -22,7 +21,6 @@ except ImportError:
     WORDS = False
 
 from ..pipeline import Tokenizer
-from ..version import __pickle__
 
 from .base import Vectors
 
@@ -124,14 +122,14 @@ class WordVectors(Vectors):
                     embeddings.append(embedding)
 
                     if len(embeddings) == batchsize:
-                        pickle.dump(np.array(embeddings, dtype=np.float32), output, protocol=__pickle__)
+                        np.save(output, np.array(embeddings, dtype=np.float32))
                         batches += 1
 
                         embeddings = []
 
                 # Final embeddings batch
                 if embeddings:
-                    pickle.dump(np.array(embeddings, dtype=np.float32), output, protocol=__pickle__)
+                    np.save(output, np.array(embeddings, dtype=np.float32))
                     batches += 1
 
         return (ids, dimensions, batches, stream)

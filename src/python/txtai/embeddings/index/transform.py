@@ -3,7 +3,6 @@ Transform module
 """
 
 import os
-import pickle
 
 import numpy as np
 
@@ -105,7 +104,7 @@ class Transform:
             with open(stream, "rb") as queue:
                 x = 0
                 for _ in range(batches):
-                    batch = pickle.load(queue)
+                    batch = np.load(queue)
                     embeddings[x : x + batch.shape[0]] = batch
                     x += batch.shape[0]
 

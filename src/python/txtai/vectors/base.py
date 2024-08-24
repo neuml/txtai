@@ -2,12 +2,9 @@
 Vectors module
 """
 
-import pickle
 import tempfile
 
 import numpy as np
-
-from ..version import __pickle__
 
 
 class Vectors:
@@ -195,7 +192,7 @@ class Vectors:
         embeddings = self.vectorize(documents)
         if embeddings is not None:
             dimensions = embeddings.shape[1]
-            pickle.dump(embeddings, output, protocol=__pickle__)
+            np.save(output, embeddings)
 
         return (ids, dimensions)
 
