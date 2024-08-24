@@ -21,7 +21,7 @@ class PoolingFactory:
     @staticmethod
     def create(config):
         """
-        Create a pooling model.
+        Create a Pooling model.
 
         Args:
             config: pooling configuration
