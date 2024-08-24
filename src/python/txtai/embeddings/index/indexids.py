@@ -2,9 +2,7 @@
 IndexIds module
 """
 
-import pickle
-
-from ...version import __pickle__
+from ...serialize import Serializer
 
 
 class IndexIds:
@@ -49,8 +47,7 @@ class IndexIds:
             self.ids = self.config.pop("ids")
         else:
             # Standard ids format
-            with open(path, "rb") as handle:
-                self.ids = pickle.load(handle)
+            self.ids = Serializer.load(path)
 
     def save(self, path):
         """
@@ -60,5 +57,4 @@ class IndexIds:
             path: path to save
         """
 
-        with open(path, "wb") as handle:
-            pickle.dump(self.ids, handle, protocol=__pickle__)
+        Serializer.save(self.ids, path)

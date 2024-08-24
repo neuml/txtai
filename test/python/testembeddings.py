@@ -12,6 +12,7 @@ from unittest.mock import patch
 import numpy as np
 
 from txtai.embeddings import Embeddings, Reducer
+from txtai.serialize import SerializeFactory
 from txtai.vectors import WordVectors
 
 
@@ -250,6 +251,33 @@ class TestEmbeddings(unittest.TestCase):
         # Check that ids is not in config
         self.assertTrue("ids" not in self.embeddings.config)
 
+    def testIdsPickle(self):
+        """
+        Test legacy pickle ids
+        """
+
+        # Create an index for the list of text
+        self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        # Generate temp file path
+        index = os.path.join(tempfile.gettempdir(), "embeddings.idspickle")
+
+        # Save index
+        self.embeddings.save(index)
+
+        # Create ids as pickle
+        path = os.path.join(tempfile.gettempdir(), "embeddings.idspickle", "ids")
+        serializer = SerializeFactory.create("pickle", allowpickle=True)
+        serializer.save(self.embeddings.ids.ids, path)
+
+        # Reload index
+        with self.assertWarns(FutureWarning):
+            self.embeddings.load(index)
+
+        # Run search
+        uid = self.embeddings.search("feel good story", 1)[0][0]
+        self.assertEqual(uid, 4)
+
     def testIndex(self):
         """
         Test index
@@ -337,6 +365,32 @@ class TestEmbeddings(unittest.TestCase):
 
         # Generate query and keep original data to ensure it changes
         query = np.random.rand(5).astype(np.float32)
+        original = query.copy()
+
+        # Run test
+        reducer(query)
+        self.assertFalse(np.array_equal(query, original))
+
+    def testReducerLegacy(self):
+        """
+        Test reducer model with legacy model format
+        """
+
+        # Test model with single PCA component
+        data = np.random.rand(5, 5).astype(np.float32)
+        reducer = Reducer(data, 1)
+
+        # Save legacy format
+        path = os.path.join(tempfile.gettempdir(), "reducer")
+        serializer = SerializeFactory.create("pickle", allowpickle=True)
+        serializer.save(reducer.model, path)
+
+        # Load legacy format
+        reducer = Reducer()
+        reducer.load(path)
+
+        # Generate query and keep original data to ensure it changes
+        query = np.random.rand(1, 5).astype(np.float32)
         original = query.copy()
 
         # Run test
