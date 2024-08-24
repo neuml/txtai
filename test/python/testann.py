@@ -11,8 +11,10 @@ from unittest.mock import patch
 import numpy as np
 
 from txtai.ann import ANNFactory, ANN
+from txtai.serialize import SerializeFactory
 
 
+# pylint: disable=R0904
 class TestANN(unittest.TestCase):
     """
     ANN tests.
@@ -109,6 +111,29 @@ class TestANN(unittest.TestCase):
         """
 
         self.runTests("numpy")
+
+    @patch.dict(os.environ, {"ALLOW_PICKLE": "True"})
+    def testNumPyLegacy(self):
+        """
+        Test NumPy backend with legacy pickled data
+        """
+
+        serializer = SerializeFactory.create("pickle", allowpickle=True)
+
+        # Create output directory
+        output = os.path.join(tempfile.gettempdir(), "ann.npy")
+        path = os.path.join(output, "embeddings")
+        os.makedirs(output, exist_ok=True)
+
+        # Generate data and save as pickle
+        data = np.random.rand(100, 300).astype(np.float32)
+        serializer.save(data, path)
+
+        ann = ANNFactory.create({"backend": "numpy"})
+        ann.load(path)
+
+        # Validate count
+        self.assertEqual(ann.count(), 100)
 
     @patch("sqlalchemy.orm.Query.limit")
     def testPGVector(self, query):

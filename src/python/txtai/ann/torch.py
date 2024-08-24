@@ -5,8 +5,6 @@ PyTorch module
 import numpy as np
 import torch
 
-from ..version import __pickle__
-
 from .numpy import NumPy
 
 
@@ -29,6 +27,9 @@ class Torch(NumPy):
 
         # Load to GPU device, if available
         return array.cuda() if torch.cuda.is_available() else array
+
+    def numpy(self, array):
+        return array.cpu().numpy()
 
     def totype(self, array, dtype):
         return array.long() if dtype == np.int64 else array

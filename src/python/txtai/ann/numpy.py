@@ -2,11 +2,9 @@
 NumPy module
 """
 
-import pickle
-
 import numpy as np
 
-from ..version import __pickle__
+from ..serialize import SerializeFactory
 
 from .base import ANN
 
@@ -29,8 +27,11 @@ class NumPy(ANN):
 
     def load(self, path):
         # Load array from file
-        with open(path, "rb") as handle:
-            self.backend = self.tensor(pickle.load(handle))
+        try:
+            self.backend = self.tensor(np.load(path, allow_pickle=False))
+        except ValueError:
+            # Backwards compatible support for previously pickled data
+            self.backend = self.tensor(SerializeFactory.create("pickle").load(path))
 
     def index(self, embeddings):
         # Create index
@@ -81,9 +82,9 @@ class NumPy(ANN):
         return self.backend[~self.all(self.backend == 0, axis=1)].shape[0]
 
     def save(self, path):
-        # Save array to file
+        # Save array to file. Use stream to prevent ".npy" suffix being added.
         with open(path, "wb") as handle:
-            pickle.dump(self.backend, handle, protocol=__pickle__)
+            np.save(handle, self.numpy(self.backend), allow_pickle=False)
 
     def tensor(self, array):
         """
@@ -94,6 +95,19 @@ class NumPy(ANN):
 
         Returns:
             array with backend-specific logic applied
+        """
+
+        return array
+
+    def numpy(self, array):
+        """
+        Handles backend-specific code to convert an array to numpy
+
+        Args:
+            array: data array
+
+        Returns:
+            numpy array
         """
 
         return array
