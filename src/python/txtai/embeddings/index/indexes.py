@@ -70,8 +70,8 @@ class Indexes:
 
         try:
             return self.indexes[name]
-        except Exception as ex:
-            raise AttributeError(ex) from ex
+        except Exception as e:
+            raise AttributeError(e) from e
 
     def default(self):
         """
