@@ -17,7 +17,7 @@ class Scoring:
         """
 
         # Scoring configuration
-        self.config = config if config else {}
+        self.config = config if config is not None else {}
 
         # Transform columns
         columns = self.config.get("columns", {})

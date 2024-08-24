@@ -4,7 +4,6 @@ TFIDF module
 
 import math
 import os
-import pickle
 
 from collections import Counter
 from multiprocessing.pool import ThreadPool
@@ -12,7 +11,7 @@ from multiprocessing.pool import ThreadPool
 import numpy as np
 
 from ..pipeline import Tokenizer
-from ..version import __pickle__
+from ..serialize import Serializer
 
 from .base import Scoring
 from .terms import Terms
@@ -194,27 +193,40 @@ class TFIDF(Scoring):
         return self.terms.count() if self.terms else self.total
 
     def load(self, path):
-        with open(path, "rb") as handle:
-            # Load scoring
-            self.__dict__.update(pickle.load(handle))
+        # Load scoring
+        state = Serializer.load(path)
 
-            # Load terms
-            if self.config.get("terms"):
-                self.terms = Terms(self.config["terms"], self.score, self.idf)
-                self.terms.load(path + ".terms")
+        # Convert to Counter instances
+        for key in ["docfreq", "wordfreq", "tags"]:
+            state[key] = Counter(state[key])
+
+        # Convert documents to dict
+        state["documents"] = dict(state["documents"]) if state["documents"] else state["documents"]
+
+        # Set parameters on this object
+        self.__dict__.update(state)
+
+        # Load terms
+        if self.config.get("terms"):
+            self.terms = Terms(self.config["terms"], self.score, self.idf)
+            self.terms.load(path + ".terms")
 
     def save(self, path):
-        with open(path, "wb") as handle:
-            # Don't serialize following fields
-            skipfields = ("config", "terms", "tokenizer")
+        # Don't serialize following fields
+        skipfields = ("config", "terms", "tokenizer")
 
-            # Save scoring
-            state = {key: value for key, value in self.__dict__.items() if key not in skipfields}
-            pickle.dump(state, handle, protocol=__pickle__)
+        # Get object state
+        state = {key: value for key, value in self.__dict__.items() if key not in skipfields}
 
-            # Save terms
-            if self.terms:
-                self.terms.save(path + ".terms")
+        # Update documents to tuples
+        state["documents"] = list(state["documents"].items()) if state["documents"] else state["documents"]
+
+        # Save scoring
+        Serializer.save(state, path)
+
+        # Save terms
+        if self.terms:
+            self.terms.save(path + ".terms")
 
     def close(self):
         if self.terms:
