@@ -3,7 +3,7 @@
 ![format](../images/format.png#only-light)
 ![format](../images/format-dark.png#only-dark)
 
-This section documents the txtai index format. The goal of each component in txtai is to enable open access to the underlying data in a programatic and platform independent way.
+This section documents the txtai index format. Each component is designed to ensure open access to the underlying data in a programmatic and platform independent way
 
 If an underlying library has an index format, that is used. Otherwise, txtai persists content with [MessagePack](https://msgpack.org/index.html) serialization.
 
