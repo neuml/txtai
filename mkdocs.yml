@@ -67,6 +67,7 @@ nav:
             - Graph: embeddings/configuration/graph.md
             - Scoring: embeddings/configuration/scoring.md
             - Vectors: embeddings/configuration/vectors.md
+        - Index Format: embeddings/format.md
         - Index Guide: embeddings/indexing.md
         - Methods: embeddings/methods.md
         - Query Guide: embeddings/query.md
