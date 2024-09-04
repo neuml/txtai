@@ -47,6 +47,7 @@ class TestOptional(unittest.TestCase):
             "sentence_transformers",
             "soundfile",
             "sqlalchemy",
+            "sqlite_vec",
             "tika",
             "ttstokenizer",
             "xmltodict",
@@ -96,6 +97,9 @@ class TestOptional(unittest.TestCase):
 
         with self.assertRaises(ImportError):
             ANNFactory.create({"backend": "pgvector"})
+
+        with self.assertRaises(ImportError):
+            ANNFactory.create({"backend": "sqlite"})
 
     def testApi(self):
         """

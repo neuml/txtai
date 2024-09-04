@@ -126,7 +126,7 @@ class TestANN(unittest.TestCase):
         os.makedirs(output, exist_ok=True)
 
         # Generate data and save as pickle
-        data = np.random.rand(100, 300).astype(np.float32)
+        data = np.random.rand(100, 240).astype(np.float32)
         serializer.save(data, path)
 
         ann = ANNFactory.create({"backend": "numpy"})
@@ -142,14 +142,14 @@ class TestANN(unittest.TestCase):
         """
 
         # Generate test record
-        data = np.random.rand(1, 300).astype(np.float32)
+        data = np.random.rand(1, 240).astype(np.float32)
 
         # Mock database query
         query.return_value = [(x, -1.0) for x in range(data.shape[0])]
 
         # Create ANN
         path = os.path.join(tempfile.gettempdir(), "pgvector.sqlite")
-        ann = ANNFactory.create({"backend": "pgvector", "pgvector": {"url": f"sqlite:///{path}"}, "dimensions": 300})
+        ann = ANNFactory.create({"backend": "pgvector", "pgvector": {"url": f"sqlite:///{path}"}, "dimensions": 240})
 
         # Test indexing
         ann.index(data)
@@ -171,6 +171,45 @@ class TestANN(unittest.TestCase):
 
         # Close ANN
         ann.close()
+
+    def testSQLite(self):
+        """
+        Test SQLite backend
+        """
+
+        self.runTests("sqlite")
+
+    def testSQLiteCustom(self):
+        """
+        Test SQLite backend with custom settings
+        """
+
+        # Test with custom settings
+        self.runTests("sqlite", {"sqlite": {"quantize": 1}})
+        self.runTests("sqlite", {"sqlite": {"quantize": 8}})
+
+        # Test saving to a new path
+        model = self.backend("sqlite")
+        expected = model.count() - 1
+
+        # Test save variations
+        index = os.path.join(tempfile.gettempdir(), "ann.sqlite")
+        new = os.path.join(tempfile.gettempdir(), "ann.sqlite.new")
+
+        # Save new
+        model.save(index)
+
+        # Save to same path
+        model.save(index)
+
+        # Delete id
+        model.delete([0])
+
+        # Save to another path
+        model.load(index)
+        model.save(new)
+
+        self.assertEqual(model.count(), expected)
 
     def testTorch(self):
         """
@@ -213,7 +252,7 @@ class TestANN(unittest.TestCase):
         """
 
         # Generate test data
-        data = np.random.rand(length, 300).astype(np.float32)
+        data = np.random.rand(length, 240).astype(np.float32)
         self.normalize(data)
 
         config = {"backend": name, "dimensions": data.shape[1]}
@@ -242,7 +281,7 @@ class TestANN(unittest.TestCase):
         model = self.backend(name, params)
 
         # Generate test data
-        data = np.random.rand(length, 300).astype(np.float32)
+        data = np.random.rand(length, 240).astype(np.float32)
         self.normalize(data)
 
         model.append(data)
@@ -306,7 +345,7 @@ class TestANN(unittest.TestCase):
         model = self.backend(name, params)
 
         # Generate query vector
-        query = np.random.rand(300).astype(np.float32)
+        query = np.random.rand(240).astype(np.float32)
         self.normalize(query)
 
         # Ensure top result has similarity > 0

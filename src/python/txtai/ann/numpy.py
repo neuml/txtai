@@ -42,13 +42,11 @@ class NumPy(ANN):
         self.metadata(self.settings())
 
     def append(self, embeddings):
-        new = embeddings.shape[0]
-
         # Append new data to array
         self.backend = self.cat((self.backend, self.tensor(embeddings)), axis=0)
 
         # Update id offset and index metadata
-        self.config["offset"] += new
+        self.config["offset"] += embeddings.shape[0]
         self.metadata()
 
     def delete(self, ids):

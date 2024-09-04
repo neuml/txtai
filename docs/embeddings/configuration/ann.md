@@ -4,7 +4,7 @@ Approximate Nearest Neighbor (ANN) index configuration for storing vector embedd
 
 ## backend
 ```yaml
-backend: faiss|hnsw|annoy|numpy|torch|pgvector|custom
+backend: faiss|hnsw|annoy|numpy|torch|pgvector|sqlite|custom
 ```
 
 Sets the ANN backend. Defaults to `faiss`. Additional backends are available via the [ann](../../../install/#ann) extras package. Set custom backends via setting this parameter to the fully resolvable class string.
@@ -61,10 +61,6 @@ annoy:
 See [Annoy documentation](https://github.com/spotify/annoy#full-python-api) for more information on these parameters. Note that annoy indexes can not be modified after creation, upserts/deletes and other modifications are not supported.
 
 ### numpy
-```yaml
-numpy:
-    quantize: number of quantized bits when working with quantized vectors (int)
-```
 
 The NumPy backend is a k-nearest neighbors backend. It's designed for simplicity and works well with smaller datasets.
 
@@ -81,3 +77,14 @@ pgvector:
 ```
 
 The pgvector backend stores embeddings in a Postgres database. See the [pgvector documentation](https://github.com/pgvector/pgvector-python?tab=readme-ov-file#sqlalchemy) for more information on these parameters. See the [SQLAlchemy](https://docs.sqlalchemy.org/en/20/core/engines.html#database-urls) documentation for more information on how to construct url connection strings.
+
+### sqlite
+```yaml
+sqlite:
+    quantize: store vectors with x-bit precision vs 32-bit (boolean|int)
+              true sets 8-bit precision, false disables, int sets specified
+              precision
+    table: database table to store vectors - defaults to `vectors`
+```
+
+The SQLite backend stores embeddings in a SQLite database using [sqlite-vec](https://github.com/asg017/sqlite-vec). This backend supports 1-bit and 8-bit quantization at the storage level.

@@ -9,6 +9,7 @@ from .faiss import Faiss
 from .hnsw import HNSW
 from .numpy import NumPy
 from .pgvector import PGVector
+from .sqlite import SQLite
 from .torch import Torch
 
 
@@ -44,6 +45,8 @@ class ANNFactory:
             ann = NumPy(config)
         elif backend == "pgvector":
             ann = PGVector(config)
+        elif backend == "sqlite":
+            ann = SQLite(config)
         elif backend == "torch":
             ann = Torch(config)
         else:

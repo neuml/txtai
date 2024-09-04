@@ -110,10 +110,11 @@ Enables truncation of vectors to this dimensionality. This is only useful for mo
 quantize: int|boolean
 ```
 
-Enables scalar quantization at the specified precision. Supports 1-bit through 8-bit quantization. Scalar quantization transforms continuous floating point values
-to discrete unsigned integers. Quantized data storage is only supported by the `faiss`, `numpy` and `torch` ANN backends.
+Enables scalar vector quantization at the specified precision. Supports 1-bit through 8-bit quantization. Scalar quantization transforms continuous floating point values to discrete unsigned integers. Only the `faiss`, `numpy` and `torch` ANN backends support storing these vectors.
 
 This parameter supports booleans for backwards compatability. When set to true/false, this flag sets [faiss.quantize](../ann/#faiss).
+
+In addition to vector-level quantization, some ANN backends have the ability to quantize vectors at the storage layer. See the [ANN](../ann) configuration options for more.
 
 ## instructions
 ```yaml

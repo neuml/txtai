@@ -55,11 +55,14 @@ class PGVector(ANN):
 
         # Add id offset and index build metadata
         self.config["offset"] = embeddings.shape[0]
+        self.metadata(self.settings())
 
     def append(self, embeddings):
         self.database.execute(self.table.insert(), [{"indexid": x + self.config["offset"], "embedding": row} for x, row in enumerate(embeddings)])
 
+        # Update id offset and index metadata
         self.config["offset"] += embeddings.shape[0]
+        self.metadata()
 
     def delete(self, ids):
         self.database.execute(delete(self.table).where(self.table.c["indexid"].in_(ids)))
@@ -116,7 +119,7 @@ class PGVector(ANN):
             f"{table}-index",
             self.table.c["embedding"],
             postgresql_using="hnsw",
-            postgresql_with={"m": self.setting("m", 16), "ef_construction": self.setting("efconstruction", 200)},
+            postgresql_with=self.settings(),
             postgresql_ops={"embedding": "vector_ip_ops"},
         )
 
@@ -128,3 +131,13 @@ class PGVector(ANN):
         # Create table and index
         self.table.create(self.engine, checkfirst=True)
         index.create(self.engine, checkfirst=True)
+
+    def settings(self):
+        """
+        Returns settings for this index.
+
+        Returns:
+            dict
+        """
+
+        return {"m": self.setting("m", 16), "ef_construction": self.setting("efconstruction", 200)}
