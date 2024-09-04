@@ -245,9 +245,7 @@ class SQLite(ANN):
             SELECT
         """
 
-        return self.tosql(
-            ("SELECT indexid, 1 - distance " "FROM {table} " f"WHERE embedding MATCH {self.embeddingsql()} " "ORDER BY distance " "LIMIT ?")
-        )
+        return self.tosql(("SELECT indexid, 1 - distance FROM {table} " f"WHERE embedding MATCH {self.embeddingsql()} AND k = ? ORDER BY distance"))
 
     def countsql(self):
         """
