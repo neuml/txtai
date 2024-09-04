@@ -111,6 +111,20 @@ Set the following environment parameters.
 
 __Issue__
 
+Error running SQLite ANN on macOS
+
+```
+AttributeError: 'sqlite3.Connection' object has no attribute 'enable_load_extension'
+```
+
+__Solution__
+
+See [this note](https://alexgarcia.xyz/sqlite-vec/python.html#macos-blocks-sqlite-extensions-by-default) for options on how to fix this.
+
+----------
+
+__Issue__
+
 `ContextualVersionConflict` and/or package METADATA exception while running one of the [examples](../examples) notebooks on Google Colab
 
 __Solution__

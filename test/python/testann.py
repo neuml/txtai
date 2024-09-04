@@ -3,6 +3,7 @@ ANN module tests
 """
 
 import os
+import platform
 import tempfile
 import unittest
 
@@ -172,6 +173,7 @@ class TestANN(unittest.TestCase):
         # Close ANN
         ann.close()
 
+    @unittest.skipIf(platform.system() == "Darwin", "SQLite extensions not supported on macOS")
     def testSQLite(self):
         """
         Test SQLite backend
@@ -179,6 +181,7 @@ class TestANN(unittest.TestCase):
 
         self.runTests("sqlite")
 
+    @unittest.skipIf(platform.system() == "Darwin", "SQLite extensions not supported on macOS")
     def testSQLiteCustom(self):
         """
         Test SQLite backend with custom settings

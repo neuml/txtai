@@ -88,3 +88,5 @@ sqlite:
 ```
 
 The SQLite backend stores embeddings in a SQLite database using [sqlite-vec](https://github.com/asg017/sqlite-vec). This backend supports 1-bit and 8-bit quantization at the storage level.
+
+See [this note](https://alexgarcia.xyz/sqlite-vec/python.html#macos-blocks-sqlite-extensions-by-default) on how to run this ANN on MacOS.
