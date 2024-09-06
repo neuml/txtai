@@ -148,7 +148,7 @@ The default install adds PyTorch with GPU support. There are a number of depende
 
 ```
 pip install txtai torch==[version]+cpu \
--f https://download.pytorch.org/whl/torch_stable.html
+-f https://download.pytorch.org/whl/torch
 ```
 
 Where `[version]` is the version of PyTorch (such as 2.3.1). The [txtai-cpu](https://hub.docker.com/r/neuml/txtai-cpu) image on Docker Hub uses this method to reduce the image size.
