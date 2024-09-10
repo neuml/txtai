@@ -27,7 +27,7 @@ data = [
 ]
 
 # Build embeddings index
-embeddings = Embeddings({"content": True})
+embeddings = Embeddings(content=True)
 embeddings.index(data)
 
 # Create and run pipeline
@@ -43,6 +43,8 @@ rag = RAG(embeddings, "google/flan-t5-base", template="""
 
 rag("What was won?")
 ```
+
+See the [Embeddings](../../../embeddings) and [LLM](../llm) pages for additional configuration options.
 
 See the links below for more detailed examples.
 
