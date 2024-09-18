@@ -45,8 +45,8 @@ See the [LiteLLM documentation](https://litellm.vercel.app/docs/providers) for t
 from txtai import LLM
 
 # Transformers
-llm = LLM("google/gemma-2-9b")
-llm = LLM("google/gemma-2-9b", method="transformers")
+llm = LLM("meta-llama/Meta-Llama-3.1-8B-Instruct")
+llm = LLM("meta-llama/Meta-Llama-3.1-8B-Instruct", method="transformers")
 
 # llama.cpp
 llm = LLM("microsoft/Phi-3-mini-4k-instruct-gguf/Phi-3-mini-4k-instruct-gguf")
@@ -54,8 +54,14 @@ llm = LLM("microsoft/Phi-3-mini-4k-instruct-gguf/Phi-3-mini-4k-instruct-gguf",
            method="llama.cpp")
 
 # LiteLLM
-llm = LLM("ollama/llama3")
-llm = LLM("ollama/llama3", method="litellm")
+llm = LLM("ollama/llama3.1")
+llm = LLM("ollama/llama3.1", method="litellm")
+
+# Custom Ollama endpoint
+llm = LLM("ollama/llama3.1", api_base="http://localhost:11434")
+
+# Custom OpenAI-compatible endpoint
+llm = LLM("openai/llama3.1", api_base="http://localhost:4000")
 
 # LLM APIs - must also set API key via environment variable
 llm = LLM("gpt-4o")
@@ -70,8 +76,8 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from txtai import LLM
 
-# Load Mistral-7B-OpenOrca
-path = "Open-Orca/Mistral-7B-OpenOrca"
+# Load Phi 3.5-mini
+path = "microsoft/Phi-3.5-mini-instruct"
 model = AutoModelForCausalLM.from_pretrained(
   path,
   torch_dtype=torch.bfloat16,
@@ -116,7 +122,7 @@ Similar to the Python example above, the underlying [Hugging Face pipeline param
 
 ```yaml
 llm:
-  path: Open-Orca/Mistral-7B-OpenOrca
+  path: microsoft/Phi-3.5-mini-instruct
   torch_dtype: torch.bfloat16
 ```
 
