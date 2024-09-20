@@ -21,7 +21,7 @@ ENV LANG=C.UTF-8
 RUN \
     # Install required packages
     apt-get update && \
-    apt-get -y --no-install-recommends install libgomp1 libsndfile1 gcc g++ python${PYTHON_VERSION} python${PYTHON_VERSION}-dev python3-pip && \
+    apt-get -y --no-install-recommends install libgomp1 libsndfile1 portaudio19-dev gcc g++ python${PYTHON_VERSION} python${PYTHON_VERSION}-dev python3-pip && \
     rm -rf /var/lib/apt/lists && \
     \
     # Install txtai project and dependencies

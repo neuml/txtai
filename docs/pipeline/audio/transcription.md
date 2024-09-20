@@ -17,6 +17,8 @@ transcribe = Transcription()
 transcribe("path to wav file")
 ```
 
+This pipeline may require additional system dependencies. See [this section](../../../install#environment-specific-prerequisites) for more.
+
 See the link below for a more detailed example.
 
 | Notebook  | Description  |       |

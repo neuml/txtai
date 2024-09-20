@@ -130,11 +130,13 @@ Additional environment specific prerequisites are below.
 
 ### Linux
 
-Optional audio transcription requires a [system library to be installed](https://github.com/bastibe/python-soundfile#installation)
+The AudioStream and Microphone pipelines require the [PortAudio](https://people.csail.mit.edu/hubert/pyaudio) system library. The Transcription pipeline requires the [SoundFile](https://github.com/bastibe/python-soundfile#installation) system library.
 
 ### macOS
 
 Older versions of Faiss have a runtime dependency on `libomp` for macOS. Run `brew install libomp` in this case.
+
+The AudioStream and Microphone pipelines require the [PortAudio](https://people.csail.mit.edu/hubert/pyaudio) system library.
 
 ### Windows
 

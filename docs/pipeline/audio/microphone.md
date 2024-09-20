@@ -17,6 +17,8 @@ microphone = Microphone()
 microphone()
 ```
 
+This pipeline may require additional system dependencies. See [this section](../../../install#environment-specific-prerequisites) for more.
+
 ## Configuration-driven example
 
 Pipelines are run with Python or configuration. Pipelines can be instantiated in [configuration](../../../api/configuration/#pipeline) using the lower case name of the pipeline. Configuration-driven pipelines are run with [workflows](../../../workflow/#configuration-driven-example) or the [API](../../../api#local-instance).
