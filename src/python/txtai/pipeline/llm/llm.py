@@ -2,9 +2,14 @@
 LLM module
 """
 
+import logging
+
 from .factory import GenerationFactory
 
 from ..base import Pipeline
+
+# Logging configuration
+logger = logging.getLogger(__name__)
 
 
 class LLM(Pipeline):
@@ -49,6 +54,9 @@ class LLM(Pipeline):
         Returns:
             generated text
         """
+
+        # Debug logging
+        logger.debug(text)
 
         # Run LLM generation
         return self.generator(text, maxlength, stream, **kwargs)
