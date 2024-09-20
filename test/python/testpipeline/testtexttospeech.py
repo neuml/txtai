@@ -37,3 +37,13 @@ class TestTextToSpeech(unittest.TestCase):
 
         tts = TextToSpeech()
         self.assertEqual(tts.providers()[0][0], "CUDAExecutionProvider")
+
+    def testStreaming(self):
+        """
+        Test streaming speech generation
+        """
+
+        tts = TextToSpeech()
+
+        # Check that data is generated
+        self.assertGreater(len(list(tts("This is a test. And another".split(), stream=True))), 0)

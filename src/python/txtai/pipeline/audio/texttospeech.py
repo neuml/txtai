@@ -24,7 +24,7 @@ from ..base import Pipeline
 
 class TextToSpeech(Pipeline):
     """
-    Generates speech from text
+    Generates speech from text.
     """
 
     def __init__(self, path=None, maxtokens=512):
@@ -63,7 +63,7 @@ class TextToSpeech(Pipeline):
         # Get model input name, typically "text"
         self.input = self.model.get_inputs()[0].name
 
-    def __call__(self, text):
+    def __call__(self, text, stream=False):
         """
         Generates speech from text. Text longer than maxtokens will be batched and returned
         as a single waveform per text input.
@@ -73,6 +73,7 @@ class TextToSpeech(Pipeline):
 
         Args:
             text: text|list
+            stream: stream response if True, defaults to False
 
         Returns:
             list of speech as NumPy array waveforms
@@ -81,14 +82,12 @@ class TextToSpeech(Pipeline):
         # Convert results to a list if necessary
         texts = [text] if isinstance(text, str) else text
 
-        outputs = []
-        for x in texts:
-            # Truncate to max size model can handle
-            x = self.tokenizer(x)
+        # Streaming response
+        if stream:
+            return self.stream(texts)
 
-            # Run input through model and store result
-            result = self.execute(x)
-            outputs.append(result)
+        # Transform text to speech
+        outputs = [self.execute(x) for x in texts]
 
         # Return results
         return outputs[0] if isinstance(text, str) else outputs
@@ -109,17 +108,44 @@ class TextToSpeech(Pipeline):
         # Default when CUDA provider isn't available
         return ["CPUExecutionProvider"]
 
-    def execute(self, tokens):
+    def stream(self, texts):
         """
-        Executes model run for input array of tokens. This method will build batches
+        Iterates over texts, splits into segments and yields snippets of audio.
+        This method is designed to integrate with streaming LLM generation.
+
+        Args:
+            texts: list of input texts
+
+        Returns:
+            snippets of audio as NumPy arrays
+        """
+
+        buffer = []
+        for x in texts:
+            buffer.append(x)
+
+            if x == "\n" or x.strip().endswith("."):
+                data, buffer = "".join(buffer), []
+                yield self.execute(data)
+
+        if buffer:
+            data = "".join(buffer)
+            yield self.execute(data)
+
+    def execute(self, text):
+        """
+        Executes model run for an input array of tokens. This method will build batches
         of tokens when len(tokens) > maxtokens.
 
         Args:
-            tokens: array of tokens to pass to model
+            text: text to tokenize and pass to model
 
         Returns:
             waveform as NumPy array
         """
+
+        # Tokenize input
+        tokens = self.tokenizer(text)
 
         # Split into batches and process
         results = []
