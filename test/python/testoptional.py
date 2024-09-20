@@ -45,7 +45,9 @@ class TestOptional(unittest.TestCase):
             "rich",
             "sklearn.decomposition",
             "sentence_transformers",
+            "sounddevice",
             "soundfile",
+            "speech_recognition",
             "sqlalchemy",
             "sqlite_vec",
             "tika",
@@ -178,12 +180,14 @@ class TestOptional(unittest.TestCase):
         """
 
         from txtai.pipeline import (
+            AudioStream,
             Caption,
             HFOnnx,
             HFTrainer,
             ImageHash,
             LiteLLM,
             LlamaCpp,
+            Microphone,
             MLOnnx,
             Objects,
             Segmentation,
@@ -193,6 +197,9 @@ class TestOptional(unittest.TestCase):
             Transcription,
             Translation,
         )
+
+        with self.assertRaises(ImportError):
+            AudioStream()
 
         with self.assertRaises(ImportError):
             Caption()
@@ -211,6 +218,9 @@ class TestOptional(unittest.TestCase):
 
         with self.assertRaises(ImportError):
             LlamaCpp("TheBloke/TinyLlama-1.1B-Chat-v0.3-GGUF/tinyllama-1.1b-chat-v0.3.Q2_K.gguf")
+
+        with self.assertRaises(ImportError):
+            Microphone()
 
         with self.assertRaises(ImportError):
             MLOnnx()
