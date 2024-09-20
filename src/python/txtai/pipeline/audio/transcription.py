@@ -26,7 +26,7 @@ class Transcription(HFPipeline):
         # Call parent constructor
         super().__init__("automatic-speech-recognition", path, quantize, gpu, model, **kwargs)
 
-    def __call__(self, audio, rate=None, chunk=10, join=True):
+    def __call__(self, audio, rate=None, chunk=10, join=True, **kwargs):
         """
         Transcribes audio files or data to text.
 
@@ -40,6 +40,7 @@ class Transcription(HFPipeline):
             join: if True (default), combine each chunk back together into a single text output.
                   When False, chunks are returned as a list of dicts, each having raw associated audio and
                   sample rate in addition to text
+            kwargs: generate keyword arguments
 
         Returns:
             list of transcribed text
@@ -52,7 +53,7 @@ class Transcription(HFPipeline):
         speech = self.read(values, rate)
 
         # Apply transformation rules and store results
-        results = self.batchprocess(speech, chunk) if chunk and not join else self.process(speech, chunk)
+        results = self.batchprocess(speech, chunk, **kwargs) if chunk and not join else self.process(speech, chunk, **kwargs)
 
         # Return single element if single element passed in
         return results[0] if not isinstance(audio, list) else results
@@ -85,7 +86,7 @@ class Transcription(HFPipeline):
 
         return speech
 
-    def process(self, speech, chunk):
+    def process(self, speech, chunk, **kwargs):
         """
         Standard processing loop. Runs a single pipeline call for all speech inputs along
         with the chunk size. Returns text for each input.
@@ -93,19 +94,20 @@ class Transcription(HFPipeline):
         Args:
             speech: list of (audio data, sample rate)
             chunk: split audio into chunk seconds sized segments for processing
+            kwargs: generate keyword arguments
 
         Returns:
             list of transcribed text
         """
 
         results = []
-        for result in self.pipeline([self.convert(*x) for x in speech], chunk_length_s=chunk, ignore_warning=True):
+        for result in self.pipeline([self.convert(*x) for x in speech], chunk_length_s=chunk, ignore_warning=True, generate_kwargs=kwargs):
             # Store result
             results.append(self.clean(result["text"]))
 
         return results
 
-    def batchprocess(self, speech, chunk):
+    def batchprocess(self, speech, chunk, **kwargs):
         """
         Batch processing loop. Runs a pipeline call per speech input. Each speech input is split
         into chunk duration segments. Each segment is individually transcribed and returned along with
@@ -114,6 +116,7 @@ class Transcription(HFPipeline):
         Args:
             speech: list of (audio data, sample rate)
             chunk: split audio into chunk seconds sized segments for processing
+            kwargs: generate keyword arguments
 
         Returns:
             list of lists of dicts - each dict has text, raw wav data for text and sample rate
@@ -128,7 +131,7 @@ class Transcription(HFPipeline):
 
             # Process segments, store raw data before processing given pipeline modifies it
             sresults = []
-            for x, result in enumerate(self.pipeline([self.convert(*x) for x in segments])):
+            for x, result in enumerate(self.pipeline([self.convert(*x) for x in segments], generate_kwargs=kwargs)):
                 sresults.append({"text": self.clean(result["text"]), "raw": segments[x][0], "rate": segments[x][1]})
 
             results.append(sresults)

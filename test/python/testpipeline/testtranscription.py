@@ -57,6 +57,21 @@ class TestTranscription(unittest.TestCase):
             transcribe(Utils.PATH + "/Make_huge_profits.wav"), "Make huge profits without working make up to one hundred thousand dollars a day"
         )
 
+    def testGenerateArguments(self):
+        """
+        Test transcription with generation keyword arguments
+        """
+
+        transcribe = Transcription()
+
+        # Read audio data
+        raw, samplerate = sf.read(Utils.PATH + "/Make_huge_profits.wav")
+
+        self.assertEqual(
+            transcribe(raw, samplerate, language="English", task="transcribe"),
+            "Make huge profits without working make up to one hundred thousand dollars a day",
+        )
+
     def testResample(self):
         """
         Test resampled audio file to text transcription
