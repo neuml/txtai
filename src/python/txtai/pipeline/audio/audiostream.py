@@ -5,6 +5,8 @@ AudioStream module
 from queue import Queue
 from threading import Thread
 
+import numpy as np
+
 # Conditional import
 try:
     import sounddevice as sd
@@ -44,13 +46,13 @@ class AudioStream(Pipeline):
 
     def __call__(self, segment):
         # Convert single element to list
-        segments = [segment] if not isinstance(segment, list) else segment
+        segments = [segment] if isinstance(segment, np.ndarray) else segment
 
         for x in segments:
             self.queue.put(x)
 
         # Return single element if single element passed in
-        return segment[0] if not isinstance(segment, list) else segment
+        return segments[0] if isinstance(segment, np.ndarray) else segments
 
     def wait(self):
         """
