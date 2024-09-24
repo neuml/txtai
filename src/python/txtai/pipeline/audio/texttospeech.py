@@ -63,7 +63,10 @@ class TextToSpeech(Pipeline):
         # Get model input name, typically "text"
         self.input = self.model.get_inputs()[0].name
 
-    def __call__(self, text, stream=False):
+        # Get parameter names
+        self.params = set(x.name for x in self.model.get_inputs())
+
+    def __call__(self, text, stream=False, speaker=1):
         """
         Generates speech from text. Text longer than maxtokens will be batched and returned
         as a single waveform per text input.
@@ -74,6 +77,7 @@ class TextToSpeech(Pipeline):
         Args:
             text: text|list
             stream: stream response if True, defaults to False
+            speaker: speaker id, defaults to 1
 
         Returns:
             list of speech as NumPy array waveforms
@@ -84,10 +88,10 @@ class TextToSpeech(Pipeline):
 
         # Streaming response
         if stream:
-            return self.stream(texts)
+            return self.stream(texts, speaker)
 
         # Transform text to speech
-        outputs = [self.execute(x) for x in texts]
+        outputs = [self.execute(x, speaker) for x in texts]
 
         # Return results
         return outputs[0] if isinstance(text, str) else outputs
@@ -108,13 +112,14 @@ class TextToSpeech(Pipeline):
         # Default when CUDA provider isn't available
         return ["CPUExecutionProvider"]
 
-    def stream(self, texts):
+    def stream(self, texts, speaker):
         """
         Iterates over texts, splits into segments and yields snippets of audio.
         This method is designed to integrate with streaming LLM generation.
 
         Args:
             texts: list of input texts
+            speaker: speaker id
 
         Returns:
             snippets of audio as NumPy arrays
@@ -126,19 +131,20 @@ class TextToSpeech(Pipeline):
 
             if x == "\n" or x.strip().endswith("."):
                 data, buffer = "".join(buffer), []
-                yield self.execute(data)
+                yield self.execute(data, speaker)
 
         if buffer:
             data = "".join(buffer)
-            yield self.execute(data)
+            yield self.execute(data, speaker)
 
-    def execute(self, text):
+    def execute(self, text, speaker):
         """
         Executes model run for an input array of tokens. This method will build batches
         of tokens when len(tokens) > maxtokens.
 
         Args:
             text: text to tokenize and pass to model
+            speaker: speaker id
 
         Returns:
             waveform as NumPy array
@@ -150,8 +156,12 @@ class TextToSpeech(Pipeline):
         # Split into batches and process
         results = []
         for x in self.batch(tokens, self.maxtokens):
+            # Format input parameters
+            params = {self.input: x}
+            params = {**params, **{"sids": np.array([speaker])}} if "sids" in self.params else params
+
             # Run text through TTS model and save waveform
-            output = self.model.run(None, {self.input: x})
+            output = self.model.run(None, params)
             results.append(output[0])
 
         # Concatenate results and return
