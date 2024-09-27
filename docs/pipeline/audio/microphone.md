@@ -3,7 +3,7 @@
 ![pipeline](../../images/pipeline.png#only-light)
 ![pipeline](../../images/pipeline-dark.png#only-dark)
 
-The Microphone pipeline reads input audio from a microphone device. This pipeline is designed to run on local machines given that it requires access to read from an input device.
+The Microphone pipeline reads input speech from a microphone device. This pipeline is designed to run on local machines given that it requires access to read from an input device.
 
 ## Example
 
@@ -26,13 +26,13 @@ Pipelines are run with Python or configuration. Pipelines can be instantiated in
 ### config.yml
 ```yaml
 # Create pipeline using lower case class name
-audiostream:
+microphone:
 
 # Run pipeline with workflow
 workflow:
-  audiostream:
+  microphone:
     tasks:
-      - action: audiostream
+      - action: microphone
 ```
 
 ### Run with Workflows
@@ -42,7 +42,7 @@ from txtai import Application
 
 # Create and run pipeline with workflow
 app = Application("config.yml")
-list(app.workflow("audiostream", ["numpy data"]))
+list(app.workflow("microphone", ["1"]))
 ```
 
 ### Run with API
@@ -53,7 +53,7 @@ CONFIG=config.yml uvicorn "txtai.api:app" &
 curl \
   -X POST "http://localhost:8000/workflow" \
   -H "Content-Type: application/json" \
-  -d '{"name":"audiostream", "elements":["numpy data"]}'
+  -d '{"name":"microphone", "elements":["1"]}'
 ```
 
 ## Methods
