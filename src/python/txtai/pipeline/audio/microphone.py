@@ -167,7 +167,9 @@ class Microphone(Pipeline):
 
         # Calculate detection ratio and return
         ratio = sum(detects) / len(detects) if detects else 0
-        logger.debug("DETECT %.4f", ratio)
+        if ratio > 0:
+            logger.debug("DETECT %.4f", ratio)
+
         return ratio >= self.vadthreshold
 
     def detectband(self, audio):

@@ -2,6 +2,8 @@
 TextToSpeech module
 """
 
+import logging
+
 # Conditional import
 try:
     import onnxruntime as ort
@@ -20,6 +22,9 @@ import numpy as np
 from huggingface_hub import hf_hub_download
 
 from ..base import Pipeline
+
+# Logging configuration
+logger = logging.getLogger(__name__)
 
 
 class TextToSpeech(Pipeline):
@@ -149,6 +154,9 @@ class TextToSpeech(Pipeline):
         Returns:
             waveform as NumPy array
         """
+
+        # Debug logging for input text
+        logger.debug("%s", text)
 
         # Tokenize input
         tokens = self.tokenizer(text)
