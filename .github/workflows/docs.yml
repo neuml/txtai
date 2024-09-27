@@ -12,7 +12,6 @@ jobs:
         with:
           python-version: 3.8
       - run: |
-          sudo apt-get update && sudo apt-get install libsndfile1 portaudio19-dev
           pip install -U pip wheel
           pip install .[all,dev]
       - run: mkdocs gh-deploy --force
