@@ -47,7 +47,6 @@ class TestOptional(unittest.TestCase):
             "sentence_transformers",
             "sounddevice",
             "soundfile",
-            "speech_recognition",
             "sqlalchemy",
             "sqlite_vec",
             "tika",

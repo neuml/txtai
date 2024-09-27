@@ -12,7 +12,7 @@ try:
     import sounddevice as sd
 
     SOUNDDEVICE = True
-except ImportError:
+except (ImportError, OSError):
     SOUNDDEVICE = False
 
 from ..base import Pipeline
@@ -35,7 +35,7 @@ class AudioStream(Pipeline):
         """
 
         if not SOUNDDEVICE:
-            raise ImportError('AudioStream pipeline is not available - install "pipeline" extra to enable')
+            raise ImportError("SoundDevice library not installed or portaudio library not found")
 
         # Sampler rate
         self.rate = rate

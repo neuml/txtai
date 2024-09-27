@@ -2,106 +2,269 @@
 Microphone module
 """
 
+import logging
+
 import numpy as np
 
 # Conditional import
 try:
-    import speech_recognition as sr
+    import sounddevice as sd
     import webrtcvad
 
-    PYAUDIO = True
-except ImportError:
-    PYAUDIO = False
+    from scipy.fft import rfft, rfftfreq
+    from scipy.signal import butter, sosfilt
+
+    SOUNDDEVICE = True
+except (ImportError, OSError):
+    SOUNDDEVICE = False
 
 from ..base import Pipeline
+
+# Logging configuration
+logger = logging.getLogger(__name__)
 
 
 class Microphone(Pipeline):
     """
-    Reads input audio from a microphone device. This pipeline is designed to run on local machines given
+    Reads input speech from a microphone device. This pipeline is designed to run on local machines given
     that it requires access to read from an input device.
     """
 
-    def __init__(self, rate=16000, vadmode=1, vadframe=30, vadthreshold=0.6):
+    def __init__(self, rate=16000, vadmode=3, vadframe=20, vadthreshold=0.6, voicestart=300, voiceend=3400, active=5, pause=8):
         """
         Creates a new Microphone pipeline.
 
         Args:
-            rate: sample rate to record audio in, defaults to 16 kHz
-            vadmode: aggressiveness of the voice activity detector, defaults to 1
-            vadframe: voice activity detector frame size in ms, defaults to 30
+            rate: sample rate to record audio in, defaults to 16000 (16 kHz)
+            vadmode: aggressiveness of the voice activity detector (1 - 3), defaults to 3, which is the most aggressive filter
+            vadframe: voice activity detector frame size in ms, defaults to 20
             vadthreshold: percentage of frames (0.0 - 1.0) that must be voice to be considered speech, defaults to 0.6
+            voicestart: starting frequency to use for voice filtering, defaults to 300
+            voiceend: ending frequency to use for voice filtering, defaults to 3400
+            active: minimum number of active speech chunks to require before considering this speech, defaults to 5
+            pause: number of non-speech chunks to keep before considering speech complete, defaults to 8
         """
 
-        if not PYAUDIO:
-            raise ImportError('Microphone pipeline is not available - install "pipeline" extra to enable')
+        if not SOUNDDEVICE:
+            raise ImportError("SoundDevice library not installed or portaudio library not found")
+
+        # Sample rate
+        self.rate = rate
 
         # Voice activity detector
         self.vad = webrtcvad.Vad(vadmode)
         self.vadframe = vadframe
         self.vadthreshold = vadthreshold
 
-        # Sample rate
-        self.rate = rate
+        # Voice spectrum
+        self.voicestart = voicestart
+        self.voiceend = voiceend
 
-        # Speech recognition config
-        self.recognizer = sr.Recognizer()
+        # Audio chunks counts
+        self.active = active
+        self.pause = pause
 
     def __call__(self, device=None):
-        # Read from microphone
-        with sr.Microphone(sample_rate=self.rate) as source:
-            # Calibrate microphone
-            self.recognizer.adjust_for_ambient_noise(source)
+        # Listen for audio
+        audio = self.listen(device[0] if isinstance(device, list) else device)
 
-            # Wait for speech
-            audio = None
-            while audio is None:
-                audio = self.listen(source)
+        # Return single element if single element passed in
+        return (audio, self.rate) if device is None or not isinstance(device, list) else [(audio, self.rate)]
 
-            # Return single element if single element passed in
-            return (audio, self.rate) if device is None or not isinstance(device, list) else [(audio, self.rate)]
-
-    def listen(self, source):
+    def listen(self, device):
         """
-        Listens for audio from source. Returns audio if it passes the voice
-        activity detector.
+        Listens for speech. Detected speech is converted to 32-bit floats for compatibility with
+        automatic speech recognition (ASR) pipelines.
+
+        This method blocks until speech is detected.
 
         Args:
-            source: microphone source
+            device: input device
 
         Returns:
-            audio if present, else None
+            audio
         """
 
-        audio = self.recognizer.listen(source)
-        if self.detect(audio.frame_data, audio.sample_rate):
-            # Convert to WAV
-            data = audio.get_wav_data()
+        # Record in 100ms chunks
+        chunksize = self.rate // 10
 
-            # Convert to float32
-            s16 = np.frombuffer(data, dtype=np.int16, count=len(data) // 2, offset=0)
-            return s16.astype(np.float32, order="C") / 32768
+        # Open input stream
+        stream = sd.RawInputStream(device=device, samplerate=self.rate, channels=1, blocksize=chunksize, dtype=np.int16)
 
-        return None
+        # Start the input stream
+        stream.start()
 
-    def detect(self, audio, rate):
+        record, speech, nospeech, chunks = True, 0, 0, []
+        while record:
+            # Read chunk
+            chunk, _ = stream.read(chunksize)
+
+            # Detect speech using WebRTC VAD for audio chunk
+            detect = self.detect(chunk)
+            speech = speech + 1 if detect else speech
+            nospeech = 0 if detect else nospeech + 1
+
+            # Save chunk, if this is an active stream
+            if speech:
+                chunks.append(chunk)
+
+                # Pause limit has been reached, check if this audio should be accepted
+                if nospeech >= self.pause:
+                    logger.debug("Audio detected and being analyzed")
+                    if speech >= self.active and self.isspeech(chunks[:-nospeech]):
+                        # Disable recording
+                        record = False
+                    else:
+                        # Reset parameters and keep recording
+                        logger.debug("Speech not detected")
+                        speech, nospeech, chunks = 0, 0, []
+
+        # Stop the input stream
+        stream.stop()
+
+        # Convert to float32 and return
+        audio = np.frombuffer(b"".join(chunks), np.int16)
+        return self.float32(audio)
+
+    def isspeech(self, chunks):
         """
-        Voice activity detector.
+        Runs an ensemble of Voice Activity Detection (VAD) methods. Returns true if speech is
+        detected in the input audio chunks.
 
         Args:
-            audio: input waveform data
-            rate: sample rate
+            chunks: input audio chunks as byte buffers
+
+        Returns:
+            True if speech is detected, False otherwise
+        """
+
+        # Convert to NumPy array for processing
+        audio = np.frombuffer(b"".join(chunks), dtype=np.int16)
+
+        # Ensemble of:
+        #  - WebRTC VAD with a human voice range butterworth bandpass filter applied to the signal
+        #  - FFT applied to detect the energy ratio for human voice range vs total range
+        return self.detectband(audio) and self.detectenergy(audio)
+
+    def detect(self, buffer):
+        """
+        Detect speech using the WebRTC Voice Activity Detector (VAD).
+
+        Args:
+            buffer: input audio buffer frame as bytes
 
         Returns:
             True if the number of audio frames with audio pass vadthreshold, False otherwise
         """
 
-        n = int(rate * (self.vadframe / 1000.0) * 2)
+        n = int(self.rate * (self.vadframe / 1000.0) * 2)
         offset = 0
 
         detects = []
-        while offset + n < len(audio):
-            detects.append(1 if self.vad.is_speech(audio[offset : offset + n], rate) else 0)
+        while offset + n <= len(buffer):
+            detects.append(1 if self.vad.is_speech(buffer[offset : offset + n], self.rate) else 0)
             offset += n
 
-        return sum(detects) / len(detects) >= self.vadthreshold if detects else 0
+        # Calculate detection ratio and return
+        ratio = sum(detects) / len(detects) if detects else 0
+        logger.debug("DETECT %.4f", ratio)
+        return ratio >= self.vadthreshold
+
+    def detectband(self, audio):
+        """
+        Detects speech using audio data filtered through a butterworth band filter
+        with the human voice range.
+
+        Args:
+            audio: input audio data as an NumPy array
+
+        Returns:
+            True if speech is detected, False otherwise
+        """
+
+        # Upsample to float32
+        audio = self.float32(audio)
+
+        # Human voice frequency range
+        low = self.voicestart / (0.5 * self.rate)
+        high = self.voiceend / (0.5 * self.rate)
+
+        # Low and high pass filter using human voice range
+        sos = butter(5, Wn=[low, high], btype="band", output="sos")
+        audio = sosfilt(sos, audio)
+
+        # Scale back to int16
+        audio = self.int16(audio)
+
+        # Pass filtered signal to WebRTC VAD
+        return self.detect(audio.tobytes())
+
+    def detectenergy(self, audio):
+        """
+        Detects speech by comparing the signal energy of the human voice range
+        to the overall signal energy.
+
+        Args:
+            audio: input audio data as an NumPy array
+
+        Returns:
+            True if speech is detected, False otherwise
+        """
+
+        # Calculate signal frequency
+        frequency = rfftfreq(len(audio), 1.0 / self.rate)
+        frequency = frequency[1:]
+
+        # Calculate signal energy using amplitude
+        energy = np.abs(rfft(audio))
+        energy = energy[1:]
+        energy = energy**2
+
+        # Get energy for each frequency
+        energyfreq = {}
+        for x, freq in enumerate(frequency):
+            if abs(freq) not in energyfreq:
+                energyfreq[abs(freq)] = energy[x] * 2
+
+        # Sum speech energy
+        speechenergy = 0
+        for f, e in energyfreq.items():
+            if self.voicestart <= f <= self.voiceend:
+                speechenergy += e
+
+        # Calculate ratio of speech energy to total energy and return
+        ratio = speechenergy / sum(energyfreq.values())
+        logger.debug("SPEECH %.4f", ratio)
+        return ratio >= self.vadthreshold
+
+    def float32(self, audio):
+        """
+        Converts an input NumPy array with 16-bit ints to 32-bit floats.
+
+        Args:
+            audio: input audio array as 16-bit ints
+
+        Returns:
+            audio array as 32-bit floats
+        """
+
+        i = np.iinfo(audio.dtype)
+        abs_max = 2 ** (i.bits - 1)
+        offset = i.min + abs_max
+        return (audio.astype(np.float32) - offset) / abs_max
+
+    def int16(self, audio):
+        """
+        Converts an input NumPy array with 32-bit floats to 16-bit ints.
+
+        Args:
+            audio: input audio array as 32-bit floats
+
+        Returns:
+            audio array as 16-bit ints
+        """
+
+        i = np.iinfo(np.int16)
+        absmax = 2 ** (i.bits - 1)
+        offset = i.min + absmax
+        return (audio * absmax + offset).clip(i.min, i.max).astype(np.int16)

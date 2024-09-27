@@ -15,6 +15,16 @@ from txtai.pipeline import TextToSpeech
 # Create and run pipeline
 tts = TextToSpeech()
 tts("Say something here")
+
+# Stream audio - incrementally generates snippets of audio
+yield from tts(
+  "Say something here. And say something else",
+  streaming=True
+)
+
+# Generate audio using a speaker id
+tts = TextToSpeech("neuml/vctk-vits-onnx")
+tts("Say something here", speaker=42)
 ```
 
 See the link below for a more detailed example.
@@ -27,6 +37,7 @@ This pipeline is backed by ONNX models from the Hugging Face Hub. The following 
 
 - [ljspeech-jets-onnx](https://huggingface.co/NeuML/ljspeech-jets-onnx)
 - [ljspeech-vits-onnx](https://huggingface.co/NeuML/ljspeech-vits-onnx)
+- [vctk-vits-onnx](https://huggingface.co/NeuML/vctk-vits-onnx)
 
 ## Configuration-driven example
 

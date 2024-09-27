@@ -34,7 +34,7 @@ jobs:
           java-version: "8"
 
       - name: Install dependencies - Linux
-        run: sudo apt-get update && sudo apt-get install libsndfile1 portaudio19-dev
+        run: sudo apt-get update && sudo apt-get install libsndfile1 portaudio19
         if: matrix.os == 'ubuntu-latest'
 
       - name: Install dependencies - macOS

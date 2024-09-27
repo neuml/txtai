@@ -56,9 +56,7 @@ extras["model"] = ["onnx>=1.11.0", "onnxruntime>=1.11.0"]
 extras["pipeline-audio"] = [
     "onnx>=1.11.0",
     "onnxruntime>=1.11.0",
-    "pyaudio>=0.2.14",
     "scipy>=1.4.1",
-    "speechrecognition>=3.10.4",
     "sounddevice>=0.5.0",
     "soundfile>=0.10.3.post1",
     "ttstokenizer>=1.0.0",

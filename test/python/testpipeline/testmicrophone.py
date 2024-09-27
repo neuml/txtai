@@ -6,6 +6,7 @@ import unittest
 
 from unittest.mock import patch
 
+import numpy as np
 import soundfile as sf
 
 from txtai.pipeline import Microphone
@@ -19,43 +20,62 @@ class TestMicrophone(unittest.TestCase):
     Microphone tests.
     """
 
-    @patch("speech_recognition.Recognizer.listen")
-    @patch("speech_recognition.Recognizer.adjust_for_ambient_noise")
-    @patch("speech_recognition.Microphone")
-    # pylint: disable=C0115,C0116,W0613
-    def testMicrophone(self, microphone, ambient, listen):
+    # pylint: disable=C0115,C0116
+    @patch("sounddevice.RawInputStream")
+    def testMicrophone(self, inputstream):
         """
         Test listening to microphone
         """
 
-        class Audio:
-            def __init__(self):
-                self.frame_data, self.sample_rate = None, None
+        class RawInputStream:
+            def __init__(self, **kwargs):
+                self.args = kwargs
 
-            def get_wav_data(self):
-                return self.frame_data
+                # Read audio data
+                self.index, self.passes = 0, 0
+                audio, self.samplerate = sf.read(Utils.PATH + "/Make_huge_profits.wav")
 
-        def speech(device):
-            # Read audio data
-            raw, samplerate = sf.read(Utils.PATH + "/Make_huge_profits.wav")
+                # Convert data to PCM
+                self.audio = self.int16(audio)
 
-            audio = Audio()
-            audio.frame_data, audio.sample_rate = raw, samplerate
-            return audio
+                # Start with random data to test that speech is not detected
+                self.data = np.concatenate((self.audio * 50, np.zeros(shape=self.audio.shape, dtype=np.int16)))
 
-        def nospeech(device):
-            audio = Audio()
-            audio.sample_rate = 16000
-            audio.frame_data = b"\x00\x00" * int(audio.sample_rate * 30 / 1000)
-            return audio
+            def start(self):
+                pass
 
-        microphone.return_value.__enter__.return_value = (0, 1)
-        ambient.return_value = True
+            def stop(self):
+                pass
 
+            def read(self, size):
+                # Get chunk
+                chunk = self.data[self.index : self.index + size]
+                self.index += size
+
+                # Initial pass is random data, 2nd pass is speech data
+                if self.index > len(self.data):
+                    if not self.passes:
+                        self.index, self.passes = 0, self.passes + 1
+                        self.data = self.audio
+                    elif self.index >= len(self.audio) * 10:
+                        # Break out of loop if speech continues to not be detected
+                        raise IOError("Data exhausted")
+
+                return chunk, False
+
+            def int16(self, data):
+                i = np.iinfo(np.int16)
+                absmax = 2 ** (i.bits - 1)
+                offset = i.min + absmax
+                return (data * absmax + offset).clip(i.min, i.max).astype(np.int16)
+
+        # Mock input stream
+        inputstream.return_value = RawInputStream()
+
+        # Create microphone pipeline and read data
         pipeline = Microphone()
+        data, rate = pipeline()
 
-        listen.side_effect = speech
-        self.assertIsNotNone(pipeline([1]))
-
-        listen.side_effect = nospeech
-        self.assertIsNone(pipeline.listen(microphone))
+        # Validate sample rate and length of data
+        self.assertEqual(len(data), 91220)
+        self.assertEqual(rate, 16000)
