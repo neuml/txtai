@@ -18,13 +18,13 @@ tts("Say something here")
 
 # Stream audio - incrementally generates snippets of audio
 yield from tts(
-  "Say something here. And say something else",
-  streaming=True
+  "Say something here. And say something else.".split(),
+  stream=True
 )
 
 # Generate audio using a speaker id
 tts = TextToSpeech("neuml/vctk-vits-onnx")
-tts("Say something here", speaker=42)
+tts("Say something here", speaker=15)
 ```
 
 See the link below for a more detailed example.
