@@ -497,7 +497,7 @@ class Application:
 
         st.markdown("Find players with similar statistics.")
 
-        category = self.category("Batting", "searchcategory")
+        stats, category = None, self.category("Batting", "searchcategory")
         with st.form("search"):
             if category == "Batting":
                 stats, columns = self.batting, self.batting.columns[:-6]

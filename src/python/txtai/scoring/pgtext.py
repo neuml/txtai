@@ -127,9 +127,11 @@ class PGText(Scoring):
                 MetaData(),
                 Column("indexid", Integer, primary_key=True, autoincrement=False),
                 Column("text", Text),
-                Column("vector", TSVECTOR, Computed(f"to_tsvector('{self.language}', text)", persisted=True))
-                if self.engine.dialect.name == "postgresql"
-                else Column("vector", Integer),
+                (
+                    Column("vector", TSVECTOR, Computed(f"to_tsvector('{self.language}', text)", persisted=True))
+                    if self.engine.dialect.name == "postgresql"
+                    else Column("vector", Integer)
+                ),
             )
 
             # Create ANN index - inner product is equal to cosine similarity on normalized vectors

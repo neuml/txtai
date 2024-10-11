@@ -127,13 +127,11 @@ class Models:
         return (
             deviceid
             if isinstance(deviceid, str)
-            else "cpu"
-            if deviceid < 0
-            else f"cuda:{deviceid}"
-            if torch.cuda.is_available()
-            else "mps"
-            if Models.hasmpsdevice()
-            else Models.finddevice()
+            else (
+                "cpu"
+                if deviceid < 0
+                else f"cuda:{deviceid}" if torch.cuda.is_available() else "mps" if Models.hasmpsdevice() else Models.finddevice()
+            )
         )
 
     @staticmethod

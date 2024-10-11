@@ -2,7 +2,6 @@
 Index imports
 """
 
-
 from .action import Action
 from .autoid import AutoId
 from .configuration import Configuration
