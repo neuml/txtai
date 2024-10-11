@@ -25,6 +25,10 @@ yield from tts(
 # Generate audio using a speaker id
 tts = TextToSpeech("neuml/vctk-vits-onnx")
 tts("Say something here", speaker=15)
+
+# Generate audio using speaker embeddings
+tts = TextToSpeech("neuml/txtai-speecht5-onnx")
+tts("Say something here", speaker=np.array(...))
 ```
 
 See the link below for a more detailed example.
@@ -38,6 +42,7 @@ This pipeline is backed by ONNX models from the Hugging Face Hub. The following 
 - [ljspeech-jets-onnx](https://huggingface.co/NeuML/ljspeech-jets-onnx)
 - [ljspeech-vits-onnx](https://huggingface.co/NeuML/ljspeech-vits-onnx)
 - [vctk-vits-onnx](https://huggingface.co/NeuML/vctk-vits-onnx)
+- [txtai-speecht5-onnx](https://huggingface.co/NeuML/txtai-speecht5-onnx)
 
 ## Configuration-driven example
 

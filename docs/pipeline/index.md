@@ -12,8 +12,10 @@ Pipelines are run with Python or configuration. Pipelines can be instantiated in
 The following is a list of the default pipelines available in txtai. All pipelines use default models when otherwise not specified. See the [model guide](../models) for the current model recommentations.
 
 - Audio
+    - [AudioMixer](audio/audiomixer)
     - [AudioStream](audio/audiostream)
     - [Microphone](audio/microphone)
+    - [TextToAudio](audio/texttoaudio)
     - [TextToSpeech](audio/texttospeech)
     - [Transcription](audio/transcription)
 - Data Processing

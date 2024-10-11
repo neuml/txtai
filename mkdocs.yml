@@ -74,8 +74,10 @@ nav:
     - Pipeline:
         - pipeline/index.md
         - Audio:
+            - Audio Mixer: pipeline/audio/audiomixer.md
             - Audio Stream: pipeline/audio/audiostream.md
             - Microphone: pipeline/audio/microphone.md
+            - Text To Audio: pipeline/audio/texttoaudio.md
             - Text To Speech: pipeline/audio/texttospeech.md
             - Transcription: pipeline/audio/transcription.md
         - Data:

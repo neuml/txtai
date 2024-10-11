@@ -1,23 +1,21 @@
-# Audio Stream
+# Audio Mixer
 
 ![pipeline](../../images/pipeline.png#only-light)
 ![pipeline](../../images/pipeline-dark.png#only-dark)
 
-The Audio Stream pipeline is a threaded pipeline that plays audio segments. This pipeline is designed to run on local machines given that it requires access to write to an output device.
+The Audio Mixer pipeline mixes multiple audio streams into a single stream.
 
 ## Example
 
 The following shows a simple example using this pipeline.
 
 ```python
-from txtai.pipeline import AudioStream
+from txtai.pipeline import AudioMixer
 
 # Create and run pipeline
-audio = AudioStream()
-audio(data)
+mixer = AudioMixer()
+mixer(((audio1, rate1), (audio2, rate2)))
 ```
-
-This pipeline may require additional system dependencies. See [this section](../../../install#environment-specific-prerequisites) for more.
 
 ## Configuration-driven example
 
@@ -26,13 +24,13 @@ Pipelines are run with Python or configuration. Pipelines can be instantiated in
 ### config.yml
 ```yaml
 # Create pipeline using lower case class name
-audiostream:
+audiomixer:
 
 # Run pipeline with workflow
 workflow:
-  audiostream:
+  audiomixer:
     tasks:
-      - action: audiostream
+      - action: audiomixer
 ```
 
 ### Run with Workflows
@@ -42,7 +40,7 @@ from txtai import Application
 
 # Create and run pipeline with workflow
 app = Application("config.yml")
-list(app.workflow("audiostream", [["numpy data", "sample rate"]]))
+list(app.workflow("audiomixer", [[[audio1, rate1], [audio2, rate2]]]))
 ```
 
 ### Run with API
@@ -53,12 +51,12 @@ CONFIG=config.yml uvicorn "txtai.api:app" &
 curl \
   -X POST "http://localhost:8000/workflow" \
   -H "Content-Type: application/json" \
-  -d '{"name":"audiostream", "elements":[["numpy data", "sample rate"]]}'
+  -d '{"name":"audiomixer", "elements":[[[audio1, rate1], [audio2, rate2]]]}'
 ```
 
 ## Methods
 
 Python documentation for the pipeline.
 
-### ::: txtai.pipeline.AudioStream.__init__
-### ::: txtai.pipeline.AudioStream.__call__
+### ::: txtai.pipeline.AudioMixer.__init__
+### ::: txtai.pipeline.AudioMixer.__call__

@@ -1,23 +1,21 @@
-# Audio Stream
+# Text To Audio
 
 ![pipeline](../../images/pipeline.png#only-light)
 ![pipeline](../../images/pipeline-dark.png#only-dark)
 
-The Audio Stream pipeline is a threaded pipeline that plays audio segments. This pipeline is designed to run on local machines given that it requires access to write to an output device.
+The Text To Audio pipeline generates audio from text.
 
 ## Example
 
 The following shows a simple example using this pipeline.
 
 ```python
-from txtai.pipeline import AudioStream
+from txtai.pipeline import TextToAudio
 
 # Create and run pipeline
-audio = AudioStream()
-audio(data)
+tta = TextToAudio()
+tta("Describe the audio to generate here")
 ```
-
-This pipeline may require additional system dependencies. See [this section](../../../install#environment-specific-prerequisites) for more.
 
 ## Configuration-driven example
 
@@ -26,13 +24,13 @@ Pipelines are run with Python or configuration. Pipelines can be instantiated in
 ### config.yml
 ```yaml
 # Create pipeline using lower case class name
-audiostream:
+texttoaudio:
 
 # Run pipeline with workflow
 workflow:
-  audiostream:
+  tta:
     tasks:
-      - action: audiostream
+      - action: texttoaudio
 ```
 
 ### Run with Workflows
@@ -42,7 +40,7 @@ from txtai import Application
 
 # Create and run pipeline with workflow
 app = Application("config.yml")
-list(app.workflow("audiostream", [["numpy data", "sample rate"]]))
+list(app.workflow("tta", ["Describe the audio to generate here"]))
 ```
 
 ### Run with API
@@ -53,12 +51,12 @@ CONFIG=config.yml uvicorn "txtai.api:app" &
 curl \
   -X POST "http://localhost:8000/workflow" \
   -H "Content-Type: application/json" \
-  -d '{"name":"audiostream", "elements":[["numpy data", "sample rate"]]}'
+  -d '{"name":"tta", "elements":["Describe the audio to generate here"]}'
 ```
 
 ## Methods
 
 Python documentation for the pipeline.
 
-### ::: txtai.pipeline.AudioStream.__init__
-### ::: txtai.pipeline.AudioStream.__call__
+### ::: txtai.pipeline.TextToAudio.__init__
+### ::: txtai.pipeline.TextToAudio.__call__
