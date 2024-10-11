@@ -5,8 +5,7 @@ Factory module
 import json
 import os
 
-from huggingface_hub import hf_hub_download
-from huggingface_hub.utils import EntryNotFoundError
+from transformers.utils import cached_file
 
 from .base import Pooling
 from .cls import ClsPooling
@@ -77,7 +76,7 @@ class PoolingFactory:
                 method = "clspooling"
 
         # Ignore this error
-        except EntryNotFoundError:
+        except OSError:
             pass
 
         return method
@@ -103,7 +102,7 @@ class PoolingFactory:
             maxlength = config.get("max_seq_length")
 
         # Ignore this error
-        except EntryNotFoundError:
+        except OSError:
             pass
 
         return maxlength
@@ -122,6 +121,6 @@ class PoolingFactory:
         """
 
         # Download file and parse JSON
-        path = hf_hub_download(repo_id=path, filename=name)
+        path = cached_file(path_or_repo_id=path, filename=name)
         with open(path, encoding="utf-8") as f:
             return json.load(f)

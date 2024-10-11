@@ -14,9 +14,11 @@ try:
     from scipy.fft import rfft, rfftfreq
     from scipy.signal import butter, sosfilt
 
-    SOUNDDEVICE = True
+    from .signal import Signal, SCIPY
+
+    MICROPHONE = SCIPY
 except (ImportError, OSError):
-    SOUNDDEVICE = False
+    MICROPHONE = False
 
 from ..base import Pipeline
 
@@ -45,8 +47,13 @@ class Microphone(Pipeline):
             pause: number of non-speech chunks to keep before considering speech complete, defaults to 8
         """
 
-        if not SOUNDDEVICE:
-            raise ImportError("SoundDevice library not installed or portaudio library not found")
+        if not MICROPHONE:
+            raise ImportError(
+                (
+                    'Microphone pipeline is not available - install "pipeline" extra to enable. '
+                    "Also check that the portaudio system library is available."
+                )
+            )
 
         # Sample rate
         self.rate = rate
@@ -65,6 +72,16 @@ class Microphone(Pipeline):
         self.pause = pause
 
     def __call__(self, device=None):
+        """
+        Reads audio from an input device.
+
+        Args:
+            device: optional input device id, otherwise uses system default
+
+        Returns:
+            list of (audio, sample rate)
+        """
+
         # Listen for audio
         audio = self.listen(device[0] if isinstance(device, list) else device)
 
@@ -124,7 +141,7 @@ class Microphone(Pipeline):
 
         # Convert to float32 and return
         audio = np.frombuffer(b"".join(chunks), np.int16)
-        return self.float32(audio)
+        return Signal.float32(audio)
 
     def isspeech(self, chunks):
         """
@@ -185,7 +202,7 @@ class Microphone(Pipeline):
         """
 
         # Upsample to float32
-        audio = self.float32(audio)
+        audio = Signal.float32(audio)
 
         # Human voice frequency range
         low = self.voicestart / (0.5 * self.rate)
@@ -196,7 +213,7 @@ class Microphone(Pipeline):
         audio = sosfilt(sos, audio)
 
         # Scale back to int16
-        audio = self.int16(audio)
+        audio = Signal.int16(audio)
 
         # Pass filtered signal to WebRTC VAD
         return self.detect(audio.tobytes())
@@ -238,35 +255,3 @@ class Microphone(Pipeline):
         ratio = speechenergy / sum(energyfreq.values())
         logger.debug("SPEECH %.4f", ratio)
         return ratio >= self.vadthreshold
-
-    def float32(self, audio):
-        """
-        Converts an input NumPy array with 16-bit ints to 32-bit floats.
-
-        Args:
-            audio: input audio array as 16-bit ints
-
-        Returns:
-            audio array as 32-bit floats
-        """
-
-        i = np.iinfo(audio.dtype)
-        abs_max = 2 ** (i.bits - 1)
-        offset = i.min + abs_max
-        return (audio.astype(np.float32) - offset) / abs_max
-
-    def int16(self, audio):
-        """
-        Converts an input NumPy array with 32-bit floats to 16-bit ints.
-
-        Args:
-            audio: input audio array as 32-bit floats
-
-        Returns:
-            audio array as 16-bit ints
-        """
-
-        i = np.iinfo(np.int16)
-        absmax = 2 ** (i.bits - 1)
-        offset = i.min + absmax
-        return (audio * absmax + offset).clip(i.min, i.max).astype(np.int16)

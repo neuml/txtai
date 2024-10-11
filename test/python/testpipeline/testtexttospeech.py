@@ -14,15 +14,18 @@ class TestTextToSpeech(unittest.TestCase):
     TextToSpeech tests.
     """
 
-    def testTextToSpeech(self):
+    def testESPnet(self):
         """
-        Test generating speech for text
+        Test generating speech for text with an ESPnet model
         """
 
         tts = TextToSpeech()
 
         # Check that data is generated
-        self.assertGreater(len(tts("This is a test")), 0)
+        speech, rate = tts("This is a test")
+
+        self.assertGreater(len(speech), 0)
+        self.assertEqual(rate, 22050)
 
     @patch("onnxruntime.get_available_providers")
     @patch("torch.cuda.is_available")
@@ -38,6 +41,19 @@ class TestTextToSpeech(unittest.TestCase):
         tts = TextToSpeech()
         self.assertEqual(tts.providers()[0][0], "CUDAExecutionProvider")
 
+    def testSpeechT5(self):
+        """
+        Test generating speech for text with a SpeechT5 model
+        """
+
+        tts = TextToSpeech("NeuML/txtai-speecht5-onnx")
+
+        # Check that data is generated
+        speech, rate = tts("This is a test")
+
+        self.assertGreater(len(speech), 0)
+        self.assertEqual(rate, 22050)
+
     def testStreaming(self):
         """
         Test streaming speech generation
@@ -46,4 +62,8 @@ class TestTextToSpeech(unittest.TestCase):
         tts = TextToSpeech()
 
         # Check that data is generated
-        self.assertGreater(len(list(tts("This is a test. And another".split(), stream=True))), 0)
+        speech, rate = list(tts("This is a test. And another".split(), stream=True))[0]
+
+        # Check that data is generated
+        self.assertGreater(len(speech), 0)
+        self.assertEqual(rate, 22050)

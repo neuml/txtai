@@ -5,11 +5,11 @@ Transcription module
 try:
     import soundfile as sf
 
-    from scipy import signal
+    from .signal import Signal, SCIPY
 
-    SOUNDFILE = True
+    TRANSCRIPTION = SCIPY
 except (ImportError, OSError):
-    SOUNDFILE = False
+    TRANSCRIPTION = False
 
 from ..hfpipeline import HFPipeline
 
@@ -20,8 +20,10 @@ class Transcription(HFPipeline):
     """
 
     def __init__(self, path=None, quantize=False, gpu=True, model=None, **kwargs):
-        if not SOUNDFILE:
-            raise ImportError("SoundFile library not installed or libsndfile not found")
+        if not TRANSCRIPTION:
+            raise ImportError(
+                'Transcription pipeline is not available - install "pipeline" extra to enable. Also check that libsndfile is available.'
+            )
 
         # Call parent constructor
         super().__init__("automatic-speech-recognition", path, quantize, gpu, model, **kwargs)
@@ -67,7 +69,7 @@ class Transcription(HFPipeline):
             rate: optional sample rate
 
         Returns:
-            List of (audio data, sample rate)
+            list of (audio data, sample rate)
         """
 
         speech = []
@@ -163,50 +165,18 @@ class Transcription(HFPipeline):
 
         Args:
             raw: raw audio data
+            rate: target sample rate
 
         Returns:
             audio data ready for pipeline model
         """
 
         # Convert stereo to mono, if necessary
-        raw = self.mono(raw)
+        raw = Signal.mono(raw)
 
-        # Resample to model sample rate
-        raw, rate = self.resample(raw, rate)
-
-        return {"raw": raw, "sampling_rate": rate}
-
-    def mono(self, raw):
-        """
-        Convert stereo to mono audio.
-
-        Args:
-            raw: raw audio data
-
-        Returns:
-            audio data with a single channel
-        """
-
-        return raw.mean(axis=1) if len(raw.shape) > 1 else raw
-
-    def resample(self, raw, rate):
-        """
-        Resample raw audio if the sample rate doesn't match the sample rate required for this model.
-
-        Args:
-            raw: raw audio data
-            rate: sample rate
-
-        Returns:
-            raw audio resampled if necessary or original raw audio
-        """
-
-        targetrate = self.pipeline.feature_extractor.sampling_rate
-        if rate != targetrate:
-            samples = round(len(raw) * float(targetrate) / rate)
-            raw = signal.resample(raw, samples)
-
-        return raw, targetrate
+        # Resample to target sample rate
+        target = self.pipeline.feature_extractor.sampling_rate
+        return {"raw": Signal.resample(raw, rate, target), "sampling_rate": target}
 
     def clean(self, text):
         """

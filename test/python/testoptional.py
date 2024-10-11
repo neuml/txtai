@@ -43,8 +43,9 @@ class TestOptional(unittest.TestCase):
             "pgvector",
             "PIL",
             "rich",
-            "sklearn.decomposition",
+            "scipy",
             "sentence_transformers",
+            "sklearn.decomposition",
             "sounddevice",
             "soundfile",
             "sqlalchemy",
@@ -179,6 +180,7 @@ class TestOptional(unittest.TestCase):
         """
 
         from txtai.pipeline import (
+            AudioMixer,
             AudioStream,
             Caption,
             HFOnnx,
@@ -192,10 +194,14 @@ class TestOptional(unittest.TestCase):
             Segmentation,
             Tabular,
             Textractor,
+            TextToAudio,
             TextToSpeech,
             Transcription,
             Translation,
         )
+
+        with self.assertRaises(ImportError):
+            AudioMixer()
 
         with self.assertRaises(ImportError):
             AudioStream()
@@ -235,6 +241,9 @@ class TestOptional(unittest.TestCase):
 
         with self.assertRaises(ImportError):
             Textractor()
+
+        with self.assertRaises(ImportError):
+            TextToAudio()
 
         with self.assertRaises(ImportError):
             TextToSpeech()

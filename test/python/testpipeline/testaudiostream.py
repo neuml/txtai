@@ -28,10 +28,10 @@ class TestAudioStream(unittest.TestCase):
         play.return_value = True
 
         # Read audio data
-        raw, samplerate = sf.read(Utils.PATH + "/Make_huge_profits.wav")
+        audio, rate = sf.read(Utils.PATH + "/Make_huge_profits.wav")
 
-        audio = AudioStream(samplerate)
-        self.assertIsNotNone(audio([raw, AudioStream.COMPLETE]))
+        stream = AudioStream()
+        self.assertIsNotNone(stream([(audio, rate), AudioStream.COMPLETE]))
 
         # Wait for completion
-        audio.wait()
+        stream.wait()
