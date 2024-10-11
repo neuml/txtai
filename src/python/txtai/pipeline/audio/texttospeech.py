@@ -287,7 +287,7 @@ class SpeechT5(Pipeline):
         results = []
         for x in self.batch(inputs["input_ids"][0], self.maxtokens):
             # Run text through TTS model and save waveform
-            results.append(self.process(np.array([x]), speaker))
+            results.append(self.process(np.array([x], dtype=np.int64), speaker))
 
         # Concatenate results and return
         return (np.concatenate(results), 16000)
