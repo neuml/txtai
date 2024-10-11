@@ -9,7 +9,7 @@ The easiest way to install is via pip and PyPI
 pip install txtai
 ```
 
-Python 3.8+ is supported. Using a Python [virtual environment](https://docs.python.org/3/library/venv.html) is recommended.
+Python 3.9+ is supported. Using a Python [virtual environment](https://docs.python.org/3/library/venv.html) is recommended.
 
 ## Optional dependencies
 
@@ -153,7 +153,7 @@ pip install txtai torch==[version]+cpu \
 -f https://download.pytorch.org/whl/torch
 ```
 
-Where `[version]` is the version of PyTorch (such as 2.3.1). The [txtai-cpu](https://hub.docker.com/r/neuml/txtai-cpu) image on Docker Hub uses this method to reduce the image size.
+Where `[version]` is the version of PyTorch (such as 2.4.1). The [txtai-cpu](https://hub.docker.com/r/neuml/txtai-cpu) image on Docker Hub uses this method to reduce the image size.
 
 ## Install from source
 
