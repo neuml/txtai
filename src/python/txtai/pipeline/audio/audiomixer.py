@@ -39,7 +39,7 @@ class AudioMixer(Pipeline):
         """
 
         # Convert single element to list
-        segments = [segment] if not isinstance(segment, list) else segment
+        segments = [segment] if isinstance(segment, tuple) else segment
 
         results = []
         for segment1, segment2 in segments:
@@ -55,4 +55,4 @@ class AudioMixer(Pipeline):
             results.append((Signal.mix(audio1, audio2, scale1, scale2), target))
 
         # Return single element if single element passed in
-        return results[0] if not isinstance(segment, list) else results
+        return results[0] if isinstance(segment, tuple) else results

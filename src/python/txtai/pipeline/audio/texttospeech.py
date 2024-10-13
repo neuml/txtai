@@ -82,10 +82,10 @@ class TextToSpeech(Pipeline):
             return self.stream(texts, speaker)
 
         # Transform text to speech
-        outputs = [self.execute(x, speaker) for x in texts]
+        results = [self.execute(x, speaker) for x in texts]
 
         # Return results
-        return outputs[0] if isinstance(text, str) else outputs
+        return results[0] if isinstance(text, str) else results
 
     def providers(self):
         """

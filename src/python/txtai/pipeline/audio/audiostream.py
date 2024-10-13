@@ -62,13 +62,13 @@ class AudioStream(Pipeline):
         """
 
         # Convert single element to list
-        segments = [segment] if not isinstance(segment, list) else segment
+        segments = [segment] if isinstance(segment, tuple) else segment
 
         for x in segments:
             self.queue.put(x)
 
         # Return single element if single element passed in
-        return segments[0] if not isinstance(segment, list) else segments
+        return segments[0] if isinstance(segment, tuple) else segments
 
     def wait(self):
         """

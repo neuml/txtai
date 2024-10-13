@@ -46,7 +46,7 @@ class TestTextToSpeech(unittest.TestCase):
         Test generating speech for text with a SpeechT5 model
         """
 
-        tts = TextToSpeech("NeuML/txtai-speecht5-onnx")
+        tts = TextToSpeech("neuml/txtai-speecht5-onnx")
 
         # Check that data is generated
         speech, rate = tts("This is a test")

@@ -2,6 +2,9 @@
 Transcription module
 """
 
+import numpy as np
+
+# Conditional import
 try:
     import soundfile as sf
 
@@ -49,7 +52,7 @@ class Transcription(HFPipeline):
         """
 
         # Convert single element to list
-        values = [audio] if not isinstance(audio, list) else audio
+        values = [audio] if isinstance(audio, (str, tuple, np.ndarray)) else audio
 
         # Read input audio
         speech = self.read(values, rate)
@@ -58,7 +61,7 @@ class Transcription(HFPipeline):
         results = self.batchprocess(speech, chunk, **kwargs) if chunk and not join else self.process(speech, chunk, **kwargs)
 
         # Return single element if single element passed in
-        return results[0] if not isinstance(audio, list) else results
+        return results[0] if isinstance(audio, (str, tuple, np.ndarray)) else results
 
     def read(self, audio, rate):
         """
