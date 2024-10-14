@@ -1,5 +1,5 @@
 # Set base image
-ARG BASE_IMAGE=ubuntu:22.04
+ARG BASE_IMAGE=ubuntu:20.04
 FROM $BASE_IMAGE
 
 # Install GPU-enabled version of PyTorch if set
@@ -8,8 +8,8 @@ ARG GPU
 # Target CPU architecture
 ARG TARGETARCH
 
-# Set Python version (i.e. 3, 3.10)
-ARG PYTHON_VERSION=3
+# Set Python version (i.e. 3, 3.9)
+ARG PYTHON_VERSION=3.9
 
 # List of txtai components to install
 ARG COMPONENTS=[all]
