@@ -19,11 +19,12 @@ transcribe("path to wav file")
 
 This pipeline may require additional system dependencies. See [this section](../../../install#environment-specific-prerequisites) for more.
 
-See the link below for a more detailed example.
+See the links below for a more detailed example.
 
 | Notebook  | Description  |       |
 |:----------|:-------------|------:|
 | [Transcribe audio to text](https://github.com/neuml/txtai/blob/master/examples/11_Transcribe_audio_to_text.ipynb) | Convert audio files to text | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/11_Transcribe_audio_to_text.ipynb) |
+| [Speech to Speech RAG](https://github.com/neuml/txtai/blob/master/examples/65_Speech_to_Speech_RAG.ipynb) [▶️](https://www.youtube.com/watch?v=tH8QWwkVMKA) | Full cycle speech to speech workflow with RAG | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/65_Speech_to_Speech_RAG.ipynb) |
 
 ## Configuration-driven example
 

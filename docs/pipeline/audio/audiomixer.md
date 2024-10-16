@@ -17,6 +17,12 @@ mixer = AudioMixer()
 mixer(((audio1, rate1), (audio2, rate2)))
 ```
 
+See the link below for a more detailed example.
+
+| Notebook  | Description  |       |
+|:----------|:-------------|------:|
+| [Generative Audio](https://github.com/neuml/txtai/blob/master/examples/66_Generative_Audio.ipynb) | Storytelling with generative audio workflows | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/66_Generative_Audio.ipynb) |
+
 ## Configuration-driven example
 
 Pipelines are run with Python or configuration. Pipelines can be instantiated in [configuration](../../../api/configuration/#pipeline) using the lower case name of the pipeline. Configuration-driven pipelines are run with [workflows](../../../workflow/#configuration-driven-example) or the [API](../../../api#local-instance).
