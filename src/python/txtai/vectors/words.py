@@ -66,6 +66,17 @@ class WordVectors(Vectors):
     Builds vectors using weighted word embeddings.
     """
 
+    def __init__(self, config, scoring, models):
+        # Check before parent constructor since it calls loadmodel
+        if not WORDS:
+            # Raise error if trying to create Word Vectors without vectors extra
+            raise ImportError(
+                'Word vector models are not available - install "vectors" extra to enable. Otherwise, specify '
+                + 'method="transformers" to use transformer backed models'
+            )
+
+        super().__init__(config, scoring, models)
+
     def loadmodel(self, path):
         # Ensure that vector path exists
         if not path or not os.path.isfile(path):

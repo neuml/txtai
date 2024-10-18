@@ -48,10 +48,11 @@ class LiteLLM(Vectors):
         return False
 
     def __init__(self, config, scoring, models):
-        super().__init__(config, scoring, models)
-
+        # Check before parent constructor since it calls loadmodel
         if not LITELLM:
             raise ImportError('LiteLLM is not available - install "vectors" extra to enable')
+
+        super().__init__(config, scoring, models)
 
     def loadmodel(self, path):
         return None

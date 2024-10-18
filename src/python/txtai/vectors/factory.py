@@ -8,7 +8,7 @@ from .external import External
 from .huggingface import HFVectors
 from .litellm import LiteLLM
 from .llama import LlamaCpp
-from .words import WordVectors, WORDS
+from .words import WordVectors
 
 
 class VectorsFactory:
@@ -47,13 +47,6 @@ class VectorsFactory:
 
         # Word vectors
         if method == "words":
-            if not WORDS:
-                # Raise error if trying to create Word Vectors without vectors extra
-                raise ImportError(
-                    'Word vector models are not available - install "vectors" extra to enable. Otherwise, specify '
-                    + 'method="transformers" to use transformer backed models'
-                )
-
             return WordVectors(config, scoring, models)
 
         # Transformers vectors
