@@ -2,6 +2,8 @@
 Translation module
 """
 
+import os
+
 # Conditional import
 try:
     import fasttext
@@ -10,7 +12,7 @@ try:
 except ImportError:
     FASTTEXT = False
 
-from huggingface_hub import cached_download
+from huggingface_hub import hf_hub_download
 from huggingface_hub.hf_api import HfApi
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
@@ -24,7 +26,7 @@ class Translation(HFModel):
     """
 
     # Default language detection model
-    DEFAULT_LANG_DETECT = "https://dl.fbaipublicfiles.com/fasttext/supervised-models/lid.176.ftz"
+    DEFAULT_LANG_DETECT = "julien-c/fasttext-language-id/lid.176.ftz"
 
     def __init__(self, path=None, quantize=False, gpu=True, batch=64, langdetect=None, findmodels=True):
         """
@@ -155,13 +157,33 @@ class Translation(HFModel):
             path = self.langdetect if self.langdetect else Translation.DEFAULT_LANG_DETECT
 
             # Load language detection model
-            path = cached_download(path, legacy_cache_layout=True)
+            path = path if os.path.exists(path) else self.download(path)
             self.detector = fasttext.load_model(path)
 
         # Transform texts to format expected by language detection model
         texts = [x.lower().replace("\n", " ").replace("\r\n", " ") for x in texts]
 
         return [x[0].split("__")[-1] for x in self.detector.predict(texts)[0]]
+
+    def download(self, path):
+        """
+        Downloads path from the Hugging Face Hub.
+
+        Args:
+            path: full model path
+
+        Returns:
+            local cached model path
+        """
+
+        # Split into parts
+        parts = path.split("/")
+
+        # Calculate repo id split
+        repo = 2 if len(parts) > 2 else 1
+
+        # Download and cache file
+        return hf_hub_download(repo_id="/".join(parts[:repo]), filename="/".join(parts[repo:]))
 
     def translate(self, texts, source, target, showmodels=False):
         """
