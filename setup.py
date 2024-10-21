@@ -96,6 +96,7 @@ extras["vectors"] = [
     "fasttext>=0.9.2",
     "litellm>=1.37.16",
     "llama-cpp-python>=0.2.75",
+    "model2vec>=0.3.0",
     "pymagnitude-lite>=0.1.43",
     "scikit-learn>=0.23.1",
     "sentence-transformers>=2.2.0",

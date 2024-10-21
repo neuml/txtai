@@ -19,12 +19,12 @@ Uses default vector model path when enabled (default setting is True) and `path`
 
 ## method
 ```yaml
-method: transformers|sentence-transformers|llama.cpp|litellm|external|words
+method: transformers|sentence-transformers|llama.cpp|litellm|model2vec|external|words
 ```
 
 Embeddings method to use. If the method is not provided, it is inferred using the `path`.
 
-`sentence-transformers`, `llama.cpp`, `litellm` and `words` require the [vectors](../../../install/#vectors) extras package to be installed.
+`sentence-transformers`, `llama.cpp`, `litellm`, `model2vec` and `words` require the [vectors](../../../install/#vectors) extras package to be installed.
 
 ### transformers
 
@@ -42,11 +42,15 @@ Same as transformers but loads models with the [sentence-transformers](https://g
 
 ### llama.cpp
 
-Builds embeddings using a llama.cpp model. Supports both local and remote GGUF paths on the HF Hub.
+Builds embeddings using a [llama.cpp](https://github.com/abetlen/llama-cpp-python) model. Supports both local and remote GGUF paths on the HF Hub.
 
 ### litellm
 
 Builds embeddings using a LiteLLM model. See the [LiteLLM documentation](https://litellm.vercel.app/docs/providers) for the options available with LiteLLM models.
+
+### model2vec
+
+Builds embeddings using a [Model2Vec](https://github.com/MinishLab/model2vec) model.
 
 ### words
 

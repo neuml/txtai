@@ -33,6 +33,7 @@ class TestOptional(unittest.TestCase):
             "libcloud.storage.providers",
             "litellm",
             "llama_cpp",
+            "model2vec",
             "networkx",
             "nltk",
             "onnxmltools",
@@ -276,6 +277,9 @@ class TestOptional(unittest.TestCase):
 
         with self.assertRaises(ImportError):
             VectorsFactory.create({"method": "llama.cpp", "path": "nomic-ai/nomic-embed-text-v1.5-GGUF/nomic-embed-text-v1.5.Q2_K.gguf"}, None)
+
+        with self.assertRaises(ImportError):
+            VectorsFactory.create({"method": "model2vec", "path": "minishlab/M2V_base_output"}, None)
 
         with self.assertRaises(ImportError):
             VectorsFactory.create({"method": "sentence-transformers", "path": "sentence-transformers/nli-mpnet-base-v2"}, None)

@@ -8,6 +8,7 @@ from .external import External
 from .huggingface import HFVectors
 from .litellm import LiteLLM
 from .llama import LlamaCpp
+from .m2v import Model2Vec
 from .words import WordVectors
 
 
@@ -44,6 +45,10 @@ class VectorsFactory:
         # llama.cpp vectors
         if method == "llama.cpp":
             return LlamaCpp(config, scoring, models)
+
+        # Model2vec vectors
+        if method == "model2vec":
+            return Model2Vec(config, scoring, models)
 
         # Word vectors
         if method == "words":
