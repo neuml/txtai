@@ -145,7 +145,6 @@ class TestOnnx(unittest.TestCase):
         labels = Labels((model, tokenizer), dynamic=False)
         self.assertEqual(labels("cat")[0][0], 1)
 
-    @unittest.skipIf(os.name == "nt", "testZeroShot skipped on Windows")
     def testZeroShot(self):
         """
         Test exporting a zero shot classification model to ONNX and running inference
