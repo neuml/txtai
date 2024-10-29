@@ -3,4 +3,4 @@ Version strings
 """
 
 # Current version tag
-__version__ = "7.6.0"
+__version__ = "8.0.0"
