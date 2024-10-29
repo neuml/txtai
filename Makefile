@@ -35,6 +35,7 @@ coverage:
 	coverage run -m unittest discover -v -k testann -s ${TEST_DIR}
 	coverage run -m unittest discover -v -k testapi.testauthorization -k testapi.testcluster -s ${TEST_DIR}
 	coverage run -m unittest discover -v -k testapi.testencoding -k testapi.testextension -s ${TEST_DIR}
+	coverage run -m unittest discover -v -k testapi.testpipelines -s ${TEST_DIR}
 	coverage run -m unittest discover -v -k testapp -s ${TEST_DIR}
 	coverage run -m unittest discover -v -k testarchive -s ${TEST_DIR}
 	coverage run -m unittest discover -v -k testcloud -s ${TEST_DIR}
@@ -44,7 +45,8 @@ coverage:
 	coverage run -m unittest discover -v -k testgraph -s ${TEST_DIR}
 	coverage run -m unittest discover -v -k testmodels -s ${TEST_DIR}
 	coverage run -m unittest discover -v -k testoptional -s ${TEST_DIR}
-	coverage run -m unittest discover -v -k testpipeline -s ${TEST_DIR}
+	coverage run -m unittest discover -v -k testpipeline.testaudio -k testpipeline.testdata -k testpipeline.testimage -s ${TEST_DIR}
+	coverage run -m unittest discover -v -k testpipeline.testllm -k testpipeline.testtext -k testpipeline.testtrain -s ${TEST_DIR}
 	coverage run -m unittest discover -v -k testscoring -s ${TEST_DIR}
 	coverage run -m unittest discover -v -k testserialize -s ${TEST_DIR}
 	coverage run -m unittest discover -v -k testvectors -s ${TEST_DIR}
