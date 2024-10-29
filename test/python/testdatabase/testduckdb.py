@@ -2,6 +2,9 @@
 DuckDB module tests
 """
 
+import os
+import unittest
+
 from txtai.embeddings import Embeddings
 
 from .testrdbms import Common
@@ -42,3 +45,11 @@ class TestDuckDB(Common.TestRDBMS):
 
         if cls.embeddings:
             cls.embeddings.close()
+
+    @unittest.skipIf(os.name == "nt", "testArchive skipped on Windows")
+    def testArchive(self):
+        """
+        Test embeddings index archiving
+        """
+
+        super().testArchive()
