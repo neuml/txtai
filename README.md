@@ -25,6 +25,9 @@
     <a href="https://coveralls.io/github/neuml/txtai?branch=master">
         <img src="https://img.shields.io/coverallsCoverage/github/neuml/txtai" alt="Coverage Status">
     </a>
+    <a href="https://gurubase.io/g/txtai">
+        <img src="https://img.shields.io/badge/Gurubase-Ask%20txtai%20Guru-006BFF" alt="Gurubase">
+    </a>
 </p>
 
 txtai is an all-in-one embeddings database for semantic search, LLM orchestration and language model workflows.
