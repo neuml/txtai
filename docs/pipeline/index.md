@@ -9,7 +9,9 @@ Pipelines are run with Python or configuration. Pipelines can be instantiated in
 
 ## List of pipelines
 
-The following is a list of the default pipelines available in txtai. All pipelines use default models when otherwise not specified. See the [model guide](../models) for the current model recommentations.
+The following is a list of the current pipelines available in txtai. All pipelines use default models when otherwise not specified. See the [model guide](../models) for the current model recommentations. All pipelines are designed to work with local models via the [Transformers library](https://github.com/huggingface/transformers).
+
+The `LLM` and `RAG` pipelines also have integrations for [llama.cpp](https://github.com/abetlen/llama-cpp-python) and [hosted API models via LiteLLM](https://github.com/BerriAI/litellm). The `LLM` pipeline can be prompted to accomplish many of the same tasks (i.e. summarization, translation, classification).
 
 - Audio
     - [AudioMixer](audio/audiomixer)
