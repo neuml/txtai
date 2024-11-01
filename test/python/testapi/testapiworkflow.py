@@ -44,8 +44,8 @@ workflow:
             - action:
                 - labels
                 - nop
-              initialize: testapi.testworkflow.TestInitFinal
-              finalize: testapi.testworkflow.TestInitFinal
+              initialize: testapi.testapiworkflow.TestInitFinal
+              finalize: testapi.testapiworkflow.TestInitFinal
               merge: concat
               args:
                 - [[positive, negative], false, True]

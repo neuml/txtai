@@ -59,13 +59,13 @@ embeddings:
     path: sentence-transformers/nli-mpnet-base-v2
     content: True
     functions:
-        - testapi.testembeddings.Elements
+        - testapi.testapiembeddings.Elements
         - name: length
           argcount: 1
-          function: testapi.testembeddings.length
+          function: testapi.testapiembeddings.length
         - name: ann
           function: ann
-    transform: testapi.testembeddings.transform
+    transform: testapi.testapiembeddings.transform
 """
 
 # Configuration for RAG

@@ -33,9 +33,7 @@ test:
 # Run tests while calculating code coverage
 coverage:
 	coverage run -m unittest discover -v -k testann -s ${TEST_DIR}
-	coverage run -m unittest discover -v -k testapi.testauthorization -k testapi.testcluster -s ${TEST_DIR}
-	coverage run -m unittest discover -v -k testapi.testencoding -k testapi.testextension -s ${TEST_DIR}
-	coverage run -m unittest discover -v -k testapi.testpipelines -s ${TEST_DIR}
+	coverage run -m unittest discover -v -k testapi -s ${TEST_DIR}
 	coverage run -m unittest discover -v -k testapp -s ${TEST_DIR}
 	coverage run -m unittest discover -v -k testarchive -s ${TEST_DIR}
 	coverage run -m unittest discover -v -k testcloud -s ${TEST_DIR}
@@ -50,7 +48,7 @@ coverage:
 	coverage run -m unittest discover -v -k testpipeline.testimage -s ${TEST_DIR}
 	coverage run -m unittest discover -v -k testpipeline.testllm -s ${TEST_DIR}
 	coverage run -m unittest discover -v -k testpipeline.testtext -s ${TEST_DIR}
-	coverage run -m unittest discover -v -k testpipeline.testtrainer -s ${TEST_DIR}
+	coverage run -m unittest discover -v -k testpipeline.testtrain -s ${TEST_DIR}
 	coverage run -m unittest discover -v -k testscoring -s ${TEST_DIR}
 	coverage run -m unittest discover -v -k testserialize -s ${TEST_DIR}
 	coverage run -m unittest discover -v -k testvectors -s ${TEST_DIR}

@@ -68,7 +68,7 @@ translation:
 
 
 # pylint: disable=R0904
-class TestPipelines(unittest.TestCase):
+class TestPipeline(unittest.TestCase):
     """
     API tests for pipelines.
     """
@@ -98,7 +98,7 @@ class TestPipelines(unittest.TestCase):
         Create API client on creation of class.
         """
 
-        cls.client = TestPipelines.start()
+        cls.client = TestPipeline.start()
 
         cls.data = [
             "US tops 5 million confirmed virus cases",
