@@ -83,7 +83,7 @@ class Generation:
             return self.stream(texts, maxlength, stream, stop, **kwargs)
 
         # Full response as content elements
-        return self.stream(texts, maxlength, stream, stop, **kwargs)
+        return list(self.stream(texts, maxlength, stream, stop, **kwargs))
 
     def clean(self, prompt, result):
         """
