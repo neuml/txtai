@@ -49,20 +49,25 @@ class TestAgent(unittest.TestCase):
         Test adding basic function tools
         """
 
-        def today(iso):
+        class DateTime:
             """
-            Gets the current date and time
-
-            Args:
-                iso: date will be converted to iso format if True
-
-            Returns:
-                current date and time
+            Date time instance
             """
 
-            return datetime.today().isoformat() if iso else datetime.today()
+            def __call__(self, iso):
+                """
+                Gets the current date and time
 
-        today = {"name": "today", "description": "Gets the current date and time", "target": today}
+                Args:
+                    iso: date will be converted to iso format if True
+
+                Returns:
+                    current date and time
+                """
+
+                return datetime.today().isoformat() if iso else datetime.today()
+
+        today = {"name": "today", "description": "Gets the current date and time", "target": DateTime()}
 
         def current() -> str:
             """

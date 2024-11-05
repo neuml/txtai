@@ -74,7 +74,7 @@ class TestLLM(unittest.TestCase):
         """
 
         model = LLM("sshleifer/tiny-gpt2")
-        self.assertIsNotNone(model("Hello, how are", maxlength=10))
+        self.assertIsInstance(model("Hello, how are", maxlength=10), str)
 
     def testNotImplemented(self):
         """
