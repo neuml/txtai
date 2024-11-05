@@ -1,0 +1,119 @@
+"""
+Factory module
+"""
+
+import inspect
+
+from types import FunctionType, MethodType
+
+from transformers.agents import DuckDuckGoSearchTool, Tool, tool as CreateTool
+from transformers.utils import chat_template_utils, TypeHintParsingException
+
+from ...embeddings import Embeddings
+from .embeddings import EmbeddingsTool
+from .function import FunctionTool
+
+
+class ToolFactory:
+    """
+    Methods to create tools.
+    """
+
+    # Default tools from Transformers Agents
+    DEFAULTS = {"websearch": DuckDuckGoSearchTool()}
+
+    @staticmethod
+    def create(config):
+        """
+        Creates a new list of tools. This method iterates of the `tools` configuration option and creates a Tool instance
+        for each entry. This supports the following:
+
+          - Transformers Tool instance
+          - Dictionary with `name`, `description`, `inputs`, `output` and `target` function configuration
+          - String with a tool alias name
+
+        Returns:
+            list of tools
+        """
+
+        tools = []
+        for tool in config.pop("tools", []):
+            # Create tool from function and it's documentation
+            if not isinstance(tool, Tool) and (isinstance(tool, (FunctionType, MethodType)) or hasattr(tool, "__call__")):
+                tool = ToolFactory.createtool(tool)
+
+            # Create tool from input dictionary
+            elif isinstance(tool, dict):
+                # Get target function
+                target = tool.get("target")
+
+                # Create tool from input dictionary
+                tool = (
+                    EmbeddingsTool(tool)
+                    if isinstance(target, Embeddings) or any(x in tool for x in ["container", "path"])
+                    else ToolFactory.createtool(target, tool)
+                )
+
+            # Get default tool, if applicable
+            elif isinstance(tool, str) and tool in ToolFactory.DEFAULTS:
+                tool = ToolFactory.DEFAULTS[tool]
+
+            # Add tool
+            tools.append(tool)
+
+        return tools
+
+    @staticmethod
+    def createtool(target, config=None):
+        """
+        Creates a new Tool.
+
+        Args:
+            target: target object or function
+            config: optional tool configuration
+
+        Returns:
+            Tool
+        """
+
+        try:
+            # Try to create using CreateTool function - this fails when no annotations are available
+            return CreateTool(target)
+        except (TypeHintParsingException, TypeError):
+            return ToolFactory.fromdocs(target, config if config else {})
+
+    @staticmethod
+    def fromdocs(target, config):
+        """
+        Creates a tool from method documentation.
+
+        Args:
+            target: target object or function
+            config: tool configuration
+
+        Returns:
+            Tool
+        """
+
+        name = target.__class__.__name__ if hasattr(target, "__call__") else target.__name__
+        target = target.__call__ if hasattr(target, "__call__") else target
+
+        doc = inspect.getdoc(target).strip()
+        description, parameters, _ = chat_template_utils.parse_google_format_docstring(doc)
+
+        # Get list of required parameters
+        signature = inspect.signature(target)
+        inputs = {}
+        for pname, param in signature.parameters.items():
+            if param.default == inspect.Parameter.empty and pname in parameters:
+                inputs[pname] = {"type": "any", "description": parameters[pname]}
+
+        # Create function tool
+        return FunctionTool(
+            {
+                "name": config.get("name", name.lower()),
+                "description": config.get("description", description),
+                "inputs": config.get("inputs", inputs),
+                "target": config.get("target", target),
+            }
+        )

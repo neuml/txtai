@@ -25,8 +25,8 @@ class HFGeneration(Generation):
         # Create HuggingFace LLM pipeline
         self.llm = HFLLM(path, **kwargs)
 
-    def stream(self, texts, maxlength, stream, **kwargs):
-        yield from self.llm(texts, maxlength=maxlength, stream=stream, **kwargs)
+    def stream(self, texts, maxlength, stream, stop, **kwargs):
+        yield from self.llm(texts, maxlength=maxlength, stream=stream, stop=stop, **kwargs)
 
 
 class HFLLM(HFPipeline):
@@ -41,7 +41,7 @@ class HFLLM(HFPipeline):
         # Load tokenizer, if necessary
         self.pipeline.tokenizer = self.pipeline.tokenizer if self.pipeline.tokenizer else Models.tokenizer(path, **kwargs)
 
-    def __call__(self, text, prefix=None, maxlength=512, workers=0, stream=False, **kwargs):
+    def __call__(self, text, prefix=None, maxlength=512, workers=0, stream=False, stop=None, **kwargs):
         """
         Generates text. Supports the following input formats:
 
@@ -54,6 +54,7 @@ class HFLLM(HFPipeline):
             maxlength: maximum sequence length
             workers: number of concurrent workers to use for processing data, defaults to None
             stream: stream response if True, defaults to False
+            stop: list of stop strings
             kwargs: additional generation keyword arguments
 
         Returns:
@@ -68,27 +69,28 @@ class HFLLM(HFPipeline):
             texts = [f"{prefix}{x}" for x in texts]
 
         # Combine all keyword arguments
-        kwargs = self.parameters(maxlength, workers, **kwargs)
+        kwargs = self.parameters(maxlength, workers, stop, **kwargs)
 
         # Stream response
         if stream:
-            return StreamingResponse(self.pipeline, texts, **kwargs)()
+            return StreamingResponse(self.pipeline, texts, stop, **kwargs)()
 
         # Run pipeline
-        results = self.pipeline(texts, **kwargs)
+        results = self.pipeline(texts, stop_strings=stop, **kwargs)
 
         # Extract generated text
         results = [self.extract(result) for result in results]
 
         return results[0] if isinstance(text, str) else results
 
-    def parameters(self, maxlength, workers, **kwargs):
+    def parameters(self, maxlength, workers, stop, **kwargs):
         """
         Builds a combined parameter dictionary.
 
         Args:
             maxlength: maximum sequence length
             workers: number of concurrent workers to use for processing data, defaults to None
+            stop: list of stop strings
             kwargs: additional generation keyword arguments
 
         Returns:
@@ -114,6 +116,10 @@ class HFLLM(HFPipeline):
             if "batch_size" in kwargs and self.pipeline.tokenizer.pad_token_id is None:
                 self.pipeline.tokenizer.pad_token_id = tokenid
                 self.pipeline.tokenizer.padding_side = "left"
+
+        # Set tokenizer when stop strings is set
+        if stop:
+            defaults["tokenizer"] = self.pipeline.tokenizer
 
         return {**defaults, **kwargs}
 
@@ -180,10 +186,11 @@ class StreamingResponse:
     Generate text as a streaming response.
     """
 
-    def __init__(self, pipeline, texts, **kwargs):
+    def __init__(self, pipeline, texts, stop, **kwargs):
         # Create streamer
         self.stream = TextIteratorStreamer(pipeline.tokenizer, skip_prompt=True, skip_special_tokens=True, timeout=5)
         kwargs["streamer"] = self.stream
+        kwargs["stop_strings"] = stop
 
         # Create thread
         self.thread = Thread(target=pipeline, args=[texts], kwargs=kwargs)

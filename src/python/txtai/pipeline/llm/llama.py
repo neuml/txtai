@@ -51,9 +51,13 @@ class LlamaCpp(Generation):
         # Create llama.cpp instance
         self.llm = Llama(path, n_ctx=0, verbose=kwargs.pop("verbose", False), **kwargs)
 
-    def stream(self, texts, maxlength, stream, **kwargs):
+    def stream(self, texts, maxlength, stream, stop, **kwargs):
         for text in texts:
-            yield from self.messages(text, maxlength, stream, **kwargs) if isinstance(text, list) else self.prompt(text, maxlength, stream, **kwargs)
+            yield from (
+                self.messages(text, maxlength, stream, stop, **kwargs)
+                if isinstance(text, list)
+                else self.prompt(text, maxlength, stream, stop, **kwargs)
+            )
 
     def download(self, path):
         """
@@ -75,7 +79,7 @@ class LlamaCpp(Generation):
         # Download and cache file
         return hf_hub_download(repo_id="/".join(parts[:repo]), filename="/".join(parts[repo:]))
 
-    def messages(self, messages, maxlength, stream, **kwargs):
+    def messages(self, messages, maxlength, stream, stop, **kwargs):
         """
         Processes a list of messages.
 
@@ -83,6 +87,7 @@ class LlamaCpp(Generation):
             messages: list of dictionaries with `role` and `content` key-values
             maxlength: maximum sequence length
             stream: stream response if True, defaults to False
+            stop: list of stop strings
             kwargs: additional generation keyword arguments
 
         Returns:
@@ -90,12 +95,12 @@ class LlamaCpp(Generation):
         """
 
         # LLM call with messages
-        result = self.llm.create_chat_completion(messages=messages, max_tokens=maxlength, stream=stream, **kwargs)
+        result = self.llm.create_chat_completion(messages=messages, max_tokens=maxlength, stream=stream, stop=stop, **kwargs)
 
         # Stream response
         yield from self.response(result if stream else [result])
 
-    def prompt(self, text, maxlength, stream, **kwargs):
+    def prompt(self, text, maxlength, stream, stop, **kwargs):
         """
         Processes a prompt.
 
@@ -103,6 +108,7 @@ class LlamaCpp(Generation):
             prompt: prompt text
             maxlength: maximum sequence length
             stream: stream response if True, defaults to False
+            stop: list of stop strings
             kwargs: additional generation keyword arguments
 
         Returns:
@@ -110,7 +116,7 @@ class LlamaCpp(Generation):
         """
 
         # LLM call with prompt
-        result = self.llm(text, max_tokens=maxlength, stream=stream, **kwargs)
+        result = self.llm(text, max_tokens=maxlength, stream=stream, stop=stop, **kwargs)
 
         # Stream response
         yield from self.response(result if stream else [result])

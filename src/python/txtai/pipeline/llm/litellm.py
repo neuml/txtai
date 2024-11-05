@@ -54,7 +54,7 @@ class LiteLLM(Generation):
         # Ignore common pipeline parameters
         self.kwargs = {k: v for k, v in self.kwargs.items() if k not in ["quantize", "gpu", "model", "task"]}
 
-    def stream(self, texts, maxlength, stream, **kwargs):
+    def stream(self, texts, maxlength, stream, stop, **kwargs):
         for text in texts:
             # LLM API call
             result = api.completion(
@@ -62,6 +62,7 @@ class LiteLLM(Generation):
                 messages=[{"content": text, "role": "prompt"}] if isinstance(text, str) else text,
                 max_tokens=maxlength,
                 stream=stream,
+                stop=stop,
                 **{**self.kwargs, **kwargs}
             )
 

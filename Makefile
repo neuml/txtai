@@ -32,6 +32,7 @@ test:
 
 # Run tests while calculating code coverage
 coverage:
+	coverage run -m unittest discover -v -k testagent -s ${TEST_DIR}
 	coverage run -m unittest discover -v -k testann -s ${TEST_DIR}
 	coverage run -m unittest discover -v -k testapi -s ${TEST_DIR}
 	coverage run -m unittest discover -v -k testapp -s ${TEST_DIR}

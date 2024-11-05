@@ -82,7 +82,15 @@ class TestLLM(unittest.TestCase):
         """
 
         generation = Generation()
-        self.assertRaises(NotImplementedError, generation.stream, None, None, None)
+        self.assertRaises(NotImplementedError, generation.stream, None, None, None, None)
+
+    def testStop(self):
+        """
+        Test stop strings
+        """
+
+        model = LLM("sshleifer/tiny-gpt2")
+        self.assertIsNotNone(model("Hello, how are", stop=["you"]))
 
     def testStream(self):
         """

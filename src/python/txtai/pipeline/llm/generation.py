@@ -24,7 +24,7 @@ class Generation:
         self.template = template
         self.kwargs = kwargs
 
-    def __call__(self, text, maxlength, stream, **kwargs):
+    def __call__(self, text, maxlength, stream, stop, **kwargs):
         """
         Generates text. Supports the following input formats:
 
@@ -35,6 +35,7 @@ class Generation:
             text: text|list
             maxlength: maximum sequence length
             stream: stream response if True, defaults to False
+            stop: list of stop strings
             kwargs: additional generation keyword arguments
 
         Returns:
@@ -50,7 +51,7 @@ class Generation:
             texts = [formatter.format(self.template, text=x) for x in texts]
 
         # Run pipeline
-        results = self.execute(texts, maxlength, stream, **kwargs)
+        results = self.execute(texts, maxlength, stream, stop, **kwargs)
 
         # Streaming generation
         if stream:
@@ -62,7 +63,7 @@ class Generation:
         # Extract results based on inputs
         return results[0] if isinstance(text, str) or isinstance(text[0], dict) else results
 
-    def execute(self, texts, maxlength, stream, **kwargs):
+    def execute(self, texts, maxlength, stream, stop, **kwargs):
         """
         Runs a list of prompts through a generative model.
 
@@ -70,6 +71,7 @@ class Generation:
             texts: list of prompts to run
             maxlength: maximum sequence length
             stream: stream response if True, defaults to False
+            stop: list of stop strings
             kwargs: additional generation keyword arguments
 
         Returns:
@@ -78,10 +80,10 @@ class Generation:
 
         # Streaming generation
         if stream:
-            return self.stream(texts, maxlength, stream, **kwargs)
+            return self.stream(texts, maxlength, stream, stop, **kwargs)
 
         # Full response as content elements
-        return list(self.stream(texts, maxlength, stream, **kwargs))
+        return self.stream(texts, maxlength, stream, stop, **kwargs)
 
     def clean(self, prompt, result):
         """
@@ -131,7 +133,7 @@ class Generation:
                 yield (text.lstrip() if not streamed else text)
                 streamed = True
 
-    def stream(self, texts, maxlength, stream, **kwargs):
+    def stream(self, texts, maxlength, stream, stop, **kwargs):
         """
         Streams LLM responses.
 
@@ -139,6 +141,7 @@ class Generation:
             texts: list of prompts to run
             maxlength: maximum sequence length
             stream: stream response if True, defaults to False
+            stop: list of stop strings
             kwargs: additional generation keyword arguments
 
         Returns:
