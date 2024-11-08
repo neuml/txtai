@@ -32,9 +32,9 @@ txtai is an all-in-one embeddings database for semantic search, LLM orchestratio
 ![architecture](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/architecture.png#gh-light-mode-only)
 ![architecture](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/architecture-dark.png#gh-dark-mode-only)
 
-Embeddings databases are a union of vector indexes (sparse and dense), graph networks and relational databases. This enables vector search with SQL, topic modeling, retrieval augmented generation (RAG) and more.
+Embeddings databases are a union of vector indexes (sparse and dense), graph networks and relational databases. This enables vector search with SQL, topic modeling, graph analysis and more.
 
-Embeddings databases can stand on their own and/or serve as a powerful knowledge source for large language model (LLM) prompts.
+Embeddings databases can stand on their own and/or serve as a powerful knowledge source for large language model (LLM) prompts. Build autonomous agents, retrieval augmented generation (RAG) processes and multi-model workflows.
 
 Summary of txtai features:
 
@@ -42,6 +42,7 @@ Summary of txtai features:
 - 📄 Create embeddings for text, documents, audio, images and video
 - 💡 Pipelines powered by language models that run LLM prompts, question-answering, labeling, transcription, translation, summarization and more
 - ↪️️ Workflows to join pipelines together and aggregate business logic. txtai processes can be simple microservices or multi-model workflows.
+- 🤖 Agents that intelligently connect embeddings, pipelines, workflows and other agents together to autonomously solve complex problems
 - ⚙️ Build with Python or YAML. API bindings available for [JavaScript](https://github.com/neuml/txtai.js), [Java](https://github.com/neuml/txtai.java), [Rust](https://github.com/neuml/txtai.rs) and [Go](https://github.com/neuml/txtai.go).
 - ☁️ Run local or scale out with container orchestration
 
@@ -83,7 +84,7 @@ curl -X GET "http://localhost:8000/search?query=positive"
 
 ## Use Cases
 
-The following sections introduce common txtai use cases. A comprehensive set of over 50 [example notebooks and applications](https://neuml.github.io/txtai/examples) are also available.
+The following sections introduce common txtai use cases. A comprehensive set of over 60 [example notebooks and applications](https://neuml.github.io/txtai/examples) are also available.
 
 ### Semantic Search
 
@@ -107,11 +108,7 @@ Get started with the following examples.
 
 ### LLM Orchestration
 
-LLM chains, retrieval augmented generation (RAG), chat with your data, pipelines and workflows that interface with large language models (LLMs).
-
-#### Chains
-
-Integrate LLM chains (known as workflows in txtai), multiple LLM agents and self-critique.
+Autonomous agents, retrieval augmented generation (RAG), chat with your data, pipelines and workflows that interface with large language models (LLMs).
 
 ![llm](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/llm.png)
 
@@ -122,6 +119,14 @@ See below to learn more.
 | [Prompt templates and task chains](https://github.com/neuml/txtai/blob/master/examples/44_Prompt_templates_and_task_chains.ipynb) | Build model prompts and connect tasks together with workflows | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/44_Prompt_templates_and_task_chains.ipynb) |
 | [Integrate LLM frameworks](https://github.com/neuml/txtai/blob/master/examples/53_Integrate_LLM_Frameworks.ipynb) | Integrate llama.cpp, LiteLLM and custom generation frameworks | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/53_Integrate_LLM_Frameworks.ipynb) |
 | [Build knowledge graphs with LLMs](https://github.com/neuml/txtai/blob/master/examples/57_Build_knowledge_graphs_with_LLM_driven_entity_extraction.ipynb) | Build knowledge graphs with LLM-driven entity extraction | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/57_Build_knowledge_graphs_with_LLM_driven_entity_extraction.ipynb) |
+
+#### Agents
+
+Agents connect embeddings, pipelines, workflows and other agents together to autonomously solve complex problems.
+
+![agent](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/agent.png)
+
+txtai agents are built on top of the Transformers Agent framework. This supports all LLMs txtai supports (Hugging Face, llama.cpp, OpenAI / Claude / AWS Bedrock via LiteLLM).
 
 #### Retrieval augmented generation
 

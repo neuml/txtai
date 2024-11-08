@@ -25,7 +25,7 @@ Build semantic/similarity/vector/neural search applications.
 
 ## LLM
 
-LLM chains, retrieval augmented generation (RAG), chat with your data, pipelines and workflows that interface with large language models (LLMs).
+Autonomous agents, retrieval augmented generation (RAG), chat with your data, pipelines and workflows that interface with large language models (LLMs).
 
 | Notebook  | Description  |       |
 |:----------|:-------------|------:|

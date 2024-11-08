@@ -34,9 +34,9 @@ txtai is an all-in-one embeddings database for semantic search, LLM orchestratio
 ![architecture](images/architecture.png#gh-light-mode-only)
 ![architecture](images/architecture-dark.png#gh-dark-mode-only)
 
-Embeddings databases are a union of vector indexes (sparse and dense), graph networks and relational databases. This enables vector search with SQL, topic modeling, retrieval augmented generation (RAG) and more.
+Embeddings databases are a union of vector indexes (sparse and dense), graph networks and relational databases. This enables vector search with SQL, topic modeling, graph analysis and more.
 
-Embeddings databases can stand on their own and/or serve as a powerful knowledge source for large language model (LLM) prompts.
+Embeddings databases can stand on their own and/or serve as a powerful knowledge source for large language model (LLM) prompts. Build autonomous agents, retrieval augmented generation (RAG) processes and multi-model workflows.
 
 Summary of txtai features:
 
@@ -44,6 +44,7 @@ Summary of txtai features:
 - 📄 Create embeddings for text, documents, audio, images and video
 - 💡 Pipelines powered by language models that run LLM prompts, question-answering, labeling, transcription, translation, summarization and more
 - ↪️️ Workflows to join pipelines together and aggregate business logic. txtai processes can be simple microservices or multi-model workflows.
+- 🤖 Agents that intelligently connect embeddings, pipelines, workflows and other agents together to autonomously solve complex problems
 - ⚙️ Build with Python or YAML. API bindings available for [JavaScript](https://github.com/neuml/txtai.js), [Java](https://github.com/neuml/txtai.java), [Rust](https://github.com/neuml/txtai.rs) and [Go](https://github.com/neuml/txtai.go).
 - ☁️ Run local or scale out with container orchestration
 

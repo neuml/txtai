@@ -1,6 +1,6 @@
 # Use Cases
 
-The following sections introduce common txtai use cases. A comprehensive set of over 50 [example notebooks and applications](../examples) are also available.
+The following sections introduce common txtai use cases. A comprehensive set of over 60 [example notebooks and applications](../examples) are also available.
 
 ## Semantic Search
 
@@ -24,11 +24,7 @@ Get started with the following examples.
 
 ## LLM Orchestration
 
-LLM chains, retrieval augmented generation (RAG), chat with your data, pipelines and workflows that interface with large language models (LLMs).
-
-### Chains
-
-Integrate LLM chains (known as workflows in txtai), multiple LLM agents and self-critique.
+Autonomous agents, retrieval augmented generation (RAG), chat with your data, pipelines and workflows that interface with large language models (LLMs).
 
 ![llm](images/llm.png)
 
@@ -39,6 +35,14 @@ See below to learn more.
 | [Prompt templates and task chains](https://github.com/neuml/txtai/blob/master/examples/44_Prompt_templates_and_task_chains.ipynb) | Build model prompts and connect tasks together with workflows | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/44_Prompt_templates_and_task_chains.ipynb) |
 | [Integrate LLM frameworks](https://github.com/neuml/txtai/blob/master/examples/53_Integrate_LLM_Frameworks.ipynb) | Integrate llama.cpp, LiteLLM and custom generation frameworks | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/53_Integrate_LLM_Frameworks.ipynb) |
 | [Build knowledge graphs with LLMs](https://github.com/neuml/txtai/blob/master/examples/57_Build_knowledge_graphs_with_LLM_driven_entity_extraction.ipynb) | Build knowledge graphs with LLM-driven entity extraction | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/57_Build_knowledge_graphs_with_LLM_driven_entity_extraction.ipynb) |
+
+### Agents
+
+Agents connect embeddings, pipelines, workflows and other agents together to autonomously solve complex problems.
+
+![agent](images/agent.png)
+
+txtai agents are built on top of the Transformers Agent framework. This supports all LLMs txtai supports (Hugging Face, llama.cpp, OpenAI / Claude / AWS Bedrock via LiteLLM).
 
 ### Retrieval augmented generation
 
