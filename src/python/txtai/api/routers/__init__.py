@@ -2,6 +2,7 @@
 Router imports
 """
 
+from . import agent
 from . import caption
 from . import embeddings
 from . import entity

@@ -9,6 +9,7 @@ from threading import RLock
 
 import yaml
 
+from ..agent import Agent
 from ..embeddings import Documents, Embeddings
 from ..pipeline import PipelineFactory
 from ..workflow import WorkflowFactory
@@ -69,10 +70,13 @@ class Application:
         self.pool = None
 
         # Create pipelines
-        self.pipes()
+        self.createpipelines()
 
         # Create workflows
-        self.flows()
+        self.createworkflows()
+
+        # Create agents
+        self.createagents()
 
         # Create embeddings index
         self.indexes(loaddata)
@@ -86,9 +90,9 @@ class Application:
             self.pool.close()
             self.pool = None
 
-    def pipes(self):
+    def createpipelines(self):
         """
-        Initialize pipelines.
+        Create pipelines.
         """
 
         # Pipeline definitions
@@ -133,9 +137,9 @@ class Application:
 
                 self.pipelines[pipeline] = PipelineFactory.create(config, pipeline)
 
-    def flows(self):
+    def createworkflows(self):
         """
-        Initialize workflows.
+        Create workflows.
         """
 
         # Workflow definitions
@@ -167,6 +171,31 @@ class Application:
                         self.pool = ThreadPool()
 
                     self.pool.apply_async(self.workflows[workflow].schedule, kwds=schedule)
+
+    def createagents(self):
+        """
+        Create agents.
+        """
+
+        # Agent definitions
+        self.agents = {}
+
+        # Create agents
+        if "agent" in self.config:
+            for agent, config in self.config["agent"].items():
+                # Create copy of config
+                config = config.copy()
+
+                # Resolve LLM
+                config["llm"] = self.function("llm")
+
+                # Resolve tools
+                for tool in config.get("tools", []):
+                    if isinstance(tool, dict) and "target" in tool:
+                        tool["target"] = self.function(tool["target"])
+
+                # Create agent
+                self.agents[agent] = Agent(**config)
 
     def indexes(self, loaddata):
         """
@@ -751,6 +780,21 @@ class Application:
 
         # Execute workflow
         return self.workflows[name](elements)
+
+    def agent(self, name, *args, **kwargs):
+        """
+        Executes an agent.
+
+        Args:
+            name: agent name
+            args: agent positional arguments
+            kwargs: agent keyword arguments
+        """
+
+        if name in self.agents:
+            return self.agents[name](*args, **kwargs)
+
+        return None
 
     def wait(self):
         """
