@@ -18,8 +18,8 @@ agent:
     test:
         max_iterations: 1
         tools:
-            - name: today
-              description: Today's date
+            - name: testtool
+              description: Test tool
               target: testapi.testapiagent.TestTool
 
 llm:
