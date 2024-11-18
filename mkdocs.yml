@@ -71,6 +71,10 @@ nav:
         - Index Guide: embeddings/indexing.md
         - Methods: embeddings/methods.md
         - Query Guide: embeddings/query.md
+    - Agent:
+        - agent/index.md
+        - Configuration: agent/configuration.md
+        - Methods: agent/methods.md
     - Pipeline:
         - pipeline/index.md
         - Audio:

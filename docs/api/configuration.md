@@ -38,6 +38,22 @@ Determines if the input embeddings index is writable (true) or read-only (false)
 ### cloud
 [Cloud storage settings](../../embeddings/configuration/cloud) can be set under a `cloud` top level configuration group.
 
+## Agent
+
+Agents are defined under a top level `agent` key. Each key under the `agent` key is the name of the agent. Constructor parameters can be passed under this key.
+
+The following example defines an agent.
+
+```yaml
+agent:
+    researcher:
+        tools:
+            - websearch
+
+llm:
+    path: hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4
+```
+
 ## Pipeline
 
 Pipelines are loaded as top level configuration parameters. Pipeline names are automatically detected in the YAML configuration and created upon startup. All [pipelines](../../pipeline) are supported.
