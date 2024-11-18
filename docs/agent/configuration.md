@@ -45,7 +45,7 @@ agent = Agent(
 llm: string|llm instance
 ```
 
-LLM pipeline instance or a LLM path. See the [LLM pipeline](../../pipeline/text/llm) for more information.
+LLM path or LLM pipeline instance. See the [LLM pipeline](../../pipeline/text/llm) for more information.
 
 ## tools
 
@@ -57,7 +57,7 @@ List of tools to supply to the agent. Supports the following configurations.
 
 ### function
 
-A function tool takes the following dictionary configuration.
+A function tool takes the following dictionary fields.
 
 | Field       | Description              |
 |:------------|:-------------------------|
@@ -77,7 +77,6 @@ Embeddings indexes have built-in support. Provide the following dictionary confi
 | description | embeddings index description               | 
 | **kwargs    | Parameters to pass to [embeddings.load](../../embeddings/methods/#txtai.embeddings.Embeddings.load) |
 
-
 ### transformers
 
 A Transformers tool instance can be provided. Additionally, the following strings load tools directly from Transformers.
@@ -85,7 +84,6 @@ A Transformers tool instance can be provided. Additionally, the following string
 | Tool        | Description                                               |
 |:------------|:----------------------------------------------------------|
 | websearch   | Runs a websearch using built-in Transformers Agent tool   |
-
 
 ## method
 

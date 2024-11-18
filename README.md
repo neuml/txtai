@@ -128,6 +128,12 @@ Agents connect embeddings, pipelines, workflows and other agents together to aut
 
 txtai agents are built on top of the Transformers Agent framework. This supports all LLMs txtai supports (Hugging Face, llama.cpp, OpenAI / Claude / AWS Bedrock via LiteLLM).
 
+See the link below to learn more.
+
+| Notebook  | Description  |       |
+|:----------|:-------------|------:|
+| [What's new in txtai 8.0](https://github.com/neuml/txtai/blob/master/examples/67_Whats_new_in_txtai_8_0.ipynb) | Agents with txtai | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/67_Whats_new_in_txtai_8_0.ipynb) |
+
 #### Retrieval augmented generation
 
 Retrieval augmented generation (RAG) reduces the risk of LLM hallucinations by constraining the output with a knowledge base as context. RAG is commonly used to "chat with your data".

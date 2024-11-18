@@ -9,7 +9,7 @@ Agents excel at complex tasks where multiple tools and/or methods are required. 
 people working on the same task. When the request is simple and/or there is a rule-based process, other methods such as RAG and Workflows
 should be explored.
 
-The following code snippet shows a basic agent.
+The following code snippet defines a basic agent.
 
 ```python
 from datetime import datetime
@@ -47,7 +47,7 @@ agent = Agent(
 )
 ```
 
-The agent above has access to a two embeddings database (Wikipedia and ArXiv) and the web. Given the user's input request, the Agent decides the best tool to solve the task. In this case, a web search is executed.
+The agent above has access to two embeddings databases (Wikipedia and ArXiv) and the web. Given the user's input request, the agent decides the best tool to solve the task.
 
 ## Example
 
@@ -57,13 +57,13 @@ The first example will solve a problem with multiple data points. See below.
 agent("Which city has the highest population, Boston or New York?")
 ```
 
-This requires looking up the populations of each city before knowing how to answer the question.
+This requires looking up the population of each city before knowing how to answer the question. Multiple search requests are run to generate a final answer.
 
 ## Agentic RAG
 
-Standard Retrieval Augmented Generation (RAG) runs a single vector search query to obtain a context and builds a prompt with the context + input question. Agentic RAG is a more complex process that goes through multiple iterations. It can also utilize multiple databases to come to a final conclusion.
+Standard retrieval augmented generation (RAG) runs a single vector search to obtain a context and builds a prompt with the context + input question. Agentic RAG is a more complex process that goes through multiple iterations. It can also utilize multiple databases to come to a final conclusion.
 
-The example below aggregates information from multiple examples and builds a report on a topic.
+The example below aggregates information from multiple sources and builds a report on a topic.
 
 ```python
 researcher = """
@@ -138,3 +138,11 @@ concepts about Signal Processing.
 Write the output in Markdown.
 """)
 ```
+
+# More examples
+
+See the link below to learn more.
+
+| Notebook  | Description  |       |
+|:----------|:-------------|------:|
+| [What's new in txtai 8.0](https://github.com/neuml/txtai/blob/master/examples/67_Whats_new_in_txtai_8_0.ipynb) | Agents with txtai | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/67_Whats_new_in_txtai_8_0.ipynb) |

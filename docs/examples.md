@@ -126,6 +126,7 @@ New functionality added in major releases.
 | [What's new in txtai 4.0](https://github.com/neuml/txtai/blob/master/examples/24_Whats_new_in_txtai_4_0.ipynb) | Content storage, SQL, object storage, reindex and compressed indexes | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/24_Whats_new_in_txtai_4_0.ipynb) |
 | [What's new in txtai 6.0](https://github.com/neuml/txtai/blob/master/examples/46_Whats_new_in_txtai_6_0.ipynb) | Sparse, hybrid and subindexes for embeddings, LLM improvements | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/46_Whats_new_in_txtai_6_0.ipynb) |
 | [What's new in txtai 7.0](https://github.com/neuml/txtai/blob/master/examples/59_Whats_new_in_txtai_7_0.ipynb) | Semantic graph 2.0, LoRA/QLoRA training and binary API support | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/59_Whats_new_in_txtai_7_0.ipynb) |
+| [What's new in txtai 8.0](https://github.com/neuml/txtai/blob/master/examples/67_Whats_new_in_txtai_8_0.ipynb) | Agents with txtai | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/67_Whats_new_in_txtai_8_0.ipynb) |
 
 ## Applications
 
