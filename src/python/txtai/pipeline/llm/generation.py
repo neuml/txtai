@@ -28,7 +28,7 @@ class Generation:
         """
         Generates text. Supports the following input formats:
 
-          - String or list of strings
+          - String or list of strings (instruction-tuned models must follow chat templates)
           - List of dictionaries with `role` and `content` key-values or lists of lists
 
         Args:

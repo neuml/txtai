@@ -29,6 +29,17 @@ llm(
   """
 )
 
+# Instruction tuned models typically require string prompts to
+# follow a specific chat template set by the model
+llm("""
+  <|im_start|>system
+  You are a friendly assistant.<|im_end|>
+  <|im_start|>user
+  Answer the following question...<|im_end|>
+  <|im_start|>assistant
+"""
+)
+
 # Chat messages are also supported
 llm([
   {"role": "system", "content": "You are a friendly assistant."},
