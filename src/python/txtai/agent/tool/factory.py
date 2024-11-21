@@ -95,11 +95,13 @@ class ToolFactory:
             Tool
         """
 
-        name = target.__class__.__name__ if hasattr(target, "__call__") else target.__name__
-        target = target.__call__ if hasattr(target, "__call__") else target
+        # Get function name and target - use target if it's a function or method, else use target.__call__
+        name = target.__name__ if isinstance(target, (FunctionType, MethodType)) or not hasattr(target, "__call__") else target.__class__.__name__
+        target = target if isinstance(target, (FunctionType, MethodType)) or not hasattr(target, "__call__") else target.__call__
 
-        doc = inspect.getdoc(target).strip()
-        description, parameters, _ = chat_template_utils.parse_google_format_docstring(doc)
+        # Extract target documentation
+        doc = inspect.getdoc(target)
+        description, parameters, _ = chat_template_utils.parse_google_format_docstring(doc.strip()) if doc else (None, {}, None)
 
         # Get list of required parameters
         signature = inspect.signature(target)

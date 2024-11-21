@@ -69,20 +69,24 @@ class TestAgent(unittest.TestCase):
 
         today = {"name": "today", "description": "Gets the current date and time", "target": DateTime()}
 
-        def current() -> str:
+        def current(iso) -> str:
             """
             Gets the current date and time
+
+            Args:
+                iso: date will be converted to iso format if True
 
             Returns:
                 current date and time
             """
 
-            return datetime.today().isoformat()
+            return datetime.today().isoformat() if iso else datetime.today()
 
         agent = Agent(tools=[today, current, "websearch"], llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_iterations=1)
 
         self.assertIsNotNone(agent)
         self.assertIsInstance(agent.tools["today"](True), str)
+        self.assertIsInstance(agent.tools["current"](True), str)
 
     def testToolsEmbeddings(self):
         """
