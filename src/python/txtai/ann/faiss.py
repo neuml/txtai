@@ -20,6 +20,7 @@ if platform.system() == "Darwin":
     # Remove this workaround once the upstream bug is patched.
     omp_set_num_threads(1)
 
+
 class Faiss(ANN):
     """
     Builds an ANN index using the Faiss library.

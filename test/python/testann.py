@@ -136,7 +136,7 @@ class TestANN(unittest.TestCase):
         # Validate count
         self.assertEqual(ann.count(), 100)
 
-    @patch('platform.system')
+    @patch("platform.system")
     def testFaissMacOS(self, mock_platform):
         """
         Test backend with OS Darwin
