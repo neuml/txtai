@@ -14,9 +14,10 @@ from faiss import index_binary_factory, read_index_binary, write_index_binary, I
 from .base import ANN
 
 if platform.system() == "Darwin":
-    # There is current a open Bug with OSX causing segmentation fault 
-    # seting the number of threads in FAISS to 1 fixes this until upstream create a patch
-    # ref: https://github.com/kyamagu/faiss-wheels/issues/100
+    # Workaround for an open bug on macOS causing segmentation faults in FAISS.
+    # Setting the number of threads in OpenMP to 1 avoids the issue for now.
+    # Ref: https://github.com/kyamagu/faiss-wheels/issues/100
+    # TODO: Remove this workaround once the upstream bug is patched.
     omp_set_num_threads(1)
 
 class Faiss(ANN):
