@@ -103,10 +103,11 @@ __Solution__
 
 Set the following environment parameters.
 
-- OpenMP threading is handled internally on macOS platforms, but it can be disabled by setting the environment variable OMP_NUM_THREADS to 1, e.g., export OMP_NUM_THREADS=1. For more details, refer to the related discussion on GitHub: kyamagu/faiss-wheels#100.
+- OpenMP threading is handled internally on macOS platforms but it can be disabled via `export OMP_NUM_THREADS=1`
 - Disable PyTorch MPS device via `export PYTORCH_MPS_DISABLE=1`
 - Disable llama.cpp metal via `export LLAMA_NO_METAL=1`
 
+For more details, refer to [this issue on GitHub](https://github.com/kyamagu/faiss-wheels/issues/100).
 
 ----------
 

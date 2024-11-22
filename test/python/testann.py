@@ -4,6 +4,7 @@ ANN module tests
 
 import os
 import platform
+import sys
 import tempfile
 import unittest
 
@@ -66,6 +67,28 @@ class TestANN(unittest.TestCase):
         # Test with custom settings
         self.runTests("faiss", {"faiss": {"nprobe": 2, "components": "PCA16,IDMap,SQ8", "sample": 1.0}}, False)
         self.runTests("faiss", {"faiss": {"components": "IVF,SQ8"}}, False)
+
+    @patch("platform.system")
+    def testFaissMacOS(self, system):
+        """
+        Test Faiss backend with macOS
+        """
+
+        # Run test
+        system.return_value = "Darwin"
+
+        # pylint: disable=C0415, W0611
+        # Force reload of class
+        name = "txtai.ann.faiss"
+        module = sys.modules[name]
+        del sys.modules[name]
+        import txtai.ann.faiss
+
+        # Run tests
+        self.runTests("faiss")
+
+        # Restore original module
+        sys.modules[name] = module
 
     @unittest.skipIf(os.name == "nt", "mmap not supported on Windows")
     def testFaissMmap(self):
@@ -135,14 +158,6 @@ class TestANN(unittest.TestCase):
 
         # Validate count
         self.assertEqual(ann.count(), 100)
-
-    @patch("platform.system")
-    def testFaissMacOS(self, mock_platform):
-        """
-        Test backend with OS Darwin
-        """
-        mock_platform.return_value = "Darwin"
-        self.runTests("faiss")
 
     @patch("sqlalchemy.orm.Query.limit")
     def testPGVector(self, query):
