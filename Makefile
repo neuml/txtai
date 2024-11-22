@@ -34,7 +34,11 @@ test:
 coverage:
 	coverage run -m unittest discover -v -k testagent -s ${TEST_DIR}
 	coverage run -m unittest discover -v -k testann -s ${TEST_DIR}
-	coverage run -m unittest discover -v -k testapi -s ${TEST_DIR}
+	coverage run -m unittest discover -v -k testapi.testapi -s ${TEST_DIR}
+	coverage run -m unittest discover -v -k testapi.testauthorization -s ${TEST_DIR}
+	coverage run -m unittest discover -v -k testapi.testcluster -s ${TEST_DIR}
+	coverage run -m unittest discover -v -k testapi.testencoding -s ${TEST_DIR}
+	coverage run -m unittest discover -v -k testapi.testextension -s ${TEST_DIR}
 	coverage run -m unittest discover -v -k testapp -s ${TEST_DIR}
 	coverage run -m unittest discover -v -k testarchive -s ${TEST_DIR}
 	coverage run -m unittest discover -v -k testcloud -s ${TEST_DIR}
