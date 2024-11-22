@@ -40,6 +40,8 @@ See the following Faiss documentation links for more information.
 - [Binary Indexes](https://github.com/facebookresearch/faiss/wiki/Binary-indexes)
 - [Search Tuning](https://github.com/facebookresearch/faiss/wiki/Faster-search)
 
+Note: For macOS users, an existing bug in an upstream package restricts the number of processing threads to 1. This limitation is managed internally to prevent system crashes.
+
 ### hnsw
 ```yaml
 hnsw:

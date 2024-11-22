@@ -3,13 +3,22 @@ Faiss module
 """
 
 import math
+import platform
 
 import numpy as np
 
+from faiss import omp_set_num_threads
 from faiss import index_factory, IO_FLAG_MMAP, METRIC_INNER_PRODUCT, read_index, write_index
 from faiss import index_binary_factory, read_index_binary, write_index_binary, IndexBinaryIDMap
 
 from .base import ANN
+
+if platform.system() == "Darwin":
+    # Workaround for an open bug on macOS causing segmentation faults in FAISS.
+    # Setting the number of threads in OpenMP to 1 avoids the issue for now.
+    # Ref: https://github.com/kyamagu/faiss-wheels/issues/100
+    # Remove this workaround once the upstream bug is patched.
+    omp_set_num_threads(1)
 
 
 class Faiss(ANN):
