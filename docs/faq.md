@@ -101,7 +101,6 @@ Segmentation faults and similar errors on macOS
 
 __Solution__
 
-
 Set the following environment parameters.
 
 - OpenMP threading is handled internally on macOS platforms, but it can be disabled by setting the environment variable OMP_NUM_THREADS to 1, e.g., export OMP_NUM_THREADS=1. For more details, refer to the related discussion on GitHub: kyamagu/faiss-wheels#100.
