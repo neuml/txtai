@@ -136,6 +136,14 @@ class TestANN(unittest.TestCase):
         # Validate count
         self.assertEqual(ann.count(), 100)
 
+    @patch('platform.system')
+    def testmocdarwin(self, mock_platform):
+        """
+        Test backend with OS Darwin
+        """
+        mock_platform.return_value = "Darwin"
+        self.runTests("faiss")
+
     @patch("sqlalchemy.orm.Query.limit")
     def testPGVector(self, query):
         """
