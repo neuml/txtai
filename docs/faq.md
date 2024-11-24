@@ -66,8 +66,8 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from txtai import LLM
 
-# Load Mistral-7B-OpenOrca
-path = "Open-Orca/Mistral-7B-OpenOrca"
+# Load Phi 3.5-mini
+path = "microsoft/Phi-3.5-mini-instruct"
 model = AutoModelForCausalLM.from_pretrained(
   path,
   torch_dtype=torch.bfloat16,

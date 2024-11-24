@@ -32,9 +32,11 @@ txtai is an all-in-one embeddings database for semantic search, LLM orchestratio
 ![architecture](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/architecture.png#gh-light-mode-only)
 ![architecture](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/architecture-dark.png#gh-dark-mode-only)
 
-Embeddings databases are a union of vector indexes (sparse and dense), graph networks and relational databases. This enables vector search with SQL, topic modeling, graph analysis and more.
+Embeddings databases are a union of vector indexes (sparse and dense), graph networks and relational databases.
 
-Embeddings databases can stand on their own and/or serve as a powerful knowledge source for large language model (LLM) prompts. Build autonomous agents, retrieval augmented generation (RAG) processes and multi-model workflows.
+This foundation enables vector search and/or serves as a powerful knowledge source for large language model (LLM) applications.
+
+Build autonomous agents, retrieval augmented generation (RAG) processes, multi-model workflows and more.
 
 Summary of txtai features:
 
@@ -44,6 +46,7 @@ Summary of txtai features:
 - ↪️️ Workflows to join pipelines together and aggregate business logic. txtai processes can be simple microservices or multi-model workflows.
 - 🤖 Agents that intelligently connect embeddings, pipelines, workflows and other agents together to autonomously solve complex problems
 - ⚙️ Build with Python or YAML. API bindings available for [JavaScript](https://github.com/neuml/txtai.js), [Java](https://github.com/neuml/txtai.java), [Rust](https://github.com/neuml/txtai.rs) and [Go](https://github.com/neuml/txtai.go).
+- 🔋 Batteries included with defaults to get up and running fast
 - ☁️ Run local or scale out with container orchestration
 
 txtai is built with Python 3.9+, [Hugging Face Transformers](https://github.com/huggingface/transformers), [Sentence Transformers](https://github.com/UKPLab/sentence-transformers) and [FastAPI](https://github.com/tiangolo/fastapi). txtai is open-source under an Apache 2.0 license.
@@ -194,7 +197,7 @@ See the table below for the current recommended models. These models all allow c
 | [Image Captions](https://neuml.github.io/txtai/pipeline/image/caption)        | [BLIP](https://hf.co/Salesforce/blip-image-captioning-base)              |
 | [Labels - Zero Shot](https://neuml.github.io/txtai/pipeline/text/labels)      | [BART-Large-MNLI](https://hf.co/facebook/bart-large)                     |
 | [Labels - Fixed](https://neuml.github.io/txtai/pipeline/text/labels)          | Fine-tune with [training pipeline](https://neuml.github.io/txtai/pipeline/train/trainer)          |
-| [Large Language Model (LLM)](https://neuml.github.io/txtai/pipeline/text/llm) | [Mistral 7B OpenOrca](https://hf.co/Open-Orca/Mistral-7B-OpenOrca)       |
+| [Large Language Model (LLM)](https://neuml.github.io/txtai/pipeline/text/llm) | [Llama 3.1 Instruct](https://hf.co/meta-llama/Llama-3.1-8B-Instruct)     |
 | [Summarization](https://neuml.github.io/txtai/pipeline/text/summary)          | [DistilBART](https://hf.co/sshleifer/distilbart-cnn-12-6)                |
 | [Text-to-Speech](https://neuml.github.io/txtai/pipeline/audio/texttospeech)   | [ESPnet JETS](https://hf.co/NeuML/ljspeech-jets-onnx)                    |
 | [Transcription](https://neuml.github.io/txtai/pipeline/audio/transcription)   | [Whisper](https://hf.co/openai/whisper-base)                             | 
