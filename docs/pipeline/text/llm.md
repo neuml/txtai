@@ -41,7 +41,7 @@ llm(
   """
 )
 
-# Chat messages are also supported
+# Chat messages automatically handle templating
 llm([
   {"role": "system", "content": "You are a friendly assistant."},
   {"role": "user", "content": "Answer the following question..."}
@@ -61,8 +61,8 @@ llm = LLM("meta-llama/Meta-Llama-3.1-8B-Instruct")
 llm = LLM("meta-llama/Meta-Llama-3.1-8B-Instruct", method="transformers")
 
 # llama.cpp
-llm = LLM("microsoft/Phi-3-mini-4k-instruct-gguf/Phi-3-mini-4k-instruct-gguf")
-llm = LLM("microsoft/Phi-3-mini-4k-instruct-gguf/Phi-3-mini-4k-instruct-gguf",
+llm = LLM("microsoft/Phi-3-mini-4k-instruct-gguf/Phi-3-mini-4k-instruct-q4.gguf")
+llm = LLM("microsoft/Phi-3-mini-4k-instruct-gguf/Phi-3-mini-4k-instruct-q4.gguf",
            method="llama.cpp")
 
 # LiteLLM
