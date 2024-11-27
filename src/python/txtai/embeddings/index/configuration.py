@@ -35,7 +35,7 @@ class Configuration:
 
         # Load configuration
         with open(f"{path}/{name}", "r" if jsonconfig else "rb", encoding="utf-8" if jsonconfig else None) as handle:
-            # Load JSON, also is backwards-compatible with pickle configuration
+            # Load JSON, also backwards-compatible with pickle configuration
             config = json.load(handle) if jsonconfig else SerializeFactory.create("pickle").loadstream(handle)
 
         # Add format parameter
@@ -71,5 +71,5 @@ class Configuration:
                 # Write config as JSON
                 json.dump(config, handle, default=str, indent=2)
             else:
-                # Backwards compatible method to load pickle configuration
+                # Backwards compatible method to save pickle configuration
                 SerializeFactory.create("pickle").savestream(config, handle)
