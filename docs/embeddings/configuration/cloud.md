@@ -11,7 +11,7 @@ provider: string
 
 Cloud provider. Can be one of the following:
 
-- Cloud object storage. Set to one of these [providers](https://libcloud.readthedocs.io/en/stable/storage/supported_providers.html).
+- Cloud object storage. Set to one of these [providers](https://libcloud.readthedocs.io/en/stable/storage/supported_providers.html). Use the text shown in the `Provider Constant` column as lower case.
 
 - Hugging Face Hub. Set to `huggingface-hub`.
 
@@ -43,6 +43,18 @@ secret: string
 ```
 
 Provider-specific access secret. Can also be set via `ACCESS_SECRET` environment variable. Ensure the configuration file is secured if added to the file. When using implicit authentication, this option is not required.
+
+### prefix
+```yaml
+prefix: string
+```
+
+Optional object prefix. Object storage doesn't have the concept of a directory but a prefix is similar. For example, a prefix could be `base/dir`. This helps with organizing data in an object storage bucket.
+
+More can be found at the following links.
+
+- [Organizing objects using prefixes](https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-prefixes.html)
+- [libcloud container method documentation](https://libcloud.readthedocs.io/en/stable/storage/api.html#libcloud.storage.base.StorageDriver.iterate_container_objects)
 
 ### host
 ```yaml

@@ -34,7 +34,7 @@ class ObjectStorage(Cloud):
             True if this is an object storage provider
         """
 
-        return LIBCLOUD and provider and provider in DRIVERS
+        return LIBCLOUD and provider and provider.lower() in [x.lower() for x in DRIVERS]
 
     def __init__(self, config):
         super().__init__(config)
@@ -67,6 +67,12 @@ class ObjectStorage(Cloud):
         # Download archive file
         if self.isarchive(path):
             obj = self.client.get_object(self.config["container"], self.objectname(path))
+
+            # Create local directory, if necessary
+            directory = os.path.dirname(path)
+            if directory:
+                os.makedirs(directory, exist_ok=True)
+
             obj.download(path, overwrite_existing=True)
 
         # Download files in container. Optionally filter with a provided prefix.
