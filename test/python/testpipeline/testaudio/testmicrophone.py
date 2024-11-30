@@ -70,7 +70,7 @@ class TestMicrophone(unittest.TestCase):
                 return (data * absmax + offset).clip(i.min, i.max).astype(np.int16)
 
         # Mock input stream
-        inputstream.return_value = RawInputStream()
+        inputstream.side_effect = RawInputStream
 
         # Create microphone pipeline and read data
         pipeline = Microphone()

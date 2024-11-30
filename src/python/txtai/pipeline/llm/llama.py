@@ -8,7 +8,7 @@ from huggingface_hub import hf_hub_download
 
 # Conditional import
 try:
-    from llama_cpp import Llama
+    import llama_cpp as llama
 
     LLAMA_CPP = True
 except ImportError:
@@ -45,11 +45,8 @@ class LlamaCpp(Generation):
         # Check if this is a local path, otherwise download from the HF Hub
         path = path if os.path.exists(path) else self.download(path)
 
-        # Default GPU layers if not already set
-        kwargs["n_gpu_layers"] = kwargs.get("n_gpu_layers", -1 if kwargs.get("gpu", os.environ.get("LLAMA_NO_METAL") != "1") else 0)
-
         # Create llama.cpp instance
-        self.llm = Llama(path, n_ctx=0, verbose=kwargs.pop("verbose", False), **kwargs)
+        self.llm = self.create(path, **kwargs)
 
     def stream(self, texts, maxlength, stream, stop, **kwargs):
         for text in texts:
@@ -78,6 +75,39 @@ class LlamaCpp(Generation):
 
         # Download and cache file
         return hf_hub_download(repo_id="/".join(parts[:repo]), filename="/".join(parts[repo:]))
+
+    def create(self, path, **kwargs):
+        """
+        Creates a new llama.cpp model instance.
+
+        Args:
+            path: path to model
+            kwargs: additional keyword args
+
+        Returns:
+            llama.cpp instance
+        """
+
+        # Default n_ctx=0 if not already set. This sets n_ctx = n_ctx_train.
+        kwargs["n_ctx"] = kwargs.get("n_ctx", 0)
+
+        # Default GPU layers if not already set
+        kwargs["n_gpu_layers"] = kwargs.get("n_gpu_layers", -1 if kwargs.get("gpu", os.environ.get("LLAMA_NO_METAL") != "1") else 0)
+
+        # Default verbose flag
+        kwargs["verbose"] = kwargs.get("verbose", False)
+
+        # Create llama.cpp instance
+        try:
+            return llama.Llama(model_path=path, **kwargs)
+        except ValueError as e:
+            # Fallback to default n_ctx when not enough memory for n_ctx = n_ctx_train
+            if not kwargs["n_ctx"]:
+                kwargs.pop("n_ctx")
+                return llama.Llama(model_path=path, **kwargs)
+
+            # Raise exception if n_ctx manually specified
+            raise e
 
     def messages(self, messages, maxlength, stream, stop, **kwargs):
         """
