@@ -20,7 +20,7 @@ class Segmentation(Pipeline):
     Segments text into logical units.
     """
 
-    def __init__(self, sentences=False, lines=False, paragraphs=False, minlength=None, join=False, sections=False):
+    def __init__(self, sentences=False, lines=False, paragraphs=False, minlength=None, join=False, sections=False, cleantext=True):
         """
         Creates a new Segmentation pipeline.
 
@@ -31,6 +31,7 @@ class Segmentation(Pipeline):
             minlength: require at least minlength characters per text element, defaults to None
             join: joins tokenized sections back together if True, defaults to False
             sections: tokenizes text into sections if True, defaults to False. Splits using section or page breaks, depending on what's available
+            cleantext: apply text cleaning rules, defaults to True
         """
 
         if not NLTK:
@@ -42,6 +43,7 @@ class Segmentation(Pipeline):
         self.sections = sections
         self.minlength = minlength
         self.join = join
+        self.cleantext = cleantext
 
     def __call__(self, text):
         """
@@ -127,7 +129,13 @@ class Segmentation(Pipeline):
             clean text
         """
 
+        # Text cleaning disabled, return original text
+        if not self.cleantext:
+            return text
+
+        # Collapse and remove excess whitespace
         text = re.sub(r" +", " ", text)
         text = text.strip()
 
+        # If minlength enabled, require at least minlength chars
         return text if not self.minlength or len(text) >= self.minlength else None

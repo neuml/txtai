@@ -28,11 +28,13 @@ class Textractor(Segmentation):
     Extracts text from files.
     """
 
-    def __init__(self, sentences=False, lines=False, paragraphs=False, minlength=None, join=False, tika=True, sections=False, headers=None):
+    def __init__(
+        self, sentences=False, lines=False, paragraphs=False, minlength=None, join=False, tika=True, sections=False, cleantext=True, headers=None
+    ):
         if not TIKA:
             raise ImportError('Textractor pipeline is not available - install "pipeline" extra to enable')
 
-        super().__init__(sentences, lines, paragraphs, minlength, join, sections)
+        super().__init__(sentences, lines, paragraphs, minlength, join, sections, cleantext)
 
         # Determine if Apache Tika (default if Java is available) or Beautiful Soup should be used
         # Beautiful Soup only supports HTML, Tika supports a wide variety of file formats.

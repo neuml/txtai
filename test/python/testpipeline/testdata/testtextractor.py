@@ -23,6 +23,23 @@ class TestTextractor(unittest.TestCase):
         textractor = Textractor()
         self.assertFalse(textractor.checkjava("1112444abc"))
 
+    def testClean(self):
+        """
+        Test text cleaning method
+        """
+
+        # Default text cleaning
+        textractor = Textractor()
+        self.assertEqual(textractor(" a  b  c "), "a b c")
+
+        # Require text to be minlength
+        textractor = Textractor(minlength=10)
+        self.assertEqual(textractor(" a  b  c "), None)
+
+        # Disable text cleaning
+        textractor = Textractor(cleantext=False, minlength=10)
+        self.assertEqual(textractor(" a  b  c "), " a  b  c ")
+
     def testDefault(self):
         """
         Test default text extraction
