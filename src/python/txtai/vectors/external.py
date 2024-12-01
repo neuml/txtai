@@ -27,6 +27,7 @@ class External(Vectors):
 
     def encode(self, data):
         # Call external transform function, if available and data not already an array
+        # Batching is handed by the external transform function
         if self.transform and data and not isinstance(data[0], np.ndarray):
             data = self.transform(data)
 

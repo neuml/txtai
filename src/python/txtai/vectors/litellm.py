@@ -59,6 +59,7 @@ class LiteLLM(Vectors):
 
     def encode(self, data):
         # Call external embeddings API using LiteLLM
+        # Batching is handled server-side
         response = api.embedding(model=self.config.get("path"), input=data, **self.config.get("vectors", {}))
 
         # Read response into a NumPy array

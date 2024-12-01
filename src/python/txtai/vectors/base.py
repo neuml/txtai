@@ -6,6 +6,8 @@ import tempfile
 
 import numpy as np
 
+from ..pipeline import Tokenizer
+
 
 class Vectors:
     """
@@ -147,7 +149,7 @@ class Vectors:
             embeddings vector
         """
 
-        # Prepare input document for transformers model and build embeddings
+        # Prepare input document for vectors model and build embeddings
         return self.batchtransform([document])[0]
 
     def batchtransform(self, documents, category=None):
@@ -162,7 +164,7 @@ class Vectors:
             embeddings vectors
         """
 
-        # Prepare input documents for transformers model
+        # Prepare input documents for vectors model
         documents = [self.prepare(data, category) for _, data, _ in documents]
 
         # Skip encoding data if it's already an array
@@ -183,7 +185,7 @@ class Vectors:
             (ids, dimensions) list of ids and number of dimensions in embeddings
         """
 
-        # Extract ids and prepare input documents for transformers model
+        # Extract ids and prepare input documents for vectors model
         ids = [uid for uid, _, _ in documents]
         documents = [self.prepare(data, "data") for _, data, _ in documents]
         dimensions = None
@@ -208,6 +210,9 @@ class Vectors:
             data formatted for vector model
         """
 
+        # Prepares tokens for the model
+        data = self.tokens(data)
+
         # Default instruction category
         category = category if category else "query"
 
@@ -215,6 +220,27 @@ class Vectors:
         if self.instructions and category in self.instructions and isinstance(data, str):
             # Prepend category instruction
             data = f"{self.instructions[category]}{data}"
+
+        return data
+
+    def tokens(self, data):
+        """
+        Prepare data as tokens model can accept.
+
+        Args:
+            data: input data
+
+        Returns:
+            tokens formatted for model
+        """
+
+        # Optional string tokenization
+        if self.tokenize and isinstance(data, str):
+            data = Tokenizer.tokenize(data)
+
+        # Convert token list to string
+        if isinstance(data, list):
+            data = " ".join(data)
 
         return data
 

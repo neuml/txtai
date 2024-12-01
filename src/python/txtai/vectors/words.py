@@ -158,6 +158,10 @@ class WordVectors(Vectors):
 
         return self.model.query(tokens)
 
+    def tokens(self, data):
+        # Skip tokenization rules
+        return data
+
     @staticmethod
     def isdatabase(path):
         """

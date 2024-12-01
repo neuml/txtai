@@ -42,14 +42,6 @@ class TestHFVectors(unittest.TestCase):
         with open(stream, "rb") as queue:
             self.assertEqual(np.load(queue).shape, (500, 768))
 
-    def testSentenceTransformers(self):
-        """
-        Test creating a model with sentence transformers
-        """
-
-        model = VectorsFactory.create({"method": "sentence-transformers", "path": "paraphrase-MiniLM-L3-v2"}, None)
-        self.assertEqual(model.transform((0, "This is a test", None)).shape, (384,))
-
     def testText(self):
         """
         Test transformers text conversion

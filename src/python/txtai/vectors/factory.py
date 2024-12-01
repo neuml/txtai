@@ -9,6 +9,7 @@ from .huggingface import HFVectors
 from .litellm import LiteLLM
 from .llama import LlamaCpp
 from .m2v import Model2Vec
+from .sbert import STVectors
 from .words import WordVectors
 
 
@@ -50,6 +51,10 @@ class VectorsFactory:
         if method == "model2vec":
             return Model2Vec(config, scoring, models)
 
+        # Sentence Transformers vectors
+        if method == "sentence-transformers":
+            return STVectors(config, scoring, models)
+
         # Word vectors
         if method == "words":
             return WordVectors(config, scoring, models)
@@ -73,7 +78,7 @@ class VectorsFactory:
             vector method
         """
 
-        # Determine vector method (external, litellm, llama.cpp, transformers or words)
+        # Determine vector method
         method = config.get("method")
         path = config.get("path")
 
@@ -84,6 +89,8 @@ class VectorsFactory:
                     method = "litellm"
                 elif LlamaCpp.ismodel(path):
                     method = "llama.cpp"
+                elif Model2Vec.ismodel(path):
+                    method = "model2vec"
                 elif WordVectors.isdatabase(path):
                     method = "words"
                 else:

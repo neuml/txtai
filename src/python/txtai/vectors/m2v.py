@@ -2,6 +2,10 @@
 Model2Vec module
 """
 
+import json
+
+from transformers.utils import cached_file
+
 # Conditional import
 try:
     from model2vec import StaticModel
@@ -18,6 +22,32 @@ class Model2Vec(Vectors):
     Builds vectors using Model2Vec.
     """
 
+    @staticmethod
+    def ismodel(path):
+        """
+        Checks if path is a Model2Vec model.
+
+        Args:
+            path: input path
+
+        Returns:
+            True if this is a Model2Vec model, False otherwise
+        """
+
+        try:
+            # Download file and parse JSON
+            path = cached_file(path_or_repo_id=path, filename="config.json")
+            if path:
+                with open(path, encoding="utf-8") as f:
+                    config = json.load(f)
+                    return config.get("model_type") == "model2vec"
+
+        # Ignore this error - invalid repo or directory
+        except OSError:
+            pass
+
+        return False
+
     def __init__(self, config, scoring, models):
         # Check before parent constructor since it calls loadmodel
         if not MODEL2VEC:
@@ -29,4 +59,4 @@ class Model2Vec(Vectors):
         return StaticModel.from_pretrained(path)
 
     def encode(self, data):
-        return self.model.encode(data)
+        return self.model.encode(data, batch_size=self.encodebatch)
