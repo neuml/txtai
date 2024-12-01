@@ -67,17 +67,12 @@ class PoolingFactory:
         # Default method
         method = "meanpooling"
 
-        try:
-            # Load 1_Pooling/config.json file
-            config = PoolingFactory.load(path, "1_Pooling/config.json")
+        # Load 1_Pooling/config.json file
+        config = PoolingFactory.load(path, "1_Pooling/config.json")
 
-            # Set to CLS pooling if it's enabled and mean pooling is disabled
-            if config["pooling_mode_cls_token"] and not config["pooling_mode_mean_tokens"]:
-                method = "clspooling"
-
-        # Ignore this error
-        except OSError:
-            pass
+        # Set to CLS pooling if it's enabled and mean pooling is disabled
+        if config and config["pooling_mode_cls_token"] and not config["pooling_mode_mean_tokens"]:
+            method = "clspooling"
 
         return method
 
@@ -97,13 +92,8 @@ class PoolingFactory:
         maxlength = None
 
         # Read max_seq_length from sentence_bert_config.json
-        try:
-            config = PoolingFactory.load(path, "sentence_bert_config.json")
-            maxlength = config.get("max_seq_length")
-
-        # Ignore this error
-        except OSError:
-            pass
+        config = PoolingFactory.load(path, "sentence_bert_config.json")
+        maxlength = config.get("max_seq_length") if config else maxlength
 
         return maxlength
 
@@ -121,6 +111,15 @@ class PoolingFactory:
         """
 
         # Download file and parse JSON
-        path = cached_file(path_or_repo_id=path, filename=name)
-        with open(path, encoding="utf-8") as f:
-            return json.load(f)
+        config = None
+        try:
+            path = cached_file(path_or_repo_id=path, filename=name)
+            if path:
+                with open(path, encoding="utf-8") as f:
+                    config = json.load(f)
+
+        # Ignore this error - invalid repo or directory
+        except OSError:
+            pass
+
+        return config

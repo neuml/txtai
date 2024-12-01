@@ -115,13 +115,14 @@ class TextToSpeech(Pipeline):
             True if name exists in path, False otherwise
         """
 
+        exists = False
         try:
             # Check if file exists
-            cached_file(path_or_repo_id=path, filename=name)
+            exists = cached_file(path_or_repo_id=path, filename=name) is not None
         except OSError:
             return False
 
-        return True
+        return exists
 
     def stream(self, texts, speaker):
         """
