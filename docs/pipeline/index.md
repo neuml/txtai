@@ -21,6 +21,8 @@ The `LLM` and `RAG` pipelines also have integrations for [llama.cpp](https://git
     - [TextToSpeech](audio/texttospeech)
     - [Transcription](audio/transcription)
 - Data Processing
+    - [FileToHTML](data/filetohtml)
+    - [HTMLToMarkdown](data/htmltomd)
     - [Segmentation](data/segmentation)
     - [Tabular](data/tabular)
     - [Text extraction](data/textractor)

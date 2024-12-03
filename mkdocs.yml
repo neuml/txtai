@@ -85,6 +85,8 @@ nav:
             - Text To Speech: pipeline/audio/texttospeech.md
             - Transcription: pipeline/audio/transcription.md
         - Data:
+            - File To HTML: pipeline/data/filetohtml.md
+            - HTML To Markdown: pipeline/data/htmltomd.md
             - Segmentation: pipeline/data/segmentation.md
             - Tabular: pipeline/data/tabular.md
             - Textractor: pipeline/data/textractor.md

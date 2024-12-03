@@ -22,7 +22,9 @@ class TestOptional(unittest.TestCase):
 
         modules = [
             "annoy",
+            "bs4",
             "croniter",
+            "docling.document_converter",
             "duckdb",
             "fastapi",
             "fasttext",
@@ -184,8 +186,10 @@ class TestOptional(unittest.TestCase):
             AudioMixer,
             AudioStream,
             Caption,
+            FileToHTML,
             HFOnnx,
             HFTrainer,
+            HTMLToMarkdown,
             ImageHash,
             LiteLLM,
             LlamaCpp,
@@ -194,7 +198,6 @@ class TestOptional(unittest.TestCase):
             Objects,
             Segmentation,
             Tabular,
-            Textractor,
             TextToAudio,
             TextToSpeech,
             Transcription,
@@ -211,10 +214,19 @@ class TestOptional(unittest.TestCase):
             Caption()
 
         with self.assertRaises(ImportError):
+            FileToHTML(backend="docling")
+
+        with self.assertRaises(ImportError):
+            FileToHTML(backend="tika")
+
+        with self.assertRaises(ImportError):
             HFOnnx()("google/bert_uncased_L-2_H-128_A-2", quantize=True)
 
         with self.assertRaises(ImportError):
             HFTrainer()(None, None, lora=True)
+
+        with self.assertRaises(ImportError):
+            HTMLToMarkdown()
 
         with self.assertRaises(ImportError):
             ImageHash()
@@ -239,9 +251,6 @@ class TestOptional(unittest.TestCase):
 
         with self.assertRaises(ImportError):
             Tabular()
-
-        with self.assertRaises(ImportError):
-            Textractor()
 
         with self.assertRaises(ImportError):
             TextToAudio()

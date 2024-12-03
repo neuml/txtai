@@ -1,5 +1,5 @@
 """
-Summary module tests
+Textractor module tests
 """
 
 import unittest
@@ -14,14 +14,6 @@ class TestTextractor(unittest.TestCase):
     """
     Textractor tests.
     """
-
-    def testCheckJava(self):
-        """
-        Test the checkjava method
-        """
-
-        textractor = Textractor()
-        self.assertFalse(textractor.checkjava("1112444abc"))
 
     def testClean(self):
         """
@@ -46,7 +38,7 @@ class TestTextractor(unittest.TestCase):
         """
 
         # Text input
-        textractor = Textractor(tika=False)
+        textractor = Textractor(backend=None)
         text = textractor(Utils.PATH + "/tabular.csv")
         self.assertEqual(len(text), 125)
 
@@ -56,6 +48,17 @@ class TestTextractor(unittest.TestCase):
 
         # Check number of sections is as expected
         self.assertEqual(len(sections), 2)
+
+    def testDocling(self):
+        """
+        Test docling backend
+        """
+
+        textractor = Textractor(backend="docling")
+
+        # Extract text and check for Markdown formatting
+        text = textractor(Utils.PATH + "/article.pdf")
+        self.assertTrue("## Introducing txtai" in text)
 
     def testLines(self):
         """
@@ -177,14 +180,27 @@ class TestTextractor(unittest.TestCase):
             # Check for table header
             self.assertTrue("|---|" in text)
 
+    def testTikaFlag(self):
+        """
+        Test legacy tika flag
+        """
+
+        textractor = Textractor(tika=True)
+        self.assertIsNotNone(textractor.html)
+
+        textractor = Textractor(tika=False)
+        self.assertIsNone(textractor.html)
+
     def testURL(self):
         """
         Test parsing a remote URL
         """
 
-        textractor = Textractor()
-        text = textractor("https://github.com/neuml/txtai")
-        self.assertTrue("txtai is an all-in-one embeddings database" in text)
+        # Test parsing URLs for each backend
+        for backend in ["docling", "tika"]:
+            textractor = Textractor(backend=backend)
+            text = textractor("https://github.com/neuml/txtai")
+            self.assertTrue("txtai is an all-in-one embeddings database" in text)
 
     def assertMarkdown(self, html, expected):
         """

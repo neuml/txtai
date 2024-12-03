@@ -3,15 +3,17 @@
 ![pipeline](../../images/pipeline.png#only-light)
 ![pipeline](../../images/pipeline-dark.png#only-dark)
 
-The Textractor pipeline extracts and splits text from documents. This pipeline uses [Apache Tika](https://github.com/chrismattmann/tika-python) (if Java is available) and [BeautifulSoup4](https://pypi.org/project/beautifulsoup4/). See [this link](https://tika.apache.org/2.9.2/formats.html) for a list of supported document formats.
+The Textractor pipeline extracts and splits text from documents.
 
 Each document goes through the following process.
 
 - Content is retrieved if it's not local
-- If the document `mime-type` isn't plain text or HTML, it's run through Tika and converted to XHTML
-- XHTML is converted to Markdown and returned
+- If the document `mime-type` isn't plain text or HTML, it's converted to HTML via the [FiletoHTML](../filetohtml) pipeline
+- HTML is converted to Markdown via the [HTMLToMarkdown](../htmltomd) pipeline and returned
 
-Without Apache Tika, this pipeline only supports plain text and HTML. Other document types require Tika and Java to be installed. Another option is to start Apache Tika via [this Docker Image](https://hub.docker.com/r/apache/tika).
+The [backend](../filetohtml/#txtai.pipeline.FileToHTML.__init__) parameter sets the FileToHTML pipeline backend. If a backend isn't available, this pipeline assumes input is HTML content and only converts it to Markdown.
+
+See the [FiletoHTML](../filetohtml) and [HTMLToMarkdown](../htmltomd) pipelines to learn more on the dependencies necessary for each of those pipelines.
 
 ## Example
 
