@@ -4,6 +4,8 @@ Textractor module tests
 
 import unittest
 
+import torch
+
 from txtai.pipeline import Textractor
 
 # pylint: disable = C0411
@@ -53,6 +55,9 @@ class TestTextractor(unittest.TestCase):
         """
         Test docling backend
         """
+
+        # Set default device to CPU
+        torch.set_default_device("cpu")
 
         textractor = Textractor(backend="docling")
 
