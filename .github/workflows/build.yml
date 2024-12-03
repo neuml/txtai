@@ -34,6 +34,7 @@ jobs:
         run: |
           echo "OMP_NUM_THREADS=1" >> $GITHUB_ENV
           echo "PYTORCH_MPS_DISABLE=1" >> $GITHUB_ENV
+          echo "PYTORCH_ENABLE_MPS_FALLBACK=1" >> $GITHUB_ENV
           echo "LLAMA_NO_METAL=1" >> $GITHUB_ENV
           echo "TIKA_STARTUP_SLEEP=30" >> $GITHUB_ENV
           echo "TIKA_STARTUP_MAX_RETRY=10" >> $GITHUB_ENV
@@ -42,7 +43,7 @@ jobs:
 
       - name: Install dependencies - Windows
         run: |
-          echo "PYTHONIOENCODING=utf-8" >> $GITHUB_ENV
+          "PYTHONIOENCODING=utf-8" >> $env:GITHUB_ENV
           choco install wget
         if: matrix.os == 'windows-latest'
 
