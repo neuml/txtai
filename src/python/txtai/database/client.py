@@ -9,6 +9,7 @@ import time
 try:
     from sqlalchemy import StaticPool, Text, cast, create_engine, insert, text as textsql
     from sqlalchemy.orm import Session, aliased
+    from sqlalchemy.schema import CreateSchema
 
     from .schema import Base, Batch, Document, Object, Section, SectionBase, Score
 
@@ -115,7 +116,15 @@ class Client(RDBMS):
         engine = create_engine(content, poolclass=StaticPool, echo=False, json_serializer=lambda x: x)
 
         # Create database session
-        return Session(engine)
+        database = Session(engine)
+
+        # Set default schema, if necessary
+        schema = self.config.get("schema")
+        if schema:
+            self.sqldialect(database, engine, CreateSchema(schema, if_not_exists=True))
+            self.sqldialect(database, engine, textsql(f"SET search_path TO {schema}"))
+
+        return database
 
     def getcursor(self):
         return Cursor(self.connection)
@@ -125,6 +134,18 @@ class Client(RDBMS):
 
     def addfunctions(self):
         return
+
+    def sqldialect(self, database, engine, sql):
+        """
+        Executes a SQL statement based on the current SQL dialect.
+
+        Args:
+            database: current database
+            engine: database engine
+            sql: SQL to execute
+        """
+
+        database.execute(sql if engine.dialect.name == "postgresql" else textsql("SELECT 1"))
 
 
 class Cursor:

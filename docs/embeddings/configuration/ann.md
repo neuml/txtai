@@ -73,6 +73,8 @@ The `torch` backend supports the same options. The only difference is that the v
 pgvector:
     url: database url connection string, alternatively can be set via
          ANN_URL environment variable
+    schema: database schema to store vectors - defaults to being
+            determined by the database
     table: database table to store vectors - defaults to `vectors`
     efconstruction:  ef_construction param (int) - defaults to 200
     m: M param for init_index (int) - defaults to 16

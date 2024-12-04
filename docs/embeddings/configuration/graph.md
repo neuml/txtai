@@ -19,6 +19,8 @@ The `rdbms` backend has the following additional settings.
 ```yaml
 url: database url connection string, alternatively can be set via the
      GRAPH_URL environment variable
+schema: database schema to store graph - defaults to being
+        determined by the database
 nodes: table to store node data, defaults to `nodes`
 edges: table to store edge data, defaults to `edges`
 ```

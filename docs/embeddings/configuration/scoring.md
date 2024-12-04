@@ -12,10 +12,18 @@ The following covers the available options.
 
 ## method
 ```yaml
-method: bm25|tfidf|sif|custom
+method: bm25|tfidf|sif|pgtext|custom
 ```
 
 Sets the scoring method. Add custom scoring via setting this parameter to the fully resolvable class string.
+
+### pgtext
+```yaml
+schema: database schema to store keyword index - defaults to being
+        determined by the database
+```
+
+Additional settings for Postgres full-text keyword indexes.
 
 ## terms
 ```yaml

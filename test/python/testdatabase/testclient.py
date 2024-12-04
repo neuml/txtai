@@ -57,3 +57,15 @@ class TestClient(Common.TestRDBMS):
         self.backend = f"sqlite:///{path}"
 
         self.embeddings.config["content"] = self.backend
+
+    def testSchema(self):
+        """
+        Test database creation with a specified schema
+        """
+
+        # Default sequence id
+        embeddings = Embeddings(path="sentence-transformers/nli-mpnet-base-v2", content=self.backend, schema="txtai")
+        embeddings.index(self.data)
+
+        result = embeddings.search("feel good story", 1)[0]
+        self.assertEqual(result["text"], self.data[4])

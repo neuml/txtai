@@ -9,7 +9,8 @@ try:
     from grand import Graph
     from grand.backends import SQLBackend, InMemoryCachedBackend
 
-    from sqlalchemy import text, StaticPool
+    from sqlalchemy import create_engine, text, StaticPool
+    from sqlalchemy.schema import CreateSchema
 
     ORM = True
 except ImportError:
@@ -85,11 +86,26 @@ class RDBMS(NetworkX):
             Graph database instance
         """
 
+        # Keyword arguments for SQLAlchemy
+        kwargs = {"poolclass": StaticPool, "echo": False}
+        url = self.config.get("url", os.environ.get("GRAPH_URL"))
+
+        # Set default schema, if necessary
+        schema = self.config.get("schema")
+        if schema:
+            # Check that schema exists
+            engine = create_engine(url)
+            with engine.connect() as connection:
+                connection.execute(CreateSchema(schema, if_not_exists=True) if "postgresql" in url else text("SELECT 1"))
+
+            # Set default schema
+            kwargs["connect_args"] = {"options": f'-c search_path="{schema}"'} if "postgresql" in url else {}
+
         backend = SQLBackend(
-            db_url=self.config.get("url", os.environ.get("GRAPH_URL")),
+            db_url=url,
             node_table_name=self.config.get("nodes", "nodes"),
             edge_table_name=self.config.get("edges", "edges"),
-            sqlalchemy_kwargs={"poolclass": StaticPool, "echo": False},
+            sqlalchemy_kwargs=kwargs,
         )
 
         # pylint: disable=W0212

@@ -10,6 +10,7 @@ try:
 
     from sqlalchemy import create_engine, delete, text, Column, Index, Integer, MetaData, StaticPool, Table
     from sqlalchemy.orm import Session
+    from sqlalchemy.schema import CreateSchema
 
     PGVECTOR = True
 except ImportError:
@@ -34,8 +35,14 @@ class PGVector(ANN):
 
         # Initialize pgvector extension
         self.database = Session(self.engine)
-        self.database.execute(text("CREATE EXTENSION IF NOT EXISTS vector" if self.engine.dialect.name == "postgresql" else "SELECT 1"))
+        self.sqldialect(text("CREATE EXTENSION IF NOT EXISTS vector"))
         self.database.commit()
+
+        # Set default schema, if necessary
+        schema = self.setting("schema")
+        if schema:
+            self.sqldialect(CreateSchema(schema, if_not_exists=True))
+            self.sqldialect(text(f"SET search_path TO {schema},public"))
 
         # Table instance
         self.table = None
@@ -141,3 +148,13 @@ class PGVector(ANN):
         """
 
         return {"m": self.setting("m", 16), "ef_construction": self.setting("efconstruction", 200)}
+
+    def sqldialect(self, sql):
+        """
+        Executes a SQL statement based on the current SQL dialect.
+
+        Args:
+            sql: SQL to execute
+        """
+
+        self.database.execute(sql if self.engine.dialect.name == "postgresql" else text("SELECT 1"))

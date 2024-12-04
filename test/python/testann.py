@@ -173,7 +173,7 @@ class TestANN(unittest.TestCase):
 
         # Create ANN
         path = os.path.join(tempfile.gettempdir(), "pgvector.sqlite")
-        ann = ANNFactory.create({"backend": "pgvector", "pgvector": {"url": f"sqlite:///{path}"}, "dimensions": 240})
+        ann = ANNFactory.create({"backend": "pgvector", "pgvector": {"url": f"sqlite:///{path}", "schema": "txtai"}, "dimensions": 240})
 
         # Test indexing
         ann.index(data)

@@ -10,6 +10,7 @@ try:
     from sqlalchemy import Column, Computed, Index, Integer, MetaData, StaticPool, Table, Text
     from sqlalchemy.dialects.postgresql import TSVECTOR
     from sqlalchemy.orm import Session
+    from sqlalchemy.schema import CreateSchema
 
     PGTEXT = True
 except ImportError:
@@ -118,6 +119,12 @@ class PGText(Scoring):
             self.engine = create_engine(self.config.get("url", os.environ.get("SCORING_URL")), poolclass=StaticPool, echo=False)
             self.database = Session(self.engine)
 
+            # Set default schema, if necessary
+            schema = self.config.get("schema")
+            if schema:
+                self.sqldialect(CreateSchema(schema, if_not_exists=True))
+                self.sqldialect(text(f"SET search_path TO {schema}"))
+
             # Table name
             table = self.config.get("table", "scoring")
 
@@ -149,3 +156,13 @@ class PGText(Scoring):
             # Create table and index
             self.table.create(self.engine, checkfirst=True)
             index.create(self.engine, checkfirst=True)
+
+    def sqldialect(self, sql):
+        """
+        Executes a SQL statement based on the current SQL dialect.
+
+        Args:
+            sql: SQL to execute
+        """
+
+        self.database.execute(sql if self.engine.dialect.name == "postgresql" else text("SELECT 1"))

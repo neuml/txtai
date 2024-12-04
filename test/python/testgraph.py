@@ -117,7 +117,7 @@ class TestGraph(unittest.TestCase):
 
         # Generate graph database
         path = os.path.join(tempfile.gettempdir(), "graph.sqlite")
-        graph = GraphFactory.create({"backend": "rdbms", "url": f"sqlite:///{path}"})
+        graph = GraphFactory.create({"backend": "rdbms", "url": f"sqlite:///{path}", "schema": "txtai"})
 
         # Initialize the graph
         graph.initialize()

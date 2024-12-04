@@ -15,12 +15,22 @@ Add custom storage engines via setting this parameter to the fully resolvable cl
 
 Content storage specific settings are set with a corresponding configuration object having the same name as the content storage engine (i.e. duckdb or sqlite). These are optional and set to defaults if omitted.
 
+### client
+```yaml
+schema:  default database schema for the session - defaults to being
+         determined by the database
+```
+
+Additional settings for client-server databases. Also supported when the `content=url`.
+
 ### sqlite
 ```yaml
 sqlite:
     wal: enable write-ahead logging - allows concurrent read/write operations,
          defaults to false
 ```
+
+Additional settings for SQLite.
 
 ## objects
 ```yaml

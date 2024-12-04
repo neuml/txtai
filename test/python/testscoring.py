@@ -86,7 +86,7 @@ class TestScoring(unittest.TestCase):
 
         # Create scoring
         path = os.path.join(tempfile.gettempdir(), "pgtext.sqlite")
-        scoring = ScoringFactory.create({"method": "pgtext", "url": f"sqlite:///{path}"})
+        scoring = ScoringFactory.create({"method": "pgtext", "url": f"sqlite:///{path}", "schema": "txtai"})
         scoring.index((uid, {"text": text}, tags) for uid, text, tags in self.data)
 
         # Run search and validate correct result returned
