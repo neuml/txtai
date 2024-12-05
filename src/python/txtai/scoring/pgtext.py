@@ -89,16 +89,19 @@ class PGText(Scoring):
 
     def load(self, path):
         # Reset database to original checkpoint
-        self.database.rollback()
+        if self.database:
+            self.database.rollback()
 
         # Initialize tables
         self.initialize()
 
     def save(self, path):
-        self.database.commit()
+        if self.database:
+            self.database.commit()
 
     def close(self):
-        self.database.close()
+        if self.database:
+            self.database.close()
 
     def hasterms(self):
         return True
@@ -123,7 +126,7 @@ class PGText(Scoring):
             schema = self.config.get("schema")
             if schema:
                 self.sqldialect(CreateSchema(schema, if_not_exists=True))
-                self.sqldialect(text(f"SET search_path TO {schema}"))
+                self.sqldialect(text("SET search_path TO :schema"), {"schema": schema})
 
             # Table name
             table = self.config.get("table", "scoring")
@@ -157,12 +160,14 @@ class PGText(Scoring):
             self.table.create(self.engine, checkfirst=True)
             index.create(self.engine, checkfirst=True)
 
-    def sqldialect(self, sql):
+    def sqldialect(self, sql, parameters=None):
         """
         Executes a SQL statement based on the current SQL dialect.
 
         Args:
             sql: SQL to execute
+            parameters: optional bind parameters
         """
 
-        self.database.execute(sql if self.engine.dialect.name == "postgresql" else text("SELECT 1"))
+        args = (sql, parameters) if self.engine.dialect.name == "postgresql" else (text("SELECT 1"),)
+        self.database.execute(*args)

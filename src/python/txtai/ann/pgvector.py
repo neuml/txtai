@@ -38,12 +38,6 @@ class PGVector(ANN):
         self.sqldialect(text("CREATE EXTENSION IF NOT EXISTS vector"))
         self.database.commit()
 
-        # Set default schema, if necessary
-        schema = self.setting("schema")
-        if schema:
-            self.sqldialect(CreateSchema(schema, if_not_exists=True))
-            self.sqldialect(text(f"SET search_path TO {schema},public"))
-
         # Table instance
         self.table = None
 
@@ -110,6 +104,12 @@ class PGVector(ANN):
             recreate: Recreates the database tables if True
         """
 
+        # Set default schema, if necessary
+        schema = self.setting("schema")
+        if schema:
+            self.sqldialect(CreateSchema(schema, if_not_exists=True))
+            self.sqldialect(text("SET search_path TO :schema,public"), {"schema": schema})
+
         # Table name
         table = self.setting("table", "vectors")
 
@@ -149,12 +149,14 @@ class PGVector(ANN):
 
         return {"m": self.setting("m", 16), "ef_construction": self.setting("efconstruction", 200)}
 
-    def sqldialect(self, sql):
+    def sqldialect(self, sql, parameters=None):
         """
         Executes a SQL statement based on the current SQL dialect.
 
         Args:
             sql: SQL to execute
+            parameters: optional bind parameters
         """
 
-        self.database.execute(sql if self.engine.dialect.name == "postgresql" else text("SELECT 1"))
+        args = (sql, parameters) if self.engine.dialect.name == "postgresql" else (text("SELECT 1"),)
+        self.database.execute(*args)

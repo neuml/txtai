@@ -122,7 +122,7 @@ class Client(RDBMS):
         schema = self.config.get("schema")
         if schema:
             self.sqldialect(database, engine, CreateSchema(schema, if_not_exists=True))
-            self.sqldialect(database, engine, textsql(f"SET search_path TO {schema}"))
+            self.sqldialect(database, engine, textsql("SET search_path TO :schema"), {"schema": schema})
 
         return database
 
@@ -135,7 +135,7 @@ class Client(RDBMS):
     def addfunctions(self):
         return
 
-    def sqldialect(self, database, engine, sql):
+    def sqldialect(self, database, engine, sql, parameters=None):
         """
         Executes a SQL statement based on the current SQL dialect.
 
@@ -143,9 +143,11 @@ class Client(RDBMS):
             database: current database
             engine: database engine
             sql: SQL to execute
+            parameters: optional bind parameters
         """
 
-        database.execute(sql if engine.dialect.name == "postgresql" else textsql("SELECT 1"))
+        args = (sql, parameters) if engine.dialect.name == "postgresql" else (textsql("SELECT 1"),)
+        database.execute(*args)
 
 
 class Cursor:
