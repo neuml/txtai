@@ -161,10 +161,10 @@ class Docling:
             return None
 
         # Parse content to HTML
-        html = self.converter.convert(path).document.export_to_html()
+        html = self.converter.convert(path).document.export_to_html(html_head="<head/>")
 
-        # Standardize HTML
-        return html.replace("</head>", "</head><body>").replace("</html>", "</body></html>").replace("</p>", "</p><p/>")
+        # Normalize HTML and return
+        return self.normalize(html)
 
     def ishtml(self, path):
         """
@@ -184,3 +184,23 @@ class Docling:
 
             # Check for HTML
             return re.search(r"<!doctype\s+html|<html|<head|<body", content)
+
+    def normalize(self, html):
+        """
+        Applies normalization rules to make HTML consistent with other text extraction backends.
+
+        Args:
+            html: input html
+
+        Returns:
+            normalized html
+        """
+
+        # Wrap content with a body tag
+        html = html.replace("<head/>", "<head/><body>").replace("</html>", "</body></html>")
+
+        # Remove bullets from list items
+        html = re.sub(r"<li>\xb7 ", r"<li>", html)
+
+        # Add spacing between paragraphs
+        return html.replace("</p>", "</p><p/>")
