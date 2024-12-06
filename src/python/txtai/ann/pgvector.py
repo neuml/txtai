@@ -8,7 +8,7 @@ import os
 try:
     from pgvector.sqlalchemy import Vector
 
-    from sqlalchemy import create_engine, delete, text, Column, Index, Integer, MetaData, StaticPool, Table
+    from sqlalchemy import create_engine, delete, func, text, Column, Index, Integer, MetaData, StaticPool, Table
     from sqlalchemy.orm import Session
     from sqlalchemy.schema import CreateSchema
 
@@ -30,21 +30,10 @@ class PGVector(ANN):
         if not PGVECTOR:
             raise ImportError('PGVector is not available - install "ann" extra to enable')
 
-        # Create engine
-        self.engine = create_engine(self.setting("url", os.environ.get("ANN_URL")), poolclass=StaticPool, echo=False)
-
-        # Initialize pgvector extension
-        self.database = Session(self.engine)
-        self.sqldialect(text("CREATE EXTENSION IF NOT EXISTS vector"))
-        self.database.commit()
-
-        # Table instance
-        self.table = None
+        # Database connection
+        self.engine, self.database, self.connection, self.table = None, None, None, None
 
     def load(self, path):
-        # Reset database to original checkpoint
-        self.database.rollback()
-
         # Initialize tables
         self.initialize()
 
@@ -84,17 +73,22 @@ class PGVector(ANN):
         return results
 
     def count(self):
-        return self.database.query(self.table.c["indexid"]).count()
+        # pylint: disable=E1102
+        return self.database.query(func.count(self.table.c["indexid"])).scalar()
 
     def save(self, path):
+        # Commit session and connection
         self.database.commit()
+        self.connection.commit()
 
     def close(self):
         # Parent logic
         super().close()
 
         # Close database connection
-        self.database.close()
+        if self.database:
+            self.database.close()
+            self.engine.dispose()
 
     def initialize(self, recreate=False):
         """
@@ -103,6 +97,9 @@ class PGVector(ANN):
         Args:
             recreate: Recreates the database tables if True
         """
+
+        # Connect to database
+        self.connect()
 
         # Set default schema, if necessary
         schema = self.setting("schema")
@@ -132,12 +129,31 @@ class PGVector(ANN):
 
         # Drop and recreate table
         if recreate:
-            self.table.drop(self.engine, checkfirst=True)
-            index.drop(self.engine, checkfirst=True)
+            self.table.drop(self.connection, checkfirst=True)
+            index.drop(self.connection, checkfirst=True)
 
         # Create table and index
-        self.table.create(self.engine, checkfirst=True)
-        index.create(self.engine, checkfirst=True)
+        self.table.create(self.connection, checkfirst=True)
+        index.create(self.connection, checkfirst=True)
+
+    def connect(self):
+        """
+        Establishes a database connection. Cleans up any existing database connection first.
+        """
+
+        # Close existing connection
+        if self.database:
+            self.close()
+
+        # Create engine
+        self.engine = create_engine(self.setting("url", os.environ.get("ANN_URL")), poolclass=StaticPool, echo=False)
+        self.connection = self.engine.connect()
+
+        # Start database session
+        self.database = Session(self.connection)
+
+        # Initialize pgvector extension
+        self.sqldialect(text("CREATE EXTENSION IF NOT EXISTS vector"))
 
     def settings(self):
         """

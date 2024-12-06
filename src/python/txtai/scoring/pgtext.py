@@ -6,7 +6,7 @@ import os
 
 # Conditional import
 try:
-    from sqlalchemy import create_engine, desc, delete, text
+    from sqlalchemy import create_engine, desc, delete, func, text
     from sqlalchemy import Column, Computed, Index, Integer, MetaData, StaticPool, Table, Text
     from sqlalchemy.dialects.postgresql import TSVECTOR
     from sqlalchemy.orm import Session
@@ -31,7 +31,7 @@ class PGText(Scoring):
             raise ImportError('PGText is not available - install "scoring" extra to enable')
 
         # Database connection
-        self.engine, self.database, self.table = None, None, None
+        self.engine, self.database, self.connection, self.table = None, None, None, None
 
         # Language
         self.language = self.config.get("language", "english")
@@ -85,23 +85,28 @@ class PGText(Scoring):
         return [self.search(query, limit) for query in queries]
 
     def count(self):
-        return self.database.query(self.table.c["indexid"]).count()
+        # pylint: disable=E1102
+        return self.database.query(func.count(self.table.c["indexid"])).scalar()
 
     def load(self, path):
         # Reset database to original checkpoint
         if self.database:
             self.database.rollback()
+            self.connection.rollback()
 
         # Initialize tables
         self.initialize()
 
     def save(self, path):
+        # Commit session and connection
         if self.database:
             self.database.commit()
+            self.connection.commit()
 
     def close(self):
         if self.database:
             self.database.close()
+            self.engine.dispose()
 
     def hasterms(self):
         return True
@@ -118,9 +123,10 @@ class PGText(Scoring):
         """
 
         if not self.database:
-            # Create engine and session
+            # Create engine, connection and session
             self.engine = create_engine(self.config.get("url", os.environ.get("SCORING_URL")), poolclass=StaticPool, echo=False)
-            self.database = Session(self.engine)
+            self.connection = self.engine.connect()
+            self.database = Session(self.connection)
 
             # Set default schema, if necessary
             schema = self.config.get("schema")
@@ -153,12 +159,12 @@ class PGText(Scoring):
 
             # Drop and recreate table
             if recreate:
-                self.table.drop(self.engine, checkfirst=True)
-                index.drop(self.engine, checkfirst=True)
+                self.table.drop(self.connection, checkfirst=True)
+                index.drop(self.connection, checkfirst=True)
 
             # Create table and index
-            self.table.create(self.engine, checkfirst=True)
-            index.create(self.engine, checkfirst=True)
+            self.table.create(self.connection, checkfirst=True)
+            index.create(self.connection, checkfirst=True)
 
     def sqldialect(self, sql, parameters=None):
         """

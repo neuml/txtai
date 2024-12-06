@@ -771,6 +771,10 @@ class Embeddings:
             # Reset archive since this is a new index
             self.archive = None
 
+        # Close existing ANN, if necessary
+        if self.ann:
+            self.ann.close()
+
         # Initialize ANN, will be created after index transformations complete
         self.ann = None
 
@@ -890,6 +894,10 @@ class Embeddings:
             new ANN, if enabled in config
         """
 
+        # Free existing resources
+        if self.ann:
+            self.ann.close()
+
         return ANNFactory.create(self.config) if self.config.get("path") or self.defaultallowed() else None
 
     def createdatabase(self):
@@ -900,7 +908,7 @@ class Embeddings:
             new database, if enabled in config
         """
 
-        # Free existing database resources
+        # Free existing resources
         if self.database:
             self.database.close()
 
@@ -921,6 +929,10 @@ class Embeddings:
         Returns:
             new graph, if enabled in config
         """
+
+        # Free existing resources
+        if self.graph:
+            self.graph.close()
 
         if "graph" in self.config:
             # Get or create graph configuration
@@ -953,6 +965,10 @@ class Embeddings:
         Returns:
             list of subindexes
         """
+
+        # Free existing resources
+        if self.indexes:
+            self.indexes.close()
 
         # Load subindexes
         if "indexes" in self.config:

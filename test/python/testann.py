@@ -350,7 +350,11 @@ class TestANN(unittest.TestCase):
         # Generate temp file path
         index = os.path.join(tempfile.gettempdir(), "ann")
 
+        # Save and close index
         model.save(index)
+        model.close()
+
+        # Reload index
         model.load(index)
 
         return model

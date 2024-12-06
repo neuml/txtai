@@ -97,6 +97,15 @@ class SQLite(ANN):
         else:
             self.copy(path).close()
 
+    def close(self):
+        # Parent logic
+        super().close()
+
+        # Close database connection
+        if self.connection:
+            self.connection.close()
+            self.connection = None
+
     def initialize(self, recreate=False):
         """
         Initializes a new database session.

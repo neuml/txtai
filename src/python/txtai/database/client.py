@@ -39,13 +39,30 @@ class Client(RDBMS):
         if not ORM:
             raise ImportError('SQLAlchemy is not available - install "database" extra to enable')
 
+        # SQLAlchemy parameters
+        self.engine, self.dbconnection = None, None
+
+    def save(self, path):
+        # Commit session and database connection
+        super().save(path)
+
+        if self.dbconnection:
+            self.dbconnection.commit()
+
+    def close(self):
+        super().close()
+
+        # Dispose of engine, which also closes dbconnection
+        if self.engine:
+            self.engine.dispose()
+
     def reindexstart(self):
         # Working table name
         name = f"rebuild{round(time.time() * 1000)}"
 
         # Create working table metadata
         type("Rebuild", (SectionBase,), {"__tablename__": name})
-        Base.metadata.tables[name].create(self.connection.bind)
+        Base.metadata.tables[name].create(self.dbconnection)
 
         return name
 
@@ -62,11 +79,11 @@ class Client(RDBMS):
         d = aliased(Document, name="d")
 
         # Build JSON column expression for column
-        return str(cast(d.data[name].as_string(), Text).compile(dialect=self.connection.bind.dialect, compile_kwargs={"literal_binds": True}))
+        return str(cast(d.data[name].as_string(), Text).compile(dialect=self.engine.dialect, compile_kwargs={"literal_binds": True}))
 
     def createtables(self):
         # Create tables
-        Base.metadata.create_all(self.connection.bind, checkfirst=True)
+        Base.metadata.create_all(self.dbconnection, checkfirst=True)
 
         # Clear existing data - table schema is created upon connecting to database
         for table in ["sections", "documents", "objects"]:
@@ -88,7 +105,7 @@ class Client(RDBMS):
 
     def createbatch(self):
         # Create temporary batch table, if necessary
-        Base.metadata.tables["batch"].create(self.connection.bind, checkfirst=True)
+        Base.metadata.tables["batch"].create(self.dbconnection, checkfirst=True)
 
     def insertbatch(self, indexids, ids, batch):
         if indexids:
@@ -98,7 +115,7 @@ class Client(RDBMS):
 
     def createscores(self):
         # Create temporary scores table, if necessary
-        Base.metadata.tables["scores"].create(self.connection.bind, checkfirst=True)
+        Base.metadata.tables["scores"].create(self.dbconnection, checkfirst=True)
 
     def insertscores(self, scores):
         # Average scores by id
@@ -113,16 +130,17 @@ class Client(RDBMS):
         content = os.environ.get("CLIENT_URL") if content == "client" else content
 
         # Create engine using database URL
-        engine = create_engine(content, poolclass=StaticPool, echo=False, json_serializer=lambda x: x)
+        self.engine = create_engine(content, poolclass=StaticPool, echo=False, json_serializer=lambda x: x)
+        self.dbconnection = self.engine.connect()
 
         # Create database session
-        database = Session(engine)
+        database = Session(self.dbconnection)
 
         # Set default schema, if necessary
         schema = self.config.get("schema")
         if schema:
-            self.sqldialect(database, engine, CreateSchema(schema, if_not_exists=True))
-            self.sqldialect(database, engine, textsql("SET search_path TO :schema"), {"schema": schema})
+            self.sqldialect(database, CreateSchema(schema, if_not_exists=True))
+            self.sqldialect(database, textsql("SET search_path TO :schema"), {"schema": schema})
 
         return database
 
@@ -135,18 +153,17 @@ class Client(RDBMS):
     def addfunctions(self):
         return
 
-    def sqldialect(self, database, engine, sql, parameters=None):
+    def sqldialect(self, database, sql, parameters=None):
         """
         Executes a SQL statement based on the current SQL dialect.
 
         Args:
             database: current database
-            engine: database engine
             sql: SQL to execute
             parameters: optional bind parameters
         """
 
-        args = (sql, parameters) if engine.dialect.name == "postgresql" else (textsql("SELECT 1"),)
+        args = (sql, parameters) if self.engine.dialect.name == "postgresql" else (textsql("SELECT 1"),)
         database.execute(*args)
 
 
