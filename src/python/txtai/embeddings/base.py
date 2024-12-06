@@ -85,6 +85,12 @@ class Embeddings:
         # Set initial configuration
         self.configure(config)
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.close()
+
     def score(self, documents):
         """
         Builds a term weighting scoring index. Only used by word vectors models.
@@ -530,6 +536,9 @@ class Embeddings:
             cloud: cloud storage configuration
             config: configuration overrides
             kwargs: additional configuration as keyword args
+
+        Returns:
+            Embeddings
         """
 
         # Load from cloud, if configured
@@ -588,6 +597,8 @@ class Embeddings:
 
         # Query model
         self.query = self.loadquery()
+
+        return self
 
     def save(self, path, cloud=None, **kwargs):
         """

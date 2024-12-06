@@ -81,6 +81,22 @@ class TestEmbeddings(unittest.TestCase):
         uid = embeddings.search("lottery", 1)[0][0]
         self.assertEqual(uid, 4)
 
+    def testContext(self):
+        """
+        Test embeddings context manager
+        """
+
+        # Generate temp file path
+        index = os.path.join(tempfile.gettempdir(), "embeddings.context")
+
+        with Embeddings() as embeddings:
+            embeddings.index(self.data)
+            embeddings.save(index)
+
+        with Embeddings().load(index) as embeddings:
+            uid = embeddings.search(self.data[4], 1)[0][0]
+            self.assertEqual(uid, 4)
+
     def testDefaults(self):
         """
         Test default configuration
