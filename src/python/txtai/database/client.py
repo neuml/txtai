@@ -139,7 +139,9 @@ class Client(RDBMS):
         # Set default schema, if necessary
         schema = self.config.get("schema")
         if schema:
-            self.sqldialect(database, CreateSchema(schema, if_not_exists=True))
+            with self.engine.begin():
+                self.sqldialect(database, CreateSchema(schema, if_not_exists=True))
+
             self.sqldialect(database, textsql("SET search_path TO :schema"), {"schema": schema})
 
         return database

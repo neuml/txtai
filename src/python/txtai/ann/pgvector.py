@@ -104,7 +104,9 @@ class PGVector(ANN):
         # Set default schema, if necessary
         schema = self.setting("schema")
         if schema:
-            self.sqldialect(CreateSchema(schema, if_not_exists=True))
+            with self.engine.begin():
+                self.sqldialect(CreateSchema(schema, if_not_exists=True))
+
             self.sqldialect(text("SET search_path TO :schema,public"), {"schema": schema})
 
         # Table name

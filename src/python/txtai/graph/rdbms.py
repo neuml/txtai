@@ -95,7 +95,7 @@ class RDBMS(NetworkX):
         if schema:
             # Check that schema exists
             engine = create_engine(url)
-            with engine.connect() as connection:
+            with engine.begin() as connection:
                 connection.execute(CreateSchema(schema, if_not_exists=True) if "postgresql" in url else text("SELECT 1"))
 
             # Set default schema
