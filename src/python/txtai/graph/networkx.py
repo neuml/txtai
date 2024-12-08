@@ -94,7 +94,7 @@ class NetworkX(Graph):
         self.backend.add_edges_from(edges)
 
     def hasedge(self, source, target=None):
-        if not target:
+        if target is None:
             edges = self.backend.adj.get(source)
             return len(edges) > 0 if edges else False
 
