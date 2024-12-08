@@ -100,6 +100,23 @@ The search method takes two parameters, the query and query limit. The results f
 
 Both natural language and SQL queries are supported. More information can be found in the [query guide](query).
 
+## Resource management
+
+Embeddings databases are context managers. The following blocks automatically [close](methods/#txtai.embeddings.base.Embeddings.close) and free resources upon completion.
+
+```python
+# Create a new Embeddings database, index data and save
+with Embeddings() as embeddings:
+  embeddings.index(rows)
+  embeddings.save(path)
+
+# Search a saved Embeddings database
+with Embeddings().load(path) as embeddings:
+  embeddings.search(query)
+```
+
+While calling `close` isn't always necessary (resources will be garbage collected), it's best to free shared resources like database connections as soon as they aren't needed.
+
 ## More examples
 
 See [this link](../examples/#semantic-search) for a full list of embeddings examples.
