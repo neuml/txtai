@@ -138,6 +138,11 @@ class TestGraph(unittest.TestCase):
         graph.load(None)
         self.assertEqual(list(graph.scan()), [str(x) for x in range(5)])
 
+        # Test remove node
+        graph.delete([0])
+        self.assertFalse(graph.hasnode(0))
+        self.assertFalse(graph.hasedge(0))
+
         # Close graph
         graph.close()
 
