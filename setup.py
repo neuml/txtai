@@ -30,7 +30,7 @@ extras["dev"] = [
 extras["ann"] = [
     "annoy>=1.16.3",
     "hnswlib>=0.5.0",
-    "pgvector>=0.2.5",
+    "pgvector>=0.3.0",
     "sqlalchemy>=2.0.20",
     "sqlite-vec>=0.1.1",
 ]

@@ -171,30 +171,39 @@ class TestANN(unittest.TestCase):
         # Mock database query
         query.return_value = [(x, -1.0) for x in range(data.shape[0])]
 
+        configs = [
+            ("full", {"dimensions": 240}, {}, data),
+            ("half", {"dimensions": 240}, {"precision": "half"}, data),
+            ("binary", {"quantize": 1, "dimensions": 240 * 8}, {}, data.astype(np.uint8)),
+        ]
+
         # Create ANN
-        path = os.path.join(tempfile.gettempdir(), "pgvector.sqlite")
-        ann = ANNFactory.create({"backend": "pgvector", "pgvector": {"url": f"sqlite:///{path}", "schema": "txtai"}, "dimensions": 240})
+        for name, config, pgvector, data in configs:
+            path = os.path.join(tempfile.gettempdir(), f"pgvector.{name}.sqlite")
+            ann = ANNFactory.create(
+                {**{"backend": "pgvector", "pgvector": {**{"url": f"sqlite:///{path}", "schema": "txtai"}, **pgvector}}, **config}
+            )
 
-        # Test indexing
-        ann.index(data)
-        ann.append(data)
+            # Test indexing
+            ann.index(data)
+            ann.append(data)
 
-        # Validate search results
-        self.assertEqual(ann.search(data, 1), [[(0, 1.0)]])
+            # Validate search results
+            self.assertEqual(ann.search(data, 1), [[(0, 1.0)]])
 
-        # Validate save/load/delete
-        ann.save(None)
-        ann.load(None)
+            # Validate save/load/delete
+            ann.save(None)
+            ann.load(None)
 
-        # Validate count
-        self.assertEqual(ann.count(), 2)
+            # Validate count
+            self.assertEqual(ann.count(), 2)
 
-        # Test delete
-        ann.delete([0])
-        self.assertEqual(ann.count(), 1)
+            # Test delete
+            ann.delete([0])
+            self.assertEqual(ann.count(), 1)
 
-        # Close ANN
-        ann.close()
+            # Close ANN
+            ann.close()
 
     @unittest.skipIf(platform.system() == "Darwin", "SQLite extensions not supported on macOS")
     def testSQLite(self):

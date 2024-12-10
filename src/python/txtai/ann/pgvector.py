@@ -4,9 +4,11 @@ PGVector module
 
 import os
 
+import numpy as np
+
 # Conditional import
 try:
-    from pgvector.sqlalchemy import Vector
+    from pgvector.sqlalchemy import BIT, HALFVEC, VECTOR
 
     from sqlalchemy import create_engine, delete, func, text, Column, Index, Integer, MetaData, StaticPool, Table
     from sqlalchemy.orm import Session
@@ -33,6 +35,10 @@ class PGVector(ANN):
         # Database connection
         self.engine, self.database, self.connection, self.table = None, None, None, None
 
+        # Scalar quantization
+        quantize = self.config.get("quantize")
+        self.qbits = quantize if quantize and isinstance(quantize, int) and not isinstance(quantize, bool) else None
+
     def load(self, path):
         # Initialize tables
         self.initialize()
@@ -41,14 +47,18 @@ class PGVector(ANN):
         # Initialize tables
         self.initialize(recreate=True)
 
-        self.database.execute(self.table.insert(), [{"indexid": x, "embedding": row} for x, row in enumerate(embeddings)])
+        # Prepare embeddings and insert rows
+        self.database.execute(self.table.insert(), [{"indexid": x, "embedding": self.prepare(row)} for x, row in enumerate(embeddings)])
 
         # Add id offset and index build metadata
         self.config["offset"] = embeddings.shape[0]
         self.metadata(self.settings())
 
     def append(self, embeddings):
-        self.database.execute(self.table.insert(), [{"indexid": x + self.config["offset"], "embedding": row} for x, row in enumerate(embeddings)])
+        # Prepare embeddings and insert rows
+        self.database.execute(
+            self.table.insert(), [{"indexid": x + self.config["offset"], "embedding": self.prepare(row)} for x, row in enumerate(embeddings)]
+        )
 
         # Update id offset and index metadata
         self.config["offset"] += embeddings.shape[0]
@@ -61,14 +71,10 @@ class PGVector(ANN):
         results = []
         for query in queries:
             # Run query
-            query = (
-                self.database.query(self.table.c["indexid"], self.table.c["embedding"].max_inner_product(query).label("score"))
-                .order_by("score")
-                .limit(limit)
-            )
+            query = self.database.query(self.table.c["indexid"], self.query(query)).order_by("score").limit(limit)
 
-            # pgvector returns negative inner product since Postgres only supports ASC order index scans on operators
-            results.append([(indexid, -score) for indexid, score in query])
+            # Calculate and collect scores
+            results.append([(indexid, self.score(score)) for indexid, score in query])
 
         return results
 
@@ -101,24 +107,17 @@ class PGVector(ANN):
         # Connect to database
         self.connect()
 
-        # Set default schema, if necessary
-        schema = self.setting("schema")
-        if schema:
-            with self.engine.begin():
-                self.sqldialect(CreateSchema(schema, if_not_exists=True))
-
-            self.sqldialect(text("SET search_path TO :schema,public"), {"schema": schema})
+        # Set the database schema
+        self.schema()
 
         # Table name
         table = self.setting("table", "vectors")
 
+        # Get embedding column and index settings
+        column, index = self.column()
+
         # Create vectors table
-        self.table = Table(
-            table,
-            MetaData(),
-            Column("indexid", Integer, primary_key=True, autoincrement=False),
-            Column("embedding", Vector(self.config["dimensions"])),
-        )
+        self.table = Table(table, MetaData(), Column("indexid", Integer, primary_key=True, autoincrement=False), Column("embedding", column))
 
         # Create ANN index - inner product is equal to cosine similarity on normalized vectors
         index = Index(
@@ -126,7 +125,7 @@ class PGVector(ANN):
             self.table.c["embedding"],
             postgresql_using="hnsw",
             postgresql_with=self.settings(),
-            postgresql_ops={"embedding": "vector_ip_ops"},
+            postgresql_ops={"embedding": index},
         )
 
         # Drop and recreate table
@@ -157,6 +156,19 @@ class PGVector(ANN):
         # Initialize pgvector extension
         self.sqldialect(text("CREATE EXTENSION IF NOT EXISTS vector"))
 
+    def schema(self):
+        """
+        Sets the database schema, if available.
+        """
+
+        # Set default schema, if necessary
+        schema = self.setting("schema")
+        if schema:
+            with self.engine.begin():
+                self.sqldialect(CreateSchema(schema, if_not_exists=True))
+
+            self.sqldialect(text("SET search_path TO :schema,public"), {"schema": schema})
+
     def settings(self):
         """
         Returns settings for this index.
@@ -178,3 +190,84 @@ class PGVector(ANN):
 
         args = (sql, parameters) if self.engine.dialect.name == "postgresql" else (text("SELECT 1"),)
         self.database.execute(*args)
+
+    def column(self):
+        """
+        Gets embedding column and index definitions for the current settings.
+
+        Returns:
+            embedding column definition, index definition
+        """
+
+        if self.qbits:
+            # If quantization is set, always return BIT vectors
+            return BIT(self.config["dimensions"] * 8), "bit_hamming_ops"
+
+        if self.setting("precision") == "half":
+            # 16-bit HALF precision vectors
+            return HALFVEC(self.config["dimensions"]), "halfvec_ip_ops"
+
+        # Default is full 32-bit FULL precision vectors
+        return VECTOR(self.config["dimensions"]), "vector_ip_ops"
+
+    def prepare(self, data):
+        """
+        Prepares data for the embeddings column. This method returns a bit string for bit vectors and
+        the input data unmodified for float vectors.
+
+        Args:
+            data: input data
+
+        Returns:
+            data ready for the embeddings column
+        """
+
+        # Transform to a bit string when vector quantization is enabled
+        if self.qbits:
+            return "".join(np.where(np.unpackbits(data), "1", "0"))
+
+        # Return original data
+        return data
+
+    def query(self, query):
+        """
+        Creates a query statement from an input query. This method uses hamming distance for bit vectors and
+        the max_inner_product for float vectors.
+
+        Args:
+            query: input query
+
+        Returns:
+            query statement
+        """
+
+        # Prepare query embeddings
+        query = self.prepare(query)
+
+        # Bit vector query
+        if self.qbits:
+            return self.table.c["embedding"].hamming_distance(query).label("score")
+
+        # Float vector query
+        return self.table.c["embedding"].max_inner_product(query).label("score")
+
+    def score(self, score):
+        """
+        Calculates the index score from the input score. This method returns the hamming score
+        (1.0 - (hamming distance / total number of bits)) for bit vectors and the -score for
+        float vectors.
+
+        Args:
+            score: input score
+
+        Returns:
+            index score
+        """
+
+        # Calculate hamming score as 1.0 - (hamming distance / total number of bits)
+        # Bound score from 0 to 1
+        if self.qbits:
+            return min(max(0.0, 1.0 - (score / (self.config["dimensions"] * 8))), 1.0)
+
+        # pgvector returns negative inner product since Postgres only supports ASC order index scans on operators
+        return -score

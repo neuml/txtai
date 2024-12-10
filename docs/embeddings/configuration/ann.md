@@ -76,6 +76,7 @@ pgvector:
     schema: database schema to store vectors - defaults to being
             determined by the database
     table: database table to store vectors - defaults to `vectors`
+    precision: vector float precision (half or full) - defaults to `full`
     efconstruction:  ef_construction param (int) - defaults to 200
     m: M param for init_index (int) - defaults to 16
 ```
