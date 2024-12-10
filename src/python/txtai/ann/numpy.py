@@ -19,7 +19,7 @@ class NumPy(ANN):
 
         # Array function definitions
         self.all, self.cat, self.dot, self.zeros = np.all, np.concatenate, np.dot, np.zeros
-        self.argsort, self.xor = np.argsort, np.bitwise_xor
+        self.argsort, self.xor, self.clip = np.argsort, np.bitwise_xor, np.clip
 
         # Scalar quantization
         quantize = self.config.get("quantize")
@@ -160,4 +160,5 @@ class NumPy(ANN):
         delta = self.totype(delta, np.int64)
 
         # Calculate score as 1.0 - percentage of different bits
-        return 1.0 - (table[delta].sum(axis=2) / (self.config["dimensions"] * 8))
+        # Bound score from 0 to 1
+        return self.clip(1.0 - (table[delta].sum(axis=2) / (self.config["dimensions"] * 8)), 0.0, 1.0)

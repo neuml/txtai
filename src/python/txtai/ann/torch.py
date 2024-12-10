@@ -18,7 +18,7 @@ class Torch(NumPy):
 
         # Define array functions
         self.all, self.cat, self.dot, self.zeros = torch.all, torch.cat, torch.mm, torch.zeros
-        self.argsort, self.xor = torch.argsort, torch.bitwise_xor
+        self.argsort, self.xor, self.clip = torch.argsort, torch.bitwise_xor, torch.clip
 
     def tensor(self, array):
         # Convert array to Tensor

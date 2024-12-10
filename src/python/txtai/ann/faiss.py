@@ -87,11 +87,8 @@ class Faiss(ANN):
         # Map results to [(id, score)]
         results = []
         for x, score in enumerate(scores):
-            # Transform scores
-            score = [1.0 - (x / (self.config["dimensions"] * 8)) for x in score.tolist()] if self.qbits else score.tolist()
-
-            # Add results
-            results.append(list(zip(ids[x].tolist(), score)))
+            # Transform scores and add results
+            results.append(list(zip(ids[x].tolist(), self.scores(score))))
 
         return results
 
@@ -214,3 +211,23 @@ class Faiss(ANN):
 
         default = 6 if count <= 5000 else round(self.cells(count) / 16)
         return self.setting("nprobe", default)
+
+    def scores(self, scores):
+        """
+        Calculates the index score from the input score. This method returns the hamming score
+        (1.0 - (hamming distance / total number of bits)) for binary indexes and the input
+        scores otherwise.
+
+        Args:
+            scores: input scores
+
+        Returns:
+            index scores
+        """
+
+        # Calculate hamming score, bound between 0.0 - 1.0
+        if self.qbits:
+            return np.clip(1.0 - (scores / (self.config["dimensions"] * 8)), 0.0, 1.0).tolist()
+
+        # Standard scoring
+        return scores.tolist()
