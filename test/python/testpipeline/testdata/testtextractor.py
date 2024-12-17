@@ -2,7 +2,6 @@
 Textractor module tests
 """
 
-import platform
 import unittest
 
 from txtai.pipeline import Textractor
@@ -50,7 +49,6 @@ class TestTextractor(unittest.TestCase):
         # Check number of sections is as expected
         self.assertEqual(len(sections), 2)
 
-    @unittest.skipIf(platform.system() == "Darwin", "Docling skipped on macOS to avoid MPS issues")
     def testDocling(self):
         """
         Test docling backend
