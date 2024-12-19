@@ -47,9 +47,13 @@ llm([
   {"role": "user", "content": "Answer the following question..."}
 ])
 
+# Set the default role to user and string inputs are converted to chat messages
+llm("Answer the following question...", defaultrole="user")
 ```
 
 The LLM pipeline automatically detects the underlying LLM framework. This can also be manually set.
+
+[Hugging Face Transformers](https://github.com/huggingface/transformers), [llama.cpp](https://github.com/abetlen/llama-cpp-python) and [hosted API models via LiteLLM](https://github.com/BerriAI/litellm) are all supported by this pipeline.
 
 See the [LiteLLM documentation](https://litellm.vercel.app/docs/providers) for the options available with LiteLLM models. llama.cpp models support both local and remote GGUF paths on the HF Hub.
 

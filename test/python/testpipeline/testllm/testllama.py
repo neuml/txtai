@@ -69,5 +69,8 @@ class TestLlama(unittest.TestCase):
         messages = [{"role": "system", "content": "You are a helpful assistant. You answer math problems."}, {"role": "user", "content": "2+2?"}]
         self.assertIsNotNone(model(messages, maxlength=10, seed=0, stop=["."]))
 
+        # Test default role
+        self.assertIsNotNone(model("2 + 2 = ", maxlength=10, seed=0, stop=["."], defaultrole="user"))
+
         # Test streaming
         self.assertEqual(" ".join(x for x in model("2 + 2 = ", maxlength=10, stream=True, seed=0, stop=["."]))[0], "4")

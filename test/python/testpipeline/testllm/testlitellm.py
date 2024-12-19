@@ -78,5 +78,8 @@ class TestLiteLLM(unittest.TestCase):
         model = LLM("huggingface/t5-small", api_base="http://127.0.0.1:8000")
         self.assertEqual(model("The sky is"), "blue")
 
+        # Test default role
+        self.assertEqual(model("The sky is", defaultrole="user"), "blue")
+
         # Test streaming
         self.assertEqual(" ".join(x for x in model("The sky is", stream=True)), "blue")

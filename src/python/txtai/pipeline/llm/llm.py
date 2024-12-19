@@ -38,7 +38,7 @@ class LLM(Pipeline):
         # Generation instance
         self.generator = GenerationFactory.create(path, method, **kwargs)
 
-    def __call__(self, text, maxlength=512, stream=False, stop=None, **kwargs):
+    def __call__(self, text, maxlength=512, stream=False, stop=None, defaultrole="prompt", **kwargs):
         """
         Generates text. Supports the following input formats:
 
@@ -50,6 +50,7 @@ class LLM(Pipeline):
             maxlength: maximum sequence length
             stream: stream response if True, defaults to False
             stop: list of stop strings, defaults to None
+            defaultrole: default role to apply to text inputs (prompt for raw prompts (default) or user for user chat messages)
             kwargs: additional generation keyword arguments
 
         Returns:
@@ -60,4 +61,4 @@ class LLM(Pipeline):
         logger.debug(text)
 
         # Run LLM generation
-        return self.generator(text, maxlength, stream, stop, **kwargs)
+        return self.generator(text, maxlength, stream, stop, defaultrole, **kwargs)

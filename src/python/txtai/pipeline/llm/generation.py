@@ -24,7 +24,7 @@ class Generation:
         self.template = template
         self.kwargs = kwargs
 
-    def __call__(self, text, maxlength, stream, stop, **kwargs):
+    def __call__(self, text, maxlength, stream, stop, defaultrole, **kwargs):
         """
         Generates text. Supports the following input formats:
 
@@ -36,6 +36,7 @@ class Generation:
             maxlength: maximum sequence length
             stream: stream response if True, defaults to False
             stop: list of stop strings
+            defaultrole: default role to apply to text inputs (prompt for raw prompts (default) or user for user chat messages)
             kwargs: additional generation keyword arguments
 
         Returns:
@@ -48,7 +49,11 @@ class Generation:
         # Apply template, if necessary
         if self.template:
             formatter = TemplateFormatter()
-            texts = [formatter.format(self.template, text=x) for x in texts]
+            texts = [formatter.format(self.template, text=x) if isinstance(x, str) else x for x in texts]
+
+        # Apply default role, if necessary
+        if defaultrole == "user":
+            texts = [[{"role": "user", "content": x}] if isinstance(x, str) else x for x in texts]
 
         # Run pipeline
         results = self.execute(texts, maxlength, stream, stop, **kwargs)

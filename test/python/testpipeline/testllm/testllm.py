@@ -54,6 +54,14 @@ class TestLLM(unittest.TestCase):
         with self.assertRaises(ImportError):
             LLM("hf-internal-testing/tiny-random-gpt2", method="notfound.generation")
 
+    def testDefaultRole(self):
+        """
+        Test default role
+        """
+
+        model = LLM("hf-internal-testing/tiny-random-LlamaForCausalLM")
+        self.assertIsNotNone(model("Hello, how are", defaultrole="user"))
+
     def testExternal(self):
         """
         Test externally loaded model
