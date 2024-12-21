@@ -7,6 +7,7 @@ The following applications are powered by txtai.
 | Application  | Description  |
 |:------------ |:-------------|
 | [rag](https://github.com/neuml/rag) | Retrieval Augmented Generation (RAG) application |
+| [ragdata](https://github.com/neuml/ragdata) | Build knowledge bases for RAG |
 | [paperai](https://github.com/neuml/paperai) | Semantic search and workflows for medical/scientific papers |
 | [annotateai](https://github.com/neuml/annotateai) | Automatically annotate papers with LLMs |
 
