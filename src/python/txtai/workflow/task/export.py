@@ -48,7 +48,7 @@ class ExportTask(Task):
 
         # Add timestamp to filename
         if self.timestamp:
-            timestamp = datetime.datetime.now().strftime("%Y%m%dT%H%M%S")
+            timestamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
             parts[-1] = timestamp + parts[-1]
 
             # Create full path to output file

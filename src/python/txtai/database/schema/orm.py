@@ -64,7 +64,7 @@ if ORM:
         id = Column(idcolumn(), primary_key=True)
         data = Column(JSON)
         tags = Column(Text)
-        entry = Column(DateTime)
+        entry = Column(DateTime(timezone=True))
 
     class Object(Base):
         """
@@ -76,7 +76,7 @@ if ORM:
         id = Column(idcolumn(), primary_key=True)
         object = Column(LargeBinary)
         tags = Column(Text)
-        entry = Column(DateTime)
+        entry = Column(DateTime(timezone=True))
 
     class SectionBase(Base):
         """
@@ -89,7 +89,7 @@ if ORM:
         id = Column(idcolumn(), index=True)
         text = Column(Text)
         tags = Column(Text)
-        entry = Column(DateTime)
+        entry = Column(DateTime(timezone=True))
 
     class Section(SectionBase):
         """

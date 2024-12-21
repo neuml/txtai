@@ -39,7 +39,7 @@ class RDBMS(Database):
         self.initialize()
 
         # Get entry date
-        entry = datetime.datetime.now()
+        entry = datetime.datetime.now(datetime.timezone.utc)
 
         # Insert documents
         for uid, document, tags in documents:
