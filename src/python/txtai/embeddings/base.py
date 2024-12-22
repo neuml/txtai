@@ -670,7 +670,7 @@ class Embeddings:
         """
 
         self.config, self.archive = None, None
-        self.reducer, self.query, self.model, self.models = None, None, None, None
+        self.reducer, self.query = None, None
         self.ids = None
 
         # Close ANN
@@ -697,6 +697,13 @@ class Embeddings:
         if self.indexes:
             self.indexes.close()
             self.indexes = None
+
+        # Close vectors model
+        if self.model:
+            self.model.close()
+            self.model = None
+
+        self.models = None
 
     def info(self):
         """

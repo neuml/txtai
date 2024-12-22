@@ -53,7 +53,7 @@ class VectorsFactory:
 
         # Sentence Transformers vectors
         if method == "sentence-transformers":
-            return STVectors(config, scoring, models)
+            return STVectors(config, scoring, models) if config and config.get("path") else None
 
         # Word vectors
         if method == "words":

@@ -135,6 +135,17 @@ class Models:
         )
 
     @staticmethod
+    def acceleratorcount():
+        """
+        Gets the number of accelerator devices available.
+
+        Returns:
+            number of accelerators available
+        """
+
+        return max(torch.cuda.device_count(), int(Models.hasaccelerator()))
+
+    @staticmethod
     def hasaccelerator():
         """
         Checks if there is an accelerator device available.

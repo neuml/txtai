@@ -64,7 +64,7 @@ class TestLiteLLM(unittest.TestCase):
 
     def testIndex(self):
         """
-        Test indexing with LiteLLM vectors.
+        Test indexing with LiteLLM vectors
         """
 
         # LiteLLM vectors instance

@@ -88,6 +88,8 @@ gpu: boolean|int|string|device
 
 Set the target device. Supports true/false, device id, device string and torch device instance. This is automatically derived if omitted.
 
+The `sentence-transformers` method supports encoding with multiple GPUs. This can be enabled by setting the gpu parameter to `all`.
+
 ## batch
 ```yaml
 batch: int

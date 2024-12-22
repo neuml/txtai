@@ -138,6 +138,13 @@ class Vectors:
 
         return (ids, dimensions, batches, stream)
 
+    def close(self):
+        """
+        Closes this vectors instance.
+        """
+
+        self.model = None
+
     def transform(self, document):
         """
         Transforms document into an embeddings vector.

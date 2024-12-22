@@ -25,7 +25,7 @@ class TestLlamaCpp(unittest.TestCase):
 
     def testIndex(self):
         """
-        Test indexing with LlamaCpp vectors.
+        Test indexing with LlamaCpp vectors
         """
 
         ids, dimension, batches, stream = self.model.index([(0, "test", None)])

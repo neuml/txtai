@@ -25,7 +25,7 @@ class TestModel2Vec(unittest.TestCase):
 
     def testIndex(self):
         """
-        Test indexing with Model2Vec vectors.
+        Test indexing with Model2Vec vectors
         """
 
         ids, dimension, batches, stream = self.model.index([(0, "test", None)])
