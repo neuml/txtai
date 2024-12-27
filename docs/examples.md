@@ -119,6 +119,16 @@ Project architecture, data formats, external integrations, scale to production, 
 | [Integrate txtai with Postgres](https://github.com/neuml/txtai/blob/master/examples/61_Integrate_txtai_with_Postgres.ipynb) | Persist content, vectors and graph data in Postgres | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/61_Integrate_txtai_with_Postgres.ipynb) |
 | [Embeddings index format for open data access](https://github.com/neuml/txtai/blob/master/examples/64_Embeddings_index_format_for_open_data_access.ipynb) | Platform and programming language independent data storage with txtai | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/64_Embeddings_index_format_for_open_data_access.ipynb) |
 
+## Embeddings
+
+| Script                                                                                      | Description                                                                         |                                                                 |
+| :---                                                                                        | :---                                                                                | ---:                                                            |
+| [Gemini](https://github.com/neuml/txtai/blob/master/examples/embedding-gemini.py)           | A sample script to show you how easy it is to generate embeddings using the Gemini. | [🤗](https://docs.litellm.ai/docs/embedding/supported_embedding) |
+| [VertexAI](https://github.com/neuml/txtai/blob/master/examples/embedding-vertexai.py)       | A simple script demonstrating how to generate embeddings using the VertexAI.        | [🤗](https://docs.litellm.ai/docs/embedding/supported_embedding) |
+| [Mistral](https://github.com/neuml/txtai/blob/master/examples/embedding-mistral.py)         | This sample demonstrates how to generate embeddings using the Mistral.              | [🤗](https://docs.litellm.ai/docs/embedding/supported_embedding) |
+| [Cohere](https://github.com/neuml/txtai/blob/master/examples/embedding-cohere.py)           | This sample script shows how to generate embeddings with Cohere.                    | [🤗](https://docs.litellm.ai/docs/embedding/supported_embedding) |
+| [AWS Bedrock](https://github.com/neuml/txtai/blob/master/examples/embedding-aws-bedrock.py) | A quick example demonstrating how to generate embeddings using AWS Bedrock.         | [🤗](https://docs.litellm.ai/docs/embedding/supported_embedding) |
+
 ## Releases
 
 New functionality added in major releases.
