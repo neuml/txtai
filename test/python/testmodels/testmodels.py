@@ -40,7 +40,7 @@ class TestModels(unittest.TestCase):
 
     def testDevice(self):
         """
-        Tests the device method
+        Test the device method
         """
 
         # pylint: disable=E1101

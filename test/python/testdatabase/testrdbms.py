@@ -449,7 +449,7 @@ class Common:
 
         def testNoIndex(self):
             """
-            Tests an embeddings instance with no available indexes
+            Test an embeddings instance with no available indexes
             """
 
             # Disable top-level indexing

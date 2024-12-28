@@ -59,7 +59,7 @@ class TestPooling(unittest.TestCase):
 
     def testMean(self):
         """
-        Tests mean pooling
+        Test mean pooling
         """
 
         # Test mean pooling

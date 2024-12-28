@@ -387,7 +387,7 @@ class TestScoring(unittest.TestCase):
     @patch("sys.byteorder", "big")
     def settings(self, config):
         """
-        Tests various settings.
+        Test various settings.
 
         Args:
             config: scoring config

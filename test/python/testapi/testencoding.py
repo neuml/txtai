@@ -87,7 +87,7 @@ class TestEncoding(unittest.TestCase):
 
     def testInvalidInputs(self):
         """
-        Tests invalid parameter inputs
+        Test invalid parameter inputs
         """
 
         response = self.client.post("addimage", data={"uid": [0, 1]}, files={"data": b"123"})
@@ -98,7 +98,7 @@ class TestEncoding(unittest.TestCase):
 
     def testInvalidJSON(self):
         """
-        Tests that invalid JSON raises an exception
+        Test that invalid JSON raises an exception
         """
 
         with self.assertRaises(TypeError):
@@ -149,7 +149,7 @@ class TestEncoding(unittest.TestCase):
 
     def testReadOnly(self):
         """
-        Tests read only indexes
+        Test read only indexes
         """
 
         # Recreate model with standard object encoding
