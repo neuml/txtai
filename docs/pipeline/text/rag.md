@@ -42,6 +42,38 @@ rag = RAG(embeddings, "google/flan-t5-base", template="""
 """)
 
 rag("What was won?")
+
+# Instruction tuned models typically require string prompts to
+# follow a specific chat template set by the model
+rag = RAG(embeddings, "meta-llama/Meta-Llama-3.1-8B-Instruct", template="""
+  <|im_start|>system
+  You are a friendly assistant.<|im_end|>
+  <|im_start|>user
+  Answer the following question using the provided context.
+
+  Question:
+  {question}
+
+  Context:
+  {context}
+  <|im_start|>assistant
+  """
+)
+rag("What was won?")
+
+# LLM options can be passed as additional arguments
+rag = RAG(embeddings, "meta-llama/Meta-Llama-3.1-8B-Instruct", template="""
+  Answer the following question using the provided context.
+
+  Question:
+  {question}
+
+  Context:
+  {context}
+""")
+
+# Set the default role to user and string inputs are converted to chat messages
+rag("What was won?", defaultrole="user")
 ```
 
 See the [Embeddings](../../../embeddings) and [LLM](../llm) pages for additional configuration options.
