@@ -59,4 +59,8 @@ class Model2Vec(Vectors):
         return StaticModel.from_pretrained(path)
 
     def encode(self, data):
-        return self.model.encode(data, batch_size=self.encodebatch)
+        # Additional model arguments
+        modelargs = self.config.get("vectors", {})
+
+        # Encode data
+        return self.model.encode(data, batch_size=self.encodebatch, **modelargs)
