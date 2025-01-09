@@ -821,6 +821,10 @@ class Embeddings:
         if not self.config.get("scoring") and any(self.config.get(key) for key in ["keyword", "hybrid"]):
             self.config["scoring"] = {"method": "bm25", "terms": True, "normalize": True}
 
+        # Expand graph shortcuts
+        if self.config.get("graph") is True:
+            self.config["graph"] = {}
+
         # Check if default model should be loaded
         if not self.model and self.defaultallowed():
             self.config["path"] = "sentence-transformers/all-MiniLM-L6-v2"

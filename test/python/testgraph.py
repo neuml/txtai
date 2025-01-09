@@ -146,6 +146,16 @@ class TestGraph(unittest.TestCase):
         # Close graph
         graph.close()
 
+    def testDefault(self):
+        """
+        Test embeddings default graph setting
+        """
+
+        embeddings = Embeddings(content=True, graph=True)
+        embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        self.assertEqual(embeddings.graph.count(), len(self.data))
+
     def testDelete(self):
         """
         Test delete
