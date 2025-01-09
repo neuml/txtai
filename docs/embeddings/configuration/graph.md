@@ -70,3 +70,11 @@ topics:
 ```
 
 Enables topic modeling. Defaults are tuned so that in most cases these values don't need to be changed (except for categories). These parameters are available for advanced use cases where one wants full control over the community detection process.
+
+## copyattributes
+```yaml
+copyattributes: boolean|list
+```
+
+Copy these attributes from input dictionaries in the `insert` method. If this is set to `True`, all attributes are copied. Otherwise, only the
+attributes specified in this list are copied to the graph as attributes.
