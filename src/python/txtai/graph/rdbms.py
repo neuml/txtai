@@ -50,13 +50,14 @@ class RDBMS(NetworkX):
         # Return NetworkX compatible backend
         return self.graph.nx
 
-    def scan(self, attribute=None):
+    def scan(self, attribute=None, data=False):
         if attribute:
             for node in self.backend:
-                if attribute in self.node(node):
-                    yield node
+                attributes = self.node(node)
+                if attribute in attributes:
+                    yield (node, attributes) if data else node
         else:
-            yield from super().scan(attribute)
+            yield from super().scan(attribute, data)
 
     def load(self, path):
         # Create graph instance

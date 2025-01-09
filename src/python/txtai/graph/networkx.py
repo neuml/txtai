@@ -43,13 +43,16 @@ class NetworkX(Graph):
     def count(self):
         return self.backend.number_of_nodes()
 
-    def scan(self, attribute=None):
-        # Nodes containing an attribute
-        if attribute:
-            return nx.subgraph_view(self.backend, filter_node=lambda x: attribute in self.node(x))
+    def scan(self, attribute=None, data=False):
+        # Full graph
+        graph = self.backend
 
-        # Return all nodes
-        return self.backend
+        # Filter graph to nodes having a specified attribute
+        if attribute:
+            graph = nx.subgraph_view(self.backend, filter_node=lambda x: attribute in self.node(x))
+
+        # Return either list of matching ids or tuple of (id, attribute dictionary)
+        return graph.nodes(data=True) if data else graph
 
     def node(self, node):
         return self.backend.nodes.get(node)
