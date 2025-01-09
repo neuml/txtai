@@ -37,6 +37,9 @@ class Graph:
         self.text = columns.get("text", "text")
         self.object = columns.get("object", "object")
 
+        # Attributes to copy - skips text/object/relationship fields - set to True to copy all
+        self.copyattributes = config.get("copyattributes", False)
+
         # Relationships are manually-provided edges
         self.relationships = columns.get("relationships", "relationships")
         self.relations = {}
@@ -58,16 +61,17 @@ class Graph:
 
         raise NotImplementedError
 
-    def scan(self, attribute=None):
+    def scan(self, attribute=None, data=False):
         """
         Iterates over nodes that match a criteria. If no criteria specified, all nodes
         are returned.
 
         Args:
             attribute: if specified, nodes having this attribute are returned
+            data: if True, attribute data is also returned
 
         Returns:
-            node iterator
+            node id iterator if data is False or (id, attribute dictionary) iterator if data is True
         """
 
         raise NotImplementedError
@@ -375,13 +379,21 @@ class Graph:
 
         nodes = []
         for uid, document, _ in documents:
-            # Relationships are manually-provided edges
-            relations = None
+            # Manually provided relationships and attributes to copy
+            relations, attributes = None, {}
 
             # Extract data from dictionary
             if isinstance(document, dict):
                 # Extract relationships
                 relations = document.get(self.relationships)
+
+                # Attributes to copy, if any
+                search = self.copyattributes if isinstance(self.copyattributes, list) else []
+                attributes = {
+                    k: v
+                    for k, v in document.items()
+                    if k not in [self.text, self.object, self.relationships] and (self.copyattributes is True or k in search)
+                }
 
                 # Require text or object field
                 document = document.get(self.text, document.get(self.object))
@@ -392,13 +404,14 @@ class Graph:
                     document = " ".join(document)
 
                 # Create node
-                nodes.append((index, {"id": uid, "data": document}))
+                nodes.append((index, {**{"id": uid, "data": document}, **attributes}))
 
                 # Add relationships
                 self.addrelations(index, relations)
 
                 index += 1
 
+        # Add nodes
         self.addnodes(nodes)
 
     def delete(self, ids):
