@@ -38,7 +38,7 @@ jobs:
           echo "TIKA_STARTUP_SLEEP=30" >> $GITHUB_ENV
           echo "TIKA_STARTUP_MAX_RETRY=10" >> $GITHUB_ENV
           brew install portaudio
-          pip install fasttext==0.9.2
+          pip install -U wheel fasttext==0.9.2
         if: matrix.os == 'macos-latest'
 
       - name: Install dependencies - Windows
