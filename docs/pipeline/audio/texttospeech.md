@@ -12,7 +12,7 @@ The following shows a simple example using this pipeline.
 ```python
 from txtai.pipeline import TextToSpeech
 
-# Create and run pipeline
+# Create and run pipeline with default model
 tts = TextToSpeech()
 tts("Say something here")
 
@@ -41,6 +41,7 @@ See the links below for a more detailed example.
 
 This pipeline is backed by ONNX models from the Hugging Face Hub. The following models are currently available.
 
+- [kokoro-base-onnx](https://huggingface.co/NeuML/kokoro-base-onnx) | [fp16](https://huggingface.co/NeuML/kokoro-fp16-onnx) | [int8](https://huggingface.co/NeuML/kokoro-int8-onnx)
 - [ljspeech-jets-onnx](https://huggingface.co/NeuML/ljspeech-jets-onnx)
 - [ljspeech-vits-onnx](https://huggingface.co/NeuML/ljspeech-vits-onnx)
 - [vctk-vits-onnx](https://huggingface.co/NeuML/vctk-vits-onnx)
