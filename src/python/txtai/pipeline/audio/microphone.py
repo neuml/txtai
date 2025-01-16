@@ -11,7 +11,6 @@ try:
     import sounddevice as sd
     import webrtcvad
 
-    from scipy.fft import rfft, rfftfreq
     from scipy.signal import butter, sosfilt
 
     from .signal import Signal, SCIPY
@@ -230,20 +229,8 @@ class Microphone(Pipeline):
             True if speech is detected, False otherwise
         """
 
-        # Calculate signal frequency
-        frequency = rfftfreq(len(audio), 1.0 / self.rate)
-        frequency = frequency[1:]
-
-        # Calculate signal energy using amplitude
-        energy = np.abs(rfft(audio))
-        energy = energy[1:]
-        energy = energy**2
-
-        # Get energy for each frequency
-        energyfreq = {}
-        for x, freq in enumerate(frequency):
-            if abs(freq) not in energyfreq:
-                energyfreq[abs(freq)] = energy[x] * 2
+        # Calculate signal energy
+        energyfreq = Signal.energy(audio, self.rate)
 
         # Sum speech energy
         speechenergy = 0

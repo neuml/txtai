@@ -7,6 +7,7 @@ import numpy as np
 # Conditional import
 try:
     from scipy import signal
+    from scipy.fft import rfft, rfftfreq
 
     SCIPY = True
 except ImportError:
@@ -116,3 +117,70 @@ class Signal:
 
         # Mix audio together
         return small + large
+
+    @staticmethod
+    def energy(audio, rate):
+        """
+        Calculates the signal energy for the input audio. Energy is defined as:
+
+          Energy = 2 * Signal Amplitude
+
+        Args:
+            audio: audio data
+            rate: sample rate
+
+        Returns:
+            {frequency: energy at that frequency}
+        """
+
+        # Calculate signal frequency
+        frequency = rfftfreq(len(audio), 1.0 / rate)
+        frequency = frequency[1:]
+
+        # Calculate signal energy using amplitude
+        energy = np.abs(rfft(audio))
+        energy = energy[1:]
+        energy = energy**2
+
+        # Get energy for each frequency
+        energyfreq = {}
+        for x, freq in enumerate(frequency):
+            if abs(freq) not in energyfreq:
+                energyfreq[abs(freq)] = energy[x] * 2
+
+        return energyfreq
+
+    @staticmethod
+    def trim(audio, rate, threshold=1, leading=True, trailing=True):
+        """
+        Removes leading and trailing silence from audio data.
+
+        Args:
+            audio: audio data
+            rate: sample rate
+            threshold: energy below this level will be considered silence, defaults to 1.0
+            leading: trim leading silence, defaults to True
+            trailing: trim trailing silence, defauls to True
+
+        Returns:
+            audio with silence removed
+        """
+
+        # Process in 20ms chunks
+        n, offset = int(rate * (20 / 1000.0) * 2), 0
+
+        chunks = []
+        while offset + n <= len(audio):
+            # Calculate energy for chunk and detection result
+            chunk = audio[offset : offset + n]
+            energyfreq = Signal.energy(chunk, rate)
+            chunks.append((chunk, sum(energyfreq.values()) >= threshold))
+
+            offset += n
+
+        # Find first and last active chunks
+        start = next((i for i, (_, active) in enumerate(chunks) if active), 0) if leading else 0
+        end = (len(chunks) - next((i for i, (_, active) in enumerate(chunks[::-1]) if active), 0)) if trailing else len(chunks)
+
+        # Concatenate active audio
+        return np.concatenate([chunk for chunk, _ in chunks[start:end]])
