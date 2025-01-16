@@ -59,7 +59,7 @@ extras["pipeline-audio"] = [
     "scipy>=1.4.1",
     "sounddevice>=0.5.0",
     "soundfile>=0.10.3.post1",
-    "ttstokenizer>=1.0.0",
+    "ttstokenizer>=1.1.0",
     "webrtcvad-wheels>=2.0.14",
 ]
 

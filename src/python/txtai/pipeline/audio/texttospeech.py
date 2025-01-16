@@ -8,7 +8,7 @@ import logging
 try:
     import onnxruntime as ort
 
-    from ttstokenizer import TTSTokenizer
+    from ttstokenizer import IPATokenizer, TTSTokenizer
 
     from .signal import Signal, SCIPY
 
@@ -16,6 +16,7 @@ try:
 except ImportError:
     TTS = False
 
+import json
 import torch
 import yaml
 
@@ -55,9 +56,15 @@ class TextToSpeech(Pipeline):
         self.rate = rate
 
         # Load target tts pipeline
-        self.pipeline = ESPnet(path, maxtokens, self.providers()) if self.hasfile(path, "model.onnx") else SpeechT5(path, maxtokens, self.providers())
+        self.pipeline = None
+        if self.hasfile(path, "model.onnx") and self.hasfile(path, "config.yaml"):
+            self.pipeline = ESPnet(path, maxtokens, self.providers())
+        elif self.hasfile(path, "model.onnx") and self.hasfile(path, "voices.json"):
+            self.pipeline = Kokoro(path, maxtokens, self.providers())
+        else:
+            self.pipeline = SpeechT5(path, maxtokens, self.providers())
 
-    def __call__(self, text, stream=False, speaker=1):
+    def __call__(self, text, stream=False, speaker=1, **kwargs):
         """
         Generates speech from text. Text longer than maxtokens will be batched and returned
         as a single waveform per text input.
@@ -69,6 +76,7 @@ class TextToSpeech(Pipeline):
             text: text|list
             stream: stream response if True, defaults to False
             speaker: speaker id, defaults to 1
+            kwargs: additional keyword args
 
         Returns:
             list of (audio, sample rate)
@@ -82,7 +90,7 @@ class TextToSpeech(Pipeline):
             return self.stream(texts, speaker)
 
         # Transform text to speech
-        results = [self.execute(x, speaker) for x in texts]
+        results = [self.execute(x, speaker, **kwargs) for x in texts]
 
         # Return results
         return results[0] if isinstance(text, str) else results
@@ -149,7 +157,7 @@ class TextToSpeech(Pipeline):
             data = "".join(buffer)
             yield self.execute(data, speaker)
 
-    def execute(self, text, speaker):
+    def execute(self, text, speaker, **kwargs):
         """
         Executes model run for an input array of tokens. This method will build batches
         of tokens when len(tokens) > maxtokens.
@@ -157,19 +165,58 @@ class TextToSpeech(Pipeline):
         Args:
             text: text to tokenize and pass to model
             speaker: speaker id
+            kwargs: additional keyword args
 
         Returns:
             (audio, sample rate)
         """
 
         # Run pipeline model
-        audio, rate = self.pipeline(text, speaker)
+        audio, rate = self.pipeline(text, speaker, **kwargs)
 
         # Resample, if necessary and return
         return (Signal.resample(audio, rate, self.rate), self.rate) if self.rate else (audio, rate)
 
 
-class ESPnet(Pipeline):
+class SpeechPipeline(Pipeline):
+    """
+    Base class for speech pipelines
+    """
+
+    # pylint: disable=W0221
+    def chunk(self, data, size, punctids):
+        """
+        Batching method that takes punctuation into account. This method splits data up to size
+        chunks. But it also searches the batch and splits on the last punctuation token id.
+
+        Args:
+            data: data
+            size: batch size
+            punctids: list of punctuation token ids
+
+        Returns:
+            yields batches of data
+        """
+
+        # Iterate over each token
+        punct, index = 0, 0
+        for i, x in enumerate(data):
+            # Check if token is a punctuation token
+            if x in punctids:
+                punct = i
+
+            # Batch size reached, leave a spot for the punctuation token
+            if i - index >= (size - 1):
+                end = (punct if punct > index else i) + 1
+                yield data[index:end]
+                index = end
+
+        # Last batch
+        if index < len(data):
+            yield data[index : len(data)]
+
+
+class ESPnet(SpeechPipeline):
     """
     Text to Speech pipeline with an ESPnet ONNX model.
     """
@@ -223,25 +270,108 @@ class ESPnet(Pipeline):
         # Debug logging for input text
         logger.debug("%s", text)
 
+        # Sample rate
+        rate = 22050
+
         # Tokenize input
         tokens = self.tokenizer(text)
 
         # Split into batches and process
         results = []
-        for x in self.batch(tokens, self.maxtokens):
+        for x in self.chunk(tokens, self.maxtokens, self.tokenizer.punctuation()):
             # Format input parameters
             params = {self.input: x}
             params = {**params, **{"sids": np.array([speaker])}} if "sids" in self.params else params
 
             # Run text through TTS model and save waveform
             output = self.model.run(None, params)
-            results.append(output[0])
+            results.append(Signal.trim(output[0], rate, trailing=False))
 
         # Concatenate results and return
-        return (np.concatenate(results), 22050)
+        return (np.concatenate(results), rate)
 
 
-class SpeechT5(Pipeline):
+class Kokoro(SpeechPipeline):
+    """
+    Text to Speech pipeline with an Kokoro ONNX model.
+    """
+
+    def __init__(self, path, maxtokens, providers):
+        """
+        Creates a new Kokoro pipeline.
+
+        Args:
+            path: model path
+            maxtokens: maximum number of tokens model can process
+            providers: list of supported ONNX providers
+        """
+
+        # Get path to model and config
+        voices = cached_file(path_or_repo_id=path, filename="voices.json")
+        model = cached_file(path_or_repo_id=path, filename="model.onnx")
+
+        # Read voices config
+        with open(voices, "r", encoding="utf-8") as f:
+            self.voices = json.load(f)
+
+        # Create tokenizer
+        self.tokenizer = IPATokenizer()
+
+        # Create ONNX Session
+        self.model = ort.InferenceSession(model, ort.SessionOptions(), providers)
+
+        # Max number of input tokens model can handle
+        self.maxtokens = min(maxtokens, 510)
+
+        # Get model input name
+        self.input = self.model.get_inputs()[0].name
+
+        # Get parameter names
+        self.params = set(x.name for x in self.model.get_inputs())
+
+    def __call__(self, text, speaker=None, speed=1.0, transcribe=True):
+        """
+        Executes a model run. This method will build batches of tokens when len(tokens) > maxtokens.
+
+        Args:
+            text: text to tokenize and pass to model
+            speaker: speaker id, defaults to first speaker
+            speed: defaults to 1.0
+            transcribe: if text should be transcriped to IPA text, defaults to True
+
+        Returns:
+            (audio, sample rate)
+        """
+
+        # Debug logging for input text
+        logger.debug("%s", text)
+
+        # Sample rate
+        rate = 24000
+
+        # Looks up speaker, falls back to default
+        speaker = speaker if speaker in self.voices else next(iter(self.voices))
+        speaker = np.array(self.voices[speaker], dtype=np.float32)
+
+        # Tokenize input
+        self.tokenizer.transcribe = transcribe
+        tokens = self.tokenizer(text)
+
+        # Split into batches and process
+        results = []
+        for i, x in enumerate(self.chunk(tokens, self.maxtokens, self.tokenizer.punctuation())):
+            # Format input parameters
+            params = {self.input: [[0, *x, 0]], "style": speaker[len(x)], "speed": np.ones(1, dtype=np.float32) * speed}
+
+            # Run text through TTS model and save waveform
+            output = self.model.run(None, params)
+            results.append(Signal.trim(output[0], rate, trailing=False) if i > 0 else output[0])
+
+        # Concatenate results and return
+        return (np.concatenate(results), rate)
+
+
+class SpeechT5(SpeechPipeline):
     """
     Text to Speech pipeline with a SpeechT5 ONNX model.
     """
@@ -266,6 +396,10 @@ class SpeechT5(Pipeline):
         # Max number of input tokens model can handle
         self.maxtokens = maxtokens
 
+        # pylint: disable=E1101
+        # Punctuation token ids
+        self.punctids = [v for k, v in self.processor.tokenizer.get_vocab().items() if k in ".,!?;"]
+
     def __call__(self, text, speaker):
         """
         Executes a model run. This method will build batches of tokens when len(tokens) > maxtokens.
@@ -281,17 +415,21 @@ class SpeechT5(Pipeline):
         # Debug logging for input text
         logger.debug("%s", text)
 
+        # Sample rate
+        rate = 16000
+
         # Tokenize text
         inputs = self.processor(text=text, return_tensors="np", normalize=True)
 
         # Split into batches and process
         results = []
-        for x in self.batch(inputs["input_ids"][0], self.maxtokens):
+        for x in self.chunk(inputs["input_ids"][0], self.maxtokens, self.punctids):
             # Run text through TTS model and save waveform
-            results.append(self.process(np.array([x], dtype=np.int64), speaker))
+            chunk = self.process(np.array([x], dtype=np.int64), speaker)
+            results.append(Signal.trim(chunk, rate, trailing=False))
 
         # Concatenate results and return
-        return (np.concatenate(results), 16000)
+        return (np.concatenate(results), rate)
 
     def process(self, inputs, speaker):
         """
