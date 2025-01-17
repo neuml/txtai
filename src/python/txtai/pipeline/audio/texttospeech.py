@@ -278,14 +278,14 @@ class ESPnet(SpeechPipeline):
 
         # Split into batches and process
         results = []
-        for x in self.chunk(tokens, self.maxtokens, self.tokenizer.punctuation()):
+        for i, x in enumerate(self.chunk(tokens, self.maxtokens, self.tokenizer.punctuation())):
             # Format input parameters
             params = {self.input: x}
             params = {**params, **{"sids": np.array([speaker])}} if "sids" in self.params else params
 
             # Run text through TTS model and save waveform
             output = self.model.run(None, params)
-            results.append(Signal.trim(output[0], rate, trailing=False))
+            results.append(Signal.trim(output[0], rate, trailing=False) if i > 0 else output[0])
 
         # Concatenate results and return
         return (np.concatenate(results), rate)
@@ -423,10 +423,10 @@ class SpeechT5(SpeechPipeline):
 
         # Split into batches and process
         results = []
-        for x in self.chunk(inputs["input_ids"][0], self.maxtokens, self.punctids):
+        for i, x in enumerate(self.chunk(inputs["input_ids"][0], self.maxtokens, self.punctids)):
             # Run text through TTS model and save waveform
             chunk = self.process(np.array([x], dtype=np.int64), speaker)
-            results.append(Signal.trim(chunk, rate, trailing=False))
+            results.append(Signal.trim(chunk, rate, trailing=False) if i > 0 else chunk)
 
         # Concatenate results and return
         return (np.concatenate(results), rate)
