@@ -50,11 +50,11 @@ Builds embeddings using a LiteLLM model. See the [LiteLLM documentation](https:/
 
 ### model2vec
 
-Builds embeddings using a [Model2Vec](https://github.com/MinishLab/model2vec) model.
+Builds embeddings using a [Model2Vec](https://github.com/MinishLab/model2vec) model. Model2Vec is a knowledge-distilled version of a transformers model with static vectors.
 
 ### words
 
-Builds embeddings using a word embeddings model. Transformers models are the preferred vector backend in most cases. Word embeddings models may be deprecated in the future.
+Builds embeddings using a word embeddings model and static vectors. While Transformers models are preferred in most cases, this method can be useful for low resource and historical languages where there isn't much linguistic data available.
 
 #### storevectors
 ```yaml
