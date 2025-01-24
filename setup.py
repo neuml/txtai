@@ -69,7 +69,7 @@ extras["pipeline-image"] = ["imagehash>=4.2.1", "pillow>=7.1.2", "timm>=0.4.12"]
 
 extras["pipeline-llm"] = ["litellm>=1.37.16", "llama-cpp-python>=0.2.75"]
 
-extras["pipeline-text"] = ["fasttext>=0.9.2", "sentencepiece>=0.1.91"]
+extras["pipeline-text"] = ["fasttext-wheel>=0.9.2", "sentencepiece>=0.1.91"]
 
 extras["pipeline-train"] = [
     "accelerate>=0.26.0",
@@ -93,7 +93,7 @@ extras["pipeline"] = (
 extras["scoring"] = ["sqlalchemy>=2.0.20"]
 
 extras["vectors"] = [
-    "fasttext>=0.9.2",
+    "fasttext-wheel>=0.9.2",
     "litellm>=1.37.16",
     "llama-cpp-python>=0.2.75",
     "model2vec>=0.3.0",
