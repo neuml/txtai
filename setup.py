@@ -43,7 +43,7 @@ extras["api"] = [
     "uvicorn>=0.12.1",
 ]
 
-extras["cloud"] = ["apache-libcloud>=3.3.1"]
+extras["cloud"] = ["apache-libcloud>=3.3.1", "fasteners>=0.14.1"]
 
 extras["console"] = ["rich>=12.0.1"]
 
