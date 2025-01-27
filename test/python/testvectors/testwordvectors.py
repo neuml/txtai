@@ -10,6 +10,7 @@ from unittest.mock import patch
 
 import numpy as np
 
+from huggingface_hub.errors import HFValidationError
 from txtai.vectors import VectorsFactory
 
 
@@ -135,7 +136,7 @@ class TestWordVectors(unittest.TestCase):
         """
 
         # Test non-existent path raises an exception
-        with self.assertRaises(IOError):
+        with self.assertRaises((IOError, HFValidationError)):
             VectorsFactory.create({"method": "words", "path": os.path.join(tempfile.gettempdir(), "noexist")}, None)
 
     def testTransform(self):
