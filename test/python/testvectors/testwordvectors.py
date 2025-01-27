@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 import numpy as np
 
-from txtai.vectors import WordVectors, VectorsFactory
+from txtai.vectors import VectorsFactory
 
 
 class TestWordVectors(unittest.TestCase):
@@ -21,32 +21,11 @@ class TestWordVectors(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """
-        Test a WordVectors build.
+        Sets the pretrained model to use
         """
 
-        # Word vectors path
-        path = os.path.join(tempfile.gettempdir(), "vectors")
-
-        # Save model path
-        cls.path = path + ".magnitude"
-
-        # Build word vectors
-        WordVectors.build("README.md", 10, 3, path)
-
-    def testBlocking(self):
-        """
-        Test blocking load of vector model
-        """
-
-        config = {"path": self.path}
-        model = VectorsFactory.create(config, None)
-
-        self.assertFalse(model.initialized)
-
-        config["dimensions"] = 10
-        model = VectorsFactory.create(config, None)
-
-        self.assertTrue(model.initialized)
+        # Test with pretrained glove quantized vectors
+        cls.path = "neuml/glove-6B-quantized"
 
     @patch("os.cpu_count")
     def testIndex(self, cpucount):
@@ -65,13 +44,13 @@ class TestWordVectors(unittest.TestCase):
         ids, dimension, batches, stream = model.index(documents)
 
         self.assertEqual(len(ids), 1000)
-        self.assertEqual(dimension, 10)
+        self.assertEqual(dimension, 300)
         self.assertEqual(batches, 1000)
         self.assertIsNotNone(os.path.exists(stream))
 
         # Test shape of serialized embeddings
         with open(stream, "rb") as queue:
-            self.assertEqual(np.load(queue).shape, (1, 10))
+            self.assertEqual(np.load(queue).shape, (1, 300))
 
     @patch("os.cpu_count")
     def testIndexBatch(self, cpucount):
@@ -90,14 +69,14 @@ class TestWordVectors(unittest.TestCase):
         ids, dimension, batches, stream = model.index(documents, 512)
 
         self.assertEqual(len(ids), 1000)
-        self.assertEqual(dimension, 10)
+        self.assertEqual(dimension, 300)
         self.assertEqual(batches, 2)
         self.assertIsNotNone(os.path.exists(stream))
 
         # Test shape of serialized embeddings
         with open(stream, "rb") as queue:
-            self.assertEqual(np.load(queue).shape, (512, 10))
-            self.assertEqual(np.load(queue).shape, (488, 10))
+            self.assertEqual(np.load(queue).shape, (512, 300))
+            self.assertEqual(np.load(queue).shape, (488, 300))
 
     def testIndexSerial(self):
         """
@@ -112,13 +91,13 @@ class TestWordVectors(unittest.TestCase):
         ids, dimension, batches, stream = model.index(documents)
 
         self.assertEqual(len(ids), 1000)
-        self.assertEqual(dimension, 10)
+        self.assertEqual(dimension, 300)
         self.assertEqual(batches, 1000)
         self.assertIsNotNone(os.path.exists(stream))
 
         # Test shape of serialized embeddings
         with open(stream, "rb") as queue:
-            self.assertEqual(np.load(queue).shape, (1, 10))
+            self.assertEqual(np.load(queue).shape, (1, 300))
 
     def testIndexSerialBatch(self):
         """
@@ -133,14 +112,14 @@ class TestWordVectors(unittest.TestCase):
         ids, dimension, batches, stream = model.index(documents, 512)
 
         self.assertEqual(len(ids), 1000)
-        self.assertEqual(dimension, 10)
+        self.assertEqual(dimension, 300)
         self.assertEqual(batches, 2)
         self.assertIsNotNone(os.path.exists(stream))
 
         # Test shape of serialized embeddings
         with open(stream, "rb") as queue:
-            self.assertEqual(np.load(queue).shape, (512, 10))
-            self.assertEqual(np.load(queue).shape, (488, 10))
+            self.assertEqual(np.load(queue).shape, (512, 300))
+            self.assertEqual(np.load(queue).shape, (488, 300))
 
     def testLookup(self):
         """
@@ -148,7 +127,7 @@ class TestWordVectors(unittest.TestCase):
         """
 
         model = VectorsFactory.create({"path": self.path}, None)
-        self.assertEqual(model.lookup(["txtai", "embeddings", "sentence"]).shape, (3, 10))
+        self.assertEqual(model.lookup(["txtai", "embeddings", "sentence"]).shape, (3, 300))
 
     def testNoExist(self):
         """
@@ -165,4 +144,4 @@ class TestWordVectors(unittest.TestCase):
         """
 
         model = VectorsFactory.create({"path": self.path}, None)
-        self.assertEqual(len(model.transform((None, ["txtai"], None))), 10)
+        self.assertEqual(len(model.transform((None, ["txtai"], None))), 300)

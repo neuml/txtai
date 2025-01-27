@@ -41,10 +41,6 @@ class Configuration:
         # Add format parameter
         config["format"] = "json" if jsonconfig else "pickle"
 
-        # Build full path to embedding vectors file
-        if config.get("storevectors"):
-            config["path"] = os.path.join(path, config["path"])
-
         return config
 
     def save(self, config, path):

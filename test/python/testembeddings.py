@@ -13,7 +13,6 @@ import numpy as np
 
 from txtai.embeddings import Embeddings, Reducer
 from txtai.serialize import SerializeFactory
-from txtai.vectors import WordVectors
 
 
 # pylint: disable=R0904
@@ -541,27 +540,11 @@ class TestEmbeddings(unittest.TestCase):
         # Mock CPU count
         cpucount.return_value = 1
 
-        # Initialize model path
-        path = os.path.join(tempfile.gettempdir(), "model")
-        os.makedirs(path, exist_ok=True)
-
-        # Build tokens file
-        with tempfile.NamedTemporaryFile(mode="w", delete=False) as output:
-            tokens = output.name
-            for x in self.data:
-                output.write(x + "\n")
-
-        # Word vectors path
-        vectors = os.path.join(path, "test-10d")
-
-        # Build word vectors, if they don't already exist
-        WordVectors.build(tokens, 10, 1, vectors)
-
         # Create dataset
         data = [(x, row.split(), None) for x, row in enumerate(self.data)]
 
         # Create embeddings model, backed by word vectors
-        embeddings = Embeddings({"path": vectors + ".magnitude", "storevectors": True, "scoring": "bm25", "pca": 3, "quantize": True})
+        embeddings = Embeddings({"path": "neuml/glove-6B-quantized", "scoring": "bm25", "pca": 3, "quantize": True})
 
         # Call scoring and index methods
         embeddings.score(data)
@@ -589,17 +572,11 @@ class TestEmbeddings(unittest.TestCase):
         # Mock CPU count
         cpucount.return_value = 1
 
-        # Initialize model path
-        path = os.path.join(tempfile.gettempdir(), "model")
-
-        # Word vectors path
-        vectors = os.path.join(path, "test-10d")
-
         # Create dataset
         data = [(x, row.split(), None) for x, row in enumerate(self.data)]
 
         # Create embeddings model, backed by word vectors
-        embeddings = Embeddings({"path": vectors + ".magnitude", "storevectors": True, "scoring": "bm25", "pca": 3})
+        embeddings = Embeddings({"path": "neuml/glove-6B/model.sqlite", "scoring": "bm25", "pca": 3})
 
         # Call scoring and index methods
         embeddings.score(data)

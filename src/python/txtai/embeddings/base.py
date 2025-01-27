@@ -4,7 +4,6 @@ Embeddings module
 
 import json
 import os
-import shutil
 import tempfile
 
 import numpy as np
@@ -617,12 +616,6 @@ class Embeddings:
 
             # Create output directory, if necessary
             os.makedirs(path, exist_ok=True)
-
-            # Copy vectors model
-            if self.config.get("storevectors"):
-                shutil.copyfile(self.config["path"], os.path.join(path, os.path.basename(self.config["path"])))
-
-                self.config["path"] = os.path.basename(self.config["path"])
 
             # Save index configuration
             Configuration().save(self.config, path)

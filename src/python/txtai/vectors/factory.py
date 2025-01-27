@@ -91,7 +91,7 @@ class VectorsFactory:
                     method = "llama.cpp"
                 elif Model2Vec.ismodel(path):
                     method = "model2vec"
-                elif WordVectors.isdatabase(path):
+                elif WordVectors.ismodel(path):
                     method = "words"
                 else:
                     method = "transformers"

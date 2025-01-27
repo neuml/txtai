@@ -2,17 +2,14 @@
 Translation module
 """
 
-import os
-
 # Conditional import
 try:
-    import fasttext
+    from staticvectors import StaticVectors
 
-    FASTTEXT = True
+    STATICVECTORS = True
 except ImportError:
-    FASTTEXT = False
+    STATICVECTORS = False
 
-from huggingface_hub import hf_hub_download
 from huggingface_hub.hf_api import HfApi
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
@@ -26,7 +23,7 @@ class Translation(HFModel):
     """
 
     # Default language detection model
-    DEFAULT_LANG_DETECT = "julien-c/fasttext-language-id/lid.176.ftz"
+    DEFAULT_LANG_DETECT = "neuml/language-id-quantized"
 
     def __init__(self, path=None, quantize=False, gpu=True, batch=64, langdetect=None, findmodels=True):
         """
@@ -137,7 +134,7 @@ class Translation(HFModel):
 
     def defaultdetect(self, texts):
         """
-        Default fasttext language detection model.
+        Default language detection model.
 
         Args:
             texts: list of text
@@ -147,43 +144,20 @@ class Translation(HFModel):
         """
 
         if not self.detector:
-            if not FASTTEXT:
+            if not STATICVECTORS:
                 raise ImportError('Language detection is not available - install "pipeline" extra to enable')
-
-            # Suppress unnecessary warning
-            fasttext.FastText.eprint = lambda x: None
 
             # Get model path
             path = self.langdetect if self.langdetect else Translation.DEFAULT_LANG_DETECT
 
             # Load language detection model
-            path = path if os.path.exists(path) else self.download(path)
-            self.detector = fasttext.load_model(path)
+            self.detector = StaticVectors(path)
 
         # Transform texts to format expected by language detection model
         texts = [x.lower().replace("\n", " ").replace("\r\n", " ") for x in texts]
 
-        return [x[0].split("__")[-1] for x in self.detector.predict(texts)[0]]
-
-    def download(self, path):
-        """
-        Downloads path from the Hugging Face Hub.
-
-        Args:
-            path: full model path
-
-        Returns:
-            local cached model path
-        """
-
-        # Split into parts
-        parts = path.split("/")
-
-        # Calculate repo id split
-        repo = 2 if len(parts) > 2 else 1
-
-        # Download and cache file
-        return hf_hub_download(repo_id="/".join(parts[:repo]), filename="/".join(parts[repo:]))
+        # Detect languages
+        return [x[0][0] for x in self.detector.predict(texts)]
 
     def translate(self, texts, source, target, showmodels=False):
         """

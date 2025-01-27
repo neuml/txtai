@@ -56,13 +56,6 @@ Builds embeddings using a [Model2Vec](https://github.com/MinishLab/model2vec) mo
 
 Builds embeddings using a word embeddings model and static vectors. While Transformers models are preferred in most cases, this method can be useful for low resource and historical languages where there isn't much linguistic data available.
 
-#### storevectors
-```yaml
-storevectors: boolean
-```
-
-Enables copying of a vectors model set in path into the embeddings models output directory on save. This option enables a fully encapsulated index with no external file dependencies.
-
 #### pca
 ```yaml
 pca: int
