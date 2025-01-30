@@ -205,13 +205,10 @@ def reindex(config: dict = Body(...), function: str = Body(default=None)):
 @router.get("/count")
 def count():
     """
-    Deletes from an embeddings index. Returns list of ids deleted.
-
-    Args:
-        ids: list of ids to delete
+    Total number of elements in this embeddings index.
 
     Returns:
-        ids deleted
+        number of elements in embeddings index
     """
 
     return application.get().count()
