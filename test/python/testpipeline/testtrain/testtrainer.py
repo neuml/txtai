@@ -6,6 +6,8 @@ import os
 import unittest
 import tempfile
 
+from unittest.mock import patch
+
 import torch
 
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
@@ -210,10 +212,14 @@ class TestTrainer(unittest.TestCase):
         labels = Labels((model, tokenizer), dynamic=False)
         self.assertEqual(labels("cat")[0][0], 1)
 
-    def testPEFT(self):
+    @patch("importlib.util.find_spec")
+    def testPEFT(self, spec):
         """
         Test training a model with causal language modeling and PEFT
         """
+
+        # Disable triton
+        spec.return_value = None
 
         trainer = HFTrainer()
         model, _ = trainer(
