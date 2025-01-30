@@ -125,9 +125,10 @@ class WordVectors(Vectors):
         # Iterate over each data element, tokenize (if necessary) and build an aggregated embeddings vector
         embeddings = []
         for tokens in data:
-            # Convert to tokens if necessary
+            # Convert to tokens, if necessary. If tokenized list is empty, use input string.
             if isinstance(tokens, str):
-                tokens = Tokenizer.tokenize(tokens)
+                tokenlist = Tokenizer.tokenize(tokens)
+                tokens = tokenlist if tokenlist else [tokens]
 
             # Generate weights for each vector using a scoring method
             weights = self.scoring.weights(tokens) if self.scoring else None
