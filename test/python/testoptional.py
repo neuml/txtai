@@ -27,6 +27,7 @@ class TestOptional(unittest.TestCase):
             "docling.document_converter",
             "duckdb",
             "fastapi",
+            "gliner",
             "grand-cypher",
             "grand-graph",
             "hnswlib",
@@ -186,6 +187,7 @@ class TestOptional(unittest.TestCase):
             AudioMixer,
             AudioStream,
             Caption,
+            Entity,
             FileToHTML,
             HFOnnx,
             HFTrainer,
@@ -212,6 +214,9 @@ class TestOptional(unittest.TestCase):
 
         with self.assertRaises(ImportError):
             Caption()
+
+        with self.assertRaises(ImportError):
+            Entity("neuml/gliner-bert-tiny")
 
         with self.assertRaises(ImportError):
             FileToHTML(backend="docling")

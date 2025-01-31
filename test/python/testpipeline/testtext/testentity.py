@@ -52,3 +52,12 @@ class TestEntity(unittest.TestCase):
         # Run entity extraction
         entities = self.entity("Canada's last fully intact ice shelf has suddenly collapsed, forming a Manhattan-sized iceberg", labels=["PER"])
         self.assertFalse(entities)
+
+    def testGliner(self):
+        """
+        Test entity pipeline with a GLiNER model
+        """
+
+        entity = Entity("neuml/gliner-bert-tiny")
+        entities = entity("My name is John Smith.", flatten=True)
+        self.assertEqual(entities, ["John Smith"])
