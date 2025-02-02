@@ -297,6 +297,19 @@ class Graph:
 
         return [self.search(query, limit, graph) for query in queries]
 
+    def isquery(self, queries):
+        """
+        Checks if queries are supported graph queries.
+
+        Args:
+            queries: queries to check
+
+        Returns:
+            True if all the queries are supported graph queries, False otherwise
+        """
+
+        raise NotImplementedError
+
     def communities(self, config):
         """
         Run community detection on the graph.

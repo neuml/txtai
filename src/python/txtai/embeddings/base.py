@@ -355,8 +355,8 @@ class Embeddings:
 
     def search(self, query, limit=None, weights=None, index=None, parameters=None, graph=False):
         """
-        Finds documents most similar to the input query. This method will run either an index search
-        or an index + database search depending on if a database is available.
+        Finds documents most similar to the input query. This method runs an index search, index + database search
+        or a graph search, depending on the embeddings configuration and query.
 
         Args:
             query: input query
@@ -377,8 +377,8 @@ class Embeddings:
 
     def batchsearch(self, queries, limit=None, weights=None, index=None, parameters=None, graph=False):
         """
-        Finds documents most similar to the input queries. This method will run either an index search
-        or an index + database search depending on if a database is available.
+        Finds documents most similar to the input query. This method runs an index search, index + database search
+        or a graph search, depending on the embeddings configuration and query.
 
         Args:
             queries: input queries
@@ -401,7 +401,7 @@ class Embeddings:
         results = Search(self, indexids=graph)(queries, limit, weights, index, parameters)
 
         # Create subgraphs using results, if necessary
-        return [self.graph.filter(x) for x in results] if graph else results
+        return [self.graph.filter(x) if isinstance(x, list) else x for x in results] if graph else results
 
     def similarity(self, query, data):
         """

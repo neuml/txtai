@@ -36,6 +36,7 @@ class Search:
         self.database = embeddings.database
         self.ids = embeddings.ids
         self.indexes = embeddings.indexes
+        self.graph = embeddings.graph
         self.query = embeddings.query
         self.scoring = embeddings.scoring if embeddings.issparse() else None
 
@@ -52,7 +53,9 @@ class Search:
             parameters: list of dicts of named parameters to bind to placeholders
 
         Returns:
-            list of (id, score) per query for index search, list of dict per query for an index + database search
+            list of (id, score) per query for index search
+            list of dict per query for an index + database search
+            list of graph results for a graph index search
         """
 
         # Default input parameters
@@ -66,6 +69,10 @@ class Search:
         # Default index name if only subindexes set
         if not index and not self.ann and not self.scoring and self.indexes:
             index = self.indexes.default()
+
+        # Graph search
+        if self.graph and self.graph.isquery(queries):
+            return self.graph.batchsearch(queries, limit, self.indexids)
 
         # Database search
         if not self.indexonly and self.database:

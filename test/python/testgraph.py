@@ -320,6 +320,7 @@ class TestGraph(unittest.TestCase):
         self.assertRaises(NotImplementedError, graph.pagerank)
         self.assertRaises(NotImplementedError, graph.showpath, None, None)
         self.assertRaises(NotImplementedError, graph.search, None)
+        self.assertRaises(NotImplementedError, graph.isquery, None)
         self.assertRaises(NotImplementedError, graph.communities, None)
         self.assertRaises(NotImplementedError, graph.load, None)
         self.assertRaises(NotImplementedError, graph.save, None)
@@ -423,7 +424,7 @@ class TestGraph(unittest.TestCase):
         self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
 
         # Run standard search
-        results = self.embeddings.graph.search(
+        results = self.embeddings.search(
             """
             MATCH (A)-[]->(B)
             RETURN A, B
@@ -432,7 +433,7 @@ class TestGraph(unittest.TestCase):
         self.assertEqual(len(results), 3)
 
         # Run path search
-        results = self.embeddings.graph.search(
+        results = self.embeddings.search(
             """
             MATCH P=()-[]->()
             RETURN P
@@ -441,7 +442,7 @@ class TestGraph(unittest.TestCase):
         self.assertEqual(len(results), 3)
 
         # Run graph search
-        g = self.embeddings.graph.search(
+        g = self.embeddings.search(
             """
             MATCH (A)-[]->(B)
             RETURN A, B
@@ -451,7 +452,7 @@ class TestGraph(unittest.TestCase):
         self.assertEqual(g.count(), 3)
 
         # Run path search
-        results = self.embeddings.graph.search(
+        results = self.embeddings.search(
             """
             MATCH P=()-[]->()
             RETURN P
@@ -469,7 +470,7 @@ class TestGraph(unittest.TestCase):
         self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
 
         # Run standard search
-        results = self.embeddings.graph.batchsearch(
+        results = self.embeddings.batchsearch(
             [
                 """
             MATCH (A)-[]->(B)

@@ -142,6 +142,10 @@ class NetworkX(Graph):
 
         return rows
 
+    def isquery(self, queries):
+        # Check for required graph query clauses
+        return all(query and query.strip().startswith("MATCH ") and "RETURN " in query for query in queries)
+
     def communities(self, config):
         # Get community detection algorithm
         algorithm = config.get("algorithm")
