@@ -16,6 +16,11 @@ from txtai.pipeline import Entity
 entity = Entity()
 entity("Canada's last fully intact ice shelf has suddenly collapsed, " \
        "forming a Manhattan-sized iceberg")
+
+# Extract entities using a GLiNER model which supports dynamic labels
+entity = Entity("gliner-community/gliner_medium-v2.5")
+entity("Canada's last fully intact ice shelf has suddenly collapsed, " \
+       "forming a Manhattan-sized iceberg", labels=["country", "city"])
 ```
 
 See the link below for a more detailed example.
