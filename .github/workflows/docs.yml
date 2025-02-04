@@ -13,6 +13,6 @@ jobs:
           python-version: 3.9
       - run: |
           pip install -U pip wheel
-          pip install .[all,dev]
+          pip install .[all,dev] mkdocstrings-python==1.13.0
       - run: mkdocs gh-deploy --force
  
