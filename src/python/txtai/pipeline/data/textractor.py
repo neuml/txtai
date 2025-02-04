@@ -19,6 +19,7 @@ class Textractor(Segmentation):
     Extracts text from files.
     """
 
+    # pylint: disable=R0913
     def __init__(
         self,
         sentences=False,
@@ -28,11 +29,12 @@ class Textractor(Segmentation):
         join=False,
         sections=False,
         cleantext=True,
+        chunker=None,
         headers=None,
         backend="available",
         **kwargs
     ):
-        super().__init__(sentences, lines, paragraphs, minlength, join, sections, cleantext)
+        super().__init__(sentences, lines, paragraphs, minlength, join, sections, cleantext, chunker, **kwargs)
 
         # Get backend parameter - handle legacy tika flag
         backend = "tika" if "tika" in kwargs and kwargs["tika"] else None if "tika" in kwargs else backend

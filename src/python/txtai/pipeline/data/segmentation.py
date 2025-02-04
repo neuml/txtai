@@ -12,6 +12,14 @@ try:
 except ImportError:
     NLTK = False
 
+# Conditional import
+try:
+    import chonkie
+
+    CHONKIE = True
+except ImportError:
+    CHONKIE = False
+
 from ..base import Pipeline
 
 
@@ -20,7 +28,9 @@ class Segmentation(Pipeline):
     Segments text into logical units.
     """
 
-    def __init__(self, sentences=False, lines=False, paragraphs=False, minlength=None, join=False, sections=False, cleantext=True):
+    def __init__(
+        self, sentences=False, lines=False, paragraphs=False, minlength=None, join=False, sections=False, cleantext=True, chunker=None, **kwargs
+    ):
         """
         Creates a new Segmentation pipeline.
 
@@ -32,10 +42,15 @@ class Segmentation(Pipeline):
             join: joins tokenized sections back together if True, defaults to False
             sections: tokenizes text into sections if True, defaults to False. Splits using section or page breaks, depending on what's available
             cleantext: apply text cleaning rules, defaults to True
+            chunker: creates a chonkie chunker to tokenize text if set, defaults to None
+            kwargs: additional keyword arguments
         """
 
-        if not NLTK:
-            raise ImportError('Segmentation pipeline is not available - install "pipeline" extra to enable')
+        if not NLTK and sentences:
+            raise ImportError('NLTK is not available - install "pipeline" extra to enable')
+
+        if not CHONKIE and chunker:
+            raise ImportError('Chonkie is not available - install "pipeline" extra to enable')
 
         self.sentences = sentences
         self.lines = lines
@@ -44,6 +59,9 @@ class Segmentation(Pipeline):
         self.minlength = minlength
         self.join = join
         self.cleantext = cleantext
+
+        # Create a chonkie chunker, if applicable
+        self.chunker = self.createchunker(chunker, **kwargs) if chunker else None
 
     def __call__(self, text):
         """
@@ -97,7 +115,10 @@ class Segmentation(Pipeline):
 
         content = None
 
-        if self.sentences:
+        if self.chunker:
+            # pylint: disable=E1102
+            content = [self.clean(x.text) for x in self.chunker(text)]
+        elif self.sentences:
             content = [self.clean(x) for x in sent_tokenize(text)]
         elif self.lines:
             content = [self.clean(x) for x in re.split(r"\n{1,}", text)]
@@ -139,3 +160,19 @@ class Segmentation(Pipeline):
 
         # If minlength enabled, require at least minlength chars
         return text if not self.minlength or len(text) >= self.minlength else None
+
+    def createchunker(self, chunker=None, **kwargs):
+        """
+        Creates a new Chonkie chunker
+
+        Args:
+            chunker: name of chonkie chunker to create
+            kwargs: additional keyword arguments
+
+        Returns:
+            new chunker
+        """
+
+        # Resolve and create Chonkie chunker
+        chunker = f"{chunker[0].upper() + chunker[1:]}Chunker"
+        return getattr(chonkie, chunker)(**kwargs)

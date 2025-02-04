@@ -33,6 +33,19 @@ class TestTextractor(unittest.TestCase):
         textractor = Textractor(cleantext=False, minlength=10)
         self.assertEqual(textractor(" a  b  c "), " a  b  c ")
 
+    def testChonkie(self):
+        """
+        Test a chonkie chunker
+        """
+
+        # Test chonkie chunking
+        textractor = Textractor(chunker="sentence", chunk_size=5, chunk_overlap=0)
+        self.assertEqual(textractor("This is a test. And another test."), ["This is a test.", "And another test."])
+
+        # Test bad chunker throws an exception
+        with self.assertRaises(AttributeError):
+            textractor = Textractor(chunker="badchunker")
+
     def testDefault(self):
         """
         Test default text extraction

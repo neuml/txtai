@@ -23,6 +23,7 @@ class TestOptional(unittest.TestCase):
         modules = [
             "annoy",
             "bs4",
+            "chonkie",
             "croniter",
             "docling.document_converter",
             "duckdb",
@@ -252,7 +253,10 @@ class TestOptional(unittest.TestCase):
             Objects()
 
         with self.assertRaises(ImportError):
-            Segmentation()
+            Segmentation(sentences=True)
+
+        with self.assertRaises(ImportError):
+            Segmentation(chunker="token")
 
         with self.assertRaises(ImportError):
             Tabular()
