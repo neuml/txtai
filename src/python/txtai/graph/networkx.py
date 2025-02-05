@@ -10,9 +10,8 @@ from tempfile import TemporaryDirectory
 try:
     import networkx as nx
 
-    from community import community_louvain
     from grandcypher import GrandCypher
-    from networkx.algorithms.community import asyn_lpa_communities, greedy_modularity_communities
+    from networkx.algorithms.community import asyn_lpa_communities, greedy_modularity_communities, louvain_partitions
     from networkx.readwrite import json_graph
 
     NETWORKX = True
@@ -210,24 +209,17 @@ class NetworkX(Graph):
             config: topic configuration
 
         Returns:
-            dictionary of {topic name:[ids]}
+            list of [ids] per community
         """
 
         # Partition level to use
         level = config.get("level", "best")
 
         # Run community detection
-        results = community_louvain.generate_dendrogram(self.backend, weight="weight", resolution=config.get("resolution", 100), random_state=0)
+        results = list(louvain_partitions(self.backend, weight="weight", resolution=config.get("resolution", 100), seed=0))
 
         # Get partition level (first or best)
-        results = results[0] if level == "first" else community_louvain.partition_at_level(results, len(results) - 1)
-
-        # Build mapping of community to list of ids
-        communities = {}
-        for k, v in results.items():
-            communities[v] = [k] if v not in communities else communities[v] + [k]
-
-        return communities.values()
+        return results[0] if level == "first" else results[-1]
 
     # pylint: disable=W0613
     def distance(self, source, target, attrs):
