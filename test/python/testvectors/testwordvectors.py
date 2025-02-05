@@ -12,6 +12,7 @@ import numpy as np
 
 from huggingface_hub.errors import HFValidationError
 from txtai.vectors import VectorsFactory
+from txtai.vectors.words import create, transform
 
 
 class TestWordVectors(unittest.TestCase):
@@ -42,7 +43,7 @@ class TestWordVectors(unittest.TestCase):
 
         model = VectorsFactory.create({"path": self.path, "parallel": True}, None)
 
-        ids, dimension, batches, stream = model.index(documents)
+        ids, dimension, batches, stream = model.index(documents, 1)
 
         self.assertEqual(len(ids), 1000)
         self.assertEqual(dimension, 300)
@@ -89,7 +90,7 @@ class TestWordVectors(unittest.TestCase):
 
         model = VectorsFactory.create({"path": self.path, "parallel": False}, None)
 
-        ids, dimension, batches, stream = model.index(documents)
+        ids, dimension, batches, stream = model.index(documents, 1)
 
         self.assertEqual(len(ids), 1000)
         self.assertEqual(dimension, 300)
@@ -129,6 +130,17 @@ class TestWordVectors(unittest.TestCase):
 
         model = VectorsFactory.create({"path": self.path}, None)
         self.assertEqual(model.lookup(["txtai", "embeddings", "sentence"]).shape, (3, 300))
+
+    def testMultiprocess(self):
+        """
+        Test multiprocess helper methods
+        """
+
+        create({"path": self.path}, None)
+
+        uid, vector = transform((0, "test", None))
+        self.assertEqual(uid, 0)
+        self.assertEqual(vector.shape, (300,))
 
     def testNoExist(self):
         """

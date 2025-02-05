@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 # Multiprocessing helper methods
 # pylint: disable=W0603
-VECTORS = None
+PARAMETERS, VECTORS = None, None
 
 
 def create(config, scoring):
@@ -42,10 +42,11 @@ def create(config, scoring):
         scoring: scoring instance
     """
 
+    global PARAMETERS
     global VECTORS
 
-    # Create a global embedding object using configuration and saved
-    VECTORS = WordVectors(config, scoring, None)
+    # Store model parameters for lazy loading
+    PARAMETERS, VECTORS = (config, scoring, None), None
 
 
 def transform(document):
@@ -58,6 +59,11 @@ def transform(document):
     Returns:
         (id, embedding)
     """
+
+    # Lazy load vectors model
+    global VECTORS
+    if not VECTORS:
+        VECTORS = WordVectors(*PARAMETERS)
 
     return (document[0], VECTORS.transform(document))
 
@@ -145,9 +151,13 @@ class WordVectors(Vectors):
 
         return np.array(embeddings, dtype=np.float32)
 
-    def index(self, documents, batchsize=1):
+    def index(self, documents, batchsize=500):
+        # Derive number of parallel processes
+        parallel = self.config.get("parallel", True)
+        parallel = os.cpu_count() if parallel and isinstance(parallel, bool) else int(parallel)
+
         # Use default single process indexing logic
-        if "parallel" in self.config and not self.config["parallel"]:
+        if not parallel:
             return super().index(documents, batchsize)
 
         # Customize indexing logic with multiprocessing pool to efficiently build vectors
@@ -157,11 +167,11 @@ class WordVectors(Vectors):
         args = (self.config, self.scoring)
 
         # Convert all documents to embedding arrays, stream embeddings to disk to control memory usage
-        with Pool(os.cpu_count(), initializer=create, initargs=args) as pool:
+        with Pool(parallel, initializer=create, initargs=args) as pool:
             with tempfile.NamedTemporaryFile(mode="wb", suffix=".npy", delete=False) as output:
                 stream = output.name
                 embeddings = []
-                for uid, embedding in pool.imap(transform, documents):
+                for uid, embedding in pool.imap(transform, documents, self.encodebatch):
                     if not dimensions:
                         # Set number of dimensions for embeddings
                         dimensions = embedding.shape[0]
