@@ -72,19 +72,14 @@ class Questions(Data):
                 while sequences[end] != (1 if self.rpad else 0):
                     end -= 1
 
-                # Label with CLS token if out of span
-                if not (offset[start][0] <= startchar and offset[end][1] >= endchar):
-                    tokenized["start_positions"].append(clstoken)
-                    tokenized["end_positions"].append(clstoken)
-                else:
-                    # Map start character and end character to matching token index
-                    while start < len(offset) and offset[start][0] <= startchar:
-                        start += 1
-                    tokenized["start_positions"].append(start - 1)
+                # Map start character and end character to matching token index
+                while start < len(offset) and offset[start][0] <= startchar:
+                    start += 1
+                tokenized["start_positions"].append(start - 1)
 
-                    while offset[end][1] >= endchar:
-                        end -= 1
-                    tokenized["end_positions"].append(end + 1)
+                while offset[end][1] >= endchar:
+                    end -= 1
+                tokenized["end_positions"].append(end + 1)
 
         return tokenized
 
