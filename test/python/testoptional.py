@@ -5,8 +5,9 @@ Optional module tests
 import sys
 import unittest
 
-# pylint: disable=C0415,W0611
-from transformers import Trainer
+# pylint: disable=C0415,W0611,W0621
+import timm
+import txtai
 
 
 class TestOptional(unittest.TestCase):
