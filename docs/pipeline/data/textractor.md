@@ -3,13 +3,14 @@
 ![pipeline](../../images/pipeline.png#only-light)
 ![pipeline](../../images/pipeline-dark.png#only-dark)
 
-The Textractor pipeline extracts and splits text from documents.
+The Textractor pipeline extracts and splits text from documents. This pipeline extends the [Segmentation](../segmentation) pipeline.
 
 Each document goes through the following process.
 
 - Content is retrieved if it's not local
 - If the document `mime-type` isn't plain text or HTML, it's converted to HTML via the [FiletoHTML](../filetohtml) pipeline
-- HTML is converted to Markdown via the [HTMLToMarkdown](../htmltomd) pipeline and returned
+- HTML is converted to Markdown via the [HTMLToMarkdown](../htmltomd) pipeline
+- Content is split/chunked based on the [segmentation parameters](../segmentation/#txtai.pipeline.Segmentation.__init__) and returned
 
 The [backend](../filetohtml/#txtai.pipeline.FileToHTML.__init__) parameter sets the FileToHTML pipeline backend. If a backend isn't available, this pipeline assumes input is HTML content and only converts it to Markdown.
 
