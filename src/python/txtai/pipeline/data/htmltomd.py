@@ -360,10 +360,13 @@ class HTMLToMarkdown(Pipeline):
         """
 
         # List of valid text nodes
-        valid = ["p", "th", "td", "li", "a", "b", "strong", "i", "em"]
+        valid = ("p", "th", "td", "li", "a", "b", "strong", "i", "em")
+
+        # Check if this node is valid or it's part of a table cell
+        valid = node.name in valid or (node.parent and node.parent.name in ("th", "td"))
 
         # Check if text is valid article text
-        text = text if (node.name in valid or self.isheader(node)) and not self.islink(node) else ""
+        text = text if (valid or self.isheader(node)) and not self.islink(node) else ""
         if text:
             # Replace non-breaking space plus newline with double newline
             text = text.replace("\xa0\n", "\n\n")
@@ -385,7 +388,7 @@ class HTMLToMarkdown(Pipeline):
             True if node is a header node, False otherwise
         """
 
-        return node.name in ["h1", "h2", "h3", "h4", "h5", "h6"]
+        return node.name in ("h1", "h2", "h3", "h4", "h5", "h6")
 
     def islink(self, node):
         """
