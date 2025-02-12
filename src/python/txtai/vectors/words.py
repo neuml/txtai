@@ -115,7 +115,7 @@ class WordVectors(Vectors):
             True if this is a SQLite database
         """
 
-        return isinstance(path, str) and Database.isdatabase(path)
+        return isinstance(path, str) and STATICVECTORS and Database.isdatabase(path)
 
     def __init__(self, config, scoring, models):
         # Check before parent constructor since it calls loadmodel

@@ -306,6 +306,10 @@ class TestOptional(unittest.TestCase):
         with self.assertRaises(ImportError):
             VectorsFactory.create({"method": "words"}, None)
 
+        # Test default model
+        model = VectorsFactory.create({"path": "sentence-transformers/all-MiniLM-L6-v2"}, None)
+        self.assertIsNotNone(model)
+
     def testWorkflow(self):
         """
         Test missing workflow dependencies
