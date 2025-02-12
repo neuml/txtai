@@ -161,7 +161,7 @@ class Segmentation(Pipeline):
         # If minlength enabled, require at least minlength chars
         return text if not self.minlength or len(text) >= self.minlength else None
 
-    def createchunker(self, chunker=None, **kwargs):
+    def createchunker(self, chunker, **kwargs):
         """
         Creates a new Chonkie chunker
 
