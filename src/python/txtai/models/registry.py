@@ -21,10 +21,8 @@ class Registry:
             config: config class name
         """
 
-        # Default config class name to model name if not provided
-        name = model.__class__.__name__
-        if not config:
-            config = name
+        # Default config class to model class if not provided
+        config = config if config else model.__class__
 
         # Default model config_class if empty
         if hasattr(model.__class__, "config_class") and not model.__class__.config_class:
