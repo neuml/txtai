@@ -72,7 +72,7 @@ class Search:
 
         # Graph search
         if self.graph and self.graph.isquery(queries):
-            return self.graph.batchsearch(queries, limit, self.indexids)
+            return self.graphsearch(queries, limit, weights, index)
 
         # Database search
         if not self.indexonly and self.database:
@@ -306,3 +306,33 @@ class Search:
             qlimit = l if l and l > qlimit else qlimit
 
         return qlimit
+
+    def graphsearch(self, queries, limit, weights, index):
+        """
+        Executes an index + graph search.
+
+        Args:
+            queries: list of queries
+            limit: maximum results
+            weights: default hybrid score weights
+            index: default index name
+
+        Returns:
+            graph search results
+        """
+
+        # Parse queries
+        queries = [self.graph.parse(query) for query in queries]
+
+        # Override limit with query limit, if applicable
+        limit = max(limit, self.limit(queries))
+
+        # Bulk index scan
+        scan = Scan(self.search, limit, weights, index)(queries, None)
+
+        # Combine index search results with database search results
+        for x, query in enumerate(queries):
+            # Add search results to query
+            query["results"] = [r for y, r in scan if x == y]
+
+        return self.graph.batchsearch(queries, limit, self.indexids)

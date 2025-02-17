@@ -10,7 +10,6 @@ from tempfile import TemporaryDirectory
 try:
     import networkx as nx
 
-    from grandcypher import GrandCypher
     from networkx.algorithms.community import asyn_lpa_communities, greedy_modularity_communities, louvain_partitions
     from networkx.readwrite import json_graph
 
@@ -22,6 +21,7 @@ from ..archive import ArchiveFactory
 from ..serialize import SerializeError, SerializeFactory
 
 from .base import Graph
+from .query import Query
 
 
 # pylint: disable=R0904
@@ -114,9 +114,15 @@ class NetworkX(Graph):
         # pylint: disable=E1121
         return nx.shortest_path(self.backend, source, target, self.distance)
 
+    def isquery(self, queries):
+        return Query().isquery(queries)
+
+    def parse(self, query):
+        return Query().parse(query)
+
     def search(self, query, limit=None, graph=False):
-        # Run openCypher query
-        results = GrandCypher(self.backend, limit if limit else 3).run(query)
+        # Run graph query
+        results = Query()(self, query, limit)
 
         # Transform into filtered graph
         if graph:
@@ -140,10 +146,6 @@ class NetworkX(Graph):
             rows.append({str(key): results[key][x] for key in keys})
 
         return rows
-
-    def isquery(self, queries):
-        # Check for required graph query clauses
-        return all(query and query.strip().startswith("MATCH ") and "RETURN " in query for query in queries)
 
     def communities(self, config):
         # Get community detection algorithm

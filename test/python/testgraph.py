@@ -319,8 +319,9 @@ class TestGraph(unittest.TestCase):
         self.assertRaises(NotImplementedError, graph.centrality)
         self.assertRaises(NotImplementedError, graph.pagerank)
         self.assertRaises(NotImplementedError, graph.showpath, None, None)
-        self.assertRaises(NotImplementedError, graph.search, None)
         self.assertRaises(NotImplementedError, graph.isquery, None)
+        self.assertRaises(NotImplementedError, graph.parse, None)
+        self.assertRaises(NotImplementedError, graph.search, None)
         self.assertRaises(NotImplementedError, graph.communities, None)
         self.assertRaises(NotImplementedError, graph.load, None)
         self.assertRaises(NotImplementedError, graph.save, None)
@@ -460,6 +461,19 @@ class TestGraph(unittest.TestCase):
             graph=True,
         )
         self.assertEqual(g.count(), 3)
+
+        # Run similar search
+        results = self.embeddings.search(
+            """
+            MATCH P=(A)-[]->()
+            WHERE SIMILAR(A, "feel good story")
+            RETURN A
+            ORDER BY A.score DESC
+            LIMIT 1
+        """,
+            graph=True,
+        )
+        self.assertEqual(list(results.scan())[0], 4)
 
     def testSearchBatch(self):
         """

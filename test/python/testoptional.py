@@ -30,8 +30,8 @@ class TestOptional(unittest.TestCase):
             "duckdb",
             "fastapi",
             "gliner",
-            "grand-cypher",
-            "grand-graph",
+            "grandcypher",
+            "grand",
             "hnswlib",
             "imagehash",
             "libcloud.storage.providers",
@@ -158,13 +158,16 @@ class TestOptional(unittest.TestCase):
         Test missing graph dependencies
         """
 
-        from txtai.graph import GraphFactory
+        from txtai.graph import GraphFactory, Query
 
         with self.assertRaises(ImportError):
             GraphFactory.create({"backend": "networkx"})
 
         with self.assertRaises(ImportError):
             GraphFactory.create({"backend": "rdbms"})
+
+        with self.assertRaises(ImportError):
+            Query()
 
     def testModel(self):
         """

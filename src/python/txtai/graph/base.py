@@ -266,6 +266,32 @@ class Graph:
 
         raise NotImplementedError
 
+    def isquery(self, queries):
+        """
+        Checks if queries are supported graph queries.
+
+        Args:
+            queries: queries to check
+
+        Returns:
+            True if all the queries are supported graph queries, False otherwise
+        """
+
+        raise NotImplementedError
+
+    def parse(self, query):
+        """
+        Parses a graph query into query components.
+
+        Args:
+            query: graph query
+
+        Returns:
+            query components as a dictionary
+        """
+
+        raise NotImplementedError
+
     def search(self, query, limit=None, graph=False):
         """
         Searches graph for nodes matching query.
@@ -292,23 +318,11 @@ class Graph:
             graph: return graph results if True
 
         Returns:
-            list of dict
+            list of dict if graph is set to False
+            filtered graph if graph is set to True
         """
 
         return [self.search(query, limit, graph) for query in queries]
-
-    def isquery(self, queries):
-        """
-        Checks if queries are supported graph queries.
-
-        Args:
-            queries: queries to check
-
-        Returns:
-            True if all the queries are supported graph queries, False otherwise
-        """
-
-        raise NotImplementedError
 
     def communities(self, config):
         """
