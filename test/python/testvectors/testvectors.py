@@ -2,11 +2,13 @@
 Vectors module tests
 """
 
+import os
+import tempfile
 import unittest
 
 import numpy as np
 
-from txtai.vectors import Vectors
+from txtai.vectors import Vectors, Recovery
 
 
 class TestVectors(unittest.TestCase):
@@ -46,3 +48,21 @@ class TestVectors(unittest.TestCase):
         # Test both data arrays are the same and changed from original
         self.assertTrue(np.allclose(data1, data2))
         self.assertFalse(np.allclose(data1, original))
+
+    def testRecovery(self):
+        """
+        Test vectors recovery failure
+        """
+
+        # Checkpoint directory
+        checkpoint = os.path.join(tempfile.gettempdir(), "recovery")
+        os.makedirs(checkpoint, exist_ok=True)
+
+        # Create empty file
+        # pylint: disable=R1732
+        f = open(os.path.join(checkpoint, "id"), "w", encoding="utf-8")
+        f.close()
+
+        # Create the recovery instance with an empty checkpoint file
+        recovery = Recovery(checkpoint, "id")
+        self.assertIsNone(recovery())

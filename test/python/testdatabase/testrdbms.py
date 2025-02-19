@@ -96,6 +96,24 @@ class Common:
             result = embeddings.search(self.data[4], 1)[0]
             self.assertEqual(len(result["id"]), 36)
 
+        def testCheckpoint(self):
+            """
+            Test embeddings index checkpoints
+            """
+
+            # Checkpoint directory
+            checkpoint = os.path.join(tempfile.gettempdir(), f"embeddings.{self.category()}.checkpoint")
+
+            # Save embeddings checkpoint
+            self.embeddings.index(self.data, checkpoint=checkpoint)
+
+            # Reindex with checkpoint
+            self.embeddings.index(self.data, checkpoint=checkpoint)
+
+            # Search for best match
+            result = self.embeddings.search("feel good story", 1)[0]
+            self.assertEqual(result["text"], self.data[4])
+
         def testColumns(self):
             """
             Test custom text/object columns

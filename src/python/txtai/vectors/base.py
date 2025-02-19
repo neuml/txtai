@@ -2,11 +2,16 @@
 Vectors module
 """
 
+import json
+import os
 import tempfile
+import uuid
 
 import numpy as np
 
 from ..pipeline import Tokenizer
+
+from .recovery import Recovery
 
 
 class Vectors:
@@ -100,7 +105,7 @@ class Vectors:
 
         return model
 
-    def index(self, documents, batchsize=500):
+    def index(self, documents, batchsize=500, checkpoint=None):
         """
         Converts a list of documents to a temporary file with embeddings arrays. Returns a tuple of document ids,
         number of dimensions and temporary file with embeddings.
@@ -108,6 +113,7 @@ class Vectors:
         Args:
             documents: list of (id, data, tags)
             batchsize: index batch size
+            checkpoint: optional checkpoint directory, enables indexing restart
 
         Returns:
             (ids, dimensions, stream)
@@ -115,8 +121,12 @@ class Vectors:
 
         ids, dimensions, batches, stream = [], None, 0, None
 
+        # Generate recovery config if checkpoint is set
+        vectorsid = self.vectorsid() if checkpoint else None
+        recovery = Recovery(checkpoint, vectorsid) if checkpoint else None
+
         # Convert all documents to embedding arrays, stream embeddings to disk to control memory usage
-        with tempfile.NamedTemporaryFile(mode="wb", suffix=".npy", delete=False) as output:
+        with self.spool(checkpoint, vectorsid) as output:
             stream = output.name
             batch = []
             for document in documents:
@@ -124,7 +134,7 @@ class Vectors:
 
                 if len(batch) == batchsize:
                     # Convert batch to embeddings
-                    uids, dimensions = self.batch(batch, output)
+                    uids, dimensions = self.batch(batch, output, recovery)
                     ids.extend(uids)
                     batches += 1
 
@@ -132,7 +142,7 @@ class Vectors:
 
             # Final batch
             if batch:
-                uids, dimensions = self.batch(batch, output)
+                uids, dimensions = self.batch(batch, output, recovery)
                 ids.extend(uids)
                 batches += 1
 
@@ -180,13 +190,50 @@ class Vectors:
 
         return self.vectorize(documents)
 
-    def batch(self, documents, output):
+    def vectorsid(self):
+        """
+        Generates vectors uid for this vectors instance.
+
+        Returns:
+            vectors uid
+        """
+
+        # Select config options that determine uniqueness
+        select = ["path", "method", "tokenizer", "maxlength", "tokenize", "instructions", "dimensionality", "quantize"]
+        config = {k: v for k, v in self.config.items() if k in select}
+        config.update(self.config.get("vectors", {}))
+
+        # Generate a deterministic UUID
+        return str(uuid.uuid5(uuid.NAMESPACE_DNS, json.dumps(config, sort_keys=True)))
+
+    def spool(self, checkpoint, vectorsid):
+        """
+        Opens a spool file for queuing generated vectors.
+
+        Args:
+            checkpoint: optional checkpoint directory, enables indexing restart
+            vectorsid: vectors uid for current configuration
+
+        Returns:
+            vectors spool file
+        """
+
+        # Spool to vectors checkpoint file
+        if checkpoint:
+            os.makedirs(checkpoint, exist_ok=True)
+            return open(f"{checkpoint}/{vectorsid}", "wb")
+
+        # Spool to temporary file
+        return tempfile.NamedTemporaryFile(mode="wb", suffix=".npy", delete=False)
+
+    def batch(self, documents, output, recovery):
         """
         Builds a batch of embeddings.
 
         Args:
             documents: list of documents used to build embeddings
             output: output temp file to store embeddings
+            recovery: optional recovery instance
 
         Returns:
             (ids, dimensions) list of ids and number of dimensions in embeddings
@@ -197,8 +244,9 @@ class Vectors:
         documents = [self.prepare(data, "data") for _, data, _ in documents]
         dimensions = None
 
-        # Build embeddings
-        embeddings = self.vectorize(documents)
+        # Attempt to read embeddings from a recovery file
+        embeddings = recovery() if recovery else None
+        embeddings = self.vectorize(documents) if embeddings is None else embeddings
         if embeddings is not None:
             dimensions = embeddings.shape[1]
             np.save(output, embeddings)

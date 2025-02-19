@@ -102,20 +102,21 @@ class Embeddings:
         if self.isweighted():
             self.scoring.index(Stream(self)(documents))
 
-    def index(self, documents, reindex=False):
+    def index(self, documents, reindex=False, checkpoint=None):
         """
         Builds an embeddings index. This method overwrites an existing index.
 
         Args:
             documents: iterable of (id, data, tags), (id, data) or data
             reindex: if this is a reindex operation in which case database creation is skipped, defaults to False
+            checkpoint: optional checkpoint directory, enables indexing restart
         """
 
         # Initialize index
         self.initindex(reindex)
 
         # Create transform and stream
-        transform = Transform(self, Action.REINDEX if reindex else Action.INDEX)
+        transform = Transform(self, Action.REINDEX if reindex else Action.INDEX, checkpoint)
         stream = Stream(self, Action.REINDEX if reindex else Action.INDEX)
 
         with tempfile.NamedTemporaryFile(mode="wb", suffix=".npy") as buffer:
@@ -153,7 +154,7 @@ class Embeddings:
         if self.graph:
             self.graph.index(Search(self, indexonly=True), Ids(self), self.batchsimilarity)
 
-    def upsert(self, documents):
+    def upsert(self, documents, checkpoint=None):
         """
         Runs an embeddings upsert operation. If the index exists, new data is
         appended to the index, existing data is updated. If the index doesn't exist,
@@ -161,15 +162,16 @@ class Embeddings:
 
         Args:
             documents: iterable of (id, data, tags), (id, data) or data
+            checkpoint: optional checkpoint directory, enables indexing restart
         """
 
         # Run standard insert if index doesn't exist or it has no records
         if not self.count():
-            self.index(documents)
+            self.index(documents, checkpoint=checkpoint)
             return
 
         # Create transform and stream
-        transform = Transform(self, Action.UPSERT)
+        transform = Transform(self, Action.UPSERT, checkpoint=checkpoint)
         stream = Stream(self, Action.UPSERT)
 
         with tempfile.NamedTemporaryFile(mode="wb", suffix=".npy") as buffer:

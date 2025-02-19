@@ -151,7 +151,7 @@ class WordVectors(Vectors):
 
         return np.array(embeddings, dtype=np.float32)
 
-    def index(self, documents, batchsize=500):
+    def index(self, documents, batchsize=500, checkpoint=None):
         # Derive number of parallel processes
         parallel = self.config.get("parallel", True)
         parallel = os.cpu_count() if parallel and isinstance(parallel, bool) else int(parallel)

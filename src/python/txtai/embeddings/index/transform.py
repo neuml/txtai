@@ -14,17 +14,19 @@ class Transform:
     Executes a transform. Processes a stream of documents, loads batches into enabled data stores and vectorizes documents.
     """
 
-    def __init__(self, embeddings, action):
+    def __init__(self, embeddings, action, checkpoint=None):
         """
         Creates a new transform.
 
         Args:
             embeddings: embeddings instance
             action: index action
+            checkpoint: optional checkpoint directory, enables indexing restart
         """
 
         self.embeddings = embeddings
         self.action = action
+        self.checkpoint = checkpoint
 
         # Alias embeddings attributes
         self.config = embeddings.config
@@ -91,7 +93,7 @@ class Transform:
         """
 
         # Consume stream and transform documents to vectors
-        ids, dimensions, batches, stream = self.model.index(self.stream(documents), self.batch)
+        ids, dimensions, batches, stream = self.model.index(self.stream(documents), self.batch, self.checkpoint)
 
         # Check that embeddings are available and load as a memmap
         embeddings = None
@@ -108,8 +110,9 @@ class Transform:
                     embeddings[x : x + batch.shape[0]] = batch
                     x += batch.shape[0]
 
-        # Remove temporary file
-        os.remove(stream)
+        # Remove temporary file (if checkpointing is disabled)
+        if not self.checkpoint:
+            os.remove(stream)
 
         return (ids, dimensions, embeddings)
 
