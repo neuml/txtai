@@ -89,8 +89,8 @@ class HFTrainer(Tensors):
         # Parse TrainingArguments
         args = self.parse(args)
 
-        # Initialize torch parameters for reproducibility
-        self.initialize(args.seed)
+        # Set seed for model reproducibility
+        set_seed(args.seed)
 
         # Load model configuration, tokenizer and max sequence length
         config, tokenizer, maxlength = self.load(base, maxlength)
@@ -161,21 +161,6 @@ class HFTrainer(Tensors):
         args.update(updates)
 
         return TrainingArguments(**args)
-
-    def initialize(self, seed):
-        """
-        Initializes torch parameters to ensure reproducibility.
-
-        Args:
-            seed: seed to set
-        """
-
-        # Set seed for model reproducibility
-        set_seed(seed)
-
-        # Enable cuDNN deterministic mode
-        torch.backends.cudnn.deterministic = True
-        torch.backends.cudnn.benchmark = False
 
     def load(self, base, maxlength):
         """
