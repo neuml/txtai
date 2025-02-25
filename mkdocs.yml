@@ -131,5 +131,6 @@ nav:
     - Cloud: cloud.md
     - Examples: examples.md
     - FAQ: faq.md
+    - Observability: observability.md
     - Powered by txtai: poweredby.md
     - Further Reading: further.md
