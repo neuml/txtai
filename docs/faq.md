@@ -30,11 +30,13 @@ Wrap the list or generator passed to the index call with tqdm. See [#478](https:
 
 __Question__
 
-What is the best way to analyze the content of a txtai index?
+What is the best way to analyze and debug a txtai process?
 
 __Answer__
 
-txtai has a console application that makes this easy. Read [this article](https://medium.com/neuml/insights-from-the-txtai-console-d307c28e149e) to learn more.
+See the [observability](../observability) section for more on how this can be enabled in txtai processes.
+
+txtai also has a console application. [This article](https://medium.com/neuml/insights-from-the-txtai-console-d307c28e149e) has more details.
 
 ----------
 
