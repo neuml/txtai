@@ -28,12 +28,8 @@ import mlflow
 mlflow.set_tracking_uri(uri="http://localhost:8000")
 mlflow.set_experiment("txtai")
 
-# MLflow < 2.20.3 requires importing this library directly
-import mlflow_txtai
-mlflow_txtai.autolog()
-
-# MLflow >= 2.20.3
-# mlflow.txtai.autolog()
+# Enable txtai automatic tracing
+mlflow.txtai.autolog()
 ```
 
 ### Textractor
