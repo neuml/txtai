@@ -2,11 +2,10 @@
 TextToSpeech module
 """
 
-import logging
-
 # Conditional import
 try:
     import onnxruntime as ort
+    import soundfile as sf
 
     from ttstokenizer import IPATokenizer, TTSTokenizer
 
@@ -17,6 +16,10 @@ except ImportError:
     TTS = False
 
 import json
+import logging
+
+from io import BytesIO
+
 import torch
 import yaml
 
@@ -64,7 +67,7 @@ class TextToSpeech(Pipeline):
         else:
             self.pipeline = SpeechT5(path, maxtokens, self.providers())
 
-    def __call__(self, text, stream=False, speaker=1, **kwargs):
+    def __call__(self, text, stream=False, speaker=1, encoding=None, **kwargs):
         """
         Generates speech from text. Text longer than maxtokens will be batched and returned
         as a single waveform per text input.
@@ -76,10 +79,11 @@ class TextToSpeech(Pipeline):
             text: text|list
             stream: stream response if True, defaults to False
             speaker: speaker id, defaults to 1
+            encoding: optional audio encoding format
             kwargs: additional keyword args
 
         Returns:
-            list of (audio, sample rate)
+            list of (audio, sample rate) or list of audio depending on encoding parameter
         """
 
         # Convert results to a list if necessary
@@ -87,10 +91,10 @@ class TextToSpeech(Pipeline):
 
         # Streaming response
         if stream:
-            return self.stream(texts, speaker)
+            return self.stream(texts, speaker, encoding)
 
         # Transform text to speech
-        results = [self.execute(x, speaker, **kwargs) for x in texts]
+        results = [self.execute(x, speaker, encoding, **kwargs) for x in texts]
 
         # Return results
         return results[0] if isinstance(text, str) else results
@@ -132,7 +136,7 @@ class TextToSpeech(Pipeline):
 
         return exists
 
-    def stream(self, texts, speaker):
+    def stream(self, texts, speaker, encoding):
         """
         Iterates over texts, splits into segments and yields snippets of audio.
         This method is designed to integrate with streaming LLM generation.
@@ -140,9 +144,10 @@ class TextToSpeech(Pipeline):
         Args:
             texts: list of input texts
             speaker: speaker id
+            encoding: audio encoding format
 
         Returns:
-            snippets of audio as NumPy arrays
+            snippets of audio as NumPy arrays or audio bytes depending on fmt parameter
         """
 
         buffer = []
@@ -151,13 +156,13 @@ class TextToSpeech(Pipeline):
 
             if x == "\n" or (x.strip().endswith(".") and len([y for y in buffer if y]) > 2):
                 data, buffer = "".join(buffer), []
-                yield self.execute(data, speaker)
+                yield self.execute(data, speaker, encoding)
 
         if buffer:
             data = "".join(buffer)
-            yield self.execute(data, speaker)
+            yield self.execute(data, speaker, encoding)
 
-    def execute(self, text, speaker, **kwargs):
+    def execute(self, text, speaker, encoding, **kwargs):
         """
         Executes model run for an input array of tokens. This method will build batches
         of tokens when len(tokens) > maxtokens.
@@ -165,17 +170,27 @@ class TextToSpeech(Pipeline):
         Args:
             text: text to tokenize and pass to model
             speaker: speaker id
+            encoding: audio encoding format
             kwargs: additional keyword args
 
         Returns:
-            (audio, sample rate)
+            (audio, sample rate) or audio bytes depending on fmt parameter
         """
 
         # Run pipeline model
         audio, rate = self.pipeline(text, speaker, **kwargs)
 
         # Resample, if necessary and return
-        return (Signal.resample(audio, rate, self.rate), self.rate) if self.rate else (audio, rate)
+        audio, rate = (Signal.resample(audio, rate, self.rate), self.rate) if self.rate else (audio, rate)
+
+        # Encoding audio data
+        if encoding:
+            data = BytesIO()
+            sf.write(data, audio, rate, format=encoding)
+            return data.getvalue()
+
+        # Default to (audio, rate) tuple
+        return (audio, rate)
 
 
 class SpeechPipeline(Pipeline):
