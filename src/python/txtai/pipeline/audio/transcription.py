@@ -52,7 +52,7 @@ class Transcription(HFPipeline):
         """
 
         # Convert single element to list
-        values = [audio] if isinstance(audio, (str, tuple, np.ndarray)) else audio
+        values = [audio] if self.isaudio(audio) else audio
 
         # Read input audio
         speech = self.read(values, rate)
@@ -61,7 +61,20 @@ class Transcription(HFPipeline):
         results = self.batchprocess(speech, chunk, **kwargs) if chunk and not join else self.process(speech, chunk, **kwargs)
 
         # Return single element if single element passed in
-        return results[0] if isinstance(audio, (str, tuple, np.ndarray)) else results
+        return results[0] if self.isaudio(audio) else results
+
+    def isaudio(self, audio):
+        """
+        Checks if input is a single audio element.
+
+        Args:
+            audio: audio|list
+
+        Returns:
+            True if input is an audio element, False otherwise
+        """
+
+        return isinstance(audio, (str, tuple, np.ndarray)) or hasattr(audio, "read")
 
     def read(self, audio, rate):
         """
@@ -77,8 +90,8 @@ class Transcription(HFPipeline):
 
         speech = []
         for x in audio:
-            if isinstance(x, str):
-                # Read file
+            if isinstance(x, str) or hasattr(x, "read"):
+                # Read file or file-like object
                 raw, samplerate = sf.read(x)
             elif isinstance(x, tuple):
                 # Input is NumPy array and sample rate
