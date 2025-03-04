@@ -127,6 +127,7 @@ nav:
         - Configuration: api/configuration.md
         - Customization: api/customization.md
         - Methods: api/methods.md
+        - OpenAI: api/openai.md
         - Security: api/security.md
     - Cloud: cloud.md
     - Examples: examples.md

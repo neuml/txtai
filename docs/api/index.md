@@ -120,8 +120,11 @@ The following programming languages have bindings with the txtai API:
 - [Rust](https://github.com/neuml/txtai.rs)
 - [Go](https://github.com/neuml/txtai.go)
 
-See the link below for a detailed example covering how to use the API.
+The API also supports hosting [OpenAI-compatible endpoints](./openai).
+
+See the links below for detailed examples covering how to use the API.
 
 | Notebook  | Description  |       |
 |:----------|:-------------|------:|
 | [API Gallery](https://github.com/neuml/txtai/blob/master/examples/08_API_Gallery.ipynb) | Using txtai in JavaScript, Java, Rust and Go | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/08_API_Gallery.ipynb) |
+| [OpenAI Compatible API](https://github.com/neuml/txtai/blob/master/examples/74_OpenAI_Compatible_API.ipynb) | Connect to txtai with a standard OpenAI client library | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/74_OpenAI_Compatible_API.ipynb) |
