@@ -14,6 +14,7 @@ from transformers import (
     AutoModelForSequenceClassification,
     AutoTokenizer,
 )
+from transformers.models.auto.modeling_auto import MODEL_FOR_IMAGE_TEXT_TO_TEXT_MAPPING_NAMES
 
 from .onnx import OnnxModel
 
@@ -255,7 +256,9 @@ class Models:
         if config:
             architecture = config.architectures[0] if config.architectures else None
             if architecture:
-                if any(x for x in ["LMHead", "CausalLM"] if x in architecture):
+                if architecture in MODEL_FOR_IMAGE_TEXT_TO_TEXT_MAPPING_NAMES.values():
+                    task = "vision"
+                elif any(x for x in ["LMHead", "CausalLM"] if x in architecture):
                     task = "language-generation"
                 elif "QuestionAnswering" in architecture:
                     task = "question-answering"

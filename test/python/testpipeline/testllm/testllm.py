@@ -10,6 +10,9 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from txtai.pipeline import LLM, Generation
 
+# pylint: disable = C0411
+from utils import Utils
+
 
 class TestLLM(unittest.TestCase):
     """
@@ -107,3 +110,15 @@ class TestLLM(unittest.TestCase):
 
         model = LLM("sshleifer/tiny-gpt2")
         self.assertIsInstance(" ".join(x for x in model("Hello, how are", stream=True)), str)
+
+    def testVision(self):
+        """
+        Test vision LLM
+        """
+
+        model = LLM("hf-internal-testing/tiny-random-Qwen2VLForConditionalGeneration")
+        result = model(
+            [{"role": "user", "content": [{"type": "text", "text": "What is in this image?"}, {"type": "image", "image": Utils.PATH + "/books.jpg"}]}]
+        )
+
+        self.assertIsNotNone(result)

@@ -69,42 +69,48 @@ class HFLLM(HFPipeline):
             texts = [f"{prefix}{x}" for x in texts]
 
         # Combine all keyword arguments
-        kwargs = self.parameters(maxlength, workers, stop, **kwargs)
+        args, kwargs = self.parameters(texts, maxlength, workers, stop, **kwargs)
 
         # Stream response
         if stream:
             return StreamingResponse(self.pipeline, texts, stop, **kwargs)()
 
-        # Run pipeline
-        results = self.pipeline(texts, stop_strings=stop, **kwargs)
-
-        # Extract generated text
-        results = [self.extract(result) for result in results]
+        # Run pipeline and extract generated text
+        results = [self.extract(result) for result in self.pipeline(*args, **kwargs)]
 
         return results[0] if isinstance(text, str) else results
 
-    def parameters(self, maxlength, workers, stop, **kwargs):
+    def parameters(self, texts, maxlength, workers, stop, **kwargs):
         """
-        Builds a combined parameter dictionary.
+        Builds a list of arguments and a combined parameter dictionary to use as keyword arguments.
 
         Args:
+            texts: input texts
             maxlength: maximum sequence length
             workers: number of concurrent workers to use for processing data, defaults to None
             stop: list of stop strings
             kwargs: additional generation keyword arguments
 
         Returns:
-            dict of parameters
+            args, kwargs
         """
 
-        # Default parameters
-        defaults = {
-            "max_length": maxlength,
-            "num_workers": workers,
-        }
+        # Set defaults and get underlying model
+        defaults, model = {"max_length": maxlength, "num_workers": workers}, self.pipeline.model
+
+        # Set parameters for vision models and return
+        if self.pipeline.task == "image-text-to-text":
+            # Maxlength has to be large enough to accomodate images
+            defaults["max_length"] = max(maxlength, 2048)
+
+            # Set default token id
+            tokenid = model.generation_config.pad_token_id
+            model.generation_config.pad_token_id = tokenid if tokenid else model.generation_config.eos_token_id
+
+            # Vision models take all arguments as keyword arguments
+            return [], {**{"text": texts, "truncation": True}, **defaults, **kwargs}
 
         # Add pad token if it's missing from model config
-        model = self.pipeline.model
         if not model.config.pad_token_id:
             tokenid = model.config.eos_token_id
             tokenid = tokenid[0] if isinstance(tokenid, list) else tokenid
@@ -121,7 +127,7 @@ class HFLLM(HFPipeline):
         if stop:
             defaults["tokenizer"] = self.pipeline.tokenizer
 
-        return {**defaults, **kwargs}
+        return [texts], {**defaults, **kwargs}
 
     def extract(self, result):
         """
@@ -153,7 +159,7 @@ class HFLLM(HFPipeline):
         """
 
         # Mapping from txtai to Hugging Face pipeline tasks
-        mapping = {"language-generation": "text-generation", "sequence-sequence": "text2text-generation"}
+        mapping = {"language-generation": "text-generation", "sequence-sequence": "text2text-generation", "vision": "image-text-to-text"}
 
         # Attempt to resolve task
         if path and not task:

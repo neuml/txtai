@@ -59,11 +59,17 @@ tabular:
 # Text extraction
 textractor:
 
+# Text to speech
+texttospeech:
+
 # Transcription
 transcription:
 
 # Translation:
 translation:
+
+# Enable file uploads
+upload:
 """
 
 
@@ -316,6 +322,15 @@ class TestPipeline(unittest.TestCase):
         texts = self.client.post("batchtextract", json=[path, path]).json()
         self.assertEqual((len(texts[0]), len(texts[1])), (2471, 2471))
 
+    def testTextToSpeech(self):
+        """
+        Test text to speech
+        """
+
+        # Generate audio and check for WAV signature
+        audio = self.client.get("texttospeech?text=hello&encoding=wav").content
+        self.assertTrue(audio[0:4] == b"RIFF")
+
     def testTranscribe(self):
         """
         Test transcribe via API
@@ -352,3 +367,13 @@ class TestPipeline(unittest.TestCase):
         text = "This is a test translation into Spanish"
         translations = self.client.post("batchtranslate", json={"texts": [text, text], "target": "es"}).json()
         self.assertEqual(translations, ["Esta es una traducción de prueba al español"] * 2)
+
+    def testUpload(self):
+        """
+        Test file upload
+        """
+
+        path = Utils.PATH + "/article.pdf"
+        with open(path, "rb") as f:
+            path = self.client.post("upload", files={"files": f}).json()[0]
+            self.assertTrue(os.path.exists(path))
