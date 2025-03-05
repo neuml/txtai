@@ -147,7 +147,7 @@ class TextToSpeech(Pipeline):
             encoding: audio encoding format
 
         Returns:
-            snippets of audio as NumPy arrays or audio bytes depending on fmt parameter
+            snippets of audio as NumPy arrays or audio bytes depending on encoding parameter
         """
 
         buffer = []
@@ -174,7 +174,7 @@ class TextToSpeech(Pipeline):
             kwargs: additional keyword args
 
         Returns:
-            (audio, sample rate) or audio bytes depending on fmt parameter
+            (audio, sample rate) or audio bytes depending on encoding parameter
         """
 
         # Run pipeline model
