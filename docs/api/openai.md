@@ -1,6 +1,6 @@
 # OpenAI-compatible API
 
-The API can be configured to serve an OpenAI-compatible API as follows.
+The API can be configured to serve an OpenAI-compatible API as shown below.
 
 ```yaml
 openai: True
