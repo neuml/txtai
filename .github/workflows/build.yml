@@ -44,8 +44,6 @@ jobs:
         run: |
           "PYTHONIOENCODING=utf-8" >> $env:GITHUB_ENV
           choco install wget
-          pip install -U wheel
-          pip install llama-cpp-python==0.3.2 --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu
         if: matrix.os == 'windows-latest'
 
       - name: Build
