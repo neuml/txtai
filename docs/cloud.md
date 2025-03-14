@@ -8,7 +8,7 @@ Scalable cloud-native applications can be built with txtai. The following cloud 
 - Container Orchestration Systems (i.e. Kubernetes)
 - Docker Engine
 - Serverless Compute
-- txtai.cloud (coming in 2024)
+- txtai.cloud (planned for future)
 
 Images for txtai are available on Docker Hub for [CPU](https://hub.docker.com/r/neuml/txtai-cpu) and [GPU](https://hub.docker.com/r/neuml/txtai-gpu) installs. The CPU install is recommended when GPUs aren't available given the image is significantly smaller.
 
