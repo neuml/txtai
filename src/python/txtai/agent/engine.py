@@ -2,6 +2,8 @@
 Engine module
 """
 
+from enum import Enum
+
 from transformers.agents import llm_engine
 
 from ..pipeline import LLM
@@ -39,7 +41,7 @@ class LLMEngine:
         """
 
         # Get clean message list
-        messages = llm_engine.get_clean_message_list(messages, role_conversions=llm_engine.llama_role_conversions)
+        messages = self.clean(messages)
 
         # Get LLM output
         response = self.llm(messages, maxlength=self.maxlength, stop=stop_sequences, **kwargs)
@@ -61,3 +63,24 @@ class LLMEngine:
         """
 
         self.maxlength = maxlength
+
+    def clean(self, messages):
+        """
+        Gets a clean message list.
+
+        Args:
+            messages: input messages
+
+        Returns:
+            clean messages
+        """
+
+        # Get clean message list
+        messages = llm_engine.get_clean_message_list(messages, role_conversions=llm_engine.llama_role_conversions)
+
+        # Ensure all roles are strings and not enums for compability across LLM frameworks
+        for message in messages:
+            if "role" in message:
+                message["role"] = message["role"].value if isinstance(message["role"], Enum) else message["role"]
+
+        return messages
