@@ -4,6 +4,7 @@ Model2Vec module
 
 import json
 
+from huggingface_hub.errors import HFValidationError
 from transformers.utils import cached_file
 
 # Conditional import
@@ -43,7 +44,7 @@ class Model2Vec(Vectors):
                     return config.get("model_type") == "model2vec"
 
         # Ignore this error - invalid repo or directory
-        except OSError:
+        except (HFValidationError, OSError):
             pass
 
         return False

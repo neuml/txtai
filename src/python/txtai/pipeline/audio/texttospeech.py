@@ -25,6 +25,7 @@ import yaml
 
 import numpy as np
 
+from huggingface_hub.errors import HFValidationError
 from transformers import SpeechT5Processor
 from transformers.utils import cached_file
 
@@ -131,7 +132,7 @@ class TextToSpeech(Pipeline):
         try:
             # Check if file exists
             exists = cached_file(path_or_repo_id=path, filename=name) is not None
-        except OSError:
+        except (HFValidationError, OSError):
             return False
 
         return exists

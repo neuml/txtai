@@ -11,6 +11,7 @@ from multiprocessing import Pool
 
 import numpy as np
 
+from huggingface_hub.errors import HFValidationError
 from transformers.utils import cached_file
 
 # Conditional import
@@ -98,7 +99,7 @@ class WordVectors(Vectors):
                     return config.get("model_type") == "staticvectors"
 
         # Ignore this error - invalid repo or directory
-        except OSError:
+        except (HFValidationError, OSError):
             pass
 
         return False

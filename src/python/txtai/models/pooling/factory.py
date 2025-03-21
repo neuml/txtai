@@ -5,6 +5,7 @@ Factory module
 import json
 import os
 
+from huggingface_hub.errors import HFValidationError
 from transformers.utils import cached_file
 
 from .base import Pooling
@@ -119,7 +120,7 @@ class PoolingFactory:
                     config = json.load(f)
 
         # Ignore this error - invalid repo or directory
-        except OSError:
+        except (HFValidationError, OSError):
             pass
 
         return config

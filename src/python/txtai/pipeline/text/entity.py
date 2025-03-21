@@ -10,6 +10,7 @@ try:
 except ImportError:
     GLINER = False
 
+from huggingface_hub.errors import HFValidationError
 from transformers.utils import cached_file
 
 from ...models import Models
@@ -88,7 +89,7 @@ class Entity(HFPipeline):
             return cached_file(path_or_repo_id=path, filename="gliner_config.json") is not None
 
         # Ignore this error - invalid repo or directory
-        except OSError:
+        except (HFValidationError, OSError):
             pass
 
         return False
