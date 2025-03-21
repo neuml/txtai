@@ -116,7 +116,7 @@ class TestLLM(unittest.TestCase):
         Test vision LLM
         """
 
-        model = LLM("hf-internal-testing/tiny-random-Qwen2VLForConditionalGeneration")
+        model = LLM("neuml/tiny-random-qwen2vl")
         result = model(
             [{"role": "user", "content": [{"type": "text", "text": "What is in this image?"}, {"type": "image", "image": Utils.PATH + "/books.jpg"}]}]
         )
