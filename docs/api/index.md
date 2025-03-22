@@ -114,7 +114,7 @@ The API can be containerized and run. This will bring up an API instance without
 
 The Model Context Protocol is an open standard that enables developers to build secure, two-way connections between their data sources and AI-powered tools.
 
-A txtai API instance can hosted as a MCP service using [this project](https://github.com/tadata-org/fastapi_mcp).
+A txtai API instance can be hosted as a MCP service using [this project](https://github.com/tadata-org/fastapi_mcp).
 
 ## Supported language bindings
 
