@@ -54,6 +54,9 @@ jobs:
           python -c "import nltk; nltk.download(['punkt', 'punkt_tab', 'averaged_perceptron_tagger_eng'])"
           python --version
           make data coverage
+        env:
+          HF_HUB_ETAG_TIMEOUT: 100
+          HF_HUB_DOWNLOAD_TIMEOUT: 100
 
       - uses: pre-commit/action@v3.0.0
         if: matrix.os == 'ubuntu-latest'
