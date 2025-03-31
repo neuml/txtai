@@ -2,7 +2,7 @@
 
 An agent takes two main arguments, an LLM and a list of tools.
 
-The txtai agent framework is built with [Transformers Agents](https://huggingface.co/docs/transformers/en/agents) and additional options can be directly passed in the `Agent` constructor.
+The txtai agent framework is built with [Transformers Agents](https://huggingface.co/docs/transformers/en/agents). Additional options can be passed in the `Agent` constructor.
 
 ```python
 from datetime import datetime
