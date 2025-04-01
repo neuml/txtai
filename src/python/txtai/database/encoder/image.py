@@ -32,6 +32,9 @@ class ImageEncoder(Encoder):
         # Create byte stream
         output = BytesIO()
 
+        # Default filename, if necessary
+        obj.filename = obj.filename if hasattr(obj, "filename") else None
+
         # Write image to byte stream
         obj.save(output, format=obj.format, quality="keep")
 
