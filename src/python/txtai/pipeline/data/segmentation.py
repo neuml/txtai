@@ -42,7 +42,7 @@ class Segmentation(Pipeline):
             join: joins tokenized sections back together if True, defaults to False
             sections: tokenizes text into sections if True, defaults to False. Splits using section or page breaks, depending on what's available
             cleantext: apply text cleaning rules, defaults to True
-            chunker: creates a chonkie chunker to tokenize text if set, defaults to None
+            chunker: creates a third-party chunker to tokenize text if set, defaults to None
             kwargs: additional keyword arguments
         """
 
@@ -60,7 +60,7 @@ class Segmentation(Pipeline):
         self.join = join
         self.cleantext = cleantext
 
-        # Create a chonkie chunker, if applicable
+        # Create a third-party chunker, if applicable
         self.chunker = self.createchunker(chunker, **kwargs) if chunker else None
 
     def __call__(self, text):
@@ -163,16 +163,16 @@ class Segmentation(Pipeline):
 
     def createchunker(self, chunker, **kwargs):
         """
-        Creates a new Chonkie chunker
+        Creates a new third-party chunker
 
         Args:
-            chunker: name of chonkie chunker to create
+            chunker: name of chunker to create
             kwargs: additional keyword arguments
 
         Returns:
             new chunker
         """
 
-        # Resolve and create Chonkie chunker
+        # Resolve and create a third-party chunker
         chunker = f"{chunker[0].upper() + chunker[1:]}Chunker"
         return getattr(chonkie, chunker)(**kwargs)
