@@ -50,7 +50,7 @@ class Translation(HFModel):
 
         # Language models
         self.models = {}
-        self.ids = self.modelids()
+        self.ids = None
 
     def __call__(self, texts, target="en", source=None, showmodels=False):
         """
@@ -242,6 +242,10 @@ class Translation(HFModel):
         Returns:
             model path
         """
+
+        # Lazy load model ids
+        if self.ids is None:
+            self.ids = self.modelids()
 
         # First try direct model
         template = "Helsinki-NLP/opus-mt-%s-%s"
