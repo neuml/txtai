@@ -126,14 +126,12 @@ class TestCluster(unittest.TestCase):
 
         cls.httpd1 = HTTPServer(("127.0.0.1", 8002), RequestHandler)
 
-        server1 = Thread(target=cls.httpd1.serve_forever)
-        server1.setDaemon(True)
+        server1 = Thread(target=cls.httpd1.serve_forever, daemon=True)
         server1.start()
 
         cls.httpd2 = HTTPServer(("127.0.0.1", 8003), RequestHandler)
 
-        server2 = Thread(target=cls.httpd2.serve_forever)
-        server2.setDaemon(True)
+        server2 = Thread(target=cls.httpd2.serve_forever, daemon=True)
         server2.start()
 
         # Index data

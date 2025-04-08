@@ -166,8 +166,7 @@ class TestWorkflow(unittest.TestCase):
 
         cls.httpd = HTTPServer(("127.0.0.1", 8001), RequestHandler)
 
-        server = Thread(target=cls.httpd.serve_forever)
-        server.setDaemon(True)
+        server = Thread(target=cls.httpd.serve_forever, daemon=True)
         server.start()
 
     @classmethod
