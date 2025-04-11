@@ -7,6 +7,8 @@ import os
 import sys
 
 from fastapi import APIRouter, Depends, FastAPI
+from fastapi_mcp import FastApiMCP
+from httpx import AsyncClient
 
 from .authorization import Authorization
 from .base import API
@@ -111,6 +113,11 @@ def lifespan(application):
             # Create instance and execute extension
             extension = APIFactory.get(extension.strip())()
             extension(application)
+
+    # Add Model Context Protocol (MCP) service, if applicable
+    if config.get("mcp"):
+        mcp = FastApiMCP(application, http_client=AsyncClient(timeout=100))
+        mcp.mount()
 
     yield
 

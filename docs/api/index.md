@@ -110,12 +110,6 @@ The API can be containerized and run. This will bring up an API instance without
 
 [See this section for more information](../cloud/#api).
 
-## Model Context Protocol (MCP)
-
-The Model Context Protocol is an open standard that enables developers to build secure, two-way connections between their data sources and AI-powered tools.
-
-A txtai API instance can be hosted as a MCP service using [this project](https://github.com/tadata-org/fastapi_mcp).
-
 ## Supported language bindings
 
 The following programming languages have bindings with the txtai API:
@@ -126,7 +120,7 @@ The following programming languages have bindings with the txtai API:
 - [Rust](https://github.com/neuml/txtai.rs)
 - [Go](https://github.com/neuml/txtai.go)
 
-The API also supports hosting [OpenAI-compatible endpoints](./openai).
+The API also supports hosting [OpenAI-compatible](./openai) and [Model Context Protocol (MCP)](./mcp) endpoints.
 
 See the links below for detailed examples covering the API.
 
