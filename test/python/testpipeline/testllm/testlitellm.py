@@ -3,7 +3,12 @@ LiteLLM module tests
 """
 
 import json
+import os
+import time
 import unittest
+import uuid
+
+from unittest.mock import patch
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from threading import Thread
@@ -28,12 +33,34 @@ class RequestHandler(BaseHTTPRequestHandler):
         if data.get("stream"):
             # Mock streaming response
             content = "application/octet-stream"
-            response = """data: {"token": {"text": "blue"}}""".encode("utf-8")
+            response = (
+                "data: "
+                + json.dumps(
+                    {
+                        "id": str(uuid.uuid4()),
+                        "object": "chat.completion.chunk",
+                        "created": int(time.time() * 1000),
+                        "model": "test",
+                        "choices": [{"id": 0, "delta": {"content": "blue"}}],
+                    }
+                )
+                + "\n\ndata: [DONE]\n\n"
+            )
         else:
             # Mock standard response
             content = "application/json"
-            response = [{"generated_text": "blue"}]
-            response = json.dumps(response).encode("utf-8")
+            response = json.dumps(
+                {
+                    "id": str(uuid.uuid4()),
+                    "object": "chat.completion",
+                    "created": int(time.time() * 1000),
+                    "model": "test",
+                    "choices": [{"id": 0, "message": {"role": "assistant", "content": "blue"}, "finish_reason": "stop"}],
+                }
+            )
+
+        # Encode response as bytes
+        response = response.encode("utf-8")
 
         self.send_response(200)
         self.send_header("content-type", content)
@@ -68,13 +95,14 @@ class TestLiteLLM(unittest.TestCase):
 
         cls.httpd.shutdown()
 
+    @patch.dict(os.environ, {"OPENAI_API_KEY": "test"})
     def testGeneration(self):
         """
         Test generation with LiteLLM
         """
 
-        # Test model generation with llama.cpp
-        model = LLM("huggingface/t5-small", api_base="http://127.0.0.1:8000")
+        # Test model generation with LiteLLM
+        model = LLM("gpt-4o", api_base="http://127.0.0.1:8000")
         self.assertEqual(model("The sky is"), "blue")
 
         # Test default role
