@@ -23,11 +23,15 @@ class Agent:
             kwargs: arguments to pass to the underlying Agent backend and LLM pipeline instance
         """
 
+        # Ensure backwards compatibility
+        if "max_iterations" in kwargs:
+            kwargs["max_steps"] = kwargs.pop("max_iterations")
+
         # Create agent process runner
         self.process = ProcessFactory.create(kwargs)
 
         # Tools dictionary
-        self.tools = self.process.toolbox.tools
+        self.tools = self.process.tools
 
     def __call__(self, text, maxlength=8192, stream=False, **kwargs):
         """
@@ -44,7 +48,7 @@ class Agent:
         """
 
         # Process parameters
-        self.process.llm_engine.parameters(maxlength)
+        self.process.model.parameters(maxlength)
 
         # Run agent loop
         return self.process.run(text, stream=stream, **kwargs)

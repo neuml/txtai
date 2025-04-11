@@ -2,7 +2,11 @@
 Agent imports
 """
 
-from .base import Agent
-from .engine import LLMEngine
-from .factory import ProcessFactory
-from .tool import *
+# Conditional import
+try:
+    from .base import Agent
+    from .factory import ProcessFactory
+    from .model import PipelineModel
+    from .tool import *
+except ImportError:
+    from .placeholder import Agent

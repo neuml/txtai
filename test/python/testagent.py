@@ -8,7 +8,7 @@ import unittest
 
 from datetime import datetime
 
-from transformers.agents import CodeAgent, ReactCodeAgent
+from smolagents import CodeAgent
 
 from txtai.agent import Agent
 from txtai.embeddings import Embeddings
@@ -24,10 +24,10 @@ class TestAgent(unittest.TestCase):
         Test executing main agent loop
         """
 
-        agent = Agent(llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_iterations=1)
+        agent = Agent(llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=1)
 
         # Patch LLM to generate answer
-        agent.process.llm_engine.llm = lambda *args, **kwargs: 'Action:\n{"action": "final_answer", "action_input": "Hi"}<end_action>'
+        agent.process.model.llm = lambda *args, **kwargs: 'Action:\n{"name": "final_answer", "arguments": "Hi"}'
 
         self.assertEqual(agent("Hello"), "Hi")
 
@@ -37,12 +37,7 @@ class TestAgent(unittest.TestCase):
         """
 
         agent = Agent(method="code", llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_iterations=1)
-
         self.assertIsInstance(agent.process, CodeAgent)
-
-        agent = Agent(method="reactcode", llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_iterations=1)
-
-        self.assertIsInstance(agent.process, ReactCodeAgent)
 
     def testToolsBasic(self):
         """
@@ -69,7 +64,7 @@ class TestAgent(unittest.TestCase):
 
         today = {"name": "today", "description": "Gets the current date and time", "target": DateTime()}
 
-        def current(iso) -> str:
+        def current(iso: str) -> str:
             """
             Gets the current date and time
 
@@ -82,7 +77,7 @@ class TestAgent(unittest.TestCase):
 
             return datetime.today().isoformat() if iso else datetime.today()
 
-        agent = Agent(tools=[today, current, "websearch"], llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_iterations=1)
+        agent = Agent(tools=[today, current, "websearch"], llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=1)
 
         self.assertIsNotNone(agent)
         self.assertIsInstance(agent.tools["today"](True), str)
@@ -108,7 +103,7 @@ class TestAgent(unittest.TestCase):
 
         embeddings2 = {"name": "embeddings2", "description": "Searches a test database", "path": index}
 
-        agent = Agent(tools=[embeddings1, embeddings2], llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_iterations=1)
+        agent = Agent(tools=[embeddings1, embeddings2], llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=1)
 
         self.assertIsNotNone(agent)
         self.assertIsInstance(agent.tools["embeddings1"]("test"), list)

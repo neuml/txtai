@@ -82,3 +82,6 @@ class TestLiteLLM(unittest.TestCase):
 
         # Test streaming
         self.assertEqual(" ".join(x for x in model("The sky is", stream=True)), "blue")
+
+        # Test vision
+        self.assertEqual(model.isvision(), False)

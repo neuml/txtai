@@ -1,22 +1,25 @@
 """
-Engine module
+Model module
 """
+
+import re
 
 from enum import Enum
 
-from transformers.agents import llm_engine
+from smolagents import ChatMessage, Model, get_clean_message_list, tool_role_conversions
+from smolagents.models import get_tool_call_from_text, remove_stop_sequences
 
 from ..pipeline import LLM
 
 
-class LLMEngine:
+class PipelineModel(Model):
     """
-    Engine backed by a txtai LLM pipeline.
+    Model backed by a LLM pipeline.
     """
 
     def __init__(self, path=None, method=None, **kwargs):
         """
-        Creates a new LLM engine.
+        Creates a new LLM model.
 
         Args:
             path: model path or instance
@@ -27,7 +30,13 @@ class LLMEngine:
         self.llm = path if isinstance(path, LLM) else LLM(path, method, **kwargs)
         self.maxlength = 8192
 
-    def __call__(self, messages, stop_sequences=None, **kwargs):
+        # Set base class parameters
+        self.model_id = self.llm.generator.path
+
+        # Call parent constructor
+        super().__init__(flatten_messages_as_text=not self.llm.isvision(), **kwargs)
+
+    def __call__(self, messages, stop_sequences=None, grammar=None, tools_to_call_from=None, **kwargs):
         """
         Runs LLM inference. This method signature must match the Transformers Agents specification.
 
@@ -48,11 +57,20 @@ class LLMEngine:
 
         # Remove stop sequences from LLM output
         if stop_sequences is not None:
-            for stop in stop_sequences:
-                if response[-len(stop) :] == stop:
-                    response = response[: -len(stop)]
+            response = remove_stop_sequences(response, stop_sequences)
 
-        return response
+        # Load response into a chat message
+        message = ChatMessage(role="assistant", content=response)
+
+        # Extract first tool action, if necessary
+        if tools_to_call_from:
+            message.tool_calls = [
+                get_tool_call_from_text(
+                    re.sub(r".*?Action:(.*?\n\}).*", r"\1", response, flags=re.DOTALL), self.tool_name_key, self.tool_arguments_key
+                )
+            ]
+
+        return message
 
     def parameters(self, maxlength):
         """
@@ -76,7 +94,7 @@ class LLMEngine:
         """
 
         # Get clean message list
-        messages = llm_engine.get_clean_message_list(messages, role_conversions=llm_engine.llama_role_conversions)
+        messages = get_clean_message_list(messages, role_conversions=tool_role_conversions, flatten_messages_as_text=self.flatten_messages_as_text)
 
         # Ensure all roles are strings and not enums for compability across LLM frameworks
         for message in messages:

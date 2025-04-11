@@ -4,7 +4,7 @@ Hugging Face module
 
 from threading import Thread
 
-from transformers import TextIteratorStreamer
+from transformers import AutoModelForImageTextToText, TextIteratorStreamer
 
 from ...models import Models
 
@@ -24,6 +24,9 @@ class HFGeneration(Generation):
 
         # Create HuggingFace LLM pipeline
         self.llm = HFLLM(path, **kwargs)
+
+    def isvision(self):
+        return isinstance(self.llm.pipeline.model, AutoModelForImageTextToText)
 
     def stream(self, texts, maxlength, stream, stop, **kwargs):
         yield from self.llm(texts, maxlength=maxlength, stream=stream, stop=stop, **kwargs)

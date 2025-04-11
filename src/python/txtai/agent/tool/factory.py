@@ -6,7 +6,7 @@ import inspect
 
 from types import FunctionType, MethodType
 
-from transformers.agents import DuckDuckGoSearchTool, Tool, tool as CreateTool
+from smolagents import DuckDuckGoSearchTool, Tool, tool as CreateTool
 from transformers.utils import chat_template_utils, TypeHintParsingException
 
 from ...embeddings import Embeddings
@@ -19,7 +19,7 @@ class ToolFactory:
     Methods to create tools.
     """
 
-    # Default tools from Transformers Agents
+    # Default toolkit
     DEFAULTS = {"websearch": DuckDuckGoSearchTool()}
 
     @staticmethod
@@ -28,7 +28,7 @@ class ToolFactory:
         Creates a new list of tools. This method iterates of the `tools` configuration option and creates a Tool instance
         for each entry. This supports the following:
 
-          - Transformers Tool instance
+          - Tool instance
           - Dictionary with `name`, `description`, `inputs`, `output` and `target` function configuration
           - String with a tool alias name
 

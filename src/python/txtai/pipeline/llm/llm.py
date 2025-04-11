@@ -62,3 +62,13 @@ class LLM(Pipeline):
 
         # Run LLM generation
         return self.generator(text, maxlength, stream, stop, defaultrole, **kwargs)
+
+    def isvision(self):
+        """
+        Returns True if this LLM supports vision operations.
+
+        Returns:
+            True if this is a vision model
+        """
+
+        return self.generator.isvision()

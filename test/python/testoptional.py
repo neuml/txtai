@@ -51,6 +51,7 @@ class TestOptional(unittest.TestCase):
             "scipy",
             "sentence_transformers",
             "sklearn.decomposition",
+            "smolagents",
             "sounddevice",
             "soundfile",
             "sqlalchemy",
@@ -89,6 +90,16 @@ class TestOptional(unittest.TestCase):
                 sys.modules[key] = value
             else:
                 del sys.modules[key]
+
+    def testAgent(self):
+        """
+        Test missing agent dependencies
+        """
+
+        from txtai.agent import Agent
+
+        with self.assertRaises(ImportError):
+            Agent(llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=1)
 
     def testANN(self):
         """

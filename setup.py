@@ -27,6 +27,8 @@ extras["dev"] = [
     "pylint",
 ]
 
+extras["agent"] = ["smolagents>=1.13"]
+
 extras["ann"] = [
     "annoy>=1.16.3",
     "hnswlib>=0.5.0",
@@ -116,7 +118,8 @@ extras["workflow"] = [
 extras["similarity"] = extras["ann"] + extras["vectors"]
 
 extras["all"] = (
-    extras["api"]
+    extras["agent"]
+    + extras["api"]
     + extras["cloud"]
     + extras["console"]
     + extras["database"]

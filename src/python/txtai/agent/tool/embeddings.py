@@ -2,7 +2,7 @@
 Embeddings module
 """
 
-from transformers.agents import Tool
+from smolagents import Tool
 
 from ...embeddings import Embeddings
 

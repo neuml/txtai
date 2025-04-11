@@ -68,6 +68,16 @@ class Generation:
         # Extract results based on inputs
         return results[0] if isinstance(text, str) or isinstance(text[0], dict) else results
 
+    def isvision(self):
+        """
+        Returns True if this LLM supports vision operations.
+
+        Returns:
+            True if this is a vision model
+        """
+
+        return False
+
     def execute(self, texts, maxlength, stream, stop, **kwargs):
         """
         Runs a list of prompts through a generative model.

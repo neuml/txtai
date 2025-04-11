@@ -2,7 +2,7 @@
 
 An agent takes two main arguments, an LLM and a list of tools.
 
-The txtai agent framework is built with [Transformers Agents](https://huggingface.co/docs/transformers/en/agents). Additional options can be passed in the `Agent` constructor.
+The txtai agent framework is built with [smolagents](https://github.com/huggingface/smolagents). Additional options can be passed in the `Agent` constructor.
 
 ```python
 from datetime import datetime
@@ -77,18 +77,20 @@ Embeddings indexes have built-in support. Provide the following dictionary confi
 | description | embeddings index description               | 
 | **kwargs    | Parameters to pass to [embeddings.load](../../embeddings/methods/#txtai.embeddings.Embeddings.load) |
 
-### transformers
+### tool
 
-A Transformers tool instance can be provided. Additionally, the following strings load tools directly from Transformers.
+A tool instance can be provided. Additionally, the following strings load tools directly.
 
 | Tool        | Description                                               |
 |:------------|:----------------------------------------------------------|
-| websearch   | Runs a websearch using built-in Transformers Agent tool   |
+| websearch   | Runs a websearch using the built-in websearch tool        |
 
 ## method
 
 ```yaml
-method: reactjson|reactcode|code
+method: code|tool
 ```
 
-Sets the agent method. Defaults to `reactjson`. [Read more on this here](https://huggingface.co/docs/transformers/en/agents#types-of-agents).
+Sets the agent method. Supports either a `code` or `tool` calling agent (default). A code agent generates Python code and executes that. A tool calling agent generates JSON blocks and calls the agents within those blocks.
+
+[Read more on this here](https://huggingface.co/docs/smolagents/v1.13.0/en/guided_tour#codeagent-and-toolcallingagent).

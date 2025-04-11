@@ -2,9 +2,9 @@
 Factory module
 """
 
-from transformers.agents import CodeAgent, ReactCodeAgent, ReactJsonAgent
+from smolagents import CodeAgent, ToolCallingAgent
 
-from .engine import LLMEngine
+from .model import PipelineModel
 from .tool import ToolFactory
 
 
@@ -26,16 +26,14 @@ class ProcessFactory:
             agent process runner
         """
 
-        constructor = ReactJsonAgent
+        constructor = ToolCallingAgent
         method = config.pop("method", None)
         if method == "code":
             constructor = CodeAgent
-        elif method == "reactcode":
-            constructor = ReactCodeAgent
 
-        # Create LLMEngine
+        # Create model backed by LLM pipeline
         llm = config.pop("llm")
-        llm = LLMEngine(**llm) if isinstance(llm, dict) else LLMEngine(llm)
+        llm = PipelineModel(**llm) if isinstance(llm, dict) else PipelineModel(llm)
 
         # Create the agent process
-        return constructor(tools=ToolFactory.create(config), llm_engine=llm, **config)
+        return constructor(tools=ToolFactory.create(config), model=llm, **config)

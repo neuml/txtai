@@ -79,7 +79,7 @@ class TestOpenAI(unittest.TestCase):
 
         # Patch LLM to generate answer
         agent = application.get().agents["hello"]
-        agent.process.llm_engine.llm = lambda *args, **kwargs: 'Action:\n{"action": "final_answer", "action_input": "Hi"}<end_action>'
+        agent.process.model.llm = lambda *args, **kwargs: 'Action:\n{"name": "final_answer", "arguments": "Hi"}'
 
         return client
 
