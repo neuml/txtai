@@ -1,4 +1,4 @@
 # Methods
 
-## ::: txtai.agent.Agent.__init__
-## ::: txtai.agent.Agent.__call__
+## ::: txtai.agent.base.Agent.__init__
+## ::: txtai.agent.base.Agent.__call__
