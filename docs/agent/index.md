@@ -41,9 +41,9 @@ def today() -> str:
     return datetime.today().isoformat()
 
 agent = Agent(
+    model="hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4",
     tools=[today, wikipedia, arxiv, "websearch"],
-    llm="hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4",
-    max_iterations=10,
+    max_steps=10,
 )
 ```
 
@@ -86,31 +86,32 @@ from txtai import Agent, LLM
 llm = LLM("hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4")
 
 websearcher = Agent(
+    model=llm,
     tools=["websearch"],
-    llm=llm,
 )
 
 wikiman = Agent(
+    model=llm,
     tools=[{
         "name": "wikipedia",
         "description": "Searches a Wikipedia database",
         "provider": "huggingface-hub",
         "container": "neuml/txtai-wikipedia"
     }],
-    llm=llm,
 )
 
 researcher = Agent(
+    model=llm,
     tools=[{
         "name": "arxiv",
         "description": "Searches a database of scientific papers",
         "provider": "huggingface-hub",
         "container": "neuml/txtai-arxiv"
     }],
-    llm=llm,
 )
 
 agent = Agent(
+    model=llm,
     tools=[{
         "name": "websearcher",
         "description": "I run web searches, there is no answer a web search can't solve!",
@@ -124,8 +125,7 @@ agent = Agent(
         "description": "I'm a science guy. I search arXiv to get all my answers.",
         "target": researcher
     }],
-    llm=llm,
-    max_iterations=10
+    max_steps=10
 )
 ```
 

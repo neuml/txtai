@@ -6,7 +6,10 @@ import inspect
 
 from types import FunctionType, MethodType
 
-from smolagents import DuckDuckGoSearchTool, Tool, tool as CreateTool
+import mcpadapt.core
+
+from mcpadapt.smolagents_adapter import SmolAgentsAdapter
+from smolagents import DuckDuckGoSearchTool, PythonInterpreterTool, Tool, tool as CreateTool, VisitWebpageTool
 from transformers.utils import chat_template_utils, TypeHintParsingException
 
 from ...embeddings import Embeddings
@@ -20,7 +23,7 @@ class ToolFactory:
     """
 
     # Default toolkit
-    DEFAULTS = {"websearch": DuckDuckGoSearchTool()}
+    DEFAULTS = {"python": PythonInterpreterTool(), "websearch": DuckDuckGoSearchTool(), "webview": VisitWebpageTool()}
 
     @staticmethod
     def create(config):
@@ -58,8 +61,14 @@ class ToolFactory:
             elif isinstance(tool, str) and tool in ToolFactory.DEFAULTS:
                 tool = ToolFactory.DEFAULTS[tool]
 
+            # Support importing MCP tool collections
+            elif isinstance(tool, str) and tool.startswith("http"):
+                tools.extend(mcpadapt.core.MCPAdapt({"url": tool}, SmolAgentsAdapter()).tools())
+                tool = None
+
             # Add tool
-            tools.append(tool)
+            if tool:
+                tools.append(tool)
 
         return tools
 

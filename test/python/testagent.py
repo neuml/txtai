@@ -6,9 +6,11 @@ import os
 import tempfile
 import unittest
 
+from unittest.mock import patch
+
 from datetime import datetime
 
-from smolagents import CodeAgent
+from smolagents import CodeAgent, PythonInterpreterTool
 
 from txtai.agent import Agent
 from txtai.embeddings import Embeddings
@@ -107,3 +109,23 @@ class TestAgent(unittest.TestCase):
 
         self.assertIsNotNone(agent)
         self.assertIsInstance(agent.tools["embeddings1"]("test"), list)
+
+    # pylint: disable=C0115,C0116
+    @patch("mcpadapt.core.MCPAdapt")
+    def testToolsMCP(self, mcp):
+        """
+        Test adding a MCP tool collection
+        """
+
+        class MCPAdapt:
+            def __init__(self, *args):
+                self.args = args
+
+            def tools(self):
+                return [PythonInterpreterTool()]
+
+        # Patch MCP adapter for testing
+        mcp.side_effect = MCPAdapt
+
+        agent = Agent(tools=["http://localhost:8000/mcp"], llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=1)
+        self.assertEqual(len(agent.tools), 2)

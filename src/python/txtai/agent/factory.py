@@ -32,8 +32,8 @@ class ProcessFactory:
             constructor = CodeAgent
 
         # Create model backed by LLM pipeline
-        llm = config.pop("llm")
-        llm = PipelineModel(**llm) if isinstance(llm, dict) else PipelineModel(llm)
+        model = config.pop("model", config.pop("llm", None))
+        model = PipelineModel(**model) if isinstance(model, dict) else PipelineModel(model)
 
         # Create the agent process
-        return constructor(tools=ToolFactory.create(config), model=llm, **config)
+        return constructor(tools=ToolFactory.create(config), model=model, **config)

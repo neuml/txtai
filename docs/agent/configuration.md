@@ -34,18 +34,20 @@ def today() -> str:
     return datetime.today().isoformat()
 
 agent = Agent(
+    model="hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4",
     tools=[today, wikipedia, arxiv, "websearch"],
-    llm="hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4",
 )
 ```
 
-## llm
+## model
 
 ```yaml
-llm: string|llm instance
+model: string|llm instance
 ```
 
-LLM path or LLM pipeline instance. See the [LLM pipeline](../../pipeline/text/llm) for more information.
+LLM model path or LLM pipeline instance. The `llm` parameter is also supported for backwards compatibility.
+
+See the [LLM pipeline](../../pipeline/text/llm) for more information.
 
 ## tools
 
@@ -83,7 +85,10 @@ A tool instance can be provided. Additionally, the following strings load tools 
 
 | Tool        | Description                                               |
 |:------------|:----------------------------------------------------------|
+| http.*      | HTTP Path to a Model Context Protocol (MCP) server        |
+| python      | Runs a Python action                                      |
 | websearch   | Runs a websearch using the built-in websearch tool        |
+| webview     | Extracts content from a web page                          |
 
 ## method
 
