@@ -215,7 +215,7 @@ class TestTextractor(unittest.TestCase):
         for backend in ["docling", "tika"]:
             textractor = Textractor(backend=backend)
             text = textractor("https://github.com/neuml/txtai")
-            self.assertTrue("txtai is an all-in-one embeddings database" in text)
+            self.assertTrue("txtai is an all-in-one AI framework" in text)
 
     def assertMarkdown(self, html, expected):
         """
