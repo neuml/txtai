@@ -34,11 +34,11 @@ txtai is an all-in-one AI framework for semantic search, LLM orchestration and l
 ![architecture](images/architecture.png#gh-light-mode-only)
 ![architecture](images/architecture-dark.png#gh-dark-mode-only)
 
-Build autonomous agents, retrieval augmented generation (RAG) processes, multi-model workflows and more.
-
-The key component of txtai is it's embeddings database which is a union of vector indexes (sparse and dense), graph networks and relational databases.
+The key component of txtai is an embeddings database, which is a union of vector indexes (sparse and dense), graph networks and relational databases.
 
 This foundation enables vector search and/or serves as a powerful knowledge source for large language model (LLM) applications.
+
+Build autonomous agents, retrieval augmented generation (RAG) processes, multi-model workflows and more.
 
 Summary of txtai features:
 
