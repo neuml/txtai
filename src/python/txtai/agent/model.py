@@ -38,7 +38,7 @@ class PipelineModel(Model):
 
     def __call__(self, messages, stop_sequences=None, grammar=None, tools_to_call_from=None, **kwargs):
         """
-        Runs LLM inference. This method signature must match the Transformers Agents specification.
+        Runs LLM inference. This method signature must match the smolagents specification.
 
         Args:
             messages: list of messages to run
