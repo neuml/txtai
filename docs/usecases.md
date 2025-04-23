@@ -42,7 +42,7 @@ Agents connect embeddings, pipelines, workflows and other agents together to aut
 
 ![agent](images/agent.png)
 
-txtai agents are built on top of the Transformers Agent framework. This supports all LLMs txtai supports (Hugging Face, llama.cpp, OpenAI / Claude / AWS Bedrock via LiteLLM).
+txtai agents are built on top of the [smolagents](https://github.com/huggingface/smolagents) framework. This supports all LLMs txtai supports (Hugging Face, llama.cpp, OpenAI / Claude / AWS Bedrock via LiteLLM).
 
 See the link below to learn more.
 

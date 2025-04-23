@@ -137,7 +137,7 @@ setup(
     name="txtai",
     version="8.6.0",
     author="NeuML",
-    description="All-in-one open-source embeddings database for semantic search, LLM orchestration and language model workflows",
+    description="All-in-one open-source AI framework for semantic search, LLM orchestration and language model workflows",
     long_description=DESCRIPTION,
     long_description_content_type="text/markdown",
     url="https://github.com/neuml/txtai",

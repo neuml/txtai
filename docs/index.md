@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-    <b>All-in-one embeddings database</b>
+    <b>All-in-one AI framework</b>
 </p>
 
 <p align="center">
@@ -29,16 +29,16 @@
     </a>
 </p>
 
-txtai is an all-in-one embeddings database for semantic search, LLM orchestration and language model workflows.
+txtai is an all-in-one AI framework for semantic search, LLM orchestration and language model workflows.
 
 ![architecture](images/architecture.png#gh-light-mode-only)
 ![architecture](images/architecture-dark.png#gh-dark-mode-only)
 
-Embeddings databases are a union of vector indexes (sparse and dense), graph networks and relational databases.
+Build autonomous agents, retrieval augmented generation (RAG) processes, multi-model workflows and more.
+
+The key component of txtai is it's embeddings database which is a union of vector indexes (sparse and dense), graph networks and relational databases.
 
 This foundation enables vector search and/or serves as a powerful knowledge source for large language model (LLM) applications.
-
-Build autonomous agents, retrieval augmented generation (RAG) processes, multi-model workflows and more.
 
 Summary of txtai features:
 
