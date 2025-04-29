@@ -21,7 +21,7 @@ class Similarity(Labels):
         self.crossencoder = CrossEncoder(model=self.pipeline) if crossencode else None
 
     # pylint: disable=W0222
-    def __call__(self, query, texts, multilabel=True):
+    def __call__(self, query, texts, multilabel=True, **kwargs):
         """
         Computes the similarity between query and list of text. Returns a list of
         (id, score) sorted by highest score, where id is the index in texts.
@@ -34,6 +34,7 @@ class Similarity(Labels):
             query: query text|list
             texts: list of text
             multilabel: labels are independent if True, scores are normalized to sum to 1 per text item if False, raw scores returned if None
+            kwargs: additional keyword args
 
         Returns:
             list of (id, score)
@@ -44,7 +45,7 @@ class Similarity(Labels):
             return self.crossencoder(query, texts, multilabel)
 
         # Call Labels pipeline for texts using input query as the candidate label
-        scores = super().__call__(texts, [query] if isinstance(query, str) else query, multilabel)
+        scores = super().__call__(texts, [query] if isinstance(query, str) else query, multilabel, **kwargs)
 
         # Sort on query index id
         scores = [[score for _, score in sorted(row)] for row in scores]
