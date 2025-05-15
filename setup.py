@@ -27,7 +27,7 @@ extras["dev"] = [
     "pylint",
 ]
 
-extras["agent"] = ["mcpadapt>=0.1.0", "smolagents>=1.13"]
+extras["agent"] = ["mcpadapt>=0.1.0", "smolagents>=1.15"]
 
 extras["ann"] = [
     "annoy>=1.16.3",
