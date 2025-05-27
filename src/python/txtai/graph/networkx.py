@@ -132,8 +132,11 @@ class NetworkX(Graph):
                     if isinstance(value, list):
                         # Path group
                         nodes.update([node for node in value if node and not isinstance(node, dict)])
+                    elif isinstance(value, dict):
+                        # Nodes by id attribute
+                        nodes.update(uid for uid, attr in self.scan(data=True) if attr["id"] == value["id"])
                     elif value is not None:
-                        # Single result
+                        # Single node id
                         nodes.add(value)
 
             return self.filter(list(nodes))

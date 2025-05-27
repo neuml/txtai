@@ -446,7 +446,7 @@ class TestGraph(unittest.TestCase):
         g = self.embeddings.search(
             """
             MATCH (A)-[]->(B)
-            RETURN A, B
+            RETURN A, ID(B)
         """,
             graph=True,
         )
