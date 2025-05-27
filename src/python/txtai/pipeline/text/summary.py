@@ -89,6 +89,7 @@ class Summary(HFPipeline):
             kwargs["min_length"] = minlength
         if maxlength:
             kwargs["max_length"] = maxlength
+            kwargs["max_new_tokens"] = None
 
             # Default minlength if not provided or it's bigger than maxlength
             if "min_length" not in kwargs or kwargs["min_length"] > kwargs["max_length"]:
