@@ -36,13 +36,16 @@ class PipelineModel(Model):
         # Call parent constructor
         super().__init__(flatten_messages_as_text=not self.llm.isvision(), **kwargs)
 
-    def __call__(self, messages, stop_sequences=None, grammar=None, tools_to_call_from=None, **kwargs):
+    # pylint: disable=W0613
+    def generate(self, messages, stop_sequences=None, response_format=None, tools_to_call_from=None, **kwargs):
         """
         Runs LLM inference. This method signature must match the smolagents specification.
 
         Args:
             messages: list of messages to run
             stop_sequences: optional list of stop sequences
+            response_format: response format to use in the model's response.
+            tools_to_call_from: list of tools that the model can use to generate responses.
             kwargs: additional keyword arguments
 
         Returns:
