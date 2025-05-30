@@ -99,7 +99,7 @@ class HFLLM(HFPipeline):
         """
 
         # Set defaults and get underlying model
-        defaults, model = {"max_length": maxlength, "num_workers": workers}, self.pipeline.model
+        defaults, model = {"max_length": maxlength, "max_new_tokens": None, "num_workers": workers}, self.pipeline.model
 
         # Set parameters for vision models and return
         if self.pipeline.task == "image-text-to-text":
