@@ -2,7 +2,7 @@
 
 ![agent](https://raw.githubusercontent.com/neuml/mlflow-txtai/master/images/agent.png)
 
-Observability helps track the inner workings of a system without having to change the system. This makes it much easier to debug and evaluate overall performance.
+Observability enables tracking the inner workings of a system without having to change the system. This makes it much easier to debug and evaluate overall performance.
 
 `txtai` has an integration with [MLflow](https://mlflow.org) and it's [tracing module](https://mlflow.org/docs/latest/llms/tracing/index.html) to provide insights into each of the components in `txtai`.
 
