@@ -5,11 +5,6 @@ Machine learning model to ONNX export module
 from ..base import Pipeline
 
 try:
-    # Workaround for issue with onnx 1.18 and onnxmltools 1.13
-    import onnx
-
-    onnx.helper.split_complex_to_pairs = None
-
     from onnxmltools import convert_sklearn
 
     from skl2onnx.common.data_types import StringTensorType
