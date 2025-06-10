@@ -5,9 +5,14 @@ Machine learning model to ONNX export module
 from ..base import Pipeline
 
 try:
-    from onnxmltools import convert_sklearn
-    from onnxmltools.convert.common.data_types import StringTensorType
+    # Workaround for issue with onnx 1.18 and onnxmltools 1.13
+    import onnx
 
+    onnx.helper.split_complex_to_pairs = None
+
+    from onnxmltools import convert_sklearn
+
+    from skl2onnx.common.data_types import StringTensorType
     from skl2onnx.helpers.onnx_helper import save_onnx_model, select_model_inputs_outputs
 
     ONNX_MLTOOLS = True
