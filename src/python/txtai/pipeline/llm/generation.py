@@ -2,6 +2,8 @@
 Generation module
 """
 
+import re
+
 from ...util import TemplateFormatter
 
 
@@ -24,7 +26,7 @@ class Generation:
         self.template = template
         self.kwargs = kwargs
 
-    def __call__(self, text, maxlength, stream, stop, defaultrole, **kwargs):
+    def __call__(self, text, maxlength, stream, stop, defaultrole, stripthink, **kwargs):
         """
         Generates text. Supports the following input formats:
 
@@ -37,6 +39,7 @@ class Generation:
             stream: stream response if True, defaults to False
             stop: list of stop strings
             defaultrole: default role to apply to text inputs (prompt for raw prompts (default) or user for user chat messages)
+            stripthink: strip thinking tags, defaults to False
             kwargs: additional generation keyword arguments
 
         Returns:
@@ -63,7 +66,7 @@ class Generation:
             return results
 
         # Clean generated text
-        results = [self.clean(texts[x], result) for x, result in enumerate(results)]
+        results = [self.clean(texts[x], result, stripthink) for x, result in enumerate(results)]
 
         # Extract results based on inputs
         return results[0] if isinstance(text, str) or isinstance(text[0], dict) else results
@@ -100,13 +103,14 @@ class Generation:
         # Full response as content elements
         return list(self.stream(texts, maxlength, stream, stop, **kwargs))
 
-    def clean(self, prompt, result):
+    def clean(self, prompt, result, stripthink):
         """
         Applies a series of rules to clean generated text.
 
         Args:
             prompt: original input prompt
             result: result text
+            stripthink: removes thinking tags if true
 
         Returns:
             clean text
@@ -114,6 +118,9 @@ class Generation:
 
         # Replace input prompt
         text = result.replace(prompt, "") if isinstance(prompt, str) else result
+
+        # Replace thinking tags, if necessary
+        text = re.sub(r"(?s)<think>.+?</think>", "", text).strip() if stripthink else text
 
         # Apply text cleaning rules
         return text.replace("$=", "<=").strip()
