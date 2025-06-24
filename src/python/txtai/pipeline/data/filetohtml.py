@@ -196,8 +196,8 @@ class Docling:
             normalized html
         """
 
-        # Wrap content with a body tag
-        html = html.replace("<head/>", "<head/><body>").replace("</html>", "</body></html>")
+        # Wrap content with a body tag, if necessary
+        html = html.replace("<head/>", "<head/><body>").replace("</html>", "</body></html>") if "<body>" not in html else html
 
         # Remove bullets from list items
         html = re.sub(r"<li>\xb7 ", r"<li>", html)
