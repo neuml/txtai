@@ -61,7 +61,8 @@ rag = RAG(embeddings, "meta-llama/Meta-Llama-3.1-8B-Instruct", template="""
 )
 rag("What was won?")
 
-# Inputs are automatically converted to chat messages when a system prompt is provided
+# Inputs are automatically converted to chat messages when a
+# system prompt is provided
 rag = RAG(
   embeddings,
   "meta-llama/Meta-Llama-3.1-8B-Instruct",
