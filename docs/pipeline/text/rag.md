@@ -3,9 +3,9 @@
 ![pipeline](../../images/pipeline.png#only-light)
 ![pipeline](../../images/pipeline-dark.png#only-dark)
 
-The RAG pipeline (aka Extractor) joins a prompt, context data store and generative model together to extract knowledge.
+The Retrieval Augmented Generation (RAG) pipeline joins a prompt, context data store and generative model together to extract knowledge.
 
-The data store can be an embeddings database or a similarity instance with associated input text. The generative model can be a prompt-driven large language model (LLM), an extractive question-answering model or a custom pipeline. This is known as retrieval augmented generation (RAG).
+The data store can be an embeddings database or a similarity instance with associated input text. The generative model can be a prompt-driven large language model (LLM), an extractive question-answering model or a custom pipeline.
 
 ## Example
 
@@ -59,6 +59,22 @@ rag = RAG(embeddings, "meta-llama/Meta-Llama-3.1-8B-Instruct", template="""
   <|im_start|>assistant
   """
 )
+rag("What was won?")
+
+# Inputs are automatically converted to chat messages when a system prompt is provided
+rag = RAG(
+  embeddings,
+  "meta-llama/Meta-Llama-3.1-8B-Instruct",
+  system="You are a friendly assistant",
+  template="""
+  Answer the following question using the provided context.
+
+  Question:
+  {question}
+
+  Context:
+  {context}
+""")
 rag("What was won?")
 
 # LLM options can be passed as additional arguments
