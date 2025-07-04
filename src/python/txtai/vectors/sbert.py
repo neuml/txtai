@@ -59,12 +59,8 @@ class STVectors(Vectors):
         return model
 
     def encode(self, data):
-        # Multiprocess encoding
-        if self.pool:
-            return self.model.encode_multi_process(data, self.pool, batch_size=self.encodebatch)
-
-        # Standard encoding
-        return self.model.encode(data, batch_size=self.encodebatch)
+        # Encode with sentence transformers
+        return self.model.encode(data, pool=self.pool, batch_size=self.encodebatch)
 
     def close(self):
         # Close pool before model is closed in parent method
