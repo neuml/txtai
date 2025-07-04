@@ -94,14 +94,14 @@ extras["pipeline"] = (
     + extras["pipeline-train"]
 )
 
-extras["scoring"] = ["sqlalchemy>=2.0.20"]
+extras["scoring"] = ["sentence-transformers>=5.0.0", "sqlalchemy>=2.0.20"]
 
 extras["vectors"] = [
     "litellm>=1.37.16",
     "llama-cpp-python>=0.2.75",
     "model2vec>=0.3.0",
     "scikit-learn>=0.23.1",
-    "sentence-transformers>=2.2.0",
+    "sentence-transformers>=5.0.0",
     "skops>=0.9.0",
     "staticvectors>=0.2.0",
 ]
@@ -135,7 +135,7 @@ extras["all"] = (
 
 setup(
     name="txtai",
-    version="8.7.0",
+    version="9.0.0",
     author="NeuML",
     description="All-in-one open-source AI framework for semantic search, LLM orchestration and language model workflows",
     long_description=DESCRIPTION,
