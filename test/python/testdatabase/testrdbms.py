@@ -381,7 +381,7 @@ class Common:
             # Build data array
             data = [(uid, text, None) for uid, text in enumerate(self.data)]
 
-            # Index data with sparse + dense vectors
+            # Index data with sparse keyword vectors
             embeddings = Embeddings({"keyword": True, "content": self.backend})
             embeddings.index(data)
 
@@ -688,6 +688,44 @@ class Common:
             # Test where filtering with bind parameters
             result = self.embeddings.search("select * from txtai where text like :x", parameters={"x": "%iceberg%"})[0]
             self.assertEqual(result["text"], self.data[1])
+
+        def testSparse(self):
+            """
+            Test sparse vector search
+            """
+
+            # Build data array
+            data = [(uid, text, None) for uid, text in enumerate(self.data)]
+
+            # Index data with sparse vectors
+            embeddings = Embeddings({"sparse": "sparse-encoder-testing/splade-bert-tiny-nq", "content": self.backend})
+            embeddings.index(data)
+
+            # Run search
+            result = embeddings.search("lottery ticket", 1)[0]
+            self.assertEqual(result["text"], data[4][1])
+
+            # Test count method
+            self.assertEqual(embeddings.count(), len(data))
+
+            # Generate temp file path
+            index = os.path.join(tempfile.gettempdir(), f"embeddings.{self.category()}.sparse")
+
+            # Test load/save
+            embeddings.save(index)
+            embeddings.load(index)
+
+            # Run search
+            result = embeddings.search("lottery ticket", 1)[0]
+            self.assertEqual(result["text"], data[4][1])
+
+            # Update data
+            data[0] = (0, "Feel good story: baby panda born", None)
+            embeddings.upsert([data[0]])
+
+            # Search for best match
+            result = embeddings.search("feel good story", 1)[0]
+            self.assertEqual(result["text"], data[0][1])
 
         def testSubindex(self):
             """
