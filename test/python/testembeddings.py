@@ -470,7 +470,6 @@ class TestEmbeddings(unittest.TestCase):
 
         # Run search
         uid = embeddings.search("lottery ticket", 1)[0][0]
-        print(uid)
         self.assertEqual(uid, 4)
 
         # Test count method
