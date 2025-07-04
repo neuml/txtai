@@ -112,7 +112,7 @@ Graphs are persisted alongside an embeddings index. Each save and load will also
 
 ## Sparse vectors
 
-Scoring instances can create a standalone [keyword](../configuration/general#keyword) or sparse index (BM25, TF-IDF). This enables [hybrid](../configuration/general/#hybrid) search when there is an available dense vector index.
+Scoring instances can create a standalone [sparse keyword indexes](../configuration/general#keyword) (BM25, TF-IDF) and [sparse vector indexes](../configuration/general#sparse) (SPLADE). This enables [hybrid](../configuration/general/#hybrid) search when there is an available dense vector index.
 
 The terms `sparse vector index`, `keyword index`, `terms index` and `scoring index` are used interchangeably throughout txtai's documentation.
 

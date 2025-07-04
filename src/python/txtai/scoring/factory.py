@@ -5,8 +5,9 @@ Factory module
 from ..util import Resolver
 
 from .bm25 import BM25
-from .sif import SIF
 from .pgtext import PGText
+from .sif import SIF
+from .sparse import Sparse
 from .tfidf import TFIDF
 
 
@@ -16,12 +17,13 @@ class ScoringFactory:
     """
 
     @staticmethod
-    def create(config):
+    def create(config, models=None):
         """
         Factory method to construct a Scoring instance.
 
         Args:
             config: scoring configuration parameters - supports bm25, sif, tfidf
+            models: models cache
 
         Returns:
             Scoring
@@ -39,10 +41,12 @@ class ScoringFactory:
 
         if method == "bm25":
             scoring = BM25(config)
-        elif method == "sif":
-            scoring = SIF(config)
         elif method == "pgtext":
             scoring = PGText(config)
+        elif method == "sif":
+            scoring = SIF(config)
+        elif method == "sparse":
+            scoring = Sparse(config, models)
         elif method == "tfidf":
             scoring = TFIDF(config)
         else:

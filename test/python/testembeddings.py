@@ -124,6 +124,17 @@ class TestEmbeddings(unittest.TestCase):
         self.assertEqual(self.embeddings.count(), 5)
         self.assertEqual(uid, 5)
 
+    def testDense(self):
+        """
+        Test dense alias
+        """
+
+        # Dense flag is an alias for path
+        embeddings = Embeddings(dense="sentence-transformers/nli-mpnet-base-v2")
+        embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        self.assertEqual(embeddings.count(), 6)
+
     def testEmpty(self):
         """
         Test empty index
@@ -314,7 +325,7 @@ class TestEmbeddings(unittest.TestCase):
         # Build data array
         data = [(uid, text, None) for uid, text in enumerate(self.data)]
 
-        # Index data with sparse + dense vectors
+        # Index data with sparse keyword vectors
         embeddings = Embeddings({"keyword": True})
         embeddings.index(data)
 
@@ -444,6 +455,45 @@ class TestEmbeddings(unittest.TestCase):
         uid = self.embeddings.similarity("feel good story", self.data)[0][0]
 
         self.assertEqual(uid, 4)
+
+    def testSparse(self):
+        """
+        Test sparse vector search
+        """
+
+        # Build data array
+        data = [(uid, text, None) for uid, text in enumerate(self.data)]
+
+        # Index data with sparse vectors
+        embeddings = Embeddings({"sparse": "sparse-encoder-testing/splade-bert-tiny-nq"})
+        embeddings.index(data)
+
+        # Run search
+        uid = embeddings.search("lottery ticket", 1)[0][0]
+        print(uid)
+        self.assertEqual(uid, 4)
+
+        # Test count method
+        self.assertEqual(embeddings.count(), len(data))
+
+        # Generate temp file path
+        index = os.path.join(tempfile.gettempdir(), "embeddings.sparse")
+
+        # Test load/save
+        embeddings.save(index)
+        embeddings.load(index)
+
+        # Run search
+        uid = embeddings.search("lottery ticket", 1)[0][0]
+        self.assertEqual(uid, 4)
+
+        # Update data
+        data[0] = (0, "Feel good story: baby panda born", None)
+        embeddings.upsert([data[0]])
+
+        # Search for best match
+        uid = embeddings.search("feel good story", 1)[0][0]
+        self.assertEqual(uid, 0)
 
     def testSubindex(self):
         """

@@ -1,15 +1,35 @@
 # General
 
-General configuration options that don't fit elsewhere.
+General configuration options.
 
 ## keyword
 ```yaml
-keyword: boolean
+keyword: boolean|string
 ```
 
 Enables sparse keyword indexing for this embeddings.
 
-When enabled, this parameter creates a BM25 index for full text search. It also implicitly disables the [defaults](../vectors/#defaults) setting for vector search.
+When set to a boolean, this parameter creates a BM25 index for full text search. When set to a string, it expects a [keyword method](../scoring#method).
+
+It also implicitly disables the [defaults](#defaults) setting for vector search.
+
+## sparse
+```yaml
+sparse: boolean|path
+```
+
+Enables sparse vector indexing for this embeddings.
+
+When set to `True`, this parameter creates a sparse vector index using the [default sparse index model](https://huggingface.co/prithivida/Splade_PP_en_v2). When set to a string, it expects a local or Hugging Face model path.
+
+It also implicitly disables the [defaults](#defaults) setting for vector search.
+
+## dense
+```yaml
+dense: boolean|string
+```
+
+Alias for the [vector model path](../vectors/#path). When set to `True`, the [default transformers vector model](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2) is used.
 
 ## hybrid
 ```yaml
@@ -18,7 +38,14 @@ hybrid: boolean
 
 Enables hybrid (sparse + dense) indexing for this embeddings.
 
-When enabled, this parameter creates a BM25 index for full text search. It has no effect on the [defaults](../vectors/#defaults) or [path](../vectors/#path) settings.
+When enabled, this parameter creates a BM25 index for full text search. It has no effect on the [defaults](#defaults) or [path](../vectors/#path) settings.
+
+## defaults
+```yaml
+defaults: boolean
+```
+
+Uses default vector model path when enabled (default setting is True) and `path` is not provided. See [this link](../) for an example.
 
 ## indexes
 ```yaml

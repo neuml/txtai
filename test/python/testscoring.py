@@ -11,6 +11,7 @@ from unittest.mock import patch
 from txtai.scoring import ScoringFactory, Scoring
 
 
+# pylint: disable=R0904
 class TestScoring(unittest.TestCase):
     """
     Scoring tests.
@@ -121,6 +122,61 @@ class TestScoring(unittest.TestCase):
         """
 
         self.runTests("sif")
+
+    @patch("torch.cuda.device_count")
+    def testSparse(self, count):
+        """
+        Test sparse vectors
+        """
+
+        # Mock accelerator count
+        count.return_value = 1
+
+        # Models cache
+        models = {}
+
+        # Test sparse scoring
+        scoring = ScoringFactory.create({"method": "sparse", "path": "sparse-encoder-testing/splade-bert-tiny-nq"}, models=models)
+        scoring.index((uid, {"text": text}, tags) for uid, text, tags in self.data)
+
+        # Run search and validate correct result returned
+        index, _ = scoring.search("lottery ticket", 1)[0]
+        self.assertEqual(index, 4)
+
+        # Run batch search
+        index, _ = scoring.batchsearch(["lottery ticket"], 1)[0][0]
+        self.assertEqual(index, 4)
+
+        # Validate count
+        self.assertEqual(scoring.count(), len(self.data))
+
+        # Test delete
+        scoring.delete([4])
+        self.assertEqual(scoring.count(), len(self.data) - 1)
+
+        # Run search after delete
+        index, _ = scoring.search("lottery ticket", 1)[0]
+        self.assertEqual(index, 5)
+
+        # Sparse vectors is a normalized terms index
+        self.assertTrue(scoring.hasterms() and scoring.isnormalized())
+        self.assertIsNone(scoring.weights("This is a test".split()))
+
+        # Close scoring
+        scoring.close()
+
+        # Mock accelerator count
+        count.return_value = 2
+
+        # Test multiple gpus
+        scoring = ScoringFactory.create({"method": "sparse", "path": "sparse-encoder-testing/splade-bert-tiny-nq", "gpu": "all"})
+        self.assertIsNotNone(scoring)
+        scoring.close()
+
+        # Test model caching
+        scoring = ScoringFactory.create({"method": "sparse", "path": "sparse-encoder-testing/splade-bert-tiny-nq"}, models=models)
+        self.assertIsNotNone(scoring.model)
+        scoring.close()
 
     def testTFIDF(self):
         """

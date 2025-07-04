@@ -10,13 +10,6 @@ path: string
 Sets the path for a vectors model. When using a transformers/sentence-transformers model, this can be any model on the
 [Hugging Face Hub](https://huggingface.co/models) or a local file path. Otherwise, it must be a local file path to a word embeddings model.
 
-## defaults
-```yaml
-defaults: boolean
-```
-
-Uses default vector model path when enabled (default setting is True) and `path` is not provided. See [this link](../) for an example.
-
 ## method
 ```yaml
 method: transformers|sentence-transformers|llama.cpp|litellm|model2vec|external|words

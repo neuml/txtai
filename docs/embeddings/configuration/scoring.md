@@ -12,7 +12,7 @@ The following covers the available options.
 
 ## method
 ```yaml
-method: bm25|tfidf|sif|pgtext|custom
+method: bm25|tfidf|sif|pgtext|sparse|custom
 ```
 
 Sets the scoring method. Add custom scoring via setting this parameter to the fully resolvable class string.
@@ -24,6 +24,17 @@ schema: database schema to store keyword index - defaults to being
 ```
 
 Additional settings for Postgres full-text keyword indexes.
+
+### sparse
+```yaml
+path: sparse vector model path
+gpu: boolean|int|string|device
+encodebatch: int
+modelargs: additional model init args
+encodeargs: additional encode() args
+```
+
+Sparse vector scoring options.
 
 ## terms
 ```yaml

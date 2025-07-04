@@ -298,6 +298,9 @@ class TestOptional(unittest.TestCase):
         with self.assertRaises(ImportError):
             ScoringFactory.create({"method": "pgtext"})
 
+        with self.assertRaises(ImportError):
+            ScoringFactory.create({"method": "sparse"})
+
     def testVectors(self):
         """
         Test missing vector dependencies

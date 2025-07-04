@@ -813,19 +813,43 @@ class Embeddings:
         self.config = self.config if self.config else {}
 
         # Expand sparse index shortcuts
-        if not self.config.get("scoring") and any(self.config.get(key) for key in ["keyword", "hybrid"]):
-            self.config["scoring"] = {"method": "bm25", "terms": True, "normalize": True}
+        if not self.config.get("scoring") and any(self.config.get(key) for key in ["keyword", "sparse", "hybrid"]):
+            self.defaultsparse()
 
         # Expand graph shortcuts
         if self.config.get("graph") is True:
             self.config["graph"] = {}
 
         # Check if default model should be loaded
-        if not self.model and self.defaultallowed():
+        if not self.model and (self.defaultallowed() or self.config.get("dense")):
             self.config["path"] = "sentence-transformers/all-MiniLM-L6-v2"
 
             # Load dense vectors model
             self.model = self.loadvectors()
+
+    def defaultsparse(self):
+        """
+        Logic to derive default sparse index configuration.
+        """
+
+        # Get sparse index configuration
+        index, method = None, None
+        for x in ["keyword", "sparse", "hybrid"]:
+            value = self.config.get(x)
+            if value:
+                index, method = (x, value if isinstance(value, str) else "bm25")
+
+        # Default scoring configuration
+        self.config["scoring"] = {"method": method, "terms": True, "normalize": True}
+
+        # Sparse vector models
+        if index == "sparse" or "/" in method:
+            # Derive sparse model path
+            path = self.config["sparse"] if index == "sparse" else method
+            path = path if isinstance(path, str) else "prithivida/Splade_PP_en_v2"
+
+            # Merge in sparse parameters
+            self.config["scoring"] = {**self.config["scoring"], **{"method": "sparse", "path": path}}
 
     def defaultallowed(self):
         """
@@ -835,7 +859,7 @@ class Embeddings:
             True if a default model is allowed, False otherwise
         """
 
-        params = [("keyword", False), ("defaults", True)]
+        params = [("keyword", False), ("sparse", False), ("defaults", True)]
         return all(self.config.get(key, default) == default for key, default in params)
 
     def loadvectors(self):
@@ -849,6 +873,11 @@ class Embeddings:
         # Create model cache if subindexes are enabled
         if "indexes" in self.config and self.models is None:
             self.models = {}
+
+        # Support path via dense parameter
+        dense = self.config.get("dense")
+        if not self.config.get("path") and dense and isinstance(dense, str):
+            self.config["path"] = dense
 
         # Load vector model
         return VectorsFactory.create(self.config, self.scoring, self.models)
@@ -1018,7 +1047,7 @@ class Embeddings:
 
             # Create configuration with custom columns, if necessary
             config = self.columns(config)
-            return ScoringFactory.create(config)
+            return ScoringFactory.create(config, self.models)
 
         return None
 
