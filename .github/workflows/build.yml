@@ -49,7 +49,7 @@ jobs:
       - name: Build
         run: |
           pip install -U wheel
-          pip install .[all,dev] llama-cpp-python==0.3.9
+          pip install .[all,dev]
           pip cache purge
           python -c "import nltk; nltk.download(['punkt', 'punkt_tab', 'averaged_perceptron_tagger_eng'])"
           python --version
