@@ -15,16 +15,20 @@ class MessagePack(Serialize):
     MessagePack serialization.
     """
 
-    def __init__(self, streaming=False):
+    def __init__(self, streaming=False, **kwargs):
         # Parent constructor
         super().__init__()
 
+        # Streaming unpacker
         self.streaming = streaming
+
+        # Additional streaming unpacker keyword arguments
+        self.kwargs = kwargs
 
     def loadstream(self, stream):
         try:
             # Support both streaming and non-streaming unpacking of data
-            return Unpacker(stream) if self.streaming else msgpack.unpack(stream)
+            return Unpacker(stream, **self.kwargs) if self.streaming else msgpack.unpack(stream)
         except ExtraData as e:
             raise SerializeError(e) from e
 
