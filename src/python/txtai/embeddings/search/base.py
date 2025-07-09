@@ -102,12 +102,13 @@ class Search:
         if index:
             return self.subindex(queries, limit, weights, index)
 
-        # Run against base index
-        dense = self.dense(queries, limit) if self.ann else None
-        sparse = self.sparse(queries, limit) if self.scoring else None
+        # Run against base indexes
+        hybrid = self.ann and self.scoring
+        dense = self.dense(queries, limit * 10 if hybrid else limit) if self.ann else None
+        sparse = self.sparse(queries, limit * 10 if hybrid else limit) if self.scoring else None
 
         # Combine scores together
-        if dense and sparse:
+        if hybrid:
             # Create weights array if single number passed
             if isinstance(weights, (int, float)):
                 weights = [weights, 1 - weights]
