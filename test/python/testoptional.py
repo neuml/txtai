@@ -49,6 +49,7 @@ class TestOptional(unittest.TestCase):
             "PIL",
             "rich",
             "scipy",
+            "scipy.sparse",
             "sentence_transformers",
             "sklearn.decomposition",
             "smolagents",
@@ -293,13 +294,16 @@ class TestOptional(unittest.TestCase):
         Test missing scoring dependencies
         """
 
-        from txtai.scoring import ScoringFactory
+        from txtai.scoring import IVFFlat, ScoringFactory
 
         with self.assertRaises(ImportError):
             ScoringFactory.create({"method": "pgtext"})
 
         with self.assertRaises(ImportError):
             ScoringFactory.create({"method": "sparse"})
+
+        with self.assertRaises(ImportError):
+            IVFFlat({})
 
     def testVectors(self):
         """

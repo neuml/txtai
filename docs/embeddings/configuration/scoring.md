@@ -32,6 +32,10 @@ gpu: boolean|int|string|device
 encodebatch: int
 modelargs: additional model init args
 encodeargs: additional encode() args
+ivf: #IVFFlat index configuration
+  sample: percent of data to use for model training (0.0 - 1.0)
+  nclusters: desired number of clusters (int)
+  nprobe: search probe setting (int)
 ```
 
 Sparse vector scoring options.

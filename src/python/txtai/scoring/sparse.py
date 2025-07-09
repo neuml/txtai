@@ -2,12 +2,11 @@
 Sparse module
 """
 
-import numpy as np
-import torch
-
 # Conditional import
 try:
+    from scipy.sparse import csr_matrix, vstack
     from sentence_transformers import SparseEncoder
+    from sklearn.preprocessing import normalize
 
     SPARSE = True
 except ImportError:
@@ -16,6 +15,7 @@ except ImportError:
 from ..models import Models
 
 from .base import Scoring
+from .ivf import IVFFlat
 
 
 class Sparse(Scoring):
@@ -41,11 +41,11 @@ class Sparse(Scoring):
         # Encode batch size - controls underlying model batch size when encoding vectors
         self.encodebatch = config.get("encodebatch", 32)
 
-        # Sparse data backend
+        # Index backend
         self.backend = None
 
-        # Deleted rows
-        self.deletes = []
+        # Input queue - data to be indexed
+        self.queue = None
 
     def insert(self, documents, index=None):
         data = []
@@ -58,63 +58,65 @@ class Sparse(Scoring):
                 # Add data
                 data.append(" ".join(document) if isinstance(document, list) else document)
 
-        # Encode batch and append to data
+        # Encode and normalize data
         data = self.encode(data)
-        self.backend = torch.cat((self.backend, data)) if self.backend is not None else data
+
+        # Create or add to existing sparse vectors
+        self.queue = vstack((self.queue, data)) if self.queue is not None else data
 
     def delete(self, ids):
-        self.deletes.append(ids)
+        self.backend.delete(ids)
+
+    def index(self, documents=None):
+        # Insert documents, if provided
+        if documents:
+            self.insert(documents)
+
+        # Create index
+        if self.queue is not None:
+            # Create a new index instance
+            self.backend = IVFFlat(self.config.get("ivf"))
+            self.backend.index(self.queue)
+
+        # Clear queue
+        self.queue = None
+
+    def upsert(self, documents=None):
+        # Insert documents, if provided
+        if documents:
+            self.insert(documents)
+
+        # Upsert index
+        if self.backend and self.queue is not None:
+            self.backend.append(self.queue)
+        else:
+            self.index()
+
+        # Clear queue
+        self.queue = None
 
     def weights(self, tokens):
         # Not supported
         return None
 
     def search(self, query, limit=3):
-        return self.batchsearch([query], limit)[0]
+        return self.backend.search(self.encode([query]), limit)
 
     def batchsearch(self, queries, limit=3, threads=True):
-        queries = self.encode(queries)
-        scores = self.model.similarity(queries, self.backend).cpu().numpy()
-
-        # Clear deletes
-        scores[:, self.deletes] = 0
-
-        # Get top n scores
-        indices = np.argpartition(-scores, limit if limit < scores.shape[0] else scores.shape[0] - 1)[:, :limit]
-        scores = np.clip(np.take_along_axis(scores, indices, axis=1), 0.0, 1.0)
-
-        # Get top n results
-        results = []
-        for x, index in enumerate(indices):
-            results.append(list(zip(index.tolist(), scores[x].tolist())))
-
-        return results
+        return [self.search(query, limit) for query in queries]
 
     def count(self):
-        return self.backend.shape[0] - len(self.deletes) if self.backend is not None else 0
+        return self.backend.count()
 
     def load(self, path):
-        with open(path, "rb") as f:
-            # Load sparse index
-            indices, values, size = np.load(f), np.load(f), np.load(f)
-
-            # Load deletes
-            self.deletes = np.load(f).tolist()
-
-        # Create backend - load on same device as model
-        self.backend = torch.sparse_coo_tensor(indices, values, size=torch.Size(size), device=self.model.device)
+        # Read IVFFlat index
+        self.backend = IVFFlat(self.config.get("ivf"))
+        self.backend.load(path)
 
     def save(self, path):
+        # Write IVFFlat index
         if self.backend is not None:
-            with open(path, "wb") as f:
-                # Save sparse index
-                data = self.backend.coalesce().cpu()
-                np.save(f, data.indices())
-                np.save(f, data.values())
-                np.save(f, data.size())
-
-                # Save deletes
-                np.save(f, np.array(self.deletes))
+            self.backend.save(path)
 
     def close(self):
         # Close pool before model is closed
@@ -122,7 +124,7 @@ class Sparse(Scoring):
             self.model.stop_multi_process_pool(self.pool)
             self.pool = None
 
-        self.model, self.backend = None, None
+        self.model, self.backend, self.queue = None, None, None
 
     def hasterms(self):
         return True
@@ -163,7 +165,7 @@ class Sparse(Scoring):
         modelargs = self.config.get("modelargs", {})
 
         # Build embeddings with sentence-transformers
-        model = SparseEncoder(path, device=Models.device(deviceid), similarity_fn_name="cosine", **modelargs)
+        model = SparseEncoder(path, device=Models.device(deviceid), **modelargs)
 
         # Start process pool for multiple GPUs
         if pool:
@@ -184,11 +186,22 @@ class Sparse(Scoring):
             data: input data
 
         Returns:
-            encoded data
+            encoded data as a SciPy CSR Matrix
         """
 
         # Additional encoding arguments
         encodeargs = self.config.get("encodeargs", {})
 
         # Encode data
-        return self.model.encode(data, pool=self.pool, batch_size=self.encodebatch, **encodeargs)
+        data = self.model.encode(data, pool=self.pool, batch_size=self.encodebatch, **encodeargs)
+
+        # Get data attributes
+        data = data.cpu().coalesce()
+        indices = data.indices().numpy()
+        values = data.values().numpy()
+
+        # Convert to CSR Matrix
+        matrix = csr_matrix((values, indices), shape=data.size())
+
+        # Normalize and return
+        return normalize(matrix)
