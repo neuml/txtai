@@ -113,10 +113,10 @@ class TFIDF(Scoring):
             # Compute IDF scores
             idfs = self.computeidf(np.array(list(self.docfreq.values())))
             for x, word in enumerate(self.docfreq):
-                self.idf[word] = idfs[x]
+                self.idf[word] = float(idfs[x])
 
             # Average IDF score per token
-            self.avgidf = np.mean(idfs)
+            self.avgidf = float(np.mean(idfs))
 
             # Calculate average score across index
             self.avgscore = self.score(self.avgfreq, self.avgidf, self.avgdl)

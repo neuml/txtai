@@ -25,7 +25,7 @@ class SIF(TFIDF):
 
     def score(self, freq, idf, length):
         # Set freq to word frequencies across entire index when freq and idf shape don't match
-        if isinstance(freq, np.ndarray) and freq.shape != idf.shape:
+        if isinstance(freq, np.ndarray) and freq.shape != np.array(idf).shape:
             freq.fill(freq.sum())
 
         # Calculate SIF score
