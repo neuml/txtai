@@ -25,6 +25,7 @@ class Indexes:
         self.indexes = indexes
 
         self.documents = None
+        self.checkpoint = None
 
         # Transform columns
         columns = embeddings.config.get("columns", {})
@@ -83,29 +84,34 @@ class Indexes:
 
         return list(self.indexes.keys())[0]
 
-    def model(self, index=None):
+    def findmodel(self, index=None):
         """
-        Lookups a vector model. If index is empty, the first vector model is returned.
+        Finds a vector model. If index is empty, the first vector model is returned.
+
+        Args:
+            index: index name to match
 
         Returns:
             Vectors
         """
 
         # Find vector model
-        matches = [self.indexes[index]] if index else [index.model for index in self.indexes.values() if index.model]
+        matches = [self.indexes[index].findmodel()] if index else [index.findmodel() for index in self.indexes.values() if index.findmodel()]
         return matches[0] if matches else None
 
-    def insert(self, documents, index=None):
+    def insert(self, documents, index=None, checkpoint=None):
         """
         Inserts a batch of documents into each subindex.
 
         Args:
             documents: list of (id, data, tags)
             index: indexid offset
+            checkpoint: optional checkpoint directory, enables indexing restart
         """
 
         if not self.documents:
             self.documents = Documents()
+            self.checkpoint = checkpoint
 
         # Create batch containing documents added to parent index
         batch = []
@@ -139,12 +145,13 @@ class Indexes:
         Builds each subindex.
         """
 
-        for index in self.indexes.values():
-            index.index(self.documents)
+        for name, index in self.indexes.items():
+            index.index(self.documents, checkpoint=f"{self.checkpoint}/{name}" if self.checkpoint else None)
 
         # Reset document stream
         self.documents.close()
         self.documents = None
+        self.checkpoint = None
 
     def upsert(self):
         """

@@ -64,5 +64,5 @@ class TestVectors(unittest.TestCase):
         f.close()
 
         # Create the recovery instance with an empty checkpoint file
-        recovery = Recovery(checkpoint, "id")
+        recovery = Recovery(checkpoint, "id", np.load)
         self.assertIsNone(recovery())

@@ -1,5 +1,5 @@
 """
-SentenceTransformers module
+Sentence Transformers module
 """
 
 # Conditional import
@@ -10,9 +10,9 @@ try:
 except ImportError:
     SENTENCE_TRANSFORMERS = False
 
-from ..models import Models
+from ...models import Models
 
-from .base import Vectors
+from ..base import Vectors
 
 
 class STVectors(Vectors):
@@ -48,8 +48,8 @@ class STVectors(Vectors):
         # Additional model arguments
         modelargs = self.config.get("vectors", {})
 
-        # Build embeddings with sentence-transformers
-        model = SentenceTransformer(path, device=Models.device(deviceid), **modelargs)
+        # Load sentence-transformers encoder
+        model = self.loadencoder(path, device=Models.device(deviceid), **modelargs)
 
         # Start process pool for multiple GPUs
         if pool:
@@ -58,9 +58,15 @@ class STVectors(Vectors):
         # Return model
         return model
 
-    def encode(self, data):
-        # Encode with sentence transformers
-        return self.model.encode(data, pool=self.pool, batch_size=self.encodebatch)
+    def encode(self, data, category=None):
+        # Get encode method based on input category
+        encode = self.model.encode_query if category == "query" else self.model.encode_document if category == "data" else self.model.encode
+
+        # Additional encoding arguments
+        encodeargs = self.config.get("encodeargs", {})
+
+        # Encode with sentence transformers encoder
+        return encode(data, pool=self.pool, batch_size=self.encodebatch, **encodeargs)
 
     def close(self):
         # Close pool before model is closed in parent method
@@ -69,3 +75,18 @@ class STVectors(Vectors):
             self.pool = None
 
         super().close()
+
+    def loadencoder(self, path, device, **kwargs):
+        """
+        Loads the embeddings encoder model from path.
+
+        Args:
+            path: model path
+            device: tensor device
+            kwargs: additional keyword args
+
+        Returns:
+            embeddings encoder
+        """
+
+        return SentenceTransformer(path, device=device, **kwargs)

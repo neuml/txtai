@@ -12,7 +12,7 @@ import numpy as np
 
 from huggingface_hub.errors import HFValidationError
 from txtai.vectors import VectorsFactory
-from txtai.vectors.words import create, transform
+from txtai.vectors.dense.words import create, transform
 
 
 class TestWordVectors(unittest.TestCase):

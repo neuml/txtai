@@ -2,8 +2,6 @@
 Transform module
 """
 
-import os
-
 import numpy as np
 
 from .action import Action
@@ -92,29 +90,11 @@ class Transform:
             (document ids, dimensions, embeddings)
         """
 
-        # Consume stream and transform documents to vectors
-        ids, dimensions, batches, stream = self.model.index(self.stream(documents), self.batch, self.checkpoint)
+        # Determine dtype
+        dtype = np.uint8 if self.qbits else np.float32
 
-        # Check that embeddings are available and load as a memmap
-        embeddings = None
-        if ids:
-            # Determine dtype
-            dtype = np.uint8 if self.qbits else np.float32
-
-            # Write batches
-            embeddings = np.memmap(buffer, dtype=dtype, shape=(len(ids), dimensions), mode="w+")
-            with open(stream, "rb") as queue:
-                x = 0
-                for _ in range(batches):
-                    batch = np.load(queue)
-                    embeddings[x : x + batch.shape[0]] = batch
-                    x += batch.shape[0]
-
-        # Remove temporary file (if checkpointing is disabled)
-        if not self.checkpoint:
-            os.remove(stream)
-
-        return (ids, dimensions, embeddings)
+        # Transform documents into vectors
+        return self.model.vectors(self.stream(documents), self.batch, self.checkpoint, buffer, dtype)
 
     def ids(self, documents):
         """
@@ -211,11 +191,11 @@ class Transform:
 
         # Load batch into scoring
         if self.scoring:
-            self.scoring.insert(batch, self.offset)
+            self.scoring.insert(batch, self.offset, self.checkpoint)
 
         # Load batch into subindex documents stream
         if self.indexes:
-            self.indexes.insert(batch, self.offset)
+            self.indexes.insert(batch, self.offset, self.checkpoint)
 
         # Load batch into graph
         if self.graph:

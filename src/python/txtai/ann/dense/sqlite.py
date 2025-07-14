@@ -13,7 +13,7 @@ try:
 except ImportError:
     SQLITEVEC = False
 
-from .base import ANN
+from ..base import ANN
 
 
 class SQLite(ANN):

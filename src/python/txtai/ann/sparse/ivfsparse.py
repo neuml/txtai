@@ -1,5 +1,5 @@
 """
-IVF module
+IVFSparse module
 """
 
 import math
@@ -8,23 +8,25 @@ import numpy as np
 
 # Conditional import
 try:
-    from scipy.sparse import csr_matrix, vstack
+    from scipy.sparse import vstack
     from sklearn.cluster import MiniBatchKMeans
     from sklearn.metrics import pairwise_distances_argmin_min
     from sklearn.utils.extmath import safe_sparse_dot
 
-    SKLEARN = True
+    IVFSPARSE = True
 except ImportError:
-    SKLEARN = False
+    IVFSPARSE = False
 
-from ..serialize import SerializeFactory
+from ...serialize import SerializeFactory
+from ...util import SparseArray
+from ..base import ANN
 
 
-class IVFFlat:
+class IVFSparse(ANN):
     """
-    Inverted file (IVF) index with flat vector storage and sparse array support.
+    Inverted file (IVF) index with flat vector file storage and sparse array support.
 
-    IVFFlat builds an IVF index and enables approximate nearest neighbor (ANN) search.
+    IVFSparse builds an IVF index and enables approximate nearest neighbor (ANN) search.
 
     This index is modeled after Faiss and supports many of the same parameters.
 
@@ -32,18 +34,10 @@ class IVFFlat:
     """
 
     def __init__(self, config):
-        """
-        Create a new IVFFlat instance.
+        super().__init__(config)
 
-        Args:
-            config: index configuration
-        """
-
-        if not SKLEARN:
-            raise ImportError('IVFFlat is not available - install "scoring" extra to enable')
-
-        # Index configuration
-        self.config = config if isinstance(config, dict) else {}
+        if not IVFSPARSE:
+            raise ImportError('IVFSparse is not available - install "ann" extra to enable')
 
         # Cluster centroids, if computed
         self.centroids = None
@@ -57,17 +51,9 @@ class IVFFlat:
         # Deleted ids
         self.deletes = None
 
-    def index(self, data):
-        """
-        Builds a new IVFFlat index.
-
-        Args:
-            data: input data
-            config: index configuration
-        """
-
+    def index(self, embeddings):
         # Compute model training size
-        train, sample = data, self.config.get("sample")
+        train, sample = embeddings, self.setting("sample")
         if sample:
             # Get sample for training
             rng = np.random.default_rng(0)
@@ -75,7 +61,7 @@ class IVFFlat:
             train = train[indices]
 
         # Get number of clusters. Note that final number of clusters could be lower due to filtering duplicate centroids.
-        clusters = self.nclusters(data.shape[0], train.shape[0])
+        clusters = self.nlist(embeddings.shape[0], train.shape[0])
 
         # A single cluster is an exact search
         if clusters > 1:
@@ -85,103 +71,75 @@ class IVFFlat:
             # Find closest points to each cluster center and use those as centroids
             # Filter out duplicate centroids
             indices, _ = pairwise_distances_argmin_min(kmeans.cluster_centers_, train, metric="cosine")
-            self.centroids = data[np.unique(indices)]
+            self.centroids = embeddings[np.unique(indices)]
 
         # Sort into clusters
-        ids = self.aggregate(data)
+        ids = self.aggregate(embeddings)
 
         # Sort clusters by id
         self.ids = dict(sorted(ids.items(), key=lambda x: x[0]))
 
         # Create cluster data blocks
-        self.blocks = {k: data[v] for k, v in self.ids.items()}
+        self.blocks = {k: embeddings[v] for k, v in self.ids.items()}
 
         # Initialize deletes
         self.deletes = []
 
-    def append(self, data):
-        """
-        Appends elements to an existing index.
+        # Add id offset and index build metadata
+        self.config["offset"] = embeddings.shape[0]
+        self.metadata({"clusters": clusters})
 
-        Args:
-            data: input data
-        """
-
+    def append(self, embeddings):
         # Get offset
         offset = self.size()
 
         # Sort into clusters and merge
-        for cluster, ids in self.aggregate(data).items():
+        for cluster, ids in self.aggregate(embeddings).items():
             # Add new ids
             self.ids[cluster].extend([x + offset for x in ids])
 
             # Add new data
-            self.blocks[cluster] = vstack([self.blocks[cluster], data[ids]])
+            self.blocks[cluster] = vstack([self.blocks[cluster], embeddings[ids]])
+
+        # Update id offset and index metadata
+        self.config["offset"] += embeddings.shape[0]
+        self.metadata()
 
     def delete(self, ids):
-        """
-        Mark ids as deleted. This prevents deleted results from showing up in search results.
-        The data is not removed from the underlying data structures.
-
-        Args:
-            ids: ids to delete
-        """
-
         # Set index ids as deleted
         self.deletes.extend(ids)
 
-    def search(self, query, limit):
-        """
-        Searches IVFFlat index for query. Returns topn results.
+    def search(self, queries, limit):
+        results = []
+        for query in queries:
+            if self.centroids is not None:
+                # Approximate search
+                indices, _ = self.topn(query, self.centroids, self.nprobe())
 
-        Args:
-            query: query array
-            limit: maximum results
+                # Stack into single ids list
+                ids = np.concatenate([self.ids[x] for x in indices if x in self.ids])
 
-        Returns:
-            query results
-        """
+                # Stack data rows
+                data = vstack([self.blocks[x] for x in indices if x in self.blocks])
+            else:
+                # Exact search
+                ids, data = np.array(self.ids[0]), self.blocks[0]
 
-        if self.centroids is not None:
-            # Approximate search
-            indices, _ = self.topn(query, self.centroids, self.nprobe())
+            # Get deletes
+            deletes = np.argwhere(np.isin(ids, self.deletes)).ravel()
 
-            # Stack into single ids list
-            ids = np.concatenate([self.ids[x] for x in indices if x in self.ids])
+            # Calculate similarity
+            indices, scores = self.topn(query, data, limit, deletes)
 
-            # Stack data rows
-            data = vstack([self.blocks[x] for x in indices if x in self.blocks])
-        else:
-            # Exact search
-            ids, data = np.array(self.ids[0]), self.blocks[0]
+            # Map data ids and return
+            results.append(list(zip(ids[indices].tolist(), scores.tolist())))
 
-        # Get deletes
-        deletes = np.argwhere(np.isin(ids, self.deletes)).ravel()
-
-        # Calculate similarity
-        indices, scores = self.topn(query, data, limit, deletes)
-
-        # Map data ids and return
-        return list(zip(ids[indices].tolist(), scores.tolist()))
+        return results
 
     def count(self):
-        """
-        Number of elements in the IVFFlat index.
-
-        Returns:
-            count
-        """
-
         return self.size() - len(self.deletes)
 
     def load(self, path):
-        """
-        Loads an IVFFlat index from path.
-
-        Args:
-            path: file path
-        """
-
         # Create streaming serializer and limit read size to a byte at a time to ensure
         # only msgpack data is consumed
         serializer = SerializeFactory.create("msgpack", streaming=True, read_size=1)
@@ -192,7 +150,7 @@ class IVFFlat:
             header = next(unpacker)
 
             # Read cluster centroids, if available
-            self.centroids = SparseArray().read(f) if header["centroids"] else None
+            self.centroids = SparseArray().load(f) if header["centroids"] else None
 
             # Read cluster ids
             self.ids = dict(next(unpacker))
@@ -200,23 +158,18 @@ class IVFFlat:
             # Read cluster data blocks
             self.blocks = {}
             for key in self.ids:
-                self.blocks[key] = SparseArray().read(f)
+                self.blocks[key] = SparseArray().load(f)
 
             # Read deletes
             self.deletes = next(unpacker)
 
     def save(self, path):
-        """
-        Saves an IVFFlat index to path. This format uses a combination of msgpack and NumPy serialization.
-        Sparse arrays are saved as groups of NumPy arrays.
-
-        IVFFlat storage format:
-            - header msgpack
-            - centroids sparse array (optional based on header parameters)
-            - cluster ids msgpack
-            - cluster data blocks list of sparse arrays
-            - deletes msgpack
-        """
+        # IVFSparse storage format:
+        #    - header msgpack
+        #    - centroids sparse array (optional based on header parameters)
+        #    - cluster ids msgpack
+        #    - cluster data blocks list of sparse arrays
+        #    - deletes msgpack
 
         # Create message pack serializer
         serializer = SerializeFactory.create("msgpack")
@@ -227,14 +180,14 @@ class IVFFlat:
 
             # Write cluster centroids, if available
             if self.centroids is not None:
-                SparseArray().write(self.centroids, f)
+                SparseArray().save(f, self.centroids)
 
             # Write cluster id mapping
             serializer.savestream(list(self.ids.items()), f)
 
             # Write cluster data blocks
             for block in self.blocks.values():
-                SparseArray().write(block, f)
+                SparseArray().save(f, block)
 
             # Write deletes
             serializer.savestream(self.deletes, f)
@@ -296,10 +249,10 @@ class IVFFlat:
 
         return indices[0], scores[0]
 
-    def nclusters(self, count, train):
+    def nlist(self, count, train):
         """
-        Calculates the number of clusters for this IVFFlat index. Note that the final number of clusters could be
-        lower as duplicate cluster centroids are filtered out.
+        Calculates the number of clusters for this IVFSparse index. Note that the final number of clusters
+        could be lower as duplicate cluster centroids are filtered out.
 
         Args:
             count: initial dataset size
@@ -313,7 +266,7 @@ class IVFFlat:
         default = 1 if count <= 5000 else self.cells(train)
 
         # Number of clusters to create
-        return self.config.get("nclusters", default)
+        return self.setting("nlist", default)
 
     def nprobe(self):
         """
@@ -327,11 +280,11 @@ class IVFFlat:
         size = self.size()
 
         default = 6 if size <= 5000 else self.cells(size) // 64
-        return self.config.get("nprobe", default)
+        return self.setting("nprobe", default)
 
     def cells(self, count):
         """
-        Calculates the number of IVF cells for an IVFFlat index.
+        Calculates the number of IVF cells for an IVFSparse index.
 
         Args:
             count: number of rows
@@ -353,38 +306,3 @@ class IVFFlat:
         """
 
         return sum(len(x) for x in self.ids.values())
-
-
-class SparseArray:
-    """
-    Methods to read and write sparse arrays to file.
-    """
-
-    def read(self, f):
-        """
-        Reads a sparse array from input file.
-
-        Args:
-            f: input file handle
-
-        Returns:
-            sparse array
-        """
-
-        data, indices, indptr, shape = np.load(f), np.load(f), np.load(f), np.load(f)
-
-        # Read sparse array
-        return csr_matrix((data, indices, indptr), shape=shape)
-
-    def write(self, array, f):
-        """
-        Writes a sparse array to file.
-
-        Args:
-            array: sparse array
-            f: output file handle
-        """
-
-        # Write sparse array to file
-        for x in [array.data, array.indices, array.indptr, array.shape]:
-            np.save(f, x, allow_pickle=False)

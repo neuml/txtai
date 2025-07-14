@@ -24,13 +24,17 @@ class Scoring:
         self.text = columns.get("text", "text")
         self.object = columns.get("object", "object")
 
-    def insert(self, documents, index=None):
+        # Vector model, if available
+        self.model = None
+
+    def insert(self, documents, index=None, checkpoint=None):
         """
         Inserts documents into the scoring index.
 
         Args:
             documents: list of (id, dict|text|tokens, tags)
             index: indexid offset
+            checkpoint: optional checkpoint directory, enables indexing restart
         """
 
         raise NotImplementedError
@@ -143,15 +147,35 @@ class Scoring:
 
         raise NotImplementedError
 
-    def hasterms(self):
+    def findmodel(self):
         """
-        Check if this scoring instance has an associated terms index.
+        Returns the associated vector model used by this scoring instance, if any.
 
         Returns:
-            True if this scoring instance has an associated terms index.
+            associated vector model
+        """
+
+        return self.model
+
+    def issparse(self):
+        """
+        Check if this scoring instance has an associated sparse keyword or sparse vector index.
+
+        Returns:
+            True if this index has an associated sparse index
         """
 
         raise NotImplementedError
+
+    def isweighted(self):
+        """
+        Check if this scoring instance is for term weighting (i.e.) it has no associated sparse index.
+
+        Returns:
+            True if this index is for term weighting
+        """
+
+        return not self.issparse()
 
     def isnormalized(self):
         """

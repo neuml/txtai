@@ -2,9 +2,9 @@
 Hugging Face module
 """
 
-from ..models import Models, PoolingFactory
+from ...models import Models, PoolingFactory
 
-from .base import Vectors
+from ..base import Vectors
 
 
 class HFVectors(Vectors):
@@ -39,6 +39,6 @@ class HFVectors(Vectors):
             }
         )
 
-    def encode(self, data):
+    def encode(self, data, category=None):
         # Encode data using vectors model
         return self.model.encode(data, batch=self.encodebatch)

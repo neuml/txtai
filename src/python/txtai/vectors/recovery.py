@@ -5,24 +5,23 @@ Recovery module
 import os
 import shutil
 
-import numpy as np
-
 
 class Recovery:
     """
     Vector embeddings recovery. This class handles streaming embeddings from a vector checkpoint file.
     """
 
-    def __init__(self, checkpoint, vectorsid):
+    def __init__(self, checkpoint, vectorsid, load):
         """
         Creates a Recovery instance.
 
         Args:
             checkpoint: checkpoint directory
             vectorsid: vectors uid for current configuration
+            load: load embeddings method
         """
 
-        self.spool, self.path = None, None
+        self.spool, self.path, self.load = None, None, load
 
         # Get unique file id
         path = f"{checkpoint}/{vectorsid}"
@@ -46,7 +45,7 @@ class Recovery:
         """
 
         try:
-            return np.load(self.spool) if self.spool else None
+            return self.load(self.spool) if self.spool else None
         except EOFError:
             # End of spool file, cleanup
             self.spool.close()

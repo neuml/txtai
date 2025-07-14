@@ -2,20 +2,13 @@
 Sparse module
 """
 
-# Conditional import
-try:
-    from scipy.sparse import csr_matrix, vstack
-    from sentence_transformers import SparseEncoder
-    from sklearn.preprocessing import normalize
+from queue import Queue
+from threading import Thread
 
-    SPARSE = True
-except ImportError:
-    SPARSE = False
-
-from ..models import Models
+from ..ann import SparseANNFactory
+from ..vectors import SparseVectorsFactory
 
 from .base import Scoring
-from .ivf import IVFFlat
 
 
 class Sparse(Scoring):
@@ -23,185 +16,166 @@ class Sparse(Scoring):
     Sparse vector scoring.
     """
 
+    # End of stream message
+    COMPLETE = 1
+
     def __init__(self, config=None, models=None):
         super().__init__(config)
 
-        if not SPARSE:
-            raise ImportError('Sparse encoder is not available - install "scoring" extra to enable')
+        # Vector configuration
+        config = {k: v for k, v in config.items() if k != "method"}
+        if "vectormethod" in config:
+            config["method"] = config["vectormethod"]
 
-        # Models cache
-        self.models = models
+        # Load the SparseVectors model
+        self.model = SparseVectorsFactory.create(config, models)
 
-        # Pool parameter
-        self.pool = None
+        # Sparse ANN
+        self.ann = None
 
-        # Sparse encoder
-        self.model = self.loadmodel()
+        # Encoding processing parameters
+        self.batch = self.config.get("batch", 1024)
+        self.thread, self.queue, self.data = None, None, None
 
-        # Encode batch size - controls underlying model batch size when encoding vectors
-        self.encodebatch = config.get("encodebatch", 32)
+    def insert(self, documents, index=None, checkpoint=None):
+        # Start processing thread, if necessary
+        self.start(checkpoint)
 
-        # Index backend
-        self.backend = None
-
-        # Input queue - data to be indexed
-        self.queue = None
-
-    def insert(self, documents, index=None):
         data = []
-        for _, document, _ in documents:
+        for uid, document, tags in documents:
             # Extract text, if necessary
             if isinstance(document, dict):
                 document = document.get(self.text, document.get(self.object))
 
             if document is not None:
                 # Add data
-                data.append(" ".join(document) if isinstance(document, list) else document)
+                data.append((uid, " ".join(document) if isinstance(document, list) else document, tags))
 
-        # Encode and normalize data
-        data = self.encode(data)
-
-        # Create or add to existing sparse vectors
-        self.queue = vstack((self.queue, data)) if self.queue is not None else data
+        # Add batch of data
+        self.queue.put(data)
 
     def delete(self, ids):
-        self.backend.delete(ids)
+        self.ann.delete(ids)
 
     def index(self, documents=None):
         # Insert documents, if provided
         if documents:
             self.insert(documents)
 
-        # Create index
-        if self.queue is not None:
-            # Create a new index instance
-            self.backend = IVFFlat(self.config.get("ivf"))
-            self.backend.index(self.queue)
-
-        # Clear queue
-        self.queue = None
+        # Create ANN, if there is pending data
+        embeddings = self.stop()
+        if embeddings is not None:
+            self.ann = SparseANNFactory.create(self.config)
+            self.ann.index(embeddings)
 
     def upsert(self, documents=None):
         # Insert documents, if provided
         if documents:
             self.insert(documents)
 
-        # Upsert index
-        if self.backend and self.queue is not None:
-            self.backend.append(self.queue)
+        # Check for existing index and pending data
+        if self.ann:
+            embeddings = self.stop()
+            if embeddings is not None:
+                self.ann.append(embeddings)
         else:
             self.index()
-
-        # Clear queue
-        self.queue = None
 
     def weights(self, tokens):
         # Not supported
         return None
 
     def search(self, query, limit=3):
-        return self.backend.search(self.encode([query]), limit)
+        return self.batchsearch([query], limit)[0]
 
     def batchsearch(self, queries, limit=3, threads=True):
-        return [self.search(query, limit) for query in queries]
+        # Convert queries to embedding vectors
+        embeddings = self.model.batchtransform((None, query, None) for query in queries)
+
+        # Run ANN search
+        return self.ann.search(embeddings, limit)
 
     def count(self):
-        return self.backend.count()
+        return self.ann.count()
 
     def load(self, path):
-        # Read IVFFlat index
-        self.backend = IVFFlat(self.config.get("ivf"))
-        self.backend.load(path)
+        self.ann = SparseANNFactory.create(self.config)
+        self.ann.load(path)
 
     def save(self, path):
-        # Write IVFFlat index
-        if self.backend is not None:
-            self.backend.save(path)
+        # Save Sparse ANN
+        if self.ann:
+            self.ann.save(path)
 
     def close(self):
-        # Close pool before model is closed
-        if self.pool:
-            self.model.stop_multi_process_pool(self.pool)
-            self.pool = None
+        # Close Sparse ANN
+        if self.ann:
+            self.ann.close()
 
-        self.model, self.backend, self.queue = None, None, None
+        # Clear parameters
+        self.model, self.ann, self.thread, self.queue = None, None, None, None
 
-    def hasterms(self):
+    def issparse(self):
         return True
 
     def isnormalized(self):
         return True
 
-    def loadmodel(self):
+    def start(self, checkpoint):
         """
-        Loads the sparse encoder model.
-
-        Returns:
-            SparseEncoder
-        """
-
-        # Model path
-        path = self.config.get("path")
-
-        # Check if model is cached
-        if self.models and path in self.models:
-            return self.models[path]
-
-        # Get target device
-        gpu, pool = self.config.get("gpu", True), False
-
-        # Default mode uses a single GPU. Setting to all spawns a process per GPU.
-        if isinstance(gpu, str) and gpu == "all":
-            # Get number of accelerator devices available
-            devices = Models.acceleratorcount()
-
-            # Enable multiprocessing pooling only when multiple devices are available
-            gpu, pool = devices <= 1, devices > 1
-
-        # Tensor device id
-        deviceid = Models.deviceid(gpu)
-
-        # Additional model arguments
-        modelargs = self.config.get("modelargs", {})
-
-        # Build embeddings with sentence-transformers
-        model = SparseEncoder(path, device=Models.device(deviceid), **modelargs)
-
-        # Start process pool for multiple GPUs
-        if pool:
-            self.pool = model.start_multi_process_pool()
-
-        # Store model in cache
-        if self.models is not None and path:
-            self.models[path] = model
-
-        # Return model
-        return model
-
-    def encode(self, data):
-        """
-        Encodes a batch of data using the Sparse Encoder model.
+        Starts an encoding processing thread.
 
         Args:
-            data: input data
-
-        Returns:
-            encoded data as a SciPy CSR Matrix
+            checkpoint: checkpoint directory
         """
 
-        # Additional encoding arguments
-        encodeargs = self.config.get("encodeargs", {})
+        if not self.thread:
+            self.queue = Queue(5)
+            self.thread = Thread(target=self.encode, args=(checkpoint,))
+            self.thread.start()
 
-        # Encode data
-        data = self.model.encode(data, pool=self.pool, batch_size=self.encodebatch, **encodeargs)
+    def stop(self):
+        """
+        Stops an encoding processing thread. Return processed results.
 
-        # Get data attributes
-        data = data.cpu().coalesce()
-        indices = data.indices().numpy()
-        values = data.values().numpy()
+        Returns:
+            results
+        """
 
-        # Convert to CSR Matrix
-        matrix = csr_matrix((values, indices), shape=data.size())
+        results = None
+        if self.thread:
+            # Send EOS message
+            self.queue.put(Sparse.COMPLETE)
 
-        # Normalize and return
-        return normalize(matrix)
+            self.thread.join()
+            self.thread, self.queue = None, None
+
+            # Get return value
+            results = self.data
+            self.data = None
+
+        return results
+
+    def encode(self, checkpoint):
+        """
+        Encodes streaming data.
+
+        Args:
+            checkpoint: checkpoint directory
+        """
+
+        # Streaming encoding of data
+        _, dimensions, self.data = self.model.vectors(self.stream(), self.batch, checkpoint)
+
+        # Save number of dimensions
+        self.config["dimensions"] = dimensions
+
+    def stream(self):
+        """
+        Streams data from an input queue until end of stream message received.
+        """
+
+        batch = self.queue.get()
+        while batch != Sparse.COMPLETE:
+            yield from batch
+            batch = self.queue.get()

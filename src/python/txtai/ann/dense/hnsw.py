@@ -13,7 +13,7 @@ try:
 except ImportError:
     HNSWLIB = False
 
-from .base import ANN
+from ..base import ANN
 
 
 class HNSW(ANN):

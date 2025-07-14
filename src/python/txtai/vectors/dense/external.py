@@ -6,9 +6,9 @@ import types
 
 import numpy as np
 
-from ..util import Resolver
+from ...util import Resolver
 
-from .base import Vectors
+from ..base import Vectors
 
 
 class External(Vectors):
@@ -25,7 +25,7 @@ class External(Vectors):
     def loadmodel(self, path):
         return None
 
-    def encode(self, data):
+    def encode(self, data, category=None):
         # Call external transform function, if available and data not already an array
         # Batching is handed by the external transform function
         if self.transform and data and not isinstance(data[0], np.ndarray):

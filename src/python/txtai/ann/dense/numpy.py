@@ -4,9 +4,9 @@ NumPy module
 
 import numpy as np
 
-from ..serialize import SerializeFactory
+from ...serialize import SerializeFactory
 
-from .base import ANN
+from ..base import ANN
 
 
 class NumPy(ANN):

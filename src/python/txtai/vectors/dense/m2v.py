@@ -15,7 +15,7 @@ try:
 except ImportError:
     MODEL2VEC = False
 
-from .base import Vectors
+from ..base import Vectors
 
 
 class Model2Vec(Vectors):
@@ -59,7 +59,7 @@ class Model2Vec(Vectors):
     def loadmodel(self, path):
         return StaticModel.from_pretrained(path)
 
-    def encode(self, data):
+    def encode(self, data, category=None):
         # Additional model arguments
         modelargs = self.config.get("vectors", {})
 

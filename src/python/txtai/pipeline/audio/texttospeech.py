@@ -407,7 +407,7 @@ class SpeechT5(SpeechPipeline):
         self.vocoder = ort.InferenceSession(cached_file(path_or_repo_id=path, filename="decoder_postnet_and_vocoder.onnx"), providers=providers)
 
         self.processor = SpeechT5Processor.from_pretrained(path)
-        self.defaultspeaker = np.load(cached_file(path_or_repo_id=path, filename="speaker.npy"))
+        self.defaultspeaker = np.load(cached_file(path_or_repo_id=path, filename="speaker.npy"), allow_pickle=False)
 
         # Max number of input tokens model can handle
         self.maxtokens = maxtokens

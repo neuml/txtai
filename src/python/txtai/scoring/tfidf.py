@@ -55,7 +55,7 @@ class TFIDF(Scoring):
         self.normalize = self.config.get("normalize")
         self.avgscore = None
 
-    def insert(self, documents, index=None):
+    def insert(self, documents, index=None, checkpoint=None):
         # Insert documents, calculate word frequency, total tokens and total documents
         for uid, document, tags in documents:
             # Extract text, if necessary
@@ -232,7 +232,7 @@ class TFIDF(Scoring):
         if self.terms:
             self.terms.close()
 
-    def hasterms(self):
+    def issparse(self):
         return self.terms is not None
 
     def isnormalized(self):
@@ -348,6 +348,9 @@ class TFIDF(Scoring):
         Returns:
             resolved results
         """
+
+        # Convert to Python values
+        scores = [(x, float(score)) for x, score in scores]
 
         if self.documents:
             return [{"id": x, "text": self.documents[x], "score": score} for x, score in scores]

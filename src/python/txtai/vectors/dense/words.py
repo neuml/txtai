@@ -22,9 +22,9 @@ try:
 except ImportError:
     STATICVECTORS = False
 
-from ..pipeline import Tokenizer
+from ...pipeline import Tokenizer
 
-from .base import Vectors
+from ..base import Vectors
 
 # Logging configuration
 logger = logging.getLogger(__name__)
@@ -128,7 +128,7 @@ class WordVectors(Vectors):
     def loadmodel(self, path):
         return StaticVectors(path)
 
-    def encode(self, data):
+    def encode(self, data, category=None):
         # Iterate over each data element, tokenize (if necessary) and build an aggregated embeddings vector
         embeddings = []
         for tokens in data:
@@ -181,14 +181,14 @@ class WordVectors(Vectors):
                     embeddings.append(embedding)
 
                     if len(embeddings) == batchsize:
-                        np.save(output, np.array(embeddings, dtype=np.float32))
+                        np.save(output, np.array(embeddings, dtype=np.float32), allow_pickle=False)
                         batches += 1
 
                         embeddings = []
 
                 # Final embeddings batch
                 if embeddings:
-                    np.save(output, np.array(embeddings, dtype=np.float32))
+                    np.save(output, np.array(embeddings, dtype=np.float32), allow_pickle=False)
                     batches += 1
 
         return (ids, dimensions, batches, stream)

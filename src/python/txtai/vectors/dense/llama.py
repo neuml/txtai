@@ -16,7 +16,7 @@ try:
 except ImportError:
     LLAMA_CPP = False
 
-from .base import Vectors
+from ..base import Vectors
 
 
 class LlamaCpp(Vectors):
@@ -58,7 +58,7 @@ class LlamaCpp(Vectors):
         # Create llama.cpp instance
         return Llama(path, n_ctx=0, verbose=modelargs.pop("verbose", False), embedding=True, **modelargs)
 
-    def encode(self, data):
+    def encode(self, data, category=None):
         # Generate embeddings and return as a NumPy array
         # llama-cpp-python has it's own batching built-in using n_batch parameter
         return np.array(self.model.embed(data), dtype=np.float32)

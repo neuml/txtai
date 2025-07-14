@@ -486,6 +486,10 @@ class TestEmbeddings(unittest.TestCase):
         uid = embeddings.search("lottery ticket", 1)[0][0]
         self.assertEqual(uid, 4)
 
+        # Test similarity
+        uid = embeddings.similarity("lottery ticket", self.data)[0][0]
+        self.assertEqual(uid, 4)
+
         # Update data
         data[0] = (0, "Feel good story: baby panda born", None)
         embeddings.upsert([data[0]])

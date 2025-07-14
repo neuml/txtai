@@ -18,7 +18,7 @@ try:
 except ImportError:
     PGVECTOR = False
 
-from .base import ANN
+from ..base import ANN
 
 
 class PGVector(ANN):
@@ -111,7 +111,7 @@ class PGVector(ANN):
         self.schema()
 
         # Table name
-        table = self.setting("table", "vectors")
+        table = self.setting("table", self.defaulttable())
 
         # Get embedding column and index settings
         column, index = self.column()
@@ -147,7 +147,7 @@ class PGVector(ANN):
             self.close()
 
         # Create engine
-        self.engine = create_engine(self.setting("url", os.environ.get("ANN_URL")), poolclass=StaticPool, echo=False)
+        self.engine = create_engine(self.url(), poolclass=StaticPool, echo=False)
         self.connection = self.engine.connect()
 
         # Start database session
@@ -190,6 +190,26 @@ class PGVector(ANN):
 
         args = (sql, parameters) if self.engine.dialect.name == "postgresql" else (text("SELECT 1"),)
         self.database.execute(*args)
+
+    def defaulttable(self):
+        """
+        Returns the default table name.
+
+        Returns:
+            default table name
+        """
+
+        return "vectors"
+
+    def url(self):
+        """
+        Reads the database url parameter.
+
+        Returns:
+            database url
+        """
+
+        return self.setting("url", os.environ.get("ANN_URL"))
 
     def column(self):
         """

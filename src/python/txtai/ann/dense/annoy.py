@@ -10,7 +10,7 @@ try:
 except ImportError:
     ANNOY = False
 
-from .base import ANN
+from ..base import ANN
 
 
 # pylint: disable=W0223

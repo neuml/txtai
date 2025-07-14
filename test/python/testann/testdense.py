@@ -1,5 +1,5 @@
 """
-ANN module tests
+Dense ANN module tests
 """
 
 import os
@@ -17,9 +17,9 @@ from txtai.serialize import SerializeFactory
 
 
 # pylint: disable=R0904
-class TestANN(unittest.TestCase):
+class TestDense(unittest.TestCase):
     """
-    ANN tests.
+    Dense ANN tests.
     """
 
     def testAnnoy(self):
@@ -79,10 +79,10 @@ class TestANN(unittest.TestCase):
 
         # pylint: disable=C0415, W0611
         # Force reload of class
-        name = "txtai.ann.faiss"
+        name = "txtai.ann.dense.faiss"
         module = sys.modules[name]
         del sys.modules[name]
-        import txtai.ann.faiss
+        import txtai.ann.dense.faiss
 
         # Run tests
         self.runTests("faiss")

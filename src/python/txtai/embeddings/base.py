@@ -6,8 +6,6 @@ import json
 import os
 import tempfile
 
-import numpy as np
-
 from ..ann import ANNFactory
 from ..archive import ArchiveFactory
 from ..cloud import CloudFactory
@@ -323,7 +321,7 @@ class Embeddings:
         self.defaults()
 
         # Get vector model
-        model = self.indexes.model(index) if index and self.indexes else self.model if self.model else self.indexes.model()
+        model = self.findmodel(index)
 
         # Convert documents into embeddings
         embeddings = model.batchtransform(Stream(self)(documents), category)
@@ -437,8 +435,11 @@ class Embeddings:
         queries = self.batchtransform(((None, query, None) for query in queries), "query")
         data = self.batchtransform(((None, row, None) for row in data), "data")
 
+        # Get vector model
+        model = self.findmodel()
+
         # Dot product on normalized vectors is equal to cosine similarity
-        scores = np.dot(queries, data.T).tolist()
+        scores = model.dot(queries, data)
 
         # Add index and sort desc based on score
         return [sorted(enumerate(score), key=lambda x: x[1], reverse=True) for score in scores]
@@ -711,13 +712,13 @@ class Embeddings:
 
     def issparse(self):
         """
-        Checks if this instance has an associated scoring instance with term indexing enabled.
+        Checks if this instance has an associated sparse keyword or sparse vectors scoring index.
 
         Returns:
-            True if term index is enabled, False otherwise
+            True if scoring has an associated sparse keyword/vector index, False otherwise
         """
 
-        return self.scoring and self.scoring.hasterms()
+        return self.scoring and self.scoring.issparse()
 
     def isdense(self):
         """
@@ -737,7 +738,25 @@ class Embeddings:
             True if term weighting is enabled, False otherwise
         """
 
-        return self.scoring and not self.scoring.hasterms()
+        return self.scoring and self.scoring.isweighted()
+
+    def findmodel(self, index=None):
+        """
+        Finds the primary vector model used by this instance.
+
+        Returns:
+            Vectors
+        """
+
+        return (
+            self.indexes.findmodel(index)
+            if index and self.indexes
+            else (
+                self.model
+                if self.model
+                else self.scoring.findmodel() if self.scoring and self.scoring.findmodel() else self.indexes.findmodel() if self.indexes else None
+            )
+        )
 
     def configure(self, config):
         """
@@ -755,7 +774,7 @@ class Embeddings:
 
         # Create scoring instance for word vectors term weighting
         scoring = self.config.get("scoring") if self.config else None
-        self.scoring = self.createscoring() if scoring and (not isinstance(scoring, dict) or not scoring.get("terms")) else None
+        self.scoring = self.createscoring() if scoring and not self.hassparse() else None
 
         # Dense vectors - transforms data to embeddings vectors
         self.model = self.loadvectors() if self.config else None
@@ -791,9 +810,8 @@ class Embeddings:
         # Initialize ANN, will be created after index transformations complete
         self.ann = None
 
-        # Create scoring only if term indexing is enabled
-        scoring = self.config.get("scoring")
-        if scoring and isinstance(scoring, dict) and self.config["scoring"].get("terms"):
+        # Create scoring only if the scoring config is for a sparse index
+        if self.hassparse():
             self.scoring = self.createscoring()
 
         # Create subindexes, if necessary
@@ -832,24 +850,29 @@ class Embeddings:
         Logic to derive default sparse index configuration.
         """
 
-        # Get sparse index configuration
-        index, method = None, None
-        for x in ["keyword", "sparse", "hybrid"]:
+        # Check for keyword and hybrid parameters
+        method = None
+        for x in ["keyword", "hybrid"]:
             value = self.config.get(x)
             if value:
-                index, method = (x, value if isinstance(value, str) else "bm25")
+                method = value if isinstance(value, str) else "bm25"
 
-        # Default scoring configuration
-        self.config["scoring"] = {"method": method, "terms": True, "normalize": True}
+                # Enable dense index when hybrid enabled
+                if x == "hybrid":
+                    self.config["dense"] = True
 
-        # Sparse vector models
-        if index == "sparse" or "/" in method:
-            # Derive sparse model path
-            path = self.config["sparse"] if index == "sparse" else method
-            path = path if isinstance(path, str) else "prithivida/Splade_PP_en_v2"
+        sparse = self.config.get("sparse", {})
+        if sparse or method == "sparse":
+            # Sparse vector configuration
+            sparse = {"path": self.config.get("sparse")} if isinstance(sparse, str) else {} if isinstance(sparse, bool) else sparse
+            sparse["path"] = sparse.get("path", "prithivida/Splade_PP_en_v2")
 
             # Merge in sparse parameters
-            self.config["scoring"] = {**self.config["scoring"], **{"method": "sparse", "path": path}}
+            self.config["scoring"] = {**{"method": "sparse"}, **sparse}
+
+        elif method:
+            # Sparse keyword configuration
+            self.config["scoring"] = {"method": method, "terms": True, "normalize": True}
 
     def defaultallowed(self):
         """
@@ -1050,6 +1073,17 @@ class Embeddings:
             return ScoringFactory.create(config, self.models)
 
         return None
+
+    def hassparse(self):
+        """
+        Checks is this embeddings database has an associated sparse index.
+
+        Returns:
+            True if this embeddings has an associated scoring index
+        """
+
+        # Create scoring only if scoring is a sparse keyword/vector index
+        return ScoringFactory.issparse(self.config.get("scoring"))
 
     def columns(self, config):
         """

@@ -107,8 +107,9 @@ class TestOptional(unittest.TestCase):
         Test missing ANN dependencies
         """
 
-        from txtai.ann import ANNFactory
+        from txtai.ann import ANNFactory, SparseANNFactory
 
+        # Test dense methods
         with self.assertRaises(ImportError):
             ANNFactory.create({"backend": "annoy"})
 
@@ -120,6 +121,13 @@ class TestOptional(unittest.TestCase):
 
         with self.assertRaises(ImportError):
             ANNFactory.create({"backend": "sqlite"})
+
+        # Test sparse methods
+        with self.assertRaises(ImportError):
+            SparseANNFactory.create({"backend": "ivfsparse"})
+
+        with self.assertRaises(ImportError):
+            SparseANNFactory.create({"backend": "pgsparse"})
 
     def testApi(self):
         """
@@ -294,24 +302,20 @@ class TestOptional(unittest.TestCase):
         Test missing scoring dependencies
         """
 
-        from txtai.scoring import IVFFlat, ScoringFactory
+        from txtai.scoring import ScoringFactory
 
         with self.assertRaises(ImportError):
             ScoringFactory.create({"method": "pgtext"})
-
-        with self.assertRaises(ImportError):
-            ScoringFactory.create({"method": "sparse"})
-
-        with self.assertRaises(ImportError):
-            IVFFlat({})
 
     def testVectors(self):
         """
         Test missing vector dependencies
         """
 
-        from txtai.vectors import VectorsFactory
+        from txtai.vectors import SparseVectors, VectorsFactory, SparseVectorsFactory
+        from txtai.util import SparseArray
 
+        # Test dense vectors
         with self.assertRaises(ImportError):
             VectorsFactory.create({"method": "litellm", "path": "huggingface/sentence-transformers/all-MiniLM-L6-v2"}, None)
 
@@ -330,6 +334,16 @@ class TestOptional(unittest.TestCase):
         # Test default model
         model = VectorsFactory.create({"path": "sentence-transformers/all-MiniLM-L6-v2"}, None)
         self.assertIsNotNone(model)
+
+        # Test sparse vectors
+        with self.assertRaises(ImportError):
+            SparseVectors(None, None, None)
+
+        with self.assertRaises(ImportError):
+            SparseVectorsFactory.create({"method": "sentence-transformers", "path": "sparse-encoder-testing/splade-bert-tiny-nq"}, None)
+
+        with self.assertRaises(ImportError):
+            SparseArray()
 
     def testWorkflow(self):
         """

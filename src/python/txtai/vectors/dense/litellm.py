@@ -12,7 +12,7 @@ try:
 except ImportError:
     LITELLM = False
 
-from .base import Vectors
+from ..base import Vectors
 
 
 class LiteLLM(Vectors):
@@ -57,7 +57,7 @@ class LiteLLM(Vectors):
     def loadmodel(self, path):
         return None
 
-    def encode(self, data):
+    def encode(self, data, category=None):
         # Call external embeddings API using LiteLLM
         # Batching is handled server-side
         response = api.embedding(model=self.config.get("path"), input=data, **self.config.get("vectors", {}))

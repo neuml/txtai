@@ -28,17 +28,30 @@ Additional settings for Postgres full-text keyword indexes.
 ### sparse
 ```yaml
 path: sparse vector model path
+vectormethod: vector embeddings method
 gpu: boolean|int|string|device
-encodebatch: int
-modelargs: additional model init args
+batch: Sets the transform batch size
+encodebatch: Sets the encode batch size
+vectors: additional model init args
 encodeargs: additional encode() args
-ivf: #IVFFlat index configuration
+backend: ivfsparse|pgsparse
+```
+
+Sparse vector scoring options. The sparse scoring instance combines a sparse vector model with a sparse approximate nearest neighbor index (ANN).
+
+#### ivfsparse
+```yaml
+ivfsparse:
   sample: percent of data to use for model training (0.0 - 1.0)
-  nclusters: desired number of clusters (int)
+  nlist: desired number of clusters (int)
   nprobe: search probe setting (int)
 ```
 
-Sparse vector scoring options.
+Inverted file (IVF) index with flat vector file storage and sparse array support.
+
+#### pgsparse
+
+Sparse ANN backed by Postgres. Supports same options as the [pgvector](../ann/#pgvector) ANN.
 
 ## terms
 ```yaml

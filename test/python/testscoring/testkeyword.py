@@ -1,5 +1,5 @@
 """
-Scoring module tests
+Keyword scoring tests
 """
 
 import os
@@ -12,9 +12,9 @@ from txtai.scoring import ScoringFactory, Scoring
 
 
 # pylint: disable=R0904
-class TestScoring(unittest.TestCase):
+class TestKeyword(unittest.TestCase):
     """
-    Scoring tests.
+    Sparse keyword scoring tests.
     """
 
     @classmethod
@@ -73,7 +73,7 @@ class TestScoring(unittest.TestCase):
         self.assertRaises(NotImplementedError, scoring.load, None)
         self.assertRaises(NotImplementedError, scoring.save, None)
         self.assertRaises(NotImplementedError, scoring.close)
-        self.assertRaises(NotImplementedError, scoring.hasterms)
+        self.assertRaises(NotImplementedError, scoring.issparse)
         self.assertRaises(NotImplementedError, scoring.isnormalized)
 
     @patch("sqlalchemy.orm.Query.params")
@@ -109,8 +109,8 @@ class TestScoring(unittest.TestCase):
         scoring.delete([0])
         self.assertEqual(scoring.count(), len(self.data) - 1)
 
-        # PGText is a normalized terms index
-        self.assertTrue(scoring.hasterms() and scoring.isnormalized())
+        # PGText is a normalized sparse index
+        self.assertTrue(scoring.issparse() and scoring.isnormalized())
         self.assertIsNone(scoring.weights("This is a test".split()))
 
         # Close scoring
@@ -122,93 +122,6 @@ class TestScoring(unittest.TestCase):
         """
 
         self.runTests("sif")
-
-    def testSparse(self):
-        """
-        Test sparse vectors
-        """
-
-        # Models cache
-        models = {}
-
-        # Test sparse scoring
-        scoring = ScoringFactory.create({"method": "sparse", "path": "sparse-encoder-testing/splade-bert-tiny-nq"}, models=models)
-        scoring.index((uid, {"text": text}, tags) for uid, text, tags in self.data)
-
-        # Run search and validate correct result returned
-        index, _ = scoring.search("lottery ticket", 1)[0]
-        self.assertEqual(index, 4)
-
-        # Run batch search
-        index, _ = scoring.batchsearch(["lottery ticket"], 1)[0][0]
-        self.assertEqual(index, 4)
-
-        # Validate count
-        self.assertEqual(scoring.count(), len(self.data))
-
-        # Test delete
-        scoring.delete([4])
-        self.assertEqual(scoring.count(), len(self.data) - 1)
-
-        # Run search after delete
-        index, _ = scoring.search("lottery ticket", 1)[0]
-        self.assertEqual(index, 5)
-
-        # Sparse vectors is a normalized terms index
-        self.assertTrue(scoring.hasterms() and scoring.isnormalized())
-        self.assertIsNone(scoring.weights("This is a test".split()))
-
-        # Close scoring
-        scoring.close()
-
-        # Test model caching
-        scoring = ScoringFactory.create({"method": "sparse", "path": "sparse-encoder-testing/splade-bert-tiny-nq"}, models=models)
-        self.assertIsNotNone(scoring.model)
-        scoring.close()
-
-    def testSparseEmpty(self):
-        """
-        Test empty sparse vectors
-        """
-
-        scoring = ScoringFactory.create({"method": "sparse", "path": "sparse-encoder-testing/splade-bert-tiny-nq"})
-        scoring.upsert((uid, {"text": text}, tags) for uid, text, tags in self.data)
-        self.assertEqual(scoring.count(), len(self.data))
-
-    @patch("torch.cuda.device_count")
-    def testSparseGPU(self, count):
-        """
-        Test sparse vectors with GPU encoding
-        """
-
-        # Mock accelerator count
-        count.return_value = 2
-
-        # Test multiple gpus
-        scoring = ScoringFactory.create({"method": "sparse", "path": "sparse-encoder-testing/splade-bert-tiny-nq", "gpu": "all"})
-        self.assertIsNotNone(scoring)
-        scoring.close()
-
-    def testSparseIVFFlat(self):
-        """
-        Test sparse vectors with IVFFlat clustering
-        """
-
-        # Expand dataset
-        data = self.data * 1000
-
-        # Test higher volume IVFFlat index with clustering
-        config = {"method": "sparse", "path": "sparse-encoder-testing/splade-bert-tiny-nq", "ivf": {"sample": 1.0}}
-        scoring = ScoringFactory.create(config)
-        scoring.index((uid, {"text": text}, tags) for uid, text, tags in data)
-
-        # Recreate index
-        self.save(scoring, config, "scoring.sparse.index")
-
-        # Run search and validate correct result returned
-        results = scoring.search("lottery ticket", 1)
-        self.assertGreater(len(results), 0)
-        scoring.close()
 
     def testTFIDF(self):
         """

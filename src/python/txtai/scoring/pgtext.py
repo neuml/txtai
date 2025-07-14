@@ -36,7 +36,7 @@ class PGText(Scoring):
         # Language
         self.language = self.config.get("language", "english")
 
-    def insert(self, documents, index=None):
+    def insert(self, documents, index=None, checkpoint=None):
         # Initialize tables
         self.initialize(recreate=True)
 
@@ -108,7 +108,7 @@ class PGText(Scoring):
             self.database.close()
             self.engine.dispose()
 
-    def hasterms(self):
+    def issparse(self):
         return True
 
     def isnormalized(self):

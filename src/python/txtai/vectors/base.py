@@ -70,12 +70,13 @@ class Vectors:
 
         raise NotImplementedError
 
-    def encode(self, data):
+    def encode(self, data, category=None):
         """
         Encodes a batch of data using vector model.
 
         Args:
             data: batch of data
+            category: optional category for instruction-based embeddings
 
         Return:
             transformed data
@@ -116,14 +117,14 @@ class Vectors:
             checkpoint: optional checkpoint directory, enables indexing restart
 
         Returns:
-            (ids, dimensions, stream)
+            (ids, dimensions, batches, stream)
         """
 
         ids, dimensions, batches, stream = [], None, 0, None
 
         # Generate recovery config if checkpoint is set
         vectorsid = self.vectorsid() if checkpoint else None
-        recovery = Recovery(checkpoint, vectorsid) if checkpoint else None
+        recovery = Recovery(checkpoint, vectorsid, self.loadembeddings) if checkpoint else None
 
         # Convert all documents to embedding arrays, stream embeddings to disk to control memory usage
         with self.spool(checkpoint, vectorsid) as output:
@@ -147,6 +148,42 @@ class Vectors:
                 batches += 1
 
         return (ids, dimensions, batches, stream)
+
+    def vectors(self, documents, batchsize=500, checkpoint=None, buffer=None, dtype=None):
+        """
+        Bulk encodes documents into vectors using index(). Return the data as a mmap-ed array.
+
+        Args:
+            documents: list of (id, data, tags)
+            batchsize: index batch size
+            checkpoint: optional checkpoint directory, enables indexing restart
+            buffer: file path used for memmap buffer
+            dtype: dtype for buffer
+
+        Returns:
+            (ids, dimensions, embeddings)
+        """
+
+        # Consume stream and transform documents to vectors
+        ids, dimensions, batches, stream = self.index(documents, batchsize, checkpoint)
+
+        # Check that embeddings are available and load as a memmap
+        embeddings = None
+        if ids:
+            # Write batches
+            embeddings = np.memmap(buffer, dtype=dtype, shape=(len(ids), dimensions), mode="w+")
+            with open(stream, "rb") as queue:
+                x = 0
+                for _ in range(batches):
+                    batch = self.loadembeddings(queue)
+                    embeddings[x : x + batch.shape[0]] = batch
+                    x += batch.shape[0]
+
+        # Remove temporary file (if checkpointing is disabled)
+        if not checkpoint:
+            os.remove(stream)
+
+        return (ids, dimensions, embeddings)
 
     def close(self):
         """
@@ -188,7 +225,22 @@ class Vectors:
         if documents and isinstance(documents[0], np.ndarray):
             return np.array(documents, dtype=np.float32)
 
-        return self.vectorize(documents)
+        return self.vectorize(documents, category)
+
+    def dot(self, queries, data):
+        """
+        Calculates the dot product similarity between queries and documents. This method
+        assumes each of the inputs are normalized.
+
+        Args:
+            queries: queries
+            data: search data
+
+        Returns:
+            dot product scores
+        """
+
+        return np.dot(queries, data.T).tolist()
 
     def vectorsid(self):
         """
@@ -246,10 +298,10 @@ class Vectors:
 
         # Attempt to read embeddings from a recovery file
         embeddings = recovery() if recovery else None
-        embeddings = self.vectorize(documents) if embeddings is None else embeddings
+        embeddings = self.vectorize(documents, "data") if embeddings is None else embeddings
         if embeddings is not None:
             dimensions = embeddings.shape[1]
-            np.save(output, embeddings)
+            self.saveembeddings(output, embeddings)
 
         return (ids, dimensions)
 
@@ -299,7 +351,7 @@ class Vectors:
 
         return data
 
-    def vectorize(self, data):
+    def vectorize(self, data, category=None):
         """
         Runs data vectorization, which consists of the following steps.
 
@@ -310,13 +362,17 @@ class Vectors:
 
         Args:
             data: input data
+            category: category for instruction-based embeddings
 
         Returns:
             embeddings vectors
         """
 
+        # Default instruction category
+        category = category if category else "query"
+
         # Transform data into vectors
-        embeddings = self.encode(data)
+        embeddings = self.encode(data, category)
 
         if embeddings is not None:
             # Truncate embeddings, if necessary
@@ -324,13 +380,37 @@ class Vectors:
                 embeddings = self.truncate(embeddings)
 
             # Normalize data
-            self.normalize(embeddings)
+            embeddings = self.normalize(embeddings)
 
             # Apply quantization, if necessary
             if self.qbits:
                 embeddings = self.quantize(embeddings)
 
         return embeddings
+
+    def loadembeddings(self, f):
+        """
+        Loads embeddings from file.
+
+        Args:
+            f: file to load from
+
+        Returns:
+            embeddings
+        """
+
+        return np.load(f, allow_pickle=False)
+
+    def saveembeddings(self, f, embeddings):
+        """
+        Saves embeddings to output.
+
+        Args:
+            f: output file
+            embeddings: embeddings to save
+        """
+
+        np.save(f, embeddings, allow_pickle=False)
 
     def truncate(self, embeddings):
         """
@@ -354,6 +434,9 @@ class Vectors:
 
         Args:
             embeddings: input embeddings
+
+        Returns:
+            embeddings
         """
 
         # Calculation is different for matrices vs vectors
@@ -361,6 +444,8 @@ class Vectors:
             embeddings /= np.linalg.norm(embeddings, axis=1)[:, np.newaxis]
         else:
             embeddings /= np.linalg.norm(embeddings)
+
+        return embeddings
 
     def quantize(self, embeddings):
         """

@@ -2,7 +2,7 @@
 Factory module
 """
 
-from ..util import Resolver
+from ...util import Resolver
 
 from .external import External
 from .huggingface import HFVectors
@@ -15,7 +15,7 @@ from .words import WordVectors
 
 class VectorsFactory:
     """
-    Methods to create Vectors models.
+    Methods to create dense vector models.
     """
 
     @staticmethod

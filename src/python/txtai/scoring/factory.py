@@ -22,7 +22,7 @@ class ScoringFactory:
         Factory method to construct a Scoring instance.
 
         Args:
-            config: scoring configuration parameters - supports bm25, sif, tfidf
+            config: scoring configuration parameters
             models: models cache
 
         Returns:
@@ -57,6 +57,24 @@ class ScoringFactory:
         config["method"] = method
 
         return scoring
+
+    @staticmethod
+    def issparse(config):
+        """
+        Checks if this scoring configuration builds a sparse index.
+
+        Args:
+            config: scoring configuration
+
+        Returns:
+            True if this config is for a sparse index
+        """
+
+        # Types that are always a sparse index
+        indexes = ["pgtext", "sparse"]
+
+        # True if this config is for a sparse index
+        return config and isinstance(config, dict) and (config.get("method") in indexes or config.get("terms"))
 
     @staticmethod
     def resolve(backend, config):

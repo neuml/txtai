@@ -2,7 +2,7 @@
 Factory module
 """
 
-from ..util import Resolver
+from ...util import Resolver
 
 from .annoy import Annoy
 from .faiss import Faiss
