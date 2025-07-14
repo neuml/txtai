@@ -446,6 +446,29 @@ class TestEmbeddings(unittest.TestCase):
         self.embeddings.upsert([(0, "Looking out into the dreadful abyss", None)])
         self.assertEqual(self.embeddings.count(), len(self.data))
 
+    def testShortcuts(self):
+        """
+        Test embeddings creation shortcuts
+        """
+
+        tests = [
+            ({"keyword": True}, ["scoring"]),
+            ({"keyword": "sif"}, ["scoring"]),
+            ({"sparse": True}, ["scoring"]),
+            ({"dense": True}, ["ann"]),
+            ({"hybrid": True}, ["ann", "scoring"]),
+            ({"hybrid": "tfidf"}, ["ann", "scoring"]),
+            ({"hybrid": "sparse"}, ["ann", "scoring"]),
+            ({"graph": True}, ["graph"]),
+        ]
+
+        for config, checks in tests:
+            embeddings = Embeddings(config)
+            embeddings.index(["test"])
+
+            for attr in checks:
+                self.assertIsNotNone(getattr(embeddings, attr))
+
     def testSimilarity(self):
         """
         Test similarity
