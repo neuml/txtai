@@ -21,6 +21,7 @@ except ImportError:
 from ..base import ANN
 
 
+# pylint: disable=R0904
 class PGVector(ANN):
     """
     Builds an ANN index backed by a Postgres database.
@@ -49,6 +50,9 @@ class PGVector(ANN):
 
         # Prepare embeddings and insert rows
         self.database.execute(self.table.insert(), [{"indexid": x, "embedding": self.prepare(row)} for x, row in enumerate(embeddings)])
+
+        # Create index
+        self.createindex()
 
         # Add id offset and index build metadata
         self.config["offset"] = embeddings.shape[0]
@@ -113,11 +117,23 @@ class PGVector(ANN):
         # Table name
         table = self.setting("table", self.defaulttable())
 
-        # Get embedding column and index settings
-        column, index = self.column()
-
         # Create vectors table
-        self.table = Table(table, MetaData(), Column("indexid", Integer, primary_key=True, autoincrement=False), Column("embedding", column))
+        self.table = Table(table, MetaData(), Column("indexid", Integer, primary_key=True, autoincrement=False), Column("embedding", self.column()))
+
+        # Drop and recreate table
+        if recreate:
+            self.table.drop(self.connection, checkfirst=True)
+
+        # Create table and index
+        self.table.create(self.connection, checkfirst=True)
+
+    def createindex(self):
+        """
+        Creates a index with the current settings.
+        """
+
+        # Table name
+        table = self.setting("table", self.defaulttable())
 
         # Create ANN index - inner product is equal to cosine similarity on normalized vectors
         index = Index(
@@ -125,16 +141,11 @@ class PGVector(ANN):
             self.table.c["embedding"],
             postgresql_using="hnsw",
             postgresql_with=self.settings(),
-            postgresql_ops={"embedding": index},
+            postgresql_ops={"embedding": self.operation()},
         )
 
-        # Drop and recreate table
-        if recreate:
-            self.table.drop(self.connection, checkfirst=True)
-            index.drop(self.connection, checkfirst=True)
-
-        # Create table and index
-        self.table.create(self.connection, checkfirst=True)
+        # Create or recreate index
+        index.drop(self.connection, checkfirst=True)
         index.create(self.connection, checkfirst=True)
 
     def connect(self):
@@ -213,22 +224,41 @@ class PGVector(ANN):
 
     def column(self):
         """
-        Gets embedding column and index definitions for the current settings.
+        Gets embedding column for the current settings.
 
         Returns:
-            embedding column definition, index definition
+            embedding column definition
         """
 
         if self.qbits:
             # If quantization is set, always return BIT vectors
-            return BIT(self.config["dimensions"] * 8), "bit_hamming_ops"
+            return BIT(self.config["dimensions"] * 8)
 
         if self.setting("precision") == "half":
             # 16-bit HALF precision vectors
-            return HALFVEC(self.config["dimensions"]), "halfvec_ip_ops"
+            return HALFVEC(self.config["dimensions"])
 
         # Default is full 32-bit FULL precision vectors
-        return VECTOR(self.config["dimensions"]), "vector_ip_ops"
+        return VECTOR(self.config["dimensions"])
+
+    def operation(self):
+        """
+        Gets the index operation for the current settings.
+
+        Returns:
+            index operation
+        """
+
+        if self.qbits:
+            # If quantization is set, always return BIT vectors
+            return "bit_hamming_ops"
+
+        if self.setting("precision") == "half":
+            # 16-bit HALF precision vectors
+            return "halfvec_ip_ops"
+
+        # Default is full 32-bit FULL precision vectors
+        return "vector_ip_ops"
 
     def prepare(self, data):
         """
