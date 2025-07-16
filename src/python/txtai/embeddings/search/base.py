@@ -189,7 +189,7 @@ class Search:
 
     def sparse(self, queries, limit):
         """
-        Executes a sparse vector search with a term frequency sparse array.
+        Executes a sparse vector search with a sparse keyword or sparse vector index.
 
         Args:
             queries: list of queries
@@ -199,8 +199,13 @@ class Search:
             list of (id, score) per query
         """
 
-        # Search term frequency sparse index
-        return self.resolve(self.scoring.batchsearch(queries, limit))
+        # Search sparse index
+        results = self.scoring.batchsearch(queries, limit)
+
+        # Require scores to be greater than 0
+        results = [[(i, score) for i, score in r if score > 0] for r in results]
+
+        return self.resolve(results)
 
     def resolve(self, results):
         """
