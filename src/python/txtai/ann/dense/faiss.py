@@ -174,7 +174,7 @@ class Faiss(ANN):
         """
 
         # Calculate number of IVF cells where x = min(4 * sqrt(embeddings count), embeddings count / 39)
-        # Faiss requires at least 39 * x data points
+        # Faiss requires at least 39 points per cluster
         return max(min(round(4 * math.sqrt(count)), int(count / 39)), 1)
 
     def components(self, components, train):
