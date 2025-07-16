@@ -83,14 +83,14 @@ class TestSparse(unittest.TestCase):
         """
 
         # Generate test record
-        data = self.generate(1, 240)
+        data = self.generate(1, 30522)
 
         # Mock database query
         query.return_value = [(x, -1.0) for x in range(data.shape[0])]
 
         # Create ANN
         path = os.path.join(tempfile.gettempdir(), "pgsparse.sqlite")
-        ann = SparseANNFactory.create({"backend": "pgsparse", "dimensions": 240, "pgsparse": {"url": f"sqlite:///{path}", "schema": "txtai"}})
+        ann = SparseANNFactory.create({"backend": "pgsparse", "dimensions": 30522, "pgsparse": {"url": f"sqlite:///{path}", "schema": "txtai"}})
 
         # Test indexing
         ann.index(data)
@@ -108,6 +108,11 @@ class TestSparse(unittest.TestCase):
 
         # Test delete
         ann.delete([0])
+        self.assertEqual(ann.count(), 1)
+
+        # Test > 1000 dimensions
+        data = random(1, 30522, format="csr", density=0.1)
+        ann.index(data)
         self.assertEqual(ann.count(), 1)
 
         # Close ANN

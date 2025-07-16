@@ -4,6 +4,8 @@ PGSparse module
 
 import os
 
+import numpy as np
+
 # Conditional import
 try:
     from pgvector import SparseVector
@@ -37,8 +39,18 @@ class PGSparse(PGVector):
         return self.setting("url", os.environ.get("SCORING_URL", os.environ.get("ANN_URL")))
 
     def column(self):
-        return SPARSEVEC(self.config["dimensions"]), "sparsevec_ip_ops"
+        return SPARSEVEC(self.config["dimensions"])
+
+    def operation(self):
+        return "sparsevec_ip_ops"
 
     def prepare(self, data):
+        # pgvector only allows 1000 non-zero values for sparse vectors
+        # Trim to top 1000 values, if necessary
+        if data.count_nonzero() > 1000:
+            value = -np.sort(-data[0, :].data)[1000]
+            data.data = np.where(data.data > value, data.data, 0)
+            data.eliminate_zeros()
+
         # Wrap as sparse vector
         return SparseVector(data)
