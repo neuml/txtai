@@ -117,14 +117,14 @@ class PGVector(ANN):
         # Table name
         table = self.setting("table", self.defaulttable())
 
-        # Create vectors table
+        # Create vectors table object
         self.table = Table(table, MetaData(), Column("indexid", Integer, primary_key=True, autoincrement=False), Column("embedding", self.column()))
 
-        # Drop and recreate table
+        # Drop table, if necessary
         if recreate:
             self.table.drop(self.connection, checkfirst=True)
 
-        # Create table and index
+        # Create table, if necessary
         self.table.create(self.connection, checkfirst=True)
 
     def createindex(self):
