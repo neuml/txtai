@@ -865,7 +865,7 @@ class Embeddings:
         if sparse or method == "sparse":
             # Sparse vector configuration
             sparse = {"path": self.config.get("sparse")} if isinstance(sparse, str) else {} if isinstance(sparse, bool) else sparse
-            sparse["path"] = sparse.get("path", "prithivida/Splade_PP_en_v2")
+            sparse["path"] = sparse.get("path", "opensearch-project/opensearch-neural-sparse-encoding-doc-v2-mini")
 
             # Merge in sparse parameters
             self.config["scoring"] = {**{"method": "sparse"}, **sparse}
