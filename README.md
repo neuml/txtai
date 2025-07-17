@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/neuml-txtai-badge.png)](https://mseep.ai/app/neuml-txtai)
+
 <p align="center">
     <img src="https://raw.githubusercontent.com/neuml/txtai/master/logo.png"/>
 </p>
