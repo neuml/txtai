@@ -76,6 +76,12 @@ class TestSparse(unittest.TestCase):
         # Close ANN
         ann.close()
 
+        # Test cluster pruning
+        ann = SparseANNFactory.create({"backend": "ivfsparse", "ivfsparse": {"nlist": 15, "nprobe": 1, "sample": 1.0}})
+        ann.index(insert)
+        self.assertLess(len(ann.blocks), 15)
+        ann.close()
+
     @patch("sqlalchemy.orm.Query.limit")
     def testPGSparse(self, query):
         """

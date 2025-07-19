@@ -3,12 +3,16 @@ IVFSparse module
 """
 
 import math
+import os
+
+from multiprocessing.pool import ThreadPool
 
 import numpy as np
 
 # Conditional import
 try:
-    from scipy.sparse import vstack
+    from scipy.sparse import csr_matrix, vstack
+    from scipy.sparse.linalg import norm
     from sklearn.cluster import MiniBatchKMeans
     from sklearn.metrics import pairwise_distances_argmin_min
     from sklearn.utils.extmath import safe_sparse_dot
@@ -60,21 +64,22 @@ class IVFSparse(ANN):
             indices = sorted(rng.choice(train.shape[0], int(sample * train.shape[0]), replace=False, shuffle=False))
             train = train[indices]
 
-        # Get number of clusters. Note that final number of clusters could be lower due to filtering duplicate centroids.
+        # Get number of clusters. Note that final number of clusters could be lower due to filtering duplicate centroids
+        # and pruning of small clusters
         clusters = self.nlist(embeddings.shape[0], train.shape[0])
 
-        # A single cluster is an exact search
-        if clusters > 1:
-            # Calculate number of data points
-            kmeans = MiniBatchKMeans(n_clusters=clusters, random_state=0, n_init="auto").fit(train)
-
-            # Find closest points to each cluster center and use those as centroids
-            # Filter out duplicate centroids
-            indices, _ = pairwise_distances_argmin_min(kmeans.cluster_centers_, train, metric="cosine")
-            self.centroids = embeddings[np.unique(indices)]
+        # Build cluster centroids if approximate search is enabled
+        # A single cluster performs exact search
+        self.centroids = self.build(train, clusters) if clusters > 1 else None
 
         # Sort into clusters
         ids = self.aggregate(embeddings)
+
+        # Prune small clusters (less than minpoints parameter) and rebuild
+        indices = sorted(k for k, v in ids.items() if len(v) >= self.minpoints())
+        if len(indices) > 0 and len(ids) > 1 and len(indices) != len(ids.keys()):
+            self.centroids = self.centroids[indices]
+            ids = self.aggregate(embeddings)
 
         # Sort clusters by id
         self.ids = dict(sorted(ids.items(), key=lambda x: x[0]))
@@ -82,12 +87,15 @@ class IVFSparse(ANN):
         # Create cluster data blocks
         self.blocks = {k: embeddings[v] for k, v in self.ids.items()}
 
+        # Calculate block max summary vectors and use as centroids
+        self.centroids = vstack([csr_matrix(x.max(axis=0)) for x in self.blocks.values()]) if self.centroids is not None else None
+
         # Initialize deletes
         self.deletes = []
 
         # Add id offset and index build metadata
         self.config["offset"] = embeddings.shape[0]
-        self.metadata({"clusters": clusters})
+        self.metadata({"clusters": len(self.blocks)})
 
     def append(self, embeddings):
         # Get offset
@@ -111,28 +119,19 @@ class IVFSparse(ANN):
 
     def search(self, queries, limit):
         results = []
-        for query in queries:
-            if self.centroids is not None:
-                # Approximate search
-                indices, _ = self.topn(query, self.centroids, self.nprobe())
 
-                # Stack into single ids list
-                ids = np.concatenate([self.ids[x] for x in indices if x in self.ids])
+        # Calculate number of threads using a thread batch size of 32
+        threads = queries.shape[0] // 32
+        threads = min(max(threads, 1), os.cpu_count())
 
-                # Stack data rows
-                data = vstack([self.blocks[x] for x in indices if x in self.blocks])
-            else:
-                # Exact search
-                ids, data = np.array(self.ids[0]), self.blocks[0]
+        # Approximate search
+        blockids = self.topn(queries, self.centroids, self.nprobe())[0] if self.centroids is not None else None
 
-            # Get deletes
-            deletes = np.argwhere(np.isin(ids, self.deletes)).ravel()
-
-            # Calculate similarity
-            indices, scores = self.topn(query, data, limit, deletes)
-
-            # Map data ids and return
-            results.append(list(zip(ids[indices].tolist(), scores.tolist())))
+        # This method is able to run as multiple threads due to a number of numpy/scipy method calls that drop the GIL.
+        results = []
+        with ThreadPool(threads) as pool:
+            for result in pool.starmap(self.scan, [(x, limit, blockids[i] if blockids is not None else None) for i, x in enumerate(queries)]):
+                results.append(result)
 
         return results
 
@@ -192,6 +191,33 @@ class IVFSparse(ANN):
             # Write deletes
             serializer.savestream(self.deletes, f)
 
+    def build(self, train, clusters):
+        """
+        Builds a k-means cluster to calculate centroid points for aggregating data blocks.
+
+        Args:
+            train: training data
+            clusters: number of clusters to create
+
+        Returns:
+            cluster centroids
+        """
+
+        # Select top n most important features that contribute to L2 vector norm
+        indices = np.argsort(-norm(train, axis=0))[: self.setting("nfeatures", 25)]
+        data = train[:, indices]
+        data = train
+
+        # Cluster data using k-means
+        kmeans = MiniBatchKMeans(n_clusters=clusters, random_state=0, n_init=5).fit(data)
+
+        # Find closest points to each cluster center and use those as centroids
+        # Filter out duplicate centroids
+        indices, _ = pairwise_distances_argmin_min(kmeans.cluster_centers_, data, metric="cosine")
+
+        # Return cluster centroids
+        return train[np.unique(indices)]
+
     def aggregate(self, data):
         """
         Aggregates input data array into clusters. This method sorts each data element into the
@@ -222,12 +248,12 @@ class IVFSparse(ANN):
 
         return ids
 
-    def topn(self, query, data, limit, deletes=None):
+    def topn(self, queries, data, limit, deletes=None):
         """
         Gets the top n most similar data elements for query.
 
         Args:
-            query: input query array
+            queries: queries array
             data: data array
             limit: top n
             deletes: optional list of deletes to filter from results
@@ -237,7 +263,7 @@ class IVFSparse(ANN):
         """
 
         # Dot product similarity (assumes all data is normalized)
-        scores = safe_sparse_dot(query, data.T, dense_output=True)
+        scores = safe_sparse_dot(queries, data.T, dense_output=True)
 
         # Clear deletes
         if deletes is not None:
@@ -247,7 +273,40 @@ class IVFSparse(ANN):
         indices = np.argpartition(-scores, limit if limit < scores.shape[0] else scores.shape[0] - 1)[:, :limit]
         scores = np.clip(np.take_along_axis(scores, indices, axis=1), 0.0, 1.0)
 
-        return indices[0], scores[0]
+        return indices, scores
+
+    def scan(self, query, limit, blockids):
+        """
+        Scans a list of blocks for top n ids that match query.
+
+        Args:
+            query: input query
+            limit top n
+            blockids: block ids to scan
+
+        Returns:
+            list of (id, scores)
+        """
+
+        if self.centroids is not None:
+            # Stack into single ids list
+            ids = np.concatenate([self.ids[x] for x in blockids if x in self.ids])
+
+            # Stack data rows
+            data = vstack([self.blocks[x] for x in blockids if x in self.blocks])
+        else:
+            # Exact search
+            ids, data = np.array(self.ids[0]), self.blocks[0]
+
+        # Get deletes
+        deletes = np.argwhere(np.isin(ids, self.deletes)).ravel()
+
+        # Calculate similarity
+        indices, scores = self.topn(query, data, limit, deletes)
+        indices, scores = indices[0], scores[0]
+
+        # Map data ids and return
+        return list(zip(ids[indices].tolist(), scores.tolist()))
 
     def nlist(self, count, train):
         """
@@ -279,7 +338,7 @@ class IVFSparse(ANN):
         # Get size of embeddings index
         size = self.size()
 
-        default = 6 if size <= 5000 else self.cells(size) // 64
+        default = 6 if size <= 5000 else self.cells(size) // 16
         return self.setting("nprobe", default)
 
     def cells(self, count):
@@ -293,9 +352,8 @@ class IVFSparse(ANN):
             number of IVF cells
         """
 
-        # Calculate number of IVF cells where x = min(4 * sqrt(count), count / 39)
-        # Match faiss behavior that requires at least 39 * x data points
-        return max(min(round(4 * math.sqrt(count)), int(count / 39)), 1)
+        # Calculate number of IVF cells where x = min(4 * sqrt(count), count / minpoints)
+        return max(min(round(4 * math.sqrt(count)), int(count / self.minpoints())), 1)
 
     def size(self):
         """
@@ -306,3 +364,15 @@ class IVFSparse(ANN):
         """
 
         return sum(len(x) for x in self.ids.values())
+
+    def minpoints(self):
+        """
+        Gets the minimum number of points per cluster.
+
+        Returns:
+            minimum points per cluster
+        """
+
+        # Minimum number of points per cluster
+        # Match faiss default that requires at least 39 points per clusters
+        return self.setting("minpoints", 39)
