@@ -152,7 +152,7 @@ class PGText(Scoring):
                 ),
             )
 
-            # Create ANN index - inner product is equal to cosine similarity on normalized vectors
+            # Create text index
             index = Index(
                 f"{table}-index",
                 self.table.c["vector"],
