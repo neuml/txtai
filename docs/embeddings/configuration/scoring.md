@@ -29,7 +29,9 @@ Additional settings for Postgres full-text keyword indexes.
 ```yaml
 path: sparse vector model path
 vectormethod: vector embeddings method
+vectornormalize: enable vector embeddings normalization (boolean)
 gpu: boolean|int|string|device
+normalize: enable score normalization (boolean | float)
 batch: Sets the transform batch size
 encodebatch: Sets the encode batch size
 vectors: additional model init args
@@ -37,14 +39,20 @@ encodeargs: additional encode() args
 backend: ivfsparse|pgsparse
 ```
 
-Sparse vector scoring options. The sparse scoring instance combines a sparse vector model with a sparse approximate nearest neighbor index (ANN).
+Sparse vector scoring options. The sparse scoring instance combines a sparse vector model with a sparse approximate nearest neighbor index (ANN). This method supports both vector normalization and score normalization.
+
+Vector normalization normalizes all vectors to have a magnitude of 1. By extension, all generated scores will be 0 to 1.
+
+Score normalization scales output scores by a scale factor. When `normalize` is set to `True` it uses a default scale factor. If `normalize` is an integer, then that is used as the scale factor. This scales the scores from 0 to 1.
 
 #### ivfsparse
 ```yaml
 ivfsparse:
   sample: percent of data to use for model training (0.0 - 1.0)
+  nfeatures: top n features to use for model training (int)
   nlist: desired number of clusters (int)
   nprobe: search probe setting (int)
+  minpoints: minimum number of points for a cluster (int)
 ```
 
 Inverted file (IVF) index with flat vector file storage and sparse array support.

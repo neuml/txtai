@@ -29,7 +29,6 @@ class TestSparse(unittest.TestCase):
             "Beijing mobilises invasion craft along coast as Taiwan tensions escalate",
             "The National Park Service warns against sacrificing slower friends in a bear attack",
             "Maine man wins $1M from $25 lottery ticket",
-            "wins wins wins",
             "Make huge profits without work, earn up to $100,000 a day",
         ]
 

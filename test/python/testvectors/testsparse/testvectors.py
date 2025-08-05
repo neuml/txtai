@@ -21,6 +21,14 @@ class TestSparseVectors(unittest.TestCase):
             SparseVectorsFactory.create({"method": "txtai.vectors.SparseSTVectors", "path": "sparse-encoder-testing/splade-bert-tiny-nq"})
         )
 
+    def testDefaultNormalize(self):
+        """
+        Test defaultnormalize method
+        """
+
+        vectors = SparseVectors(None, None, None)
+        self.assertFalse(vectors.defaultnormalize())
+
     def testNotSupported(self):
         """
         Test exceptions for unsupported methods

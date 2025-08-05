@@ -212,16 +212,15 @@ class IVFSparse(ANN):
         kmeans = MiniBatchKMeans(n_clusters=clusters, random_state=0, n_init=5).fit(data)
 
         # Find closest points to each cluster center and use those as centroids
-        # Filter out duplicate centroids
-        indices, _ = pairwise_distances_argmin_min(kmeans.cluster_centers_, data, metric="cosine")
+        indices, _ = pairwise_distances_argmin_min(kmeans.cluster_centers_, data, metric="l2")
 
-        # Return cluster centroids
+        # Filter out duplicate centroids and return cluster centroids
         return train[np.unique(indices)]
 
     def aggregate(self, data):
         """
         Aggregates input data array into clusters. This method sorts each data element into the
-        cluster with the highest cosine similarity centroid.
+        cluster with the highest L2 similarity centroid.
 
         Args:
             data: input data
@@ -235,7 +234,7 @@ class IVFSparse(ANN):
             return {0: list(range(data.shape[0]))}
 
         # Map data to closest centroids
-        indices, _ = pairwise_distances_argmin_min(data, self.centroids, metric="cosine")
+        indices, _ = pairwise_distances_argmin_min(data, self.centroids, metric="l2")
 
         # Sort into clusters
         ids = {}
@@ -262,7 +261,7 @@ class IVFSparse(ANN):
             list of matching (indices, scores)
         """
 
-        # Dot product similarity (assumes all data is normalized)
+        # Dot product similarity
         scores = safe_sparse_dot(queries, data.T, dense_output=True)
 
         # Clear deletes
@@ -271,7 +270,7 @@ class IVFSparse(ANN):
 
         # Get top n matching indices and scores
         indices = np.argpartition(-scores, limit if limit < scores.shape[0] else scores.shape[0] - 1)[:, :limit]
-        scores = np.clip(np.take_along_axis(scores, indices, axis=1), 0.0, 1.0)
+        scores = np.take_along_axis(scores, indices, axis=1)
 
         return indices, scores
 

@@ -23,12 +23,18 @@ class Sparse(Scoring):
         super().__init__(config)
 
         # Vector configuration
-        config = {k: v for k, v in config.items() if k != "method"}
-        if "vectormethod" in config:
-            config["method"] = config["vectormethod"]
+        mapping = {"vectormethod": "method", "vectornormalize": "normalize"}
+        config = {k: v for k, v in config.items() if k not in mapping.values()}
+        for k, v in mapping.items():
+            if k in config:
+                config[v] = config[k]
 
         # Load the SparseVectors model
         self.model = SparseVectorsFactory.create(config, models)
+
+        # Normalize search outputs if vectors are not normalized already
+        # A float can also be provided to set the normalization factor (defaults to 30.0)
+        self.isnormalize = self.config.get("normalize", True)
 
         # Sparse ANN
         self.ann = None
@@ -93,7 +99,10 @@ class Sparse(Scoring):
         embeddings = self.model.batchtransform((None, query, None) for query in queries)
 
         # Run ANN search
-        return self.ann.search(embeddings, limit)
+        scores = self.ann.search(embeddings, limit)
+
+        # Normalize scores if normalization IS enabled AND vector normalization IS NOT enabled
+        return self.normalize(embeddings, scores) if self.isnormalize and not self.model.isnormalize else scores
 
     def count(self):
         return self.ann.count()
@@ -119,7 +128,7 @@ class Sparse(Scoring):
         return True
 
     def isnormalized(self):
-        return True
+        return self.isnormalize or self.model.isnormalize
 
     def start(self, checkpoint):
         """
@@ -179,3 +188,31 @@ class Sparse(Scoring):
         while batch != Sparse.COMPLETE:
             yield from batch
             batch = self.queue.get()
+
+    def normalize(self, queries, scores):
+        """
+        Normalize query result using the max query score.
+
+        Args:
+            queries: query vectors
+            scores: query results
+
+        Returns:
+            normalized query results
+        """
+
+        # Get normalize scale factor
+        scale = 30.0 if isinstance(self.isnormalize, bool) else self.isnormalize
+
+        # Normalize scores using max scores
+        maxscores = self.model.dot(queries, queries)
+
+        # Normalize results and return
+        results = []
+        for x, result in enumerate(scores):
+            maxscore = max(maxscores[x][x] / scale, scale)
+            maxscore = max(maxscore, result[0][1]) if result else maxscore
+
+            results.append([(uid, score / maxscore) for uid, score in result])
+
+        return results

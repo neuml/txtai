@@ -29,6 +29,9 @@ class SparseVectors(Vectors):
 
         super().__init__(config, scoring, models)
 
+        # Get normalization setting
+        self.isnormalize = self.config.get("normalize", self.defaultnormalize()) if self.config else None
+
     def encode(self, data, category=None):
         # Encode data to embeddings
         embeddings = super().encode(data, category)
@@ -69,8 +72,19 @@ class SparseVectors(Vectors):
         raise ValueError("Truncate is not supported for sparse vectors")
 
     def normalize(self, embeddings):
-        # Normalize in place using method that supports sparse vectors
-        return normalize(embeddings, copy=False)
+        # Optionally normalize embeddings using method that supports sparse vectors
+        return normalize(embeddings, copy=False) if self.isnormalize else embeddings
 
     def quantize(self, embeddings):
         raise ValueError("Quantize is not supported for sparse vectors")
+
+    def defaultnormalize(self):
+        """
+        Returns the default normalization setting.
+
+        Returns:
+            default normalization setting
+        """
+
+        # Sparse vector embeddings typically perform better as unnormalized
+        return False

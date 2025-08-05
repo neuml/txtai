@@ -28,3 +28,7 @@ class SparseSTVectors(SparseVectors, STVectors):
 
     def loadencoder(self, path, device, **kwargs):
         return SparseEncoder(path, device=device, **kwargs)
+
+    def defaultnormalize(self):
+        # Enable normalization by default if similarity function is cosine
+        return self.model and self.model.similarity_fn_name == "cosine"
