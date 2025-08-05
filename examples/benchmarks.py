@@ -23,6 +23,7 @@ from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
 from pytrec_eval import RelevanceEvaluator
 from rank_bm25 import BM25Okapi
+from tqdm.auto import tqdm
 
 from txtai.embeddings import Embeddings
 from txtai.pipeline import LLM, RAG, Tokenizer
@@ -111,8 +112,16 @@ class Index:
         Iterates over the dataset yielding a row at a time for indexing.
         """
 
-        with open(f"{self.path}/corpus.jsonl", encoding="utf-8") as f:
-            for line in f:
+        # Data file
+        path = f"{self.path}/corpus.jsonl"
+
+        # Get total count
+        with open(path, encoding="utf-8") as f:
+            total = sum(1 for _ in f)
+
+        # Yield data
+        with open(path, encoding="utf-8") as f:
+            for line in tqdm(f, total=total):
                 row = json.loads(line)
                 text = f'{row["title"]}. {row["text"]}' if row.get("title") else row["text"]
                 if text:
