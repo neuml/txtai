@@ -102,7 +102,7 @@ class TestLiteLLM(unittest.TestCase):
         """
 
         # Test model generation with LiteLLM
-        model = LLM("gpt-4o", api_base="http://127.0.0.1:8000")
+        model = LLM("openai/gpt-4o", api_base="http://127.0.0.1:8000")
         self.assertEqual(model("The sky is"), "blue")
 
         # Test default role

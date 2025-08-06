@@ -2,6 +2,8 @@
 LiteLLM module
 """
 
+from transformers.utils import cached_file
+
 # Conditional import
 try:
     import litellm as api
@@ -36,7 +38,7 @@ class LiteLLM(Generation):
             try:
                 # Suppress debug messages for this test
                 api.suppress_debug_info = True
-                return api.get_llm_provider(path)
+                return api.get_llm_provider(path) and not LiteLLM.ishub(path)
             except:
                 return False
             finally:
@@ -44,6 +46,24 @@ class LiteLLM(Generation):
                 api.suppress_debug_info = debug
 
         return False
+
+    @staticmethod
+    def ishub(path):
+        """
+        Checks if path is available on the HF Hub.
+
+        Args:
+            input path
+
+        Returns:
+            True if this is a model on the HF Hub
+        """
+
+        # pylint: disable=W0702
+        try:
+            return cached_file(path_or_repo_id=path, filename="config.json") is not None if "/" in path else False
+        except:
+            return False
 
     def __init__(self, path, template=None, **kwargs):
         super().__init__(path, template, **kwargs)
