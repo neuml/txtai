@@ -8,6 +8,8 @@ import os
 import tempfile
 import unittest
 
+from unittest.mock import patch
+
 from txtai.embeddings import Embeddings, IndexNotFoundError
 from txtai.database import Embedded, RDBMS, SQLError
 
@@ -512,6 +514,7 @@ class Common:
             obj = embeddings.search("select object from txtai where id = 0")[0]["object"]
             self.assertEqual(str(obj.getvalue(), "utf-8"), "binary data")
 
+        @patch.dict(os.environ, {"ALLOW_PICKLE": "True"})
         def testPickle(self):
             """
             Test pickle configuration

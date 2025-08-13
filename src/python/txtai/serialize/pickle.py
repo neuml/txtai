@@ -74,7 +74,7 @@ class Pickle(Serialize):
             path: optional path to add to generated error messages
         """
 
-        enablepickle = self.allowpickle or os.environ.get("ALLOW_PICKLE", "True") in ("True", "1")
+        enablepickle = self.allowpickle or os.environ.get("ALLOW_PICKLE", "False") in ("True", "1")
         if not enablepickle:
             raise ValueError(
                 (
@@ -88,11 +88,11 @@ class Pickle(Serialize):
         if not self.allowpickle:
             warnings.warn(
                 (
-                    "Pickled index data formats are deprecated and loading will be disabled by default in the future. "
-                    "Set the env variable `ALLOW_PICKLE=False` to disable the loading of pickled index data formats. "
+                    "Loading of pickled data enabled through `ALLOW_PICKLE=True` env variable. "
+                    "This setting should only be used with trusted and/or local data. "
                     "Saving this index will replace pickled index data formats with the latest index formats and remove this warning."
                 ),
-                FutureWarning,
+                RuntimeWarning,
             )
 
         return enablepickle

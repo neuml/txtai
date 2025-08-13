@@ -7,6 +7,8 @@ import os
 import unittest
 import tempfile
 
+from unittest.mock import patch
+
 from io import BytesIO
 
 from PIL import Image
@@ -84,6 +86,7 @@ class TestEncoder(unittest.TestCase):
         self.assertTrue(result["id"].endswith("stars.jpg"))
         self.assertTrue(isinstance(result["object"], Image.Image))
 
+    @patch.dict(os.environ, {"ALLOW_PICKLE": "True"})
     def testPickle(self):
         """
         Test an index with pickle encoder

@@ -277,6 +277,7 @@ class TestEmbeddings(unittest.TestCase):
         # Check that ids is not in config
         self.assertTrue("ids" not in self.embeddings.config)
 
+    @patch.dict(os.environ, {"ALLOW_PICKLE": "True"})
     def testIdsPickle(self):
         """
         Test legacy pickle ids
@@ -296,8 +297,7 @@ class TestEmbeddings(unittest.TestCase):
         serializer = SerializeFactory.create("pickle", allowpickle=True)
         serializer.save(self.embeddings.ids.ids, path)
 
-        # Reload index
-        with self.assertWarns(FutureWarning):
+        with self.assertWarns(RuntimeWarning):
             self.embeddings.load(index)
 
         # Run search
@@ -397,6 +397,7 @@ class TestEmbeddings(unittest.TestCase):
         reducer(query)
         self.assertFalse(np.array_equal(query, original))
 
+    @patch.dict(os.environ, {"ALLOW_PICKLE": "True"})
     def testReducerLegacy(self):
         """
         Test reducer model with legacy model format
