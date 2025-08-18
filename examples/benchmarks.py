@@ -26,7 +26,7 @@ from rank_bm25 import BM25Okapi
 from tqdm.auto import tqdm
 
 from txtai.embeddings import Embeddings
-from txtai.pipeline import LLM, RAG, Tokenizer
+from txtai.pipeline import LLM, RAG, Similarity, Tokenizer
 from txtai.scoring import ScoringFactory
 
 
@@ -275,6 +275,34 @@ class Score(Index):
         return scoring
 
 
+class Similar(Index):
+    """
+    Similarity pipeline.
+    """
+
+    def index(self):
+        # Load similarity pipeline
+        model = Similarity(**self.readconfig("similar", {}))
+
+        # Get datasets
+        data = list(self.rows())
+        ids = [x[0] for x in data]
+        texts = [x[1] for x in data]
+
+        return (ids, texts, model)
+
+    def search(self, queries, limit):
+        # Unpack backend
+        ids, texts, model = self.backend
+
+        # Run model inference
+        results = []
+        for result in model(queries, texts, limit=limit):
+            results.append([(ids[x], score) for x, score in result])
+
+        return results
+
+
 class RankBM25(Index):
     """
     BM25 index using rank-bm25.
@@ -500,6 +528,8 @@ def create(method, path, config, output, refresh):
         return SQLiteFTS(path, config, output, refresh)
     if method == "es":
         return Elastic(path, config, output, refresh)
+    if method == "similarity":
+        return Similarity(path, config, output, refresh)
 
     # Default
     return Embed(path, config, output, refresh)
