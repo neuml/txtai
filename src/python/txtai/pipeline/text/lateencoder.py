@@ -16,7 +16,7 @@ class LateEncoder(Pipeline):
 
     def __init__(self, path=None, **kwargs):
         # Get device
-        self.device = Models.deviceid(kwargs.get("gpu", True))
+        self.device = Models.device(Models.deviceid(kwargs.get("gpu", True)))
 
         # Load model
         self.model = PoolingFactory.create(
