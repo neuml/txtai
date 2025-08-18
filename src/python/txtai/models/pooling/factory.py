@@ -10,6 +10,7 @@ from transformers.utils import cached_file
 
 from .base import Pooling
 from .cls import ClsPooling
+from .late import LatePooling
 from .mean import MeanPooling
 
 
@@ -43,12 +44,16 @@ class PoolingFactory:
             return Pooling(path, device, tokenizer, maxlength, modelargs)
 
         # Derive pooling method if it's not specified, path is a string and path is not a local path
-        if (not method or method not in ("clspooling", "meanpooling")) and (isinstance(path, str) and not os.path.exists(path)):
+        if (not method or method not in ("clspooling", "meanpooling", "latepooling")) and (isinstance(path, str) and not os.path.exists(path)):
             method = PoolingFactory.method(path)
 
         # Check for cls pooling
         if method == "clspooling":
             return ClsPooling(path, device, tokenizer, maxlength, modelargs)
+
+        # Check for late pooling
+        if method == "latepooling":
+            return LatePooling(path, device, tokenizer, maxlength, modelargs)
 
         # Default to mean pooling
         return MeanPooling(path, device, tokenizer, maxlength, modelargs)
@@ -74,6 +79,19 @@ class PoolingFactory:
         # Set to CLS pooling if it's enabled and mean pooling is disabled
         if config and config["pooling_mode_cls_token"] and not config["pooling_mode_mean_tokens"]:
             method = "clspooling"
+
+        # Check for late interaction pooling
+        if not config:
+            # Load 1_Dense/config.json
+            config = PoolingFactory.load(path, "1_Dense/config.json")
+            if config:
+                method = "latepooling"
+
+            # Load config.json and check architecture
+            else:
+                config = PoolingFactory.load(path, "config.json")
+                if config and "HF_ColBERT" in config.get("architectures", []):
+                    method = "latepooling"
 
         return method
 

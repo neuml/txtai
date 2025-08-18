@@ -76,6 +76,9 @@ class Pooling(nn.Module):
             # Add batch result
             results.extend(outputs.cpu().numpy())
 
+        # Apply post encoding transformation logic
+        results = self.postencode(results)
+
         # Restore original order and return array
         return np.asarray([results[x] for x in np.argsort(lengths)])
 
@@ -105,3 +108,16 @@ class Pooling(nn.Module):
         """
 
         return self.model(**inputs)[0]
+
+    def postencode(self, results):
+        """
+        Applies post encoding transformation logic.
+
+        Args:
+            results: list of results
+
+        Returns:
+            results with transformation logic applied
+        """
+
+        return results
