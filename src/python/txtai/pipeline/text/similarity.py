@@ -6,19 +6,26 @@ import numpy as np
 
 from .crossencoder import CrossEncoder
 from .labels import Labels
+from .lateencoder import LateEncoder
 
 
 class Similarity(Labels):
     """
-    Computes similarity between query and list of text using a text classifier.
+    Computes similarity between query and list of text using a transformers model.
     """
 
-    def __init__(self, path=None, quantize=False, gpu=True, model=None, dynamic=True, crossencode=False, **kwargs):
-        # Use zero-shot classification if dynamic is True and crossencode is False, otherwise use standard text classification
-        super().__init__(path, quantize, gpu, model, False if crossencode else dynamic, **kwargs)
+    def __init__(self, path=None, quantize=False, gpu=True, model=None, dynamic=True, crossencode=False, lateencode=False, **kwargs):
+        self.crossencoder, self.lateencoder = None, None
 
-        # Load as a cross-encoder if crossencode set to True
-        self.crossencoder = CrossEncoder(model=self.pipeline) if crossencode else None
+        if lateencode:
+            # Load a late interaction encoder if lateencode set to True
+            self.lateencoder = LateEncoder(path=path, gpu=gpu, **kwargs)
+        else:
+            # Use zero-shot classification if dynamic is True and crossencode is False, otherwise use standard text classification
+            super().__init__(path, quantize, gpu, model, False if crossencode else dynamic, **kwargs)
+
+            # Load as a cross-encoder if crossencode set to True
+            self.crossencoder = CrossEncoder(model=self.pipeline) if crossencode else None
 
     # pylint: disable=W0222
     def __call__(self, query, texts, multilabel=True, **kwargs):
@@ -43,6 +50,9 @@ class Similarity(Labels):
         if self.crossencoder:
             # pylint: disable=E1102
             return self.crossencoder(query, texts, multilabel)
+
+        if self.lateencoder:
+            return self.lateencoder(query, texts, **kwargs)
 
         # Call Labels pipeline for texts using input query as the candidate label
         scores = super().__call__(texts, [query] if isinstance(query, str) else query, multilabel, **kwargs)
