@@ -26,11 +26,11 @@ class LateEncoder(Pipeline):
                 "device": self.device,
                 "tokenizer": kwargs.get("tokenizer"),
                 "maxlength": kwargs.get("maxlength"),
-                "modelargs": kwargs.get("vectors", {}),
+                "modelargs": {**kwargs.get("vectors", {}), **{"muvera": None}},
             }
         )
 
-    def __call__(self, query, texts, limit=None, **kwargs):
+    def __call__(self, query, texts, limit=None):
         """
         Computes the similarity between query and list of text. Returns a list of
         (id, score) sorted by highest score, where id is the index in texts.
@@ -51,8 +51,8 @@ class LateEncoder(Pipeline):
         queries = [query] if isinstance(query, str) else query
 
         # Encode text to vectors
-        queries = torch.from_numpy(self.model.encode(queries)).to(self.device)
-        data = torch.from_numpy(self.model.encode(texts)).to(self.device)
+        queries = self.encode(queries, "query")
+        data = self.encode(texts, "data") if isinstance(texts[0], str) else texts
 
         # Compute maximum similarity score
         scores = []
@@ -60,6 +60,20 @@ class LateEncoder(Pipeline):
             scores.extend(self.score(q.unsqueeze(0), data, limit))
 
         return scores[0] if isinstance(query, str) else scores
+
+    def encode(self, data, category):
+        """
+        Encodes a batch of data using the underlying model.
+
+        Args:
+            data: input data
+            category: encoding category
+
+        Returns:
+            encoded data
+        """
+
+        return torch.from_numpy(self.model.encode(data, category=category)).to(self.device)
 
     def score(self, queries, data, limit):
         """

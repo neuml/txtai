@@ -13,6 +13,7 @@ from torch import nn
 from transformers.utils import cached_file
 
 from .base import Pooling
+from .muvera import Muvera
 
 
 class LatePooling(Pooling):
@@ -21,6 +22,12 @@ class LatePooling(Pooling):
     """
 
     def __init__(self, path, device, tokenizer=None, maxlength=None, modelargs=None):
+        # Check if fixed dimensional encoder is enabled
+        modelargs = modelargs.copy() if modelargs else {}
+        muvera = modelargs.pop("muvera", {})
+        self.encoder = Muvera(**muvera) if muvera is not None else None
+
+        # Call parent initialization
         super().__init__(path, device, tokenizer, maxlength, modelargs)
 
         # Get linear weights path
@@ -31,6 +38,9 @@ class LatePooling(Pooling):
         else:
             # Stanford weights format
             name = "model.safetensors"
+
+        # Read model settings
+        self.qprefix, self.qlength, self.dprefix, self.dlength = self.settings(path, config)
 
         # Load linear layer
         path = cached_file(path_or_repo_id=path, filename=name)
@@ -59,7 +69,33 @@ class LatePooling(Pooling):
         # Run through final linear layer and return
         return self.linear(tokens)
 
-    def postencode(self, results):
+    def preencode(self, documents, category):
+        """
+        Apply prefixes and lengths to data.
+
+        Args:
+            documents: list of documents used to build embeddings
+            category: embeddings category (query or data)
+        """
+
+        results = []
+
+        # Apply prefix
+        for text in documents:
+            prefix = self.qprefix if category == "query" else self.dprefix
+            if prefix:
+                text = f"{prefix}{text}"
+
+            results.append(text)
+
+        # Set maxlength
+        maxlength = self.qlength if category == "query" else self.dlength
+        if maxlength:
+            self.maxlength = maxlength
+
+        return results
+
+    def postencode(self, results, category):
         """
         Normalizes and pads results.
 
@@ -84,7 +120,31 @@ class LatePooling(Pooling):
         for vectors in results:
             data.append(np.pad(vectors, [(0, length - vectors.shape[0]), (0, 0)]))
 
-        return np.asarray(data)
+        # Build NumPy array
+        data = np.asarray(data)
+
+        # Apply fixed dimesional encoder, if necessary
+        return self.encoder(data, category) if self.encoder else data
+
+    def settings(self, path, config):
+        """
+        Reads model settings.
+
+        Args:
+            path: model path
+            config: PyLate model format if provided, otherwise read from Stanford format
+        """
+
+        if config:
+            # PyLate format
+            config = self.load(path, "config_sentence_transformers.json")
+            params = ["query_prefix", "query_length", "document_prefix", "document_length"]
+        else:
+            # Stanford format
+            config = self.load(path, "artifact.metadata")
+            params = ["query_token_id", "query_maxlen", "doc_token_id", "doc_maxlen"]
+
+        return [config.get(p) for p in params]
 
     def load(self, path, name):
         """

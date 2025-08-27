@@ -43,8 +43,8 @@ class PoolingFactory:
         if isinstance(path, bytes) or (isinstance(path, str) and os.path.isfile(path)) or method == "pooling":
             return Pooling(path, device, tokenizer, maxlength, modelargs)
 
-        # Derive pooling method if it's not specified, path is a string and path is not a local path
-        if (not method or method not in ("clspooling", "meanpooling", "latepooling")) and (isinstance(path, str) and not os.path.exists(path)):
+        # Derive pooling method if it's not specified and path is a string
+        if (not method or method not in ("clspooling", "meanpooling", "latepooling")) and isinstance(path, str):
             method = PoolingFactory.method(path)
 
         # Check for cls pooling

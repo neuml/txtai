@@ -70,3 +70,20 @@ class TestPooling(unittest.TestCase):
             {"method": "meanpooling", "path": "flax-sentence-embeddings/multi-qa_v1-MiniLM-L6-cls_dot", "device": self.device}
         )
         self.assertEqual(type(pooling), MeanPooling)
+
+    def testMuvera(self):
+        """
+        Test late pooling with MUVERA fixed dimensional encoding
+        """
+
+        # Test MUVERA encoding
+        for model in ["neuml/colbert-bert-tiny", "neuml/pylate-bert-tiny"]:
+            # Test defaults
+            pooling = PoolingFactory.create({"path": model, "device": self.device})
+            self.assertEqual(pooling.encode(["test"], category="query").shape, (1, 10240))
+
+            # Test custom settings
+            pooling = PoolingFactory.create(
+                {"path": model, "device": self.device, "modelargs": {"muvera": {"repetitions": 5, "hashes": 2, "projection": 8}}}
+            )
+            self.assertEqual(pooling.encode(["test"], category="data").shape, (1, 160))

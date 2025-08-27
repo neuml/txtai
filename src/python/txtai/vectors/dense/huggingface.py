@@ -41,4 +41,4 @@ class HFVectors(Vectors):
 
     def encode(self, data, category=None):
         # Encode data using vectors model
-        return self.model.encode(data, batch=self.encodebatch)
+        return self.model.encode(data, batch=self.encodebatch, category=category)
