@@ -277,7 +277,7 @@ class Score(Index):
 
 class Similar(Index):
     """
-    Similarity pipeline.
+    Search data using a similarity pipeline.
     """
 
     def index(self):
@@ -289,16 +289,52 @@ class Similar(Index):
         ids = [x[0] for x in data]
         texts = [x[1] for x in data]
 
-        return (ids, texts, model)
+        # Encode texts
+        data = model.encode(texts, "data")
+
+        return (ids, data, model)
 
     def search(self, queries, limit):
         # Unpack backend
-        ids, texts, model = self.backend
+        ids, data, model = self.backend
 
         # Run model inference
         results = []
-        for result in model(queries, texts, limit=limit):
+        for result in model(queries, data, limit=limit):
             results.append([(ids[x], score) for x, score in result])
+
+        return results
+
+
+class Rerank(Embed):
+    """
+    Embeddings index using txtai combined with a similarity pipeline
+    """
+
+    def index(self):
+        # Build embeddings index
+        embeddings = super().index()
+
+        # Combine similar pipeline with embeddings
+        model = Similar(self.path, self.config, self.output, self.refresh)
+        return model.index() + (embeddings,)
+
+    def search(self, queries, limit):
+        # Unpack backend
+        ids, data, model, embeddings = self.backend
+
+        # Run initial query
+        indices = []
+        for r in embeddings.batchsearch(queries, limit * 10):
+            indices.append({x: ids.index(uid) for x, (uid, _) in enumerate(r)})
+
+        # Run model inference
+        results = []
+        for x, query in enumerate(queries):
+            queue = data[list(indices[x].values())]
+            if len(queue) > 0:
+                result = model(query, queue, limit=limit)
+                results.append([(ids[indices[x][i]], score) for i, score in result])
 
         return results
 
@@ -528,8 +564,10 @@ def create(method, path, config, output, refresh):
         return SQLiteFTS(path, config, output, refresh)
     if method == "es":
         return Elastic(path, config, output, refresh)
-    if method == "similarity":
-        return Similarity(path, config, output, refresh)
+    if method == "similar":
+        return Similar(path, config, output, refresh)
+    if method == "rerank":
+        return Rerank(path, config, output, refresh)
 
     # Default
     return Embed(path, config, output, refresh)
@@ -653,7 +691,7 @@ def benchmarks(args):
             "climate-fever",
             "scifact",
         ]
-        methods = ["embed", "hybrid", "rag", "scoring", "rank", "bm25s", "sqlite", "es"]
+        methods = ["embed", "hybrid", "rag", "scoring", "rank", "bm25s", "sqlite", "es", "similar", "rerank"]
         mode = "w"
 
     # Run and save benchmarks
