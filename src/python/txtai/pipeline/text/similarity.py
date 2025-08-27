@@ -52,7 +52,7 @@ class Similarity(Labels):
             return self.crossencoder(query, texts, multilabel)
 
         if self.lateencoder:
-            return self.lateencoder(query, texts, **kwargs)
+            return self.lateencoder(query, texts)
 
         # Call Labels pipeline for texts using input query as the candidate label
         scores = super().__call__(texts, [query] if isinstance(query, str) else query, multilabel, **kwargs)
@@ -67,3 +67,17 @@ class Similarity(Labels):
         scores = [sorted(enumerate(row), key=lambda x: x[1], reverse=True) for row in scores]
 
         return scores[0] if isinstance(query, str) else scores
+
+    def encode(self, data, category):
+        """
+        Encodes a batch of data using the underlying model.
+
+        Args:
+            data: input data
+            category: encoding category
+
+        Returns:
+            encoded data
+        """
+
+        return self.lateencoder.encode(data, category) if self.lateencoder else data

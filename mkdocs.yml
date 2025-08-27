@@ -99,6 +99,7 @@ nav:
             - Labels: pipeline/text/labels.md
             - LLM: pipeline/text/llm.md
             - RAG: pipeline/text/rag.md
+            - Reranker: pipeline/text/reranker.md
             - Similarity: pipeline/text/similarity.md
             - Summary: pipeline/text/summary.md
             - Translation: pipeline/text/translation.md

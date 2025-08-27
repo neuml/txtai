@@ -12,6 +12,7 @@ from . import llm
 from . import objects
 from . import openai
 from . import rag
+from . import reranker
 from . import segmentation
 from . import similarity
 from . import summary

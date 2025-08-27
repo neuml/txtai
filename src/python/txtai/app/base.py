@@ -107,7 +107,7 @@ class Application:
                 pipelines.append(key)
 
         # Move dependent pipelines to end of list
-        dependent = ["similarity", "extractor", "rag"]
+        dependent = ["similarity", "extractor", "rag", "reranker"]
         pipelines = sorted(pipelines, key=lambda x: dependent.index(x) + 1 if x in dependent else 0)
 
         # Create pipelines
@@ -134,6 +134,10 @@ class Application:
 
                 elif pipeline == "similarity" and "path" not in config and "labels" in self.pipelines:
                     config["model"] = self.pipelines["labels"]
+
+                elif pipeline == "reranker":
+                    config["embeddings"] = None
+                    config["similarity"] = self.pipelines["similarity"]
 
                 self.pipelines[pipeline] = PipelineFactory.create(config, pipeline)
 
@@ -234,6 +238,10 @@ class Application:
 
             if pipeline and config is not None and config["similarity"] is None:
                 pipeline.similarity = self.embeddings
+
+        # Attach embeddings to reranker
+        if "reranker" in self.pipelines:
+            self.pipelines["reranker"].embeddings = self.embeddings
 
     def resolvetask(self, task):
         """

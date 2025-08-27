@@ -56,6 +56,10 @@ class TestSimilarity(unittest.TestCase):
         uid = similarity("Who won the lottery?", self.data)[0][0]
         self.assertEqual(self.data[uid], self.data[4])
 
+        # Test encode method
+        # pylint: disable=E1101
+        self.assertEqual(similarity.encode(["Who won the lottery?"], "data").shape, (1, 8, 128))
+
     def testLateEncoderBatch(self):
         """
         Test late-encoder similarity model with multiple inputs

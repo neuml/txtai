@@ -92,6 +92,27 @@ rag:
     output: flatten
 """
 
+# Configuration for reranker
+RERANK = """
+# Index file path
+path: %s
+
+# Allow indexing of documents
+writable: True
+
+# Embeddings settings
+embeddings:
+    path: sentence-transformers/nli-mpnet-base-v2
+    content: True
+
+# Similarity and Reranking settings
+similarity:
+    path: neuml/colbert-bert-tiny
+    lateencode: True
+
+reranker:
+"""
+
 
 class TestEmbeddings(unittest.TestCase):
     """
@@ -400,6 +421,26 @@ class TestEmbeddings(unittest.TestCase):
 
         response = self.client.post("batchrag", json={"queries": ["bear", "bear"]}).json()
         self.assertEqual(len(response), 2)
+
+    def testXRerank(self):
+        """
+        Test rerank via API
+        """
+
+        # Re-create model with custom functions
+        self.client = TestEmbeddings.start(RERANK)
+
+        # Index data
+        self.client.post("add", json=[{"id": x, "text": row} for x, row in enumerate(self.data)])
+        self.client.get("index")
+
+        uid = self.client.get("rerank?query=bear").json()[0]["id"]
+        self.assertEqual(uid, "3")
+
+        results = self.client.post("batchrerank", json={"queries": ["bear", "bear"]}).json()
+
+        uids = [result[0]["id"] for result in results]
+        self.assertEqual(uids, ["3", "3"])
 
 
 class Elements:
