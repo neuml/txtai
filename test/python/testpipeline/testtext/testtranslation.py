@@ -3,6 +3,9 @@ Translation module tests
 """
 
 import unittest
+import time
+
+import requests
 
 from txtai.pipeline import Translation
 
@@ -19,6 +22,19 @@ class TestTranslation(unittest.TestCase):
         """
 
         cls.translate = Translation()
+
+        # Preload list of models. Handle HF Hub errors.
+        complete, wait = False, 1
+        while not complete:
+            try:
+                cls.translate.lookup("en", "es")
+                complete = True
+            except requests.exceptions.HTTPError:
+                # Exponential backoff
+                time.sleep(wait)
+
+                # Wait up to 16 seconds
+                wait = min(wait * 2, 16)
 
     def testDetect(self):
         """
