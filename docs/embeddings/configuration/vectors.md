@@ -24,8 +24,8 @@ Embeddings method to use. If the method is not provided, it is inferred using th
 Builds embeddings using a transformers model. While this can be any transformers model, it works best with
 [models trained](https://huggingface.co/models?pipeline_tag=sentence-similarity) to build embeddings.
 
-Both `mean` and `cls` pooling are supported and automatically inferred from the model. The pooling method can be overwritten by changing the method
-from `transformers` to `meanpooling` or `clspooling` respectively.
+`mean`, `cls` and `late` pooling are supported and automatically inferred from the model. The pooling method can be overwritten by changing the method
+from `transformers` to `meanpooling`, `clspooling` or `latepooling` respectively.
 
 Setting `maxlength` to `True` enables truncating inputs to the `max_seq_length`. Setting `maxlength` to an integer will truncate inputs to that value. When omitted (default), the `maxlength` will be set to either the model or tokenizer maxlength.
 
