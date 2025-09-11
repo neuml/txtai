@@ -49,6 +49,32 @@ class TestArchive(unittest.TestCase):
             path = os.path.join(archive.path(), "dir", "test")
             self.assertTrue(os.path.exists(path))
 
+    def testInvalidTarLink(self):
+        """
+        Test invalid tar file with symlinks
+        """
+
+        symlink = os.path.join(tempfile.gettempdir(), "link")
+
+        # Remove symlink if it already exists
+        try:
+            os.remove(symlink)
+        except OSError:
+            pass
+
+        # Create symlink and add to TAR file
+        os.symlink(os.path.join(tempfile.gettempdir(), "noexist"), symlink)
+
+        path = os.path.join(tempfile.gettempdir(), "badtarlink")
+        with tarfile.open(path, "w") as tar:
+            tar.add(symlink, arcname="l")
+
+        archive = ArchiveFactory.create()
+
+        # Validate error is thrown for file
+        with self.assertRaises(IOError):
+            archive.load(path, "tar")
+
     def testInvalidTar(self):
         """
         Test invalid tar file

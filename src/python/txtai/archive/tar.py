@@ -28,10 +28,13 @@ class Tar(Compress):
             # Validate paths
             for member in tar.getmembers():
                 fullpath = os.path.join(path, member.name)
-                if not self.validate(path, fullpath):
-                    raise IOError(f"Invalid tar entry: {member.name}")
 
-            tar.extractall(output)
+                # Reject paths outside of base directory and links
+                if not self.validate(path, fullpath) or member.issym() or member.islnk():
+                    raise IOError(f"Invalid tar entry: {member.name}{'->' + member.linkname if member.linkname else ''}")
+
+            # Unpack data. Apply default data filter to only allow basic TAR features.
+            tar.extractall(output, filter="data")
 
     def compression(self, path):
         """
