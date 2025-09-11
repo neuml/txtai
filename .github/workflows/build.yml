@@ -18,7 +18,7 @@ jobs:
       - name: Install Python
         uses: actions/setup-python@v6
         with:
-          python-version: ">=3.10.12 <3.11"
+          python-version: "3.10"
 
       - name: Install Java
         uses: actions/setup-java@v3
@@ -38,6 +38,7 @@ jobs:
           echo "TIKA_STARTUP_SLEEP=30" >> $GITHUB_ENV
           echo "TIKA_STARTUP_MAX_RETRY=10" >> $GITHUB_ENV
           brew install portaudio
+          brew upgrade python
           sudo xcode-select -s "/Applications/Xcode_16.app"
         if: matrix.os == 'macos-latest'
 
