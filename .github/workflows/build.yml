@@ -60,7 +60,7 @@ jobs:
           HF_HUB_DOWNLOAD_TIMEOUT: 100
           HF_XET_CHUNK_CACHE_SIZE_BYTES: 0
 
-      - uses: pre-commit/action@v3.0.0
+      - uses: pre-commit/action@v3.0.1
         if: matrix.os == 'ubuntu-latest'
 
       - name: Test Coverage
