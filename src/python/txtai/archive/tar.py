@@ -34,7 +34,8 @@ class Tar(Compress):
                     raise IOError(f"Invalid tar entry: {member.name}{'->' + member.linkname if member.linkname else ''}")
 
             # Unpack data. Apply default data filter to only allow basic TAR features.
-            tar.extractall(output, filter="data")
+            kwargs = {"filter": "data"} if hasattr(tarfile, "data_filter") else {}
+            tar.extractall(output, **kwargs)
 
     def compression(self, path):
         """
