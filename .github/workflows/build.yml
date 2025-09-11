@@ -38,7 +38,7 @@ jobs:
           echo "TIKA_STARTUP_SLEEP=30" >> $GITHUB_ENV
           echo "TIKA_STARTUP_MAX_RETRY=10" >> $GITHUB_ENV
           brew install portaudio
-          brew upgrade python
+          brew upgrade python@3.10
           sudo xcode-select -s "/Applications/Xcode_16.app"
         if: matrix.os == 'macos-latest'
 
