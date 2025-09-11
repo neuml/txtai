@@ -75,31 +75,31 @@ class TestArchive(unittest.TestCase):
         with self.assertRaises(IOError):
             archive.load(path, "tar")
 
-    def testInvalidTar(self):
+    def testInvalidTarPath(self):
         """
-        Test invalid tar file
+        Test invalid tar file with a path outside of base directory
         """
 
-        path = os.path.join(tempfile.gettempdir(), "badtar")
+        path = os.path.join(tempfile.gettempdir(), "badtarpath")
         with tarfile.open(path, "w") as tar:
             tar.add(Utils.PATH, arcname="..")
 
-        archive = ArchiveFactory.create(path)
+        archive = ArchiveFactory.create()
 
         # Validate error is thrown for file
         with self.assertRaises(IOError):
             archive.load(path, "tar")
 
-    def testInvalidZip(self):
+    def testInvalidZipPath(self):
         """
-        Test invalid zip file
+        Test invalid zip file with a path outside of base directory
         """
 
-        path = os.path.join(tempfile.gettempdir(), "badzip")
+        path = os.path.join(tempfile.gettempdir(), "badzippath")
         with ZipFile(path, "w", ZIP_DEFLATED) as zfile:
             zfile.write(Utils.PATH + "/article.pdf", arcname="../article.pdf")
 
-        archive = ArchiveFactory.create(path)
+        archive = ArchiveFactory.create()
 
         # Validate error is thrown for file
         with self.assertRaises(IOError):

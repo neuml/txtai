@@ -26,10 +26,11 @@ class Zip(Compress):
 
     def unpack(self, path, output):
         with ZipFile(path, "r") as zfile:
-            # Validate path if directory specified
+            # Validate paths if directory specified
             for fullpath in zfile.namelist():
                 fullpath = os.path.join(path, fullpath)
                 if os.path.dirname(fullpath) and not self.validate(path, fullpath):
                     raise IOError(f"Invalid zip entry: {fullpath}")
 
+            # Unpack data
             zfile.extractall(output)
