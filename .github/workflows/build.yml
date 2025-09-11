@@ -8,7 +8,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest-large, windows-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
 
     timeout-minutes: 60
     steps:
@@ -39,7 +39,7 @@ jobs:
           echo "TIKA_STARTUP_MAX_RETRY=10" >> $GITHUB_ENV
           brew install portaudio
           sudo xcode-select -s "/Applications/Xcode_16.app"
-        if: matrix.os == 'macos-latest-large'
+        if: matrix.os == 'macos-latest'
 
       - name: Install dependencies - Windows
         run: |
