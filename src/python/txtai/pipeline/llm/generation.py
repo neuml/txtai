@@ -39,7 +39,7 @@ class Generation:
             stream: stream response if True, defaults to False
             stop: list of stop strings
             defaultrole: default role to apply to text inputs (prompt for raw prompts (default) or user for user chat messages)
-            stripthink: strip thinking tags, defaults to False
+            stripthink: strip thinking text, defaults to False
             kwargs: additional generation keyword arguments
 
         Returns:
@@ -110,7 +110,7 @@ class Generation:
         Args:
             prompt: original input prompt
             result: result text
-            stripthink: removes thinking tags if true
+            stripthink: removes thinking text if true
 
         Returns:
             clean text
@@ -119,8 +119,11 @@ class Generation:
         # Replace input prompt
         text = result.replace(prompt, "") if isinstance(prompt, str) else result
 
-        # Replace thinking tags, if necessary
-        text = re.sub(r"(?s)<think>.+?</think>", "", text).strip() if stripthink else text
+        # Replace thinking text, if necessary
+        if stripthink:
+            text = re.sub(r"(?s)<think>.+?</think>", "", text)
+            text = text.split("<|channel|>final<|message|>", 1)
+            text = text[1] if len(text) > 1 else text[0]
 
         # Apply text cleaning rules
         return text.replace("$=", "<=").strip()

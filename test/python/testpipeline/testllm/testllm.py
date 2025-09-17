@@ -10,7 +10,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from txtai.pipeline import LLM, Generation
 
-# pylint: disable = C0411
+# pylint: disable=C0411
 from utils import Utils
 
 
@@ -110,6 +110,25 @@ class TestLLM(unittest.TestCase):
 
         model = LLM("sshleifer/tiny-gpt2")
         self.assertIsInstance(" ".join(x for x in model("Hello, how are", stream=True)), str)
+
+    def testStripThink(self):
+        """
+        Test stripthink parameter
+        """
+
+        # pylint: disable=W0613
+        def execute1(*args, **kwargs):
+            return ["<think>test</think>you"]
+
+        def execute2(*args, **kwargs):
+            return ["<|channel|>final<|message|> you"]
+
+        model = LLM("hf-internal-testing/tiny-random-LlamaForCausalLM")
+
+        for method in [execute1, execute2]:
+            # Override execute method
+            model.generator.execute = method
+            self.assertEqual(model("Hello, how are", stripthink=True), "you")
 
     def testVision(self):
         """
