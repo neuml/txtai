@@ -26,7 +26,7 @@ class Embeddings:
     that have the same meaning, not necessarily the same keywords.
     """
 
-    # pylint: disable = W0231
+    # pylint: disable=W0231
     def __init__(self, config=None, models=None, **kwargs):
         """
         Creates a new embeddings index. Embeddings indexes are thread-safe for read operations but writes must be synchronized.

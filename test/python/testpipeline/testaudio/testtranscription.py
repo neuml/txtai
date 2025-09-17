@@ -11,7 +11,7 @@ from scipy import signal
 
 from txtai.pipeline import Transcription
 
-# pylint: disable = C0411
+# pylint: disable=C0411
 from utils import Utils
 
 

@@ -7,7 +7,7 @@ import unittest
 
 from txtai.pipeline import Textractor
 
-# pylint: disable = C0411
+# pylint: disable=C0411
 from utils import Utils
 
 

@@ -18,7 +18,7 @@ class Cluster:
     Aggregates multiple embeddings shards into a single logical embeddings instance.
     """
 
-    # pylint: disable = W0231
+    # pylint: disable=W0231
     def __init__(self, config=None):
         """
         Creates a new Cluster.

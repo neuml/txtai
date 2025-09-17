@@ -11,7 +11,7 @@ from zipfile import ZipFile, ZIP_DEFLATED
 
 from txtai.archive import ArchiveFactory, Compress
 
-# pylint: disable = C0411
+# pylint: disable=C0411
 from utils import Utils
 
 

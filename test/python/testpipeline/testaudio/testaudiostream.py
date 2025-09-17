@@ -10,7 +10,7 @@ import soundfile as sf
 
 from txtai.pipeline import AudioStream
 
-# pylint: disable = C0411
+# pylint: disable=C0411
 from utils import Utils
 
 

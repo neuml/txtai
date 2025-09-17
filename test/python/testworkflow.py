@@ -30,7 +30,7 @@ from txtai.workflow import (
     WorkflowTask,
 )
 
-# pylint: disable = C0411
+# pylint: disable=C0411
 from utils import Utils
 
 

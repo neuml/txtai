@@ -20,7 +20,7 @@ from fastapi.testclient import TestClient
 from txtai.api import application
 from txtai.api.responses import JSONEncoder
 
-# pylint: disable = C0411
+# pylint: disable=C0411
 from utils import Utils
 
 # Configuration for image storage

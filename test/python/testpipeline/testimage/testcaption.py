@@ -8,7 +8,7 @@ from PIL import Image
 
 from txtai.pipeline import Caption
 
-# pylint: disable = C0411
+# pylint: disable=C0411
 from utils import Utils
 
 

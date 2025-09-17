@@ -13,7 +13,7 @@ from fastapi.testclient import TestClient
 
 from txtai.api import API, application
 
-# pylint: disable = C0411
+# pylint: disable=C0411
 from utils import Utils
 
 # Configuration for pipelines
