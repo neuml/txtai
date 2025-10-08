@@ -27,7 +27,10 @@ jobs:
           java-version: 21
 
       - name: Install dependencies - Linux
-        run: sudo apt-get update && sudo apt-get install libportaudio2 libsndfile1 && sudo apt-get -y autoremove
+        run: |
+          sudo apt-get update
+          sudo apt-get install libportaudio2 libsndfile1
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
         if: matrix.os == 'ubuntu-latest'
 
       - name: Install dependencies - macOS
