@@ -159,6 +159,25 @@ class TestDense(unittest.TestCase):
         # Validate count
         self.assertEqual(ann.count(), 100)
 
+    def testNumPySafetensors(self):
+        """
+        Test NumPy backend with safetensors storage
+        """
+
+        ann = ANNFactory.create({"backend": "numpy", "numpy": {"safetensors": True}})
+
+        # Generate and index dummy data
+        data = np.random.rand(100, 240).astype(np.float32)
+        ann.index(data)
+
+        # Test save and load
+        index = os.path.join(tempfile.gettempdir(), "ann.safetensors")
+        ann.save(index)
+        ann.load(index)
+
+        # Validate count
+        self.assertEqual(ann.count(), 100)
+
     @patch("sqlalchemy.orm.Query.limit")
     def testPGVector(self, query):
         """

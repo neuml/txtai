@@ -4,6 +4,8 @@ NumPy module
 
 import numpy as np
 
+from safetensors.numpy import load_file, save_file
+
 from ...serialize import SerializeFactory
 
 from ..base import ANN
@@ -28,7 +30,12 @@ class NumPy(ANN):
     def load(self, path):
         # Load array from file
         try:
-            self.backend = self.tensor(np.load(path, allow_pickle=False))
+            if self.setting("safetensors"):
+                data = load_file(path).get("data")
+            else:
+                data = np.load(path, allow_pickle=False)
+
+            self.backend = self.tensor(data)
         except ValueError:
             # Backwards compatible support for previously pickled data
             self.backend = self.tensor(SerializeFactory.create("pickle").load(path))
@@ -81,8 +88,11 @@ class NumPy(ANN):
 
     def save(self, path):
         # Save array to file. Use stream to prevent ".npy" suffix being added.
-        with open(path, "wb") as handle:
-            np.save(handle, self.numpy(self.backend), allow_pickle=False)
+        if self.setting("safetensors"):
+            save_file({"data": self.numpy(self.backend)}, path)
+        else:
+            with open(path, "wb") as handle:
+                np.save(handle, self.numpy(self.backend), allow_pickle=False)
 
     def tensor(self, array):
         """
