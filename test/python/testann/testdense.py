@@ -277,6 +277,7 @@ class TestDense(unittest.TestCase):
 
         self.runTests("torch")
 
+    @unittest.skipIf(platform.system() == "Darwin", "Torch quantization not supported on macOS")
     def testTorchQuantization(self):
         """
         Test Torch backend with quantization enabled

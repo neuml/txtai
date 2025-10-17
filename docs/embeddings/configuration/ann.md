@@ -75,7 +75,7 @@ numpy:
 
 The Torch backend is a k-nearest neighbors backend like NumPy. It supports GPU-enabled operations. It also has support for quantization which enables fitting larger arrays into GPU memory.
 
-When quantization is enabled, vectors are _always_ stored in safetensors.
+When quantization is enabled, vectors are _always_ stored in safetensors. _Note that macOS support for quantization is limited._
 
 ```yaml
 torch:
