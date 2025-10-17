@@ -80,7 +80,7 @@ extras["pipeline-text"] = ["gliner>=0.2.16", "sentencepiece>=0.1.91", "staticvec
 
 extras["pipeline-train"] = [
     "accelerate>=0.26.0",
-    "bitsandbytes>=0.42.0",
+    "bitsandbytes>=0.48.1",
     "onnx>=1.11.0",
     "onnxmltools>=1.9.1",
     "onnxruntime>=1.11.0",
