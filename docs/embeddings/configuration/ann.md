@@ -68,7 +68,8 @@ The NumPy backend is a k-nearest neighbors backend. It's designed for simplicity
 
 ```yaml
 numpy:
-    safetensors: stores vectors using the safetensors format - defaults to NumPy array storage
+    safetensors: stores vectors using the safetensors format
+                 defaults to NumPy array storage
 ```
 
 ### torch
@@ -79,7 +80,8 @@ When quantization is enabled, vectors are _always_ stored in safetensors. _Note 
 
 ```yaml
 torch:
-    safetensors: stores vectors using the safetensors format - defaults to NumPy array storage if quantization is disabled
+    safetensors: stores vectors using the safetensors format - defaults
+                 to NumPy array storage if quantization is disabled
     quantize:
         type: quantization type (fp4, nf4, int8)
         blocksize: quantization block size parameter
