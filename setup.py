@@ -31,7 +31,7 @@ extras["agent"] = ["mcpadapt>=0.1.0", "smolagents>=1.17"]
 
 extras["ann"] = [
     "annoy>=1.16.3",
-    "bitsandbytes>=0.48.1",
+    "bitsandbytes>=0.42.0",
     "scikit-learn>=0.23.1",
     "hnswlib>=0.5.0",
     "pgvector>=0.4.1",
@@ -80,7 +80,7 @@ extras["pipeline-text"] = ["gliner>=0.2.16", "sentencepiece>=0.1.91", "staticvec
 
 extras["pipeline-train"] = [
     "accelerate>=0.26.0",
-    "bitsandbytes>=0.48.1",
+    "bitsandbytes>=0.42.0",
     "onnx>=1.11.0",
     "onnxmltools>=1.9.1",
     "onnxruntime>=1.11.0",
