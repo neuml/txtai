@@ -23,6 +23,7 @@ class TestOptional(unittest.TestCase):
 
         modules = [
             "annoy",
+            "bitsandbytes",
             "bs4",
             "chonkie",
             "croniter",
@@ -121,6 +122,9 @@ class TestOptional(unittest.TestCase):
 
         with self.assertRaises(ImportError):
             ANNFactory.create({"backend": "sqlite"})
+
+        with self.assertRaises(ImportError):
+            ANNFactory.create({"backend": "torch", "torch": {"quantize": True}})
 
         # Test sparse methods
         with self.assertRaises(ImportError):

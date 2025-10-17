@@ -4,7 +4,8 @@ NumPy module
 
 import numpy as np
 
-from safetensors.numpy import load_file, save_file
+from safetensors import safe_open
+from safetensors.numpy import save_file
 
 from ...serialize import SerializeFactory
 
@@ -31,7 +32,7 @@ class NumPy(ANN):
         # Load array from file
         try:
             if self.setting("safetensors"):
-                data = load_file(path).get("data")
+                data = self.loadsafetensors(path).get("data")
             else:
                 data = np.load(path, allow_pickle=False)
 
@@ -89,7 +90,7 @@ class NumPy(ANN):
     def save(self, path):
         # Save array to file. Use stream to prevent ".npy" suffix being added.
         if self.setting("safetensors"):
-            save_file({"data": self.numpy(self.backend)}, path)
+            self.savesafetensors({"data": self.numpy(self.backend)}, path)
         else:
             with open(path, "wb") as handle:
                 np.save(handle, self.numpy(self.backend), allow_pickle=False)
@@ -143,6 +144,33 @@ class NumPy(ANN):
         """
 
         return {"numpy": np.__version__}
+
+    def loadsafetensors(self, path):
+        """
+        Loads data from a safetensors file.
+
+        Args:
+            path: path to safetensors file
+
+        Returns:
+            dict with metadata + tensors
+        """
+
+        # Merge metadata and tensors into single dictionary
+        with safe_open(path, framework="np") as f:
+            return {**(f.metadata() if f.metadata() else {}), **{k: f.get_tensor(k) for k in f.keys()}}
+
+    def savesafetensors(self, data, path, metadata=None):
+        """
+        Saves data and metadata to a safetensors file.
+
+        Args:
+            data: tensors to save
+            path: output file
+            metadata: additional metadata to save
+        """
+
+        save_file(data, path, metadata)
 
     def hammingscore(self, queries):
         """

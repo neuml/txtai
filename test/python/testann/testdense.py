@@ -171,9 +171,14 @@ class TestDense(unittest.TestCase):
         ann.index(data)
 
         # Test save and load
-        index = os.path.join(tempfile.gettempdir(), "ann.safetensors")
+        index = os.path.join(tempfile.gettempdir(), "numpy.safetensors")
         ann.save(index)
         ann.load(index)
+
+        # Generate query vector and test search
+        query = np.random.rand(240).astype(np.float32)
+        self.normalize(query)
+        self.assertGreater(ann.search(np.array([query]), 1)[0][0][1], 0)
 
         # Validate count
         self.assertEqual(ann.count(), 100)
@@ -271,6 +276,35 @@ class TestDense(unittest.TestCase):
         """
 
         self.runTests("torch")
+
+    def testTorchQuantization(self):
+        """
+        Test Torch backend with quantization enabled
+        """
+
+        for qtype in ["fp4", "nf4", "int8"]:
+            ann = ANNFactory.create({"backend": "torch", "torch": {"quantize": {"type": qtype}}})
+
+            # Generate and index dummy data
+            data = np.random.rand(100, 240).astype(np.float32)
+            ann.index(data)
+
+            # Test save and load
+            index = os.path.join(tempfile.gettempdir(), f"{qtype}.safetensors")
+            ann.save(index)
+            ann.load(index)
+
+            # Generate query vector and test search
+            query = np.random.rand(240).astype(np.float32)
+            self.normalize(query)
+            self.assertGreater(ann.search(np.array([query]), 1)[0][0][1], 0)
+
+            # Validate count
+            self.assertEqual(ann.count(), 100)
+
+            # Test delete
+            ann.delete([0])
+            self.assertEqual(ann.count(), 99)
 
     def runTests(self, name, params=None, update=True):
         """

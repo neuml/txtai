@@ -69,6 +69,7 @@ class HFOnnx(Tensors):
             input_names=list(inputs.keys()),
             output_names=list(outputs.keys()),
             dynamic_axes=dict(chain(inputs.items(), outputs.items())),
+            dynamo=False,
         )
 
         # Quantize model

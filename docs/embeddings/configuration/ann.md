@@ -64,9 +64,26 @@ See [Annoy documentation](https://github.com/spotify/annoy#full-python-api) for 
 
 ### numpy
 
-The NumPy backend is a k-nearest neighbors backend. It's designed for simplicity and works well with smaller datasets.
+The NumPy backend is a k-nearest neighbors backend. It's designed for simplicity and works well with smaller datasets that fit into memory.
 
-The `torch` backend supports the same options. The only difference is that the vectors can be search using GPUs.
+```yaml
+numpy:
+    safetensors: stores vectors using the safetensors format - defaults to NumPy array storage
+```
+
+### torch
+
+The Torch backend is a k-nearest neighbors backend like NumPy. It supports GPU-enabled operations. It also has support for quantization which enables fitting larger arrays into GPU memory.
+
+When quantization is enabled, vectors are _always_ stored in safetensors.
+
+```yaml
+torch:
+    safetensors: stores vectors using the safetensors format - defaults to NumPy array storage if quantization is disabled
+    quantize:
+        type: quantization type (fp4, nf4, int8)
+        blocksize: quantization block size parameter
+```
 
 ### pgvector
 ```yaml

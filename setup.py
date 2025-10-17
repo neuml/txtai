@@ -6,7 +6,7 @@ with open("README.md", "r", encoding="utf-8") as f:
     DESCRIPTION = "".join([line for line in f if "gh-dark-mode-only" not in line])
 
 # Required dependencies
-install = ["faiss-cpu>=1.7.1.post2", "msgpack>=1.0.7", "torch>=2.1", "transformers>=4.45.0"]
+install = ["faiss-cpu>=1.7.1.post2", "msgpack>=1.0.7", "torch>=2.4", "transformers>=4.45.0"]
 
 # Required dependencies that are also base transformers dependencies
 install += ["huggingface-hub>=0.34.0", "numpy>=1.18.4", "pyyaml>=5.3", "regex>=2022.8.17", "safetensors>=0.4.5"]
@@ -31,6 +31,7 @@ extras["agent"] = ["mcpadapt>=0.1.0", "smolagents>=1.17"]
 
 extras["ann"] = [
     "annoy>=1.16.3",
+    "bitsandbytes>=0.48.1",
     "scikit-learn>=0.23.1",
     "hnswlib>=0.5.0",
     "pgvector>=0.4.1",
