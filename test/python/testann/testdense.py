@@ -99,6 +99,62 @@ class TestDense(unittest.TestCase):
         # Test to with mmap enabled
         self.runTests("faiss", {"faiss": {"mmap": True}}, False)
 
+    def testGGML(self):
+        """
+        Test GGML backend
+        """
+
+        self.runTests("ggml")
+
+    def testGGMLQuantization(self):
+        """
+        Test GGML backend with quantization enabled
+        """
+
+        ann = ANNFactory.create({"backend": "ggml", "ggml": {"quantize": "Q4_0"}})
+
+        # Generate and index dummy data
+        data = np.random.rand(100, 256).astype(np.float32)
+        ann.index(data)
+
+        # Test save and load
+        index = os.path.join(tempfile.gettempdir(), "ggml.q4_0.v1")
+        ann.save(index)
+        ann.load(index)
+
+        # Generate query vector and test search
+        query = np.random.rand(256).astype(np.float32)
+        self.normalize(query)
+        self.assertGreater(ann.search(np.array([query]), 1)[0][0][1], 0)
+
+        # Validate count
+        self.assertEqual(ann.count(), 100)
+
+        # Test delete
+        ann.delete([0])
+        self.assertEqual(ann.count(), 99)
+
+        # Save updated index with deletes and reload
+        index = os.path.join(tempfile.gettempdir(), "ggml.q4_0.v2")
+        ann.save(index)
+        ann.load(index)
+        ann.index(data)
+
+    def testGGMLInvalid(self):
+        """
+        Test invalid GGML configurations
+        """
+
+        data = np.random.rand(100, 240).astype(np.float32)
+
+        with self.assertRaises(ValueError):
+            ann = ANNFactory.create({"backend": "ggml", "ggml": {"quantize": "NOEXIST", "gpu": False}})
+            ann.index(data)
+
+        with self.assertRaises(ValueError):
+            ann = ANNFactory.create({"backend": "ggml", "ggml": {"quantize": "Q4_K"}})
+            ann.index(data)
+
     def testHnsw(self):
         """
         Test Hnswlib backend

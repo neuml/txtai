@@ -6,6 +6,7 @@ from ...util import Resolver
 
 from .annoy import Annoy
 from .faiss import Faiss
+from .ggml import GGML
 from .hnsw import HNSW
 from .numpy import NumPy
 from .pgvector import PGVector
@@ -41,6 +42,8 @@ class ANNFactory:
             ann = Faiss(config)
         elif backend == "hnsw":
             ann = HNSW(config)
+        elif backend == "ggml":
+            ann = GGML(config)
         elif backend == "numpy":
             ann = NumPy(config)
         elif backend == "pgvector":

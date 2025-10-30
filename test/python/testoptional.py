@@ -30,6 +30,7 @@ class TestOptional(unittest.TestCase):
             "docling.document_converter",
             "duckdb",
             "fastapi",
+            "ggml",
             "gliner",
             "grandcypher",
             "grand",
@@ -113,6 +114,9 @@ class TestOptional(unittest.TestCase):
         # Test dense methods
         with self.assertRaises(ImportError):
             ANNFactory.create({"backend": "annoy"})
+
+        with self.assertRaises(ImportError):
+            ANNFactory.create({"backend": "ggml"})
 
         with self.assertRaises(ImportError):
             ANNFactory.create({"backend": "hnsw"})

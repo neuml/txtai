@@ -32,9 +32,10 @@ extras["agent"] = ["mcpadapt>=0.1.0", "smolagents>=1.17"]
 extras["ann"] = [
     "annoy>=1.16.3",
     "bitsandbytes>=0.42.0",
-    "scikit-learn>=0.23.1",
+    "ggml-py>=0.9.4",
     "hnswlib>=0.5.0",
     "pgvector>=0.4.1",
+    "scikit-learn>=0.23.1",
     "scipy>=1.4.1",
     "sqlalchemy>=2.0.20",
     "sqlite-vec>=0.1.1",
