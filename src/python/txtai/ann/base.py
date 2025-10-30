@@ -126,7 +126,7 @@ class ANN:
 
         # Get setting value, set default value if not found
         setting = backend.get(name) if backend else None
-        return setting if setting else default
+        return setting if setting or (backend and name in backend) else default
 
     def metadata(self, settings=None):
         """
