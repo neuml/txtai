@@ -53,7 +53,7 @@ jobs:
       - name: Build
         run: |
           pip install -U wheel
-          pip install git+https://github.com/neuml/ggml-python
+          pip install git+https://github.com/neuml/ggml-python --verbose
           python -c "import ggml"
           pip install .[all,dev]
           pip cache purge
