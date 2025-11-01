@@ -4,7 +4,7 @@ Approximate Nearest Neighbor (ANN) index configuration for storing vector embedd
 
 ## backend
 ```yaml
-backend: faiss|hnsw|annoy|numpy|torch|pgvector|sqlite|custom
+backend: faiss|hnsw|annoy|ggml|numpy|torch|pgvector|sqlite|custom
 ```
 
 Sets the ANN backend. Defaults to `faiss`. Additional backends are available via the [ann](../../../install/#ann) extras package. Set custom backends via setting this parameter to the fully resolvable class string.
@@ -61,6 +61,18 @@ annoy:
 ```
 
 See [Annoy documentation](https://github.com/spotify/annoy#full-python-api) for more information on these parameters. Note that annoy indexes can not be modified after creation, upserts/deletes and other modifications are not supported.
+
+### ggml
+```yaml
+ggml:
+    gpu: enable GPU - defaults to True
+    quantize: sets the tensor quantization - defaults to F32
+    querysize: query buffer size - defaults to 64
+```
+
+The [GGML](https://github.com/ggml-org/ggml) backend is a k-nearest neighbors backend. It stores tensors using GGML and [GGUF](https://huggingface.co/docs/hub/en/gguf). It supports GPU-enabled operations and supports quantization. GGML is the framework used by [llama.cpp](https://github.com/ggml-org/llama.cpp).
+
+[See this](https://github.com/ggml-org/ggml/blob/master/include/ggml.h#L379) for a list of quantization types.
 
 ### numpy
 
