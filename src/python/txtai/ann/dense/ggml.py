@@ -368,7 +368,8 @@ class GGMLTensors:
 
         # Fall back to CPU backend
         if not backend:
-            backend = ggml.ggml_backend_init_by_type(ggml.GGML_BACKEND_DEVICE_TYPE_CPU, None)
+            backend = ggml.ggml_backend_cpu_init()
+            print("BACKEND", backend)
             ggml.ggml_backend_cpu_set_n_threads(backend, os.cpu_count())
 
         return backend
