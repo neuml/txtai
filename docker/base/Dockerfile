@@ -27,7 +27,7 @@ RUN \
     # Install txtai project and dependencies
     ln -s /usr/bin/python${PYTHON_VERSION} /usr/bin/python && \
     python -m pip install --no-cache-dir -U pip wheel setuptools && \
-    if [ -z ${GPU} ] && { [ -z ${TARGETARCH} ] || [ ${TARGETARCH} = "amd64" ] ;}; then pip install --no-cache-dir torch==2.8.0+cpu torchvision==0.23.0+cpu -f https://download.pytorch.org/whl/torch -f https://download.pytorch.org/whl/torchvision; fi && \
+    if [ -z ${GPU} ] && { [ -z ${TARGETARCH} ] || [ ${TARGETARCH} = "amd64" ] ;}; then pip install --no-cache-dir torch==2.9.0+cpu torchvision==0.24.0+cpu -f https://download.pytorch.org/whl/torch -f https://download.pytorch.org/whl/torchvision; fi && \
     python -m pip install --no-cache-dir txtai${COMPONENTS} && \
     python -c "import sys, importlib.util as util; 1 if util.find_spec('nltk') else sys.exit(); import nltk; nltk.download(['punkt', 'punkt_tab', 'averaged_perceptron_tagger_eng'])" && \
     \
