@@ -120,7 +120,7 @@ class HFTrainer(Tensors):
         # Build trainer
         trainer = Trainer(
             model=model,
-            tokenizer=tokenizer,
+            processing_class=tokenizer,
             data_collator=collator,
             args=args,
             train_dataset=train,
