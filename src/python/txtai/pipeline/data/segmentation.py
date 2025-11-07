@@ -29,7 +29,17 @@ class Segmentation(Pipeline):
     """
 
     def __init__(
-        self, sentences=False, lines=False, paragraphs=False, minlength=None, join=False, sections=False, cleantext=True, chunker=None, **kwargs
+        self,
+        sentences=False,
+        lines=False,
+        paragraphs=False,
+        minlength=None,
+        join=False,
+        sections=False,
+        cleantext=True,
+        chunker=None,
+        tuples=False,
+        **kwargs,
     ):
         """
         Creates a new Segmentation pipeline.
@@ -43,6 +53,7 @@ class Segmentation(Pipeline):
             sections: tokenizes text into sections if True, defaults to False. Splits using section or page breaks, depending on what's available
             cleantext: apply text cleaning rules, defaults to True
             chunker: creates a third-party chunker to tokenize text if set, defaults to None
+            tuples: return (input, output) tuples, defaults to False
             kwargs: additional keyword arguments
         """
 
@@ -62,6 +73,9 @@ class Segmentation(Pipeline):
 
         # Create a third-party chunker, if applicable
         self.chunker = self.createchunker(chunker, **kwargs) if chunker else None
+
+        # Return (input, output) tuples as output
+        self.tuples = tuples
 
     def __call__(self, text):
         """
@@ -85,10 +99,16 @@ class Segmentation(Pipeline):
         results = []
         for value in texts:
             # Get text
-            value = self.text(value)
+            result = self.text(value)
 
             # Parse and add extracted results
-            results.append(self.parse(value))
+            result = self.parse(result)
+
+            # Wrap as tuple
+            if self.tuples:
+                result = [(value, x) for x in result] if isinstance(result, list) else (value, result)
+
+            results.append(result)
 
         return results[0] if isinstance(text, str) else results
 

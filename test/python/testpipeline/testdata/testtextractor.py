@@ -206,6 +206,18 @@ class TestTextractor(unittest.TestCase):
         textractor = Textractor(tika=False)
         self.assertIsNone(textractor.html)
 
+    def testTuples(self):
+        """
+        Test output tuples
+        """
+
+        # Default text cleaning
+        textractor = Textractor(tuples=True)
+
+        path, text = textractor(Utils.PATH + "/article.pdf")
+        self.assertEqual(path, Utils.PATH + "/article.pdf")
+        self.assertEqual(len(text), 2471)
+
     def testURL(self):
         """
         Test parsing a remote URL
