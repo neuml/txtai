@@ -130,6 +130,25 @@ class TestLLM(unittest.TestCase):
             model.generator.execute = method
             self.assertEqual(model("Hello, how are", stripthink=True), "you")
 
+    def testStripThinkStream(self):
+        """
+        Test stripthink parameter with streaming output
+        """
+
+        # pylint: disable=W0613
+        def execute1(*args, **kwargs):
+            yield from "<think>test</think>you"
+
+        def execute2(*args, **kwargs):
+            yield from "<|channel|>final<|message|>you"
+
+        model = LLM("hf-internal-testing/tiny-random-LlamaForCausalLM")
+
+        for method in [execute1, execute2]:
+            # Override execute method
+            model.generator.execute = method
+            self.assertEqual("".join(model("Hello, how are", stripthink=True, stream=True)), "you")
+
     def testVision(self):
         """
         Test vision LLM

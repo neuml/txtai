@@ -63,7 +63,7 @@ class Generation:
 
         # Streaming generation
         if stream:
-            return results
+            return self.cleanstream(results) if stripthink else results
 
         # Clean generated text
         results = [self.clean(texts[x], result, stripthink) for x, result in enumerate(results)]
@@ -121,12 +121,46 @@ class Generation:
 
         # Replace thinking text, if necessary
         if stripthink:
-            text = re.sub(r"(?s)<think>.+?</think>", "", text)
-            text = text.split("<|channel|>final<|message|>", 1)
-            text = text[1] if len(text) > 1 else text[0]
+            text = self.cleanthink(text)
 
         # Apply text cleaning rules
         return text.replace("$=", "<=").strip()
+
+    def cleanstream(self, results):
+        """
+        Cleans thinking tokens from streaming results and streams the remaining results.
+
+        Args:
+            results: results stream
+        """
+
+        # Consume "thinking" tokens
+        text, buffer = None, ""
+        for chunk in results:
+            buffer += chunk
+            text = self.cleanthink(buffer)
+            if text != buffer:
+                break
+
+        # Yield remaining tokens
+        yield from text
+        yield from results
+
+    def cleanthink(self, text):
+        """
+        Clean thinking tokens from text.
+
+        Args:
+            text: input text
+
+        Returns:
+            text with thinking tokens removed
+        """
+
+        text = re.sub(r"(?s)<think>.+?</think>", "", text)
+        text = text.split("<|channel|>final<|message|>", 1)
+        text = text[1] if len(text) > 1 else text[0]
+        return text
 
     def response(self, result):
         """
