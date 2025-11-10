@@ -14,7 +14,7 @@ router = APIRouter(route_class=EncodingAPIRoute)
 
 
 @router.get("/rag")
-def rag(query: str, maxlength: Optional[int] = None, stream: Optional[bool] = False):
+def rag(query: str, maxlength: Optional[int] = None, stream: Optional[bool] = False, stripthink: Optional[bool] = False):
     """
     Runs a RAG pipeline for the input query.
 
@@ -28,7 +28,8 @@ def rag(query: str, maxlength: Optional[int] = None, stream: Optional[bool] = Fa
     """
 
     # Build keyword arguments
-    kwargs = {key: value for key, value in [("stream", stream), ("maxlength", maxlength)] if value}
+    params = [("maxlength", maxlength), ("stream", stream), ("stripthink", stripthink)]
+    kwargs = {key: value for key, value in params if value}
 
     # Run pipeline
     result = application.get().pipeline("rag", query, **kwargs)
@@ -38,7 +39,12 @@ def rag(query: str, maxlength: Optional[int] = None, stream: Optional[bool] = Fa
 
 
 @router.post("/batchrag")
-def batchrag(queries: List[str] = Body(...), maxlength: Optional[int] = Body(default=None), stream: Optional[bool] = Body(default=False)):
+def batchrag(
+    queries: List[str] = Body(...),
+    maxlength: Optional[int] = Body(default=None),
+    stream: Optional[bool] = Body(default=False),
+    stripthink: Optional[bool] = Body(default=False),
+):
     """
     Runs a RAG pipeline for the input queries.
 
@@ -52,7 +58,8 @@ def batchrag(queries: List[str] = Body(...), maxlength: Optional[int] = Body(def
     """
 
     # Build keyword arguments
-    kwargs = {key: value for key, value in [("stream", stream), ("maxlength", maxlength)] if value}
+    params = [("maxlength", maxlength), ("stream", stream), ("stripthink", stripthink)]
+    kwargs = {key: value for key, value in params if value}
 
     # Run pipeline
     result = application.get().pipeline("rag", queries, **kwargs)
