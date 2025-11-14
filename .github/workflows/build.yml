@@ -53,6 +53,7 @@ jobs:
       - name: Build
         run: |
           pip install -U wheel
+          pip install gliner==0.2.21
           pip install .[all,dev]
           pip cache purge
           python -c "import nltk; nltk.download(['punkt', 'punkt_tab', 'averaged_perceptron_tagger_eng'])"
