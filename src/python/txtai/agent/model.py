@@ -7,7 +7,7 @@ import re
 from enum import Enum
 
 from smolagents import ChatMessage, Model, get_clean_message_list, tool_role_conversions
-from smolagents.models import get_tool_call_from_text, remove_stop_sequences
+from smolagents.models import get_tool_call_from_text, remove_content_after_stop_sequences
 
 from ..pipeline import LLM
 
@@ -60,7 +60,7 @@ class PipelineModel(Model):
 
         # Remove stop sequences from LLM output
         if stop_sequences is not None:
-            response = remove_stop_sequences(response, stop_sequences)
+            response = remove_content_after_stop_sequences(response, stop_sequences)
 
         # Load response into a chat message
         message = ChatMessage(role="assistant", content=response)
