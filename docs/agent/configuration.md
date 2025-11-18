@@ -96,6 +96,8 @@ A tool instance can be provided. Additionally, the following strings load tools 
 method: code|tool
 ```
 
-Sets the agent method. Supports either a `code` or `tool` calling agent (default). A code agent generates Python code and executes that. A tool calling agent generates JSON blocks and calls the agents within those blocks.
+Sets the agent method. Supports either a `code` or `tool` (default) calling agent. A code agent generates Python code and executes that. A tool calling agent generates JSON blocks and calls the agents within those blocks.
 
-[Read more on this here](https://huggingface.co/docs/smolagents/v1.13.0/en/guided_tour#codeagent-and-toolcallingagent).
+Additional options can be directly passed. See [CodeAgent](https://huggingface.co/docs/smolagents/main/en/reference/agents#smolagents.CodeAgent) or [ToolCallingAgent](https://huggingface.co/docs/smolagents/main/en/reference/agents#smolagents.ToolCallingAgent) for a list of parameters.
+
+[Read more here](https://huggingface.co/docs/smolagents/main/en/guided_tour).
