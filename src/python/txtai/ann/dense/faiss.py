@@ -77,9 +77,12 @@ class Faiss(ANN):
         self.backend.remove_ids(np.array(ids, dtype=np.int64))
 
     def search(self, queries, limit):
-        # Set nprobe and nflip search parameters
-        self.backend.nprobe = self.nprobe()
-        self.backend.nflip = self.setting("nflip", self.backend.nprobe)
+        # Set nprobe and nflip search parameters, if available
+        if hasattr(self.backend, "nprobe"):
+            self.backend.nprobe = self.nprobe()
+
+        if hasattr(self.backend, "nflip"):
+            self.backend.nflip = self.setting("nflip", self.nprobe())
 
         # Run the query
         scores, ids = self.backend.search(queries, limit)

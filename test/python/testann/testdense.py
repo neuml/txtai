@@ -59,6 +59,21 @@ class TestDense(unittest.TestCase):
 
         self.runTests("faiss")
 
+    def testFaissBinary(self):
+        """
+        Test Faiss backend with a binary hash index
+        """
+
+        ann = ANNFactory.create({"backend": "faiss", "quantize": 1, "dimensions": 240 * 8, "faiss": {"components": "BHash32"}})
+
+        # Generate and index dummy data
+        data = np.random.rand(100, 240).astype(np.uint8)
+        ann.index(data)
+
+        # Generate query vector and test search
+        query = np.random.rand(240).astype(np.uint8)
+        self.assertGreater(ann.search(np.array([query]), 1)[0][0][1], 0)
+
     def testFaissCustom(self):
         """
         Test Faiss backend with custom settings
