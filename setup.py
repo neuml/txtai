@@ -77,7 +77,7 @@ extras["pipeline-image"] = ["imagehash>=4.2.1", "pillow>=7.1.2", "timm>=0.4.12"]
 
 extras["pipeline-llm"] = ["litellm>=1.37.16", "llama-cpp-python>=0.2.75"]
 
-extras["pipeline-text"] = ["gliner>=0.2.16", "sentencepiece>=0.1.91", "staticvectors>=0.2.0"]
+extras["pipeline-text"] = ["gliner>=0.2.16,<=0.2.21", "sentencepiece>=0.1.91", "staticvectors>=0.2.0"]
 
 extras["pipeline-train"] = [
     "accelerate>=0.26.0",
