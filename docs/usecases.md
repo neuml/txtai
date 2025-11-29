@@ -1,6 +1,6 @@
 # Use Cases
 
-The following sections introduce common txtai use cases. A comprehensive set of over 60 [example notebooks and applications](../examples) are also available.
+The following sections introduce common txtai use cases. A comprehensive set of over 70 [example notebooks and applications](../examples) are also available.
 
 ## Semantic Search
 
@@ -44,7 +44,7 @@ Agents connect embeddings, pipelines, workflows and other agents together to aut
 
 txtai agents are built on top of the [smolagents](https://github.com/huggingface/smolagents) framework. This supports all LLMs txtai supports (Hugging Face, llama.cpp, OpenAI / Claude / AWS Bedrock via LiteLLM).
 
-See the link below to learn more.
+See the links below to learn more.
 
 | Notebook  | Description  |       |
 |:----------|:-------------|------:|
@@ -59,7 +59,7 @@ Retrieval augmented generation (RAG) reduces the risk of LLM hallucinations by c
 ![rag](images/rag.png#gh-light-mode-only)
 ![rag](images/rag-dark.png#gh-dark-mode-only)
 
-A novel feature of txtai is that it can provide both an answer and source citation.
+Check out this [RAG Quickstart Example](https://github.com/neuml/txtai/blob/master/examples/rag_quickstart.py). Additional examples are listed below.
 
 | Notebook  | Description  |       |
 |:----------|:-------------|------:|

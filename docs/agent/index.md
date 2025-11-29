@@ -141,7 +141,7 @@ Write the output in Markdown.
 
 # More examples
 
-See the link below to learn more.
+See the links below to learn more.
 
 | Notebook  | Description  |       |
 |:----------|:-------------|------:|
