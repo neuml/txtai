@@ -275,6 +275,10 @@ class TestKeyword(unittest.TestCase):
         index, _ = scoring.batchsearch(["bear"], 1)[0][0]
         self.assertEqual(index, 3)
 
+        # Run wildcard search
+        index, _ = scoring.search("bea*", 1)[0]
+        self.assertEqual(index, 3)
+
         # Test save/reload
         self.save(scoring, config, f"scoring.{config['method']}.search")
 

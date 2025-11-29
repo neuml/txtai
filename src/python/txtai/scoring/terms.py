@@ -3,6 +3,7 @@ Terms module
 """
 
 import functools
+import logging
 import os
 import sqlite3
 import sys
@@ -12,6 +13,9 @@ from collections import Counter
 from threading import RLock
 
 import numpy as np
+
+# Logging configuration
+logger = logging.getLogger(__name__)
 
 
 class Terms:
@@ -30,6 +34,7 @@ class Terms:
 
     INSERT_TERM = "INSERT OR REPLACE INTO terms VALUES (?, ?, ?)"
     SELECT_TERMS = "SELECT ids, freqs FROM terms WHERE term = ?"
+    WILDCARD_TERMS = "SELECT term FROM terms WHERE term LIKE ?"
 
     # Documents table
     CREATE_DOCUMENTS = """
@@ -44,6 +49,9 @@ class Terms:
     DELETE_DOCUMENTS = "DELETE FROM documents"
     INSERT_DOCUMENT = "INSERT OR REPLACE INTO documents VALUES (?, ?, ?, ?)"
     SELECT_DOCUMENTS = "SELECT indexid, id, deleted, length FROM documents ORDER BY indexid"
+
+    # Operators
+    ASTERISK = "__asterisk__"
 
     def __init__(self, config, score, idf):
         """
@@ -173,6 +181,12 @@ class Terms:
         # Initialize scores array
         scores = np.zeros(len(self.ids), dtype=np.float32)
 
+        # Apply term expansion
+        terms = self.expand(terms)
+
+        # Debug logging for terms
+        logger.debug(" ".join(["%s"] * len(terms)), *terms)
+
         # Score less common terms
         terms, skipped, hasscores = Counter(terms), {}, False
         for term, freq in terms.items():
@@ -191,6 +205,19 @@ class Terms:
 
         # Merge in common term scores and return top n matches
         return self.topn(scores, limit, hasscores, skipped)
+
+    def escape(self, query):
+        """
+        Escapes query operators.
+
+        Args:
+            query: query
+
+        Returns:
+            query with query operators escaped
+        """
+
+        return query.replace("*", Terms.ASTERISK)
 
     def count(self):
         """
@@ -391,6 +418,33 @@ class Terms:
                 freqs.byteswap()
 
         return uids, freqs
+
+    def expand(self, terms):
+        """
+        Expands a list of terms using the following term expansion rules.
+
+          - Asterisks (*) for wildcard expressions
+
+        Args:
+            terms: list of terms
+
+        Returns:
+            expanded terms list
+        """
+
+        results = []
+        for term in terms:
+            # Wilcard expressions
+            if Terms.ASTERISK in term:
+                # Require a prefix or suffix
+                if term.replace(Terms.ASTERISK, "").strip():
+                    term = term.replace(Terms.ASTERISK, "%")
+                    result = self.cursor.execute(Terms.WILDCARD_TERMS, [term])
+                    results.extend([t for t, in result])
+            else:
+                results.append(term)
+
+        return results
 
     @functools.lru_cache(maxsize=500)
     def weights(self, term):

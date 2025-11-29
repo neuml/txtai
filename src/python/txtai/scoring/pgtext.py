@@ -3,6 +3,7 @@ PGText module
 """
 
 import os
+import re
 
 # Conditional import
 try:
@@ -71,6 +72,9 @@ class PGText(Scoring):
         return None
 
     def search(self, query, limit=3):
+        # Replace wildcards with prefix wildcard term
+        query = re.sub(r"(?<!\:)\*", ":*", query)
+
         # Run query
         query = (
             self.database.query(self.table.c["indexid"], text("ts_rank(vector, plainto_tsquery(:language, :query)) rank"))

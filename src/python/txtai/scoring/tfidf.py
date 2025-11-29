@@ -156,6 +156,9 @@ class TFIDF(Scoring):
     def search(self, query, limit=3):
         # Check if term index available
         if self.terms:
+            # Escape query operators
+            query = self.terms.escape(query) if isinstance(query, str) else [self.terms.escape(q) for q in query]
+
             # Parse query into terms
             query = self.tokenize(query) if isinstance(query, str) else query
 
