@@ -30,11 +30,8 @@ class PipelineModel(Model):
         self.llm = path if isinstance(path, LLM) else LLM(path, method, **kwargs)
         self.maxlength = 8192
 
-        # Set base class parameters
-        self.model_id = self.llm.generator.path
-
         # Call parent constructor
-        super().__init__(flatten_messages_as_text=not self.llm.isvision(), **kwargs)
+        super().__init__(flatten_messages_as_text=not self.llm.isvision(), model_id=self.llm.generator.path, **kwargs)
 
     # pylint: disable=W0613
     def generate(self, messages, stop_sequences=None, response_format=None, tools_to_call_from=None, **kwargs):
