@@ -30,8 +30,8 @@ data = [
 embeddings = Embeddings(content=True)
 embeddings.index(data)
 
-# Create and run pipeline
-rag = RAG(embeddings, "google/flan-t5-base", template="""
+# Create the RAG pipeline
+rag = RAG(embeddings, "Qwen/Qwen3-0.6B", template="""
   Answer the following question using the provided context.
 
   Question:
@@ -41,11 +41,15 @@ rag = RAG(embeddings, "google/flan-t5-base", template="""
   {context}
 """)
 
-rag("What was won?")
+# Run RAG pipeline
+# LLM options can be passed as additional arguments
+#  - Set the default role to user and inputs are converted to chat messages
+#  - Thinking text is removed when `stripthink=True`
+rag("What was won?", defaultrole="user", stripthink=True)
 
-# Instruction tuned models typically require string prompts to
+# Instruction tuned models require string prompts to
 # follow a specific chat template set by the model
-rag = RAG(embeddings, "meta-llama/Meta-Llama-3.1-8B-Instruct", template="""
+rag = RAG(embeddings, "Qwen/Qwen3-0.6B", template="""
   <|im_start|>system
   You are a friendly assistant.<|im_end|>
   <|im_start|>user
@@ -59,13 +63,13 @@ rag = RAG(embeddings, "meta-llama/Meta-Llama-3.1-8B-Instruct", template="""
   <|im_start|>assistant
   """
 )
-rag("What was won?")
+rag("What was won?", stripthink=True)
 
 # Inputs are automatically converted to chat messages when a
 # system prompt is provided
 rag = RAG(
   embeddings,
-  "meta-llama/Meta-Llama-3.1-8B-Instruct",
+  "openai/gpt-oss-20b",
   system="You are a friendly assistant",
   template="""
   Answer the following question using the provided context.
@@ -76,26 +80,12 @@ rag = RAG(
   Context:
   {context}
 """)
-rag("What was won?")
-
-# LLM options can be passed as additional arguments
-rag = RAG(embeddings, "meta-llama/Meta-Llama-3.1-8B-Instruct", template="""
-  Answer the following question using the provided context.
-
-  Question:
-  {question}
-
-  Context:
-  {context}
-""")
-
-# Set the default role to user and string inputs are converted to chat messages
-rag("What was won?", defaultrole="user")
+rag("What was won?", stripthink=True)
 ```
 
 See the [Embeddings](../../../embeddings) and [LLM](../llm) pages for additional configuration options.
 
-See the links below for more detailed examples.
+Check out this [RAG Quickstart Example](https://github.com/neuml/txtai/blob/master/examples/rag_quickstart.py). Additional examples are listed below.
 
 | Notebook  | Description  |       |
 |:----------|:-------------|------:|
@@ -137,7 +127,7 @@ embeddings:
   content: True
 
 rag:
-  path: google/flan-t5-base
+  path: Qwen/Qwen3-0.6B
   template: |
     Answer the following question using the provided context.
 
@@ -146,6 +136,8 @@ rag:
 
     Context:
     {context}
+  defaultrole: user
+  stripthink: True
 
 workflow:
   search:

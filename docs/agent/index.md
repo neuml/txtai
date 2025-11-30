@@ -41,7 +41,7 @@ def today() -> str:
     return datetime.today().isoformat()
 
 agent = Agent(
-    model="hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4",
+    model="Qwen/Qwen3-4B-Instruct-2507",
     tools=[today, wikipedia, arxiv, "websearch"],
     max_steps=10,
 )
@@ -83,7 +83,7 @@ Agents can also be tools. This enables the concept of building "Agent Teams" to 
 ```python
 from txtai import Agent, LLM
 
-llm = LLM("hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4")
+llm = LLM("Qwen/Qwen3-4B-Instruct-2507")
 
 websearcher = Agent(
     model=llm,
@@ -133,15 +133,14 @@ This provides another level of intelligence to the process. Instead of just a si
 
 ```python
 agent("""
-Work with your team and build a comprehensive report on fundamental
-concepts about Signal Processing.
+Research fundamental concepts about Signal Processing and build a comprehensive report.
 Write the output in Markdown.
 """)
 ```
 
 # More examples
 
-See the links below to learn more.
+Check out this [Agent Quickstart Example](https://github.com/neuml/txtai/blob/master/examples/agent_quickstart.py). Additional examples are listed below.
 
 | Notebook  | Description  |       |
 |:----------|:-------------|------:|

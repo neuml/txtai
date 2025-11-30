@@ -88,13 +88,13 @@ with mlflow.start_run():
     # Create RAG pipeline
     rag = RAG(
         wiki,
-        "hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4",
+        "openai/gpt-oss-20b",
         system="You are a friendly assistant. You answer questions from users.",
         template=template,
         context=10
     )
 
-    rag("Tell me about the Roman Empire", maxlength=2048)
+    rag("Tell me about the Roman Empire", maxlength=2048, stripthink=True)
 ```
 
 ![rag](https://raw.githubusercontent.com/neuml/mlflow-txtai/master/images/rag.png)
@@ -155,7 +155,7 @@ embeddings.load(provider="huggingface-hub", container="neuml/txtai-astronomy")
 
 agent = Agent(
     tools=[search],
-    llm="hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4",
+    llm="Qwen/Qwen3-4B-Instruct-2507",
     max_iterations=10,
 )
 

@@ -51,7 +51,7 @@ agent:
             - websearch
 
 llm:
-    path: hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4
+    path: Qwen/Qwen3-4B-Instruct-2507
 ```
 
 ## Pipeline

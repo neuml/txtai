@@ -34,7 +34,7 @@ def today() -> str:
     return datetime.today().isoformat()
 
 agent = Agent(
-    model="hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4",
+    model="Qwen/Qwen3-4B-Instruct-2507",
     tools=[today, wikipedia, arxiv, "websearch"],
 )
 ```

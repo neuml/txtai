@@ -132,7 +132,7 @@ Agents connect embeddings, pipelines, workflows and other agents together to aut
 
 txtai agents are built on top of the [smolagents](https://github.com/huggingface/smolagents) framework. This supports all LLMs txtai supports (Hugging Face, llama.cpp, OpenAI / Claude / AWS Bedrock via LiteLLM).
 
-See the links below to learn more.
+Check out this [Agent Quickstart Example](https://github.com/neuml/txtai/blob/master/examples/agent_quickstart.py). Additional examples are listed below.
 
 | Notebook  | Description  |       |
 |:----------|:-------------|------:|
@@ -199,7 +199,7 @@ See the table below for the current recommended models. These models all allow c
 | [Image Captions](https://neuml.github.io/txtai/pipeline/image/caption)        | [BLIP](https://hf.co/Salesforce/blip-image-captioning-base)              |
 | [Labels - Zero Shot](https://neuml.github.io/txtai/pipeline/text/labels)      | [BART-Large-MNLI](https://hf.co/facebook/bart-large)                     |
 | [Labels - Fixed](https://neuml.github.io/txtai/pipeline/text/labels)          | Fine-tune with [training pipeline](https://neuml.github.io/txtai/pipeline/train/trainer)          |
-| [Large Language Model (LLM)](https://neuml.github.io/txtai/pipeline/text/llm) | [Llama 3.1 Instruct](https://hf.co/meta-llama/Llama-3.1-8B-Instruct)     |
+| [Large Language Model (LLM)](https://neuml.github.io/txtai/pipeline/text/llm) | [gpt-oss-20b](https://huggingface.co/openai/gpt-oss-20b)                 |
 | [Summarization](https://neuml.github.io/txtai/pipeline/text/summary)          | [DistilBART](https://hf.co/sshleifer/distilbart-cnn-12-6)                |
 | [Text-to-Speech](https://neuml.github.io/txtai/pipeline/audio/texttospeech)   | [ESPnet JETS](https://hf.co/NeuML/ljspeech-jets-onnx)                    |
 | [Transcription](https://neuml.github.io/txtai/pipeline/audio/transcription)   | [Whisper](https://hf.co/openai/whisper-base)                             | 

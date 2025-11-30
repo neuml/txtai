@@ -61,27 +61,28 @@ See the [LiteLLM documentation](https://litellm.vercel.app/docs/providers) for t
 from txtai import LLM
 
 # Transformers
-llm = LLM("meta-llama/Meta-Llama-3.1-8B-Instruct")
-llm = LLM("meta-llama/Meta-Llama-3.1-8B-Instruct", method="transformers")
+llm = LLM("openai/gpt-oss-20b")
+llm = LLM("openai/gpt-oss-20b", method="transformers")
 
 # llama.cpp
-llm = LLM("microsoft/Phi-3-mini-4k-instruct-gguf/Phi-3-mini-4k-instruct-q4.gguf")
-llm = LLM("microsoft/Phi-3-mini-4k-instruct-gguf/Phi-3-mini-4k-instruct-q4.gguf",
+llm = LLM("unsloth/gpt-oss-20b-GGUF/gpt-oss-20b-Q4_K_M.gguf")
+llm = LLM("unsloth/gpt-oss-20b-GGUF/gpt-oss-20b-Q4_K_M.gguf",
            method="llama.cpp")
 
 # LiteLLM
-llm = LLM("ollama/llama3.1")
-llm = LLM("ollama/llama3.1", method="litellm")
+llm = LLM("ollama/gpt-oss")
+llm = LLM("ollama/gpt-oss", method="litellm")
 
 # Custom Ollama endpoint
-llm = LLM("ollama/llama3.1", api_base="http://localhost:11434")
+llm = LLM("ollama/gpt-oss", api_base="http://localhost:11434")
 
 # Custom OpenAI-compatible endpoint
-llm = LLM("openai/llama3.1", api_base="http://localhost:4000")
+llm = LLM("openai/gpt-oss", api_base="http://localhost:4000")
 
 # LLM APIs - must also set API key via environment variable
-llm = LLM("gpt-4o")
-llm = LLM("claude-3-5-sonnet-20240620")
+llm = LLM("gpt-5.1")
+llm = LLM("claude-opus-4-5-20251101")
+llm = LLM("gemini/gemini-3-pro-preview")
 ```
 
 Models can be externally loaded and passed to pipelines. This is useful for models that are not yet supported by Transformers and/or need special initialization.
@@ -92,8 +93,8 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from txtai import LLM
 
-# Load Phi 3.5-mini
-path = "microsoft/Phi-3.5-mini-instruct"
+# Load Qwen3 0.6B
+path = "Qwen/Qwen3-0.6B"
 model = AutoModelForCausalLM.from_pretrained(
   path,
   torch_dtype=torch.bfloat16,
@@ -148,7 +149,7 @@ Similar to the Python example above, the underlying [Hugging Face pipeline param
 
 ```yaml
 llm:
-  path: microsoft/Phi-3.5-mini-instruct
+  path: Qwen/Qwen3-0.6B
   torch_dtype: torch.bfloat16
 ```
 

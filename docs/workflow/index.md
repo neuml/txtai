@@ -133,7 +133,7 @@ Workflows can connect multiple LLM prompting tasks together.
 
 ```yaml
 llm:
-  path: google/flan-t5-xl
+  path: openai/gpt-oss-20b
 
 workflow:
   llm:
@@ -168,7 +168,7 @@ Any txtai pipeline/workflow task can be connected in workflows with LLMs.
 
 ```yaml
 llm:
-  path: google/flan-t5-xl
+  path: openai/gpt-oss-20b
 
 translation:
 

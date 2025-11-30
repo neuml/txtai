@@ -68,8 +68,8 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from txtai import LLM
 
-# Load Phi 3.5-mini
-path = "microsoft/Phi-3.5-mini-instruct"
+# Load Qwen3 0.6B
+path = "Qwen/Qwen3-0.6B"
 model = AutoModelForCausalLM.from_pretrained(
   path,
   torch_dtype=torch.bfloat16,
