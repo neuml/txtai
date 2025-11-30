@@ -116,7 +116,11 @@ class ToolFactory:
         signature = inspect.signature(target)
         inputs = {}
         for pname, param in signature.parameters.items():
-            if param.default == inspect.Parameter.empty and pname in parameters:
+            if (
+                param.default == inspect.Parameter.empty
+                and pname in parameters
+                and param.kind not in (inspect.Parameter.VAR_KEYWORD, inspect.Parameter.VAR_POSITIONAL)
+            ):
                 inputs[pname] = {"type": "any", "description": parameters[pname]}
 
         # Create function tool
