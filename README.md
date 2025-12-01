@@ -165,6 +165,8 @@ Language model workflows, also known as semantic workflows, connect language mod
 
 While LLMs are powerful, there are plenty of smaller, more specialized models that work better and faster for specific tasks. This includes models for extractive question-answering, automatic summarization, text-to-speech, transcription and translation.
 
+Check out this [Workflow Quickstart Example](https://github.com/neuml/txtai/blob/master/examples/workflow_quickstart.py). Additional examples are listed below.
+
 | Notebook  | Description  |       |
 |:----------|:-------------|------:|
 | [Run pipeline workflows](https://github.com/neuml/txtai/blob/master/examples/14_Run_pipeline_workflows.ipynb) [▶️](https://www.youtube.com/watch?v=UBMPDCn1gEU) | Simple yet powerful constructs to efficiently process data | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/14_Run_pipeline_workflows.ipynb) |

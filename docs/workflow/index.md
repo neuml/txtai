@@ -202,4 +202,4 @@ Workflows are callable objects. Workflows take an input of iterable data element
 
 ## More examples
 
-See [this link](../examples/#workflows) for a full list of workflow examples.
+Check out this [Workflow Quickstart Example](https://github.com/neuml/txtai/blob/master/examples/workflow_quickstart.py). See [this link](../examples/#workflows) for a full list of workflow examples.
