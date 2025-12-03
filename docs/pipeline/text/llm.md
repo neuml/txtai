@@ -47,7 +47,8 @@ llm([
   {"role": "user", "content": "Answer the following question..."}
 ])
 
-# Set the default role to user and string inputs are converted to chat messages
+# When there is no system prompt passed to instruction tuned models,
+# `defaultrole="user"` must be set for string inputs
 llm("Answer the following question...", defaultrole="user")
 ```
 

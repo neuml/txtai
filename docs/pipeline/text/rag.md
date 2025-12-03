@@ -43,7 +43,8 @@ rag = RAG(embeddings, "Qwen/Qwen3-0.6B", template="""
 
 # Run RAG pipeline
 # LLM options can be passed as additional arguments
-#  - Set the default role to user and inputs are converted to chat messages
+#  - When there is no system prompt passed to instruction tuned models,
+#    `defaultrole="user"` must be set for string prompts
 #  - Thinking text is removed when `stripthink=True`
 rag("What was won?", defaultrole="user", stripthink=True)
 
