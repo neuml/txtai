@@ -48,6 +48,8 @@ plugins:
             "pipeline/text/sequences.md": "pipeline/text/llm.md"
 
 markdown_extensions:
+    - admonition
+    - pymdownx.details
     - pymdownx.highlight
     - pymdownx.superfences
 nav:
