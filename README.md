@@ -51,7 +51,10 @@ Summary of txtai features:
 
 txtai is built with Python 3.10+, [Hugging Face Transformers](https://github.com/huggingface/transformers), [Sentence Transformers](https://github.com/UKPLab/sentence-transformers) and [FastAPI](https://github.com/tiangolo/fastapi). txtai is open-source under an Apache 2.0 license.
 
-*Interested in an easy and secure way to run hosted txtai applications? Then join the [txtai.cloud](https://txtai.cloud) preview to learn more.*
+> [!INFO]
+>
+> [NeuML](https://neuml.com) is the company behind txtai. We provide AI consulting services around our stack. [Schedule a meeting](https://cal.com/neuml/intro) or [send a message](mailto:info@neuml.com) to learn more.
+> We're also building an easy and secure way to run hosted txtai applications with [txtai.cloud](https://txtai.cloud).
 
 ## Why txtai?
 
