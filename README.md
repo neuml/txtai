@@ -53,7 +53,7 @@ txtai is built with Python 3.10+, [Hugging Face Transformers](https://github.com
 
 > [!NOTE]
 >
-> [NeuML](https://neuml.com) is the company behind txtai. We provide AI consulting services around our stack. [Schedule a meeting](https://cal.com/neuml/intro) or [send a message](mailto:info@neuml.com) to learn more.
+> [NeuML](https://neuml.com) is the company behind txtai and we provide AI consulting services around our stack. [Schedule a meeting](https://cal.com/neuml/intro) or [send a message](mailto:info@neuml.com) to learn more.
 > We're also building an easy and secure way to run hosted txtai applications with [txtai.cloud](https://txtai.cloud).
 
 ## Why txtai?
