@@ -78,9 +78,9 @@ class HFPipeline(Tensors):
         args = inspect.getfullargspec(pipeline).args
 
         # Resolve torch dtype, if necessary
-        dtype = kwargs.get("torch_dtype")
+        dtype = kwargs.get("dtype")
         if dtype and isinstance(dtype, str) and dtype != "auto":
-            kwargs["torch_dtype"] = Resolver()(dtype)
+            kwargs["dtype"] = Resolver()(dtype)
 
         # Split into modelargs and kwargs
         return ({arg: value for arg, value in kwargs.items() if arg not in args}, {arg: value for arg, value in kwargs.items() if arg in args})
