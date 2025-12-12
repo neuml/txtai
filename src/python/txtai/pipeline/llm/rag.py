@@ -281,8 +281,11 @@ class RAG(Pipeline):
             scores, segments, tokenlist
         """
 
+        # Derive target batchsearch method
+        batchsearch = self.similarity if callable(self.similarity) else self.similarity.batchsearch
+
         scores, segments, tokenlist = [], [], []
-        for results in self.similarity.batchsearch([self.tokenize(x) for x in queries], self.context):
+        for results in batchsearch([self.tokenize(x) for x in queries], self.context):
             # Assume embeddings content is enabled and results are dictionaries
             scores.append([(result["id"], result["score"]) for result in results])
             segments.append([(result["id"], result["text"]) for result in results])
