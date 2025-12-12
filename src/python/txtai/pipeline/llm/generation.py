@@ -28,7 +28,7 @@ class Generation:
 
     def __call__(self, text, maxlength, stream, stop, defaultrole, stripthink, **kwargs):
         """
-        Generates text. Supports the following input formats:
+        Generates content. Supports the following input formats:
 
           - String or list of strings (instruction-tuned models must follow chat templates)
           - List of dictionaries with `role` and `content` key-values or lists of lists
@@ -38,12 +38,12 @@ class Generation:
             maxlength: maximum sequence length
             stream: stream response if True, defaults to False
             stop: list of stop strings
-            defaultrole: default role to apply to text inputs (prompt for raw prompts (default) or user for user chat messages)
-            stripthink: strip thinking text, defaults to False
+            defaultrole: default role to apply to text inputs (`auto` to infer (default), `user` for user chat messages or `prompt` for raw prompts)
+            stripthink: strip thinking tags, defaults to False if stream is enabled, True otherwise
             kwargs: additional generation keyword arguments
 
         Returns:
-            generated text
+            generated content
         """
 
         # Format inputs
@@ -54,32 +54,70 @@ class Generation:
             formatter = TemplateFormatter()
             texts = [formatter.format(self.template, text=x) if isinstance(x, str) else x for x in texts]
 
-        # Apply default role, if necessary
-        if defaultrole == "user":
-            texts = [[{"role": "user", "content": x}] if isinstance(x, str) else x for x in texts]
-
         # Run pipeline
-        results = self.execute(texts, maxlength, stream, stop, **kwargs)
+        results = self.execute(self.format(texts, defaultrole), maxlength, stream, stop, **kwargs)
 
         # Streaming generation
         if stream:
             return self.cleanstream(results) if stripthink else results
 
-        # Clean generated text
+        # Clean generated content
         results = [self.clean(texts[x], result, stripthink) for x, result in enumerate(results)]
 
         # Extract results based on inputs
         return results[0] if isinstance(text, str) or isinstance(text[0], dict) else results
 
+    def ischat(self):
+        """
+        Returns True if this LLM supports chat.
+
+        Returns:
+            True if this a chat model
+        """
+
+        return True
+
     def isvision(self):
         """
-        Returns True if this LLM supports vision operations.
+        Returns True if this LLM supports vision.
 
         Returns:
             True if this is a vision model
         """
 
         return False
+
+    def format(self, texts, defaultrole):
+        """
+        Formats inputs for LLM inference. This method handles wrapping string inputs as chat messages using the following rules.
+
+          - defaultrole == "user" OR
+          - defaultrole == "auto" AND model supports chat AND text doesn't start with an instruction token
+
+        Args:
+            texts: list of inputs
+            defaultrole: default role to apply to text inputs (`auto` to infer (default), `user` for user chat messages or `prompt` for raw prompts)
+
+        Returns:
+            inputs ready for inference
+        """
+
+        # Instruction tokens
+        instruct = ("<|im_start|>", "<|start|>", "<|start_of_role|>", "[INST]")
+
+        results = []
+        for text in texts:
+            # Format chat messages using following rules
+            #  - defaultrole == "user"
+            #  - defaultrole == "auto" and text doesn't start with a instruction token
+            if isinstance(text, str) and (
+                defaultrole == "user" or (defaultrole == "auto" and self.ischat() and not text.strip().startswith(instruct))
+            ):
+                text = [{"role": "user", "content": text}]
+
+            results.append(text)
+
+        return results
 
     def execute(self, texts, maxlength, stream, stop, **kwargs):
         """
@@ -93,7 +131,7 @@ class Generation:
             kwargs: additional generation keyword arguments
 
         Returns:
-            generated text
+            generated content
         """
 
         # Streaming generation
@@ -105,7 +143,7 @@ class Generation:
 
     def clean(self, prompt, result, stripthink):
         """
-        Applies a series of rules to clean generated text.
+        Applies a series of rules to clean generated content.
 
         Args:
             prompt: original input prompt
@@ -113,7 +151,7 @@ class Generation:
             stripthink: removes thinking text if true
 
         Returns:
-            clean text
+            clean content
         """
 
         # Replace input prompt
@@ -143,7 +181,7 @@ class Generation:
                 break
 
         # Yield remaining tokens
-        yield from text
+        yield from text.lstrip()
         yield from results
 
     def cleanthink(self, text):

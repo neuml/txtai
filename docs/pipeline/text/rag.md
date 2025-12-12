@@ -42,14 +42,10 @@ rag = RAG(embeddings, "Qwen/Qwen3-0.6B", template="""
 """)
 
 # Run RAG pipeline
-# LLM options can be passed as additional arguments
-#  - When there is no system prompt passed to instruction tuned models,
-#    `defaultrole="user"` must be set for string prompts
-#  - Thinking text is removed when `stripthink=True`
-rag("What was won?", defaultrole="user", stripthink=True)
+rag("What was won?")
 
-# Instruction tuned models require string prompts to
-# follow a specific chat template set by the model
+# Prompts with chat templating can be directly passed
+# The template format varies by model
 rag = RAG(embeddings, "Qwen/Qwen3-0.6B", template="""
   <|im_start|>system
   You are a friendly assistant.<|im_end|>
@@ -64,7 +60,7 @@ rag = RAG(embeddings, "Qwen/Qwen3-0.6B", template="""
   <|im_start|>assistant
   """
 )
-rag("What was won?", stripthink=True)
+rag("What was won?")
 
 # Inputs are automatically converted to chat messages when a
 # system prompt is provided
@@ -81,7 +77,13 @@ rag = RAG(
   Context:
   {context}
 """)
-rag("What was won?", stripthink=True)
+rag("What was won?")
+
+# LLM options can be passed as additional arguments
+#  - Streaming RAG response with `stream=True`
+#  - String inputs are always converted to user messages with `defaultrole="user"`
+#  - Thinking text is removed with `stripthink=True`
+rag("What was won?", stream=True, defaultrole="user", stripThink=True)
 ```
 
 See the [Embeddings](../../../embeddings) and [LLM](../llm) pages for additional configuration options.
@@ -137,8 +139,6 @@ rag:
 
     Context:
     {context}
-  defaultrole: user
-  stripthink: True
 
 workflow:
   search:

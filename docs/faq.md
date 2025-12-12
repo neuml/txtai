@@ -72,7 +72,7 @@ from txtai import LLM
 path = "Qwen/Qwen3-0.6B"
 model = AutoModelForCausalLM.from_pretrained(
   path,
-  torch_dtype=torch.bfloat16,
+  dtype=torch.bfloat16,
 )
 tokenizer = AutoTokenizer.from_pretrained(path)
 

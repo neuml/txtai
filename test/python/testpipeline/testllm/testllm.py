@@ -27,10 +27,10 @@ class TestLLM(unittest.TestCase):
         start = "Hello, how are"
 
         # Test that text is generated with custom parameters
-        model = LLM("hf-internal-testing/tiny-random-gpt2", task="language-generation", torch_dtype="torch.float32")
+        model = LLM("hf-internal-testing/tiny-random-gpt2", task="language-generation", dtype="torch.float32")
         self.assertIsNotNone(model(start))
 
-        model = LLM("hf-internal-testing/tiny-random-gpt2", task="language-generation", torch_dtype=torch.float32)
+        model = LLM("hf-internal-testing/tiny-random-gpt2", task="language-generation", dtype=torch.float32)
         self.assertIsNotNone(model(start))
 
     def testBatchSize(self):
@@ -63,7 +63,27 @@ class TestLLM(unittest.TestCase):
         """
 
         model = LLM("hf-internal-testing/tiny-random-LlamaForCausalLM")
-        self.assertIsNotNone(model("Hello, how are", defaultrole="user"))
+        generator = model.generator
+
+        # Validate that the LLM supports chat messages
+        self.assertEqual(model.ischat(), True)
+
+        messages = [
+            ("<|start|>Hello<|end|>", str),
+            ("Hello", list),
+            ("\n<|im_start|>Hello<|im_end|>", str),
+            ("[INST]Hello[/INST]", str),
+        ]
+
+        for message, expected in messages:
+            # Test auto detection of formats
+            self.assertEqual(type(generator.format([message], "auto")[0]), expected)
+
+            # Test always setting user chat messages
+            self.assertEqual(type(generator.format([message], "user")[0]), list)
+
+            # Test always keeping as prompt text
+            self.assertEqual(type(generator.format([message], "prompt")[0]), str)
 
     def testExternal(self):
         """
@@ -129,6 +149,7 @@ class TestLLM(unittest.TestCase):
             # Override execute method
             model.generator.execute = method
             self.assertEqual(model("Hello, how are", stripthink=True), "you")
+            self.assertEqual(model("Hello, how are", stripthink=False), method()[0])
 
     def testStripThinkStream(self):
         """
@@ -148,6 +169,7 @@ class TestLLM(unittest.TestCase):
             # Override execute method
             model.generator.execute = method
             self.assertEqual("".join(model("Hello, how are", stripthink=True, stream=True)), "you")
+            self.assertEqual("".join(model("Hello, how are", stripthink=False, stream=True)), "".join(list(method())))
 
     def testVision(self):
         """

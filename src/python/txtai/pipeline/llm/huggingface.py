@@ -25,8 +25,11 @@ class HFGeneration(Generation):
         # Create HuggingFace LLM pipeline
         self.llm = HFLLM(path, **kwargs)
 
+    def ischat(self):
+        return self.llm.ischat()
+
     def isvision(self):
-        return isinstance(self.llm.pipeline.model, AutoModelForImageTextToText)
+        return self.llm.isvision()
 
     def stream(self, texts, maxlength, stream, stop, **kwargs):
         yield from self.llm(texts, maxlength=maxlength, stream=stream, stop=stop, **kwargs)
@@ -46,7 +49,7 @@ class HFLLM(HFPipeline):
 
     def __call__(self, text, prefix=None, maxlength=512, workers=0, stream=False, stop=None, **kwargs):
         """
-        Generates text. Supports the following input formats:
+        Generates content. Supports the following input formats:
 
           - String or list of strings (instruction-tuned models must follow chat templates)
           - List of dictionaries with `role` and `content` key-values or lists of lists
@@ -61,7 +64,7 @@ class HFLLM(HFPipeline):
             kwargs: additional generation keyword arguments
 
         Returns:
-            generated text
+            generated content
         """
 
         # List of texts
@@ -82,6 +85,26 @@ class HFLLM(HFPipeline):
         results = [self.extract(result) for result in self.pipeline(*args, **kwargs)]
 
         return results[0] if isinstance(text, str) else results
+
+    def ischat(self):
+        """
+        Returns True if this model supports chat.
+
+        Returns:
+            True if this a chat model
+        """
+
+        return self.pipeline.tokenizer.chat_template is not None
+
+    def isvision(self):
+        """
+        Returns True if this model supports vision.
+
+        Returns:
+            True if this is a vision model
+        """
+
+        return isinstance(self.pipeline.model, AutoModelForImageTextToText)
 
     def parameters(self, texts, maxlength, workers, stop, **kwargs):
         """
@@ -134,13 +157,13 @@ class HFLLM(HFPipeline):
 
     def extract(self, result):
         """
-        Extracts generated text from a pipeline result.
+        Extracts generated content from a pipeline result.
 
         Args:
             result: pipeline result
 
         Returns:
-            generated text
+            generated content
         """
 
         # Extract output from list, if necessary
@@ -174,7 +197,7 @@ class HFLLM(HFPipeline):
 
 class Generator(HFLLM):
     """
-    Generate text with a causal language model.
+    Generates content with a causal language model.
     """
 
     def __init__(self, path=None, quantize=False, gpu=True, model=None, **kwargs):
@@ -183,7 +206,7 @@ class Generator(HFLLM):
 
 class Sequences(HFLLM):
     """
-    Generate text with a sequence-sequence model.
+    Generates content with a sequence-sequence model.
     """
 
     def __init__(self, path=None, quantize=False, gpu=True, model=None, **kwargs):
@@ -192,7 +215,7 @@ class Sequences(HFLLM):
 
 class StreamingResponse:
     """
-    Generate text as a streaming response.
+    Generates content as a streaming response.
     """
 
     def __init__(self, pipeline, texts, stop, **kwargs):

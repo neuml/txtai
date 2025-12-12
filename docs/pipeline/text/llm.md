@@ -29,8 +29,8 @@ llm(
   """
 )
 
-# Instruction tuned models typically require string prompts to
-# follow a specific chat template set by the model
+# Prompts with chat templating can be directly passed
+# The template format varies by model
 llm(
   """
   <|im_start|>system
@@ -47,9 +47,15 @@ llm([
   {"role": "user", "content": "Answer the following question..."}
 ])
 
-# When there is no system prompt passed to instruction tuned models,
-# `defaultrole="user"` must be set for string inputs
+# When there is no system prompt passed to instruction tuned models
+# the default role is inferred `defaultrole="auto"`
+llm("Answer the following question...")
+
+# To always generate chat messages for string inputs
 llm("Answer the following question...", defaultrole="user")
+
+# To never generate chat messages for string inputs
+llm("Answer the following question...", defaultrole="prompt")
 ```
 
 The LLM pipeline automatically detects the underlying LLM framework. This can also be manually set.
@@ -98,7 +104,7 @@ from txtai import LLM
 path = "Qwen/Qwen3-0.6B"
 model = AutoModelForCausalLM.from_pretrained(
   path,
-  torch_dtype=torch.bfloat16,
+  dtype=torch.bfloat16,
 )
 tokenizer = AutoTokenizer.from_pretrained(path)
 
@@ -151,7 +157,7 @@ Similar to the Python example above, the underlying [Hugging Face pipeline param
 ```yaml
 llm:
   path: Qwen/Qwen3-0.6B
-  torch_dtype: torch.bfloat16
+  dtype: torch.bfloat16
 ```
 
 ### Run with Workflows

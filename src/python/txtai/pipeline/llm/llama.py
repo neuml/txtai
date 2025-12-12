@@ -121,7 +121,7 @@ class LlamaCpp(Generation):
             kwargs: additional generation keyword arguments
 
         Returns:
-            generated text
+            generated content
         """
 
         # LLM call with messages
@@ -142,7 +142,7 @@ class LlamaCpp(Generation):
             kwargs: additional generation keyword arguments
 
         Returns:
-            generated text
+            generated content
         """
 
         # LLM call with prompt

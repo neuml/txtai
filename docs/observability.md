@@ -94,7 +94,7 @@ with mlflow.start_run():
         context=10
     )
 
-    rag("Tell me about the Roman Empire", maxlength=2048, stripthink=True)
+    rag("Tell me about the Roman Empire", maxlength=2048)
 ```
 
 ![rag](https://raw.githubusercontent.com/neuml/mlflow-txtai/master/images/rag.png)
@@ -156,7 +156,7 @@ embeddings.load(provider="huggingface-hub", container="neuml/txtai-astronomy")
 agent = Agent(
     tools=[search],
     llm="Qwen/Qwen3-4B-Instruct-2507",
-    max_iterations=10,
+    max_steps=10,
 )
 
 researcher = """

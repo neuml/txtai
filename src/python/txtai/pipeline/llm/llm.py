@@ -33,14 +33,14 @@ class LLM(Pipeline):
         """
 
         # Default LLM if not provided
-        path = path if path else "google/flan-t5-base"
+        path = path if path else "ibm-granite/granite-4.0-350m"
 
         # Generation instance
         self.generator = GenerationFactory.create(path, method, **kwargs)
 
-    def __call__(self, text, maxlength=512, stream=False, stop=None, defaultrole="prompt", stripthink=False, **kwargs):
+    def __call__(self, text, maxlength=512, stream=False, stop=None, defaultrole="auto", stripthink=None, **kwargs):
         """
-        Generates text. Supports the following input formats:
+        Generates content. Supports the following input formats:
 
           - String or list of strings (instruction-tuned models must follow chat templates)
           - List of dictionaries with `role` and `content` key-values or lists of lists
@@ -50,19 +50,32 @@ class LLM(Pipeline):
             maxlength: maximum sequence length
             stream: stream response if True, defaults to False
             stop: list of stop strings, defaults to None
-            defaultrole: default role to apply to text inputs (prompt for raw prompts (default) or user for user chat messages)
-            stripthink: strip thinking tags, defaults to False
+            defaultrole: default role to apply to text inputs (`auto` to infer (default), `user` for user chat messages or `prompt` for raw prompts)
+            stripthink: strip thinking tags, defaults to False if stream is enabled, True otherwise
             kwargs: additional generation keyword arguments
 
         Returns:
-            generated text
+            generated content
         """
 
         # Debug logging
         logger.debug(text)
 
+        # Default stripthink to False when streaming, True otherwise
+        stripthink = not stream if stripthink is None else stripthink
+
         # Run LLM generation
         return self.generator(text, maxlength, stream, stop, defaultrole, stripthink, **kwargs)
+
+    def ischat(self):
+        """
+        Returns True if this LLM supports chat.
+
+        Returns:
+            True if this a chat model
+        """
+
+        return self.generator.ischat()
 
     def isvision(self):
         """
