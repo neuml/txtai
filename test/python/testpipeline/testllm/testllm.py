@@ -69,9 +69,10 @@ class TestLLM(unittest.TestCase):
         self.assertEqual(model.ischat(), True)
 
         messages = [
-            ("<|start|>Hello<|end|>", str),
             ("Hello", list),
             ("\n<|im_start|>Hello<|im_end|>", str),
+            ("<|start|>Hello<|end|>", str),
+            ("<|start_of_role|>system<|end_of_role|>", str),
             ("[INST]Hello[/INST]", str),
         ]
 
