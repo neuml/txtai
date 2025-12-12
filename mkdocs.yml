@@ -43,9 +43,8 @@ plugins:
                     show_root_toc_entry: false
     - redirects:
         redirect_maps:
-            "pipeline/text/extractor.md": "pipeline/text/rag.md"
-            "pipeline/text/generator.md": "pipeline/text/llm.md"
-            "pipeline/text/sequences.md": "pipeline/text/llm.md"
+            "pipeline/text/llm.md": "pipeline/llm/llm.md"
+            "pipeline/text/rag.md": "pipeline/llm/rag.md"
 
 markdown_extensions:
     - admonition
@@ -96,11 +95,12 @@ nav:
             - Caption: pipeline/image/caption.md
             - Image Hash: pipeline/image/imagehash.md
             - Objects: pipeline/image/objects.md
+        - LLM:
+            - LLM: pipeline/llm/llm.md
+            - RAG: pipeline/llm/rag.md
         - Text:
             - Entity: pipeline/text/entity.md
             - Labels: pipeline/text/labels.md
-            - LLM: pipeline/text/llm.md
-            - RAG: pipeline/text/rag.md
             - Reranker: pipeline/text/reranker.md
             - Similarity: pipeline/text/similarity.md
             - Summary: pipeline/text/summary.md
