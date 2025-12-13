@@ -139,3 +139,20 @@ vectors: dict
 ```
 
 Passes these additional parameters to the underlying vector model.
+
+### muvera
+```yaml
+muvera:
+    repetitions: defaults 20
+    hashes: defaults to 5
+    projection: defaults 16
+```
+
+Settings to control the size of MUVERA fixed dimensional outputs. Default is 20 * 2^5 * 16 = 10,240 dimensions.
+
+### trust_remote_code
+```yaml
+trust_remote_code: boolean
+```
+
+Parameter for trusting the code from Hugging Face models with custom implementations.
