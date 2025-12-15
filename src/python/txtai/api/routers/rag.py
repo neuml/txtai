@@ -14,7 +14,7 @@ router = APIRouter(route_class=EncodingAPIRoute)
 
 
 @router.get("/rag")
-def rag(query: str, maxlength: Optional[int] = None, stream: Optional[bool] = False, stripthink: Optional[bool] = False):
+def rag(query: str, maxlength: Optional[int] = None, stream: Optional[bool] = False, stripthink: Optional[bool] = None):
     """
     Runs a RAG pipeline for the input query.
 
@@ -22,6 +22,7 @@ def rag(query: str, maxlength: Optional[int] = None, stream: Optional[bool] = Fa
         query: input RAG query
         maxlength: optional response max length
         stream: streams response if True
+        stripthink: strip thinking tags if True
 
     Returns:
         answer
@@ -43,7 +44,7 @@ def batchrag(
     queries: List[str] = Body(...),
     maxlength: Optional[int] = Body(default=None),
     stream: Optional[bool] = Body(default=False),
-    stripthink: Optional[bool] = Body(default=False),
+    stripthink: Optional[bool] = Body(default=None),
 ):
     """
     Runs a RAG pipeline for the input queries.
@@ -52,6 +53,7 @@ def batchrag(
         queries: input RAG queries
         maxlength: optional response max length
         stream: streams response if True
+        stripthink: strip thinking tags if True
 
     Returns:
         answers

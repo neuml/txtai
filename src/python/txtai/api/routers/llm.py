@@ -14,7 +14,7 @@ router = APIRouter(route_class=EncodingAPIRoute)
 
 
 @router.get("/llm")
-def llm(text: str, maxlength: Optional[int] = None, stream: Optional[bool] = False, stripthink: Optional[bool] = False):
+def llm(text: str, maxlength: Optional[int] = None, stream: Optional[bool] = False, stripthink: Optional[bool] = None):
     """
     Runs a LLM pipeline for the input text.
 
@@ -22,6 +22,7 @@ def llm(text: str, maxlength: Optional[int] = None, stream: Optional[bool] = Fal
         text: input text
         maxlength: optional response max length
         stream: streams response if True
+        stripthink: strip thinking tags if True
 
     Returns:
         response text
@@ -43,7 +44,7 @@ def batchllm(
     texts: List[str] = Body(...),
     maxlength: Optional[int] = Body(default=None),
     stream: Optional[bool] = Body(default=False),
-    stripthink: Optional[bool] = Body(default=False),
+    stripthink: Optional[bool] = Body(default=None),
 ):
     """
     Runs a LLM pipeline for the input texts.
@@ -52,6 +53,7 @@ def batchllm(
         texts: input texts
         maxlength: optional response max length
         stream: streams response if True
+        stripthink: strip thinking tags if True
 
     Returns:
         response texts
