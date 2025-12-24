@@ -435,7 +435,7 @@ class Application:
         st.markdown(
             """
             This application finds the best matching historical players using vector search with [txtai](https://github.com/neuml/txtai).
-            Raw data is from the [Baseball Databank](https://github.com/chadwickbureau) GitHub project. Read [this
+            Raw data is from the [Baseball Databank](https://github.com/chadwickbureau) Project. Read [this
             article](https://medium.com/neuml/explore-baseball-history-with-vector-search-5778d98d6846) for more details.
             """
         )
