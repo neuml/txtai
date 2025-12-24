@@ -38,7 +38,7 @@ class Stats:
         self.names = self.loadnames()
 
         # Build index
-        self.vectors, self.data, self.embeddings = self.index()
+        self.vectors, self.data, self.maxyear, self.embeddings = self.index()
 
     def loadcolumns(self):
         """
@@ -122,12 +122,12 @@ class Stats:
         # Build data dictionary
         vectors = {f'{row["yearID"]}{row["playerID"]}': self.transform(row) for _, row in self.stats.iterrows()}
         data = {f'{row["yearID"]}{row["playerID"]}': dict(row) for _, row in self.stats.iterrows()}
+        maxyear = max(row["yearID"] for _, row in self.stats.iterrows())
 
         embeddings = Embeddings({"transform": Stats.transform})
-
         embeddings.index((uid, vectors[uid], None) for uid in vectors)
 
-        return vectors, data, embeddings
+        return vectors, data, maxyear, embeddings
 
     def metrics(self, name):
         """
@@ -155,13 +155,14 @@ class Stats:
 
         return range(1871, datetime.datetime.today().year), 1950, None
 
-    def search(self, name=None, year=None, row=None, limit=10):
+    def search(self, name=None, year=None, window=None, row=None, limit=10):
         """
         Runs an embeddings search. This method takes either a player-year or stats row as input.
 
         Args:
             name: player name to search
             year: year to search
+            window: limit to window recent seasons
             row: row of stats to search
             limit: max results to return
 
@@ -179,13 +180,17 @@ class Stats:
 
         results, ids = [], set()
         if query is not None:
-            for uid, _ in self.embeddings.search(query, limit * 5):
+            candidates = limit * 100 if window else limit * 5
+            for uid, _ in self.embeddings.search(query, candidates):
                 # Only add unique players
                 if uid[4:] not in ids:
                     result = self.data[uid].copy()
-                    result["link"] = f'https://www.baseball-reference.com/players/{result["nameLast"].lower()[0]}/{result["bbrefID"]}.shtml'
-                    results.append(result)
-                    ids.add(uid[4:])
+
+                    # Add first player if this is a player comparison. Limit results to window, if necessary
+                    if (not ids and not row) or not window or result["yearID"] > self.maxyear - window:
+                        result["link"] = f'https://www.baseball-reference.com/players/{result["nameLast"].lower()[0]}/{result["bbrefID"]}.shtml'
+                        results.append(result)
+                        ids.add(uid[4:])
 
                     if len(ids) >= limit:
                         break
@@ -431,10 +436,10 @@ class Application:
         Runs a Streamlit application.
         """
 
-        st.title("⚾ Baseball Statistics")
+        st.title("⚾ Baseball Stats")
         st.markdown(
             """
-            This application finds the best matching historical players using vector search with [txtai](https://github.com/neuml/txtai).
+            This application finds the best matching players using vector search with [txtai](https://github.com/neuml/txtai).
             Raw data is from the [Lahman Baseball Database](https://sabr.org/lahman-database/). Read [this
             article](https://medium.com/neuml/explore-baseball-history-with-vector-search-5778d98d6846) for more details.
             """
@@ -467,6 +472,9 @@ class Application:
         # Player name
         name = self.name(stats.names, params.get("name"))
 
+        # Limit player-year comparisons using this window
+        window = self.window(params.get("window"), "window")
+
         # Player metrics
         active, best, metrics = stats.metrics(name)
 
@@ -478,14 +486,16 @@ class Application:
             self.chart(category, metrics)
 
         # Run search
-        results = stats.search(name, year)
+        results = stats.search(name, year, window)
 
         # Display results
         self.table(results, ["link", "nameFirst", "nameLast", "teamID"] + stats.columns[1:])
 
-        # Save parameters
-        for name, value in [("category", category), ("name", name), ("year", year)]:
-            st.query_params[name] = value
+        # Save query parameters
+        st.query_params.clear()
+        for key, value in [("category", category), ("name", name), ("window", window), ("year", year)]:
+            if value:
+                st.query_params[key] = value
 
     def search(self):
         """
@@ -495,6 +505,10 @@ class Application:
         st.markdown("Find players with similar statistics.")
 
         stats, category = None, self.category("Batting", "searchcategory")
+
+        # Limit player-year comparisons using this window
+        window = self.window(None, "searchwindow")
+
         with st.form("search"):
             if category == "Batting":
                 stats, columns = self.batting, self.batting.columns[:-6]
@@ -507,7 +521,7 @@ class Application:
             submitted = st.form_submit_button("Search")
             if submitted:
                 # Run search
-                results = stats.search(row=inputs.to_dict(orient="records")[0])
+                results = stats.search(window=window, row=inputs.to_dict(orient="records")[0])
 
                 # Display table
                 self.table(results, ["link", "nameFirst", "nameLast", "teamID"] + stats.columns[1:])
@@ -520,17 +534,18 @@ class Application:
             parameters
         """
 
-        # Get parameters
-        params = {x: st.query_params.get(x) for x in ["category", "name", "year"]}
+        # Get query parameters
+        params = {x: st.query_params.get(x) for x in ["category", "name", "window", "year"]}
 
         # Sync parameters with session state
         if all(x in st.session_state for x in ["category", "name", "year"]):
             # Copy session year if category and name are unchanged
             params["year"] = str(st.session_state["year"]) if all(params.get(x) == st.session_state[x] for x in ["category", "name"]) else None
 
-            # Copy category and name from session state
+            # Copy category, name and window from session state
             params["category"] = st.session_state["category"]
             params["name"] = st.session_state["name"]
+            params["window"] = st.session_state["window"]
 
         return params
 
@@ -554,6 +569,29 @@ class Application:
 
         # Radio box component
         return st.radio("Stat", categories, index=default, horizontal=True, key=key)
+
+    def window(self, window, key):
+        """
+        Limit results to last N seasons.
+
+        Args:
+            window: limit to window seasons
+            key: widget key
+
+        Returns:
+            window component
+        """
+
+        # Get window size
+        window = st.text_input("Limit to last N seasons", value=window, key=key)
+
+        # Clear invalid input
+        if window and (not window.isnumeric() or int(window) < 1):
+            st.error("Window must be a number greater or equal to 1")
+            return None
+
+        # Convert to int
+        return int(window) if window else window
 
     def name(self, names, name):
         """
