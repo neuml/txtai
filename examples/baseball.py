@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
-from txtai.embeddings import Embeddings
+from txtai import Embeddings
 
 
 class Stats:
@@ -123,11 +123,7 @@ class Stats:
         vectors = {f'{row["yearID"]}{row["playerID"]}': self.transform(row) for _, row in self.stats.iterrows()}
         data = {f'{row["yearID"]}{row["playerID"]}': dict(row) for _, row in self.stats.iterrows()}
 
-        embeddings = Embeddings(
-            {
-                "transform": self.transform,
-            }
-        )
+        embeddings = Embeddings({"transform": Stats.transform})
 
         embeddings.index((uid, vectors[uid], None) for uid in vectors)
 
@@ -253,10 +249,10 @@ class Batting(Stats):
         ]
 
     def load(self):
-        # Retrieve raw data from GitHub
-        players = pd.read_csv("https://raw.githubusercontent.com/chadwickbureau/baseballdatabank/master/core/People.csv")
-        batting = pd.read_csv("https://raw.githubusercontent.com/chadwickbureau/baseballdatabank/master/core/Batting.csv")
-        fielding = pd.read_csv("https://raw.githubusercontent.com/chadwickbureau/baseballdatabank/master/core/Fielding.csv")
+        # Retrieve raw data
+        players = pd.read_csv("https://hf.co/datasets/neuml/baseballdatabank/resolve/main/People.csv")
+        batting = pd.read_csv("https://hf.co/datasets/neuml/baseballdatabank/resolve/main/Batting.csv")
+        fielding = pd.read_csv("https://hf.co/datasets/neuml/baseballdatabank/resolve/main/Fielding.csv")
 
         # Merge player data in
         batting = pd.merge(players, batting, how="inner", on=["playerID"])
@@ -387,9 +383,9 @@ class Pitching(Stats):
         ]
 
     def load(self):
-        # Retrieve raw data from GitHub
-        players = pd.read_csv("https://raw.githubusercontent.com/chadwickbureau/baseballdatabank/master/core/People.csv")
-        pitching = pd.read_csv("https://raw.githubusercontent.com/chadwickbureau/baseballdatabank/master/core/Pitching.csv")
+        # Retrieve raw data
+        players = pd.read_csv("https://hf.co/datasets/neuml/baseballdatabank/resolve/main/People.csv")
+        pitching = pd.read_csv("https://hf.co/datasets/neuml/baseballdatabank/resolve/main/Pitching.csv")
 
         # Merge player data in
         pitching = pd.merge(players, pitching, how="inner", on=["playerID"])
@@ -439,9 +435,9 @@ class Application:
         st.markdown(
             """
             This application finds the best matching historical players using vector search with [txtai](https://github.com/neuml/txtai).
-            Raw data is from the [Baseball Databank](https://github.com/chadwickbureau/baseballdatabank) GitHub project. Read [this
+            Raw data is from the [Baseball Databank](https://github.com/chadwickbureau) GitHub project. Read [this
             article](https://medium.com/neuml/explore-baseball-history-with-vector-search-5778d98d6846) for more details.
-        """
+            """
         )
 
         player, search = st.tabs(["Player", "Search"])
@@ -488,7 +484,8 @@ class Application:
         self.table(results, ["link", "nameFirst", "nameLast", "teamID"] + stats.columns[1:])
 
         # Save parameters
-        st.experimental_set_query_params(category=category, name=name, year=year)
+        for name, value in [("category", category), ("name", name), ("year", year)]:
+            st.query_params[name] = value
 
     def search(self):
         """
@@ -524,8 +521,7 @@ class Application:
         """
 
         # Get parameters
-        params = st.experimental_get_query_params()
-        params = {x: params[x][0] for x in params}
+        params = {x: st.query_params.get(x) for x in ["category", "name", "year"]}
 
         # Sync parameters with session state
         if all(x in st.session_state for x in ["category", "name", "year"]):
@@ -627,7 +623,7 @@ class Application:
         chart = (chart + rule).encode(y=alt.Y(title=metric)).properties(height=200).configure_axis(grid=False)
 
         # Draw chart
-        st.altair_chart(chart + rule, theme="streamlit", use_container_width=True)
+        st.altair_chart(chart + rule, theme="streamlit", width="stretch")
 
     def table(self, results, columns):
         """
@@ -643,7 +639,7 @@ class Application:
                 results,
                 column_order=columns,
                 column_config={
-                    "link": st.column_config.LinkColumn("Link", width="small"),
+                    "link": st.column_config.LinkColumn("Link", width="small", display_text=":material/open_in_new:"),
                     "yearID": st.column_config.NumberColumn("Year", format="%d"),
                     "nameFirst": "First",
                     "nameLast": "Last",
