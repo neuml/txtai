@@ -250,9 +250,9 @@ class Batting(Stats):
 
     def load(self):
         # Retrieve raw data
-        players = pd.read_csv("https://hf.co/datasets/neuml/baseballdatabank/resolve/main/People.csv")
-        batting = pd.read_csv("https://hf.co/datasets/neuml/baseballdatabank/resolve/main/Batting.csv")
-        fielding = pd.read_csv("https://hf.co/datasets/neuml/baseballdatabank/resolve/main/Fielding.csv")
+        players = pd.read_csv("https://hf.co/datasets/neuml/baseballdata/resolve/main/People.csv")
+        batting = pd.read_csv("https://hf.co/datasets/neuml/baseballdata/resolve/main/Batting.csv")
+        fielding = pd.read_csv("https://hf.co/datasets/neuml/baseballdata/resolve/main/Fielding.csv")
 
         # Merge player data in
         batting = pd.merge(players, batting, how="inner", on=["playerID"])
@@ -384,8 +384,8 @@ class Pitching(Stats):
 
     def load(self):
         # Retrieve raw data
-        players = pd.read_csv("https://hf.co/datasets/neuml/baseballdatabank/resolve/main/People.csv")
-        pitching = pd.read_csv("https://hf.co/datasets/neuml/baseballdatabank/resolve/main/Pitching.csv")
+        players = pd.read_csv("https://hf.co/datasets/neuml/baseballdata/resolve/main/People.csv")
+        pitching = pd.read_csv("https://hf.co/datasets/neuml/baseballdata/resolve/main/Pitching.csv")
 
         # Merge player data in
         pitching = pd.merge(players, pitching, how="inner", on=["playerID"])
@@ -435,7 +435,7 @@ class Application:
         st.markdown(
             """
             This application finds the best matching historical players using vector search with [txtai](https://github.com/neuml/txtai).
-            Raw data is from the [Baseball Databank](https://github.com/chadwickbureau) Project. Read [this
+            Raw data is from the [Lahman Baseball Database](https://sabr.org/lahman-database/). Read [this
             article](https://medium.com/neuml/explore-baseball-history-with-vector-search-5778d98d6846) for more details.
             """
         )
