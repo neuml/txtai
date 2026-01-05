@@ -2,12 +2,9 @@
 Late module
 """
 
-import json
-
 import numpy as np
 import torch
 
-from huggingface_hub.errors import HFValidationError
 from safetensors import safe_open
 from torch import nn
 from transformers.utils import cached_file
@@ -21,14 +18,14 @@ class LatePooling(Pooling):
     Builds late pooled vectors using outputs from a transformers model.
     """
 
-    def __init__(self, path, device, tokenizer=None, maxlength=None, modelargs=None):
+    def __init__(self, path, device, tokenizer=None, maxlength=None, loadprompts=None, modelargs=None):
         # Check if fixed dimensional encoder is enabled
         modelargs = modelargs.copy() if modelargs else {}
         muvera = modelargs.pop("muvera", {})
         self.encoder = Muvera(**muvera) if muvera is not None else None
 
         # Call parent initialization
-        super().__init__(path, device, tokenizer, maxlength, modelargs)
+        super().__init__(path, device, tokenizer, maxlength, loadprompts, modelargs)
 
         # Get linear weights path
         config = self.load(path, "1_Dense/config.json")
@@ -145,29 +142,3 @@ class LatePooling(Pooling):
             params = ["query_token_id", "query_maxlen", "doc_token_id", "doc_maxlen"]
 
         return [config.get(p) for p in params]
-
-    def load(self, path, name):
-        """
-        Loads a JSON config file from the Hugging Face Hub.
-
-        Args:
-            path: model path
-            name: file to load
-
-        Returns:
-            config
-        """
-
-        # Download file and parse JSON
-        config = None
-        try:
-            path = cached_file(path_or_repo_id=path, filename=name)
-            if path:
-                with open(path, encoding="utf-8") as f:
-                    config = json.load(f)
-
-        # Ignore this error - invalid repo or directory
-        except (HFValidationError, OSError):
-            pass
-
-        return config

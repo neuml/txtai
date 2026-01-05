@@ -35,6 +35,7 @@ class HFVectors(Vectors):
                 "device": Models.deviceid(self.config.get("gpu", True)),
                 "tokenizer": self.config.get("tokenizer"),
                 "maxlength": self.config.get("maxlength"),
+                "loadprompts": "instructions" not in self.config,
                 "modelargs": self.config.get("vectors", {}),
             }
         )

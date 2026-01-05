@@ -117,7 +117,7 @@ instructions:
 
 Instruction-based models use prefixes to modify how embeddings are computed. This is especially useful with asymmetric search, which is when the query and indexed data are of vastly different lengths. In other words, short queries with long documents.
 
-[E5-base](https://huggingface.co/intfloat/e5-base) is an example of a model that accepts instructions. It takes `query: ` and `passage: ` prefixes and uses those to generate embeddings that work well for asymmetric search.
+`txtai` automatically loads prompts stored in `config_sentence_transformers.json` except if this parameter is set. For some older models such as [E5-base](https://huggingface.co/intfloat/e5-base), instructions still need to be provided via this parameter.
 
 ## models
 ```yaml

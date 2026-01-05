@@ -32,8 +32,8 @@ class PoolingFactory:
         """
 
         # Unpack parameters
-        method, path, device, tokenizer, maxlength, modelargs = [
-            config.get(x) for x in ["method", "path", "device", "tokenizer", "maxlength", "modelargs"]
+        method, path, device, tokenizer, maxlength, loadprompts, modelargs = [
+            config.get(x) for x in ["method", "path", "device", "tokenizer", "maxlength", "loadprompts", "modelargs"]
         ]
 
         # Derive maxlength, if applicable
@@ -41,7 +41,7 @@ class PoolingFactory:
 
         # Default pooling returns hidden state
         if isinstance(path, bytes) or (isinstance(path, str) and os.path.isfile(path)) or method == "pooling":
-            return Pooling(path, device, tokenizer, maxlength, modelargs)
+            return Pooling(path, device, tokenizer, maxlength, loadprompts, modelargs)
 
         # Derive pooling method if it's not specified and path is a string
         if (not method or method not in ("clspooling", "meanpooling", "latepooling")) and isinstance(path, str):
@@ -49,14 +49,14 @@ class PoolingFactory:
 
         # Check for cls pooling
         if method == "clspooling":
-            return ClsPooling(path, device, tokenizer, maxlength, modelargs)
+            return ClsPooling(path, device, tokenizer, maxlength, loadprompts, modelargs)
 
         # Check for late pooling
         if method == "latepooling":
-            return LatePooling(path, device, tokenizer, maxlength, modelargs)
+            return LatePooling(path, device, tokenizer, maxlength, loadprompts, modelargs)
 
         # Default to mean pooling
-        return MeanPooling(path, device, tokenizer, maxlength, modelargs)
+        return MeanPooling(path, device, tokenizer, maxlength, loadprompts, modelargs)
 
     @staticmethod
     def method(path):

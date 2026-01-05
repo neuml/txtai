@@ -87,3 +87,28 @@ class TestPooling(unittest.TestCase):
                 {"path": model, "device": self.device, "modelargs": {"muvera": {"repetitions": 5, "hashes": 2, "projection": 8}}}
             )
             self.assertEqual(pooling.encode(["test"], category="data").shape, (1, 160))
+
+    def testPrompts(self):
+        """
+        Test instruction prompts
+        """
+
+        # Load model with prompts
+        pooling = PoolingFactory.create({"path": "neuml/bert-tiny-prompts", "device": self.device, "loadprompts": True})
+
+        # Test prompts are prepended
+        self.assertEqual(pooling.preencode(["abc"], "query")[0], "query: abc")
+
+        self.assertEqual(pooling.preencode(["text"], "data")[0], "document: text")
+
+        # Load model with prompts disabled (default)
+        pooling = PoolingFactory.create(
+            {
+                "path": "neuml/bert-tiny-prompts",
+                "device": self.device,
+            }
+        )
+
+        # Test that prompts are not prepended
+        self.assertEqual(pooling.preencode(["abc"], "query")[0], "abc")
+        self.assertEqual(pooling.preencode(["text"], "data")[0], "text")

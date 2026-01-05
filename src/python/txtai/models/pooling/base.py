@@ -2,10 +2,14 @@
 Pooling module
 """
 
+import json
+
 import numpy as np
 import torch
 
+from huggingface_hub.errors import HFValidationError
 from torch import nn
+from transformers.utils import cached_file
 
 from ..models import Models
 
@@ -15,7 +19,7 @@ class Pooling(nn.Module):
     Builds pooled vectors usings outputs from a transformers model.
     """
 
-    def __init__(self, path, device, tokenizer=None, maxlength=None, modelargs=None):
+    def __init__(self, path, device, tokenizer=None, maxlength=None, loadprompts=None, modelargs=None):
         """
         Creates a new Pooling model.
 
@@ -24,6 +28,7 @@ class Pooling(nn.Module):
             device: tensor device id
             tokenizer: optional path to tokenizer
             maxlength: max sequence length
+            loadprompts: whether instruction prompts should be loaded
             modelargs: additional model arguments
         """
 
@@ -38,6 +43,9 @@ class Pooling(nn.Module):
 
         # Set max length
         self.maxlength = maxlength if maxlength else self.tokenizer.model_max_length if self.tokenizer.model_max_length != int(1e30) else None
+
+        # Load stored prompts
+        self.prompts = self.loadprompts(path) if loadprompts else None
 
         # Move to device
         self.to(self.device)
@@ -123,6 +131,11 @@ class Pooling(nn.Module):
             category: embeddings category (query or data)
         """
 
+        # Prepend prompt
+        prompt = self.prompts.get(category) if self.prompts else None
+        if prompt:
+            documents = [f"{prompt}{x}" if isinstance(x, str) else x for x in documents]
+
         return documents
 
     # pylint: disable=W0613
@@ -139,3 +152,50 @@ class Pooling(nn.Module):
         """
 
         return results
+
+    def load(self, path, name):
+        """
+        Loads a JSON config file from the Hugging Face Hub.
+
+        Args:
+            path: model path
+            name: file to load
+
+        Returns:
+            config
+        """
+
+        # Download file and parse JSON
+        config = None
+        try:
+            path = cached_file(path_or_repo_id=path, filename=name)
+            if path:
+                with open(path, encoding="utf-8") as f:
+                    config = json.load(f)
+
+        # Ignore this error - invalid repo or directory
+        except (HFValidationError, OSError):
+            pass
+
+        return config
+
+    def loadprompts(self, path):
+        """
+        Loads prompts from a sentence transformers configuration file.
+
+        Args:
+            path: model path
+
+        Returns:
+            prompts dictionary, if available
+        """
+
+        prompts = None
+        config = self.load(path, "config_sentence_transformers.json")
+        if config:
+            # Copy document prompt to data
+            prompts = config.get("prompts")
+            if prompts and "document" in prompts:
+                prompts["data"] = prompts["document"]
+
+        return prompts
