@@ -98,16 +98,10 @@ class TestPooling(unittest.TestCase):
 
         # Test prompts are prepended
         self.assertEqual(pooling.preencode(["abc"], "query")[0], "query: abc")
-
         self.assertEqual(pooling.preencode(["text"], "data")[0], "document: text")
 
         # Load model with prompts disabled (default)
-        pooling = PoolingFactory.create(
-            {
-                "path": "neuml/bert-tiny-prompts",
-                "device": self.device,
-            }
-        )
+        pooling = PoolingFactory.create({"path": "neuml/bert-tiny-prompts", "device": self.device})
 
         # Test that prompts are not prepended
         self.assertEqual(pooling.preencode(["abc"], "query")[0], "abc")
