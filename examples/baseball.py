@@ -436,6 +436,8 @@ class Application:
         Runs a Streamlit application.
         """
 
+        st.set_page_config(layout="wide", page_title="Baseball Stats", page_icon="⚾")
+
         st.title("⚾ Baseball Stats")
         st.markdown(
             """
