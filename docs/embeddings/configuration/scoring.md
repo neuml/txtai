@@ -82,3 +82,10 @@ normalize: boolean
 ```
 
 Enables normalized scoring (ranging from 0 to 1). When enabled, statistics from the index will be used to calculate normalized scores.
+
+## tokenizer
+```yaml
+tokenizer: dict
+```
+
+Set tokenization rules. Passes these arguments to the underlying [Tokenization pipeline](../../../pipeline/data/tokenizer#txtai.pipeline.Tokenizer.__init__).

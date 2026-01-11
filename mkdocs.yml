@@ -91,6 +91,7 @@ nav:
             - Segmentation: pipeline/data/segmentation.md
             - Tabular: pipeline/data/tabular.md
             - Textractor: pipeline/data/textractor.md
+            - Tokenizer: pipeline/data/tokenizer.md
         - Image:
             - Caption: pipeline/image/caption.md
             - Image Hash: pipeline/image/imagehash.md
