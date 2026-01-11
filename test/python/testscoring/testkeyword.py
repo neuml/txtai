@@ -150,6 +150,7 @@ class TestKeyword(unittest.TestCase):
         self.empty(config)
         self.copy(config)
         self.settings(config)
+        self.tokenization(config)
 
     def index(self, config, data=None):
         """
@@ -419,3 +420,30 @@ class TestKeyword(unittest.TestCase):
 
         # Validate counts
         self.assertEqual(scoring.count(), len(self.data))
+
+    def tokenization(self, config):
+        """
+        Test tokenization methods.
+
+        Args:
+            config: scoring config
+        """
+
+        # Test whitespace tokenization
+        config = {**config, **{"terms": True, "tokenizer": {"whitespace": True}}}
+
+        # Create scoring instance
+        scoring = ScoringFactory.create(config)
+        scoring.index([(0, "abc-def-123", None)])
+
+        self.assertEqual(scoring.search("abc-def-123")[0][0], 0)
+
+        # Test regular expression tokenization
+        config = {**config, **{"tokenizer": {"regexp": r"\w{5,}"}}}
+
+        # Create scoring instance
+        scoring = ScoringFactory.create(config)
+        scoring.index([(0, "hello test", None)])
+
+        self.assertEqual(scoring.search("hello")[0][0], 0)
+        self.assertFalse(scoring.search("test"))

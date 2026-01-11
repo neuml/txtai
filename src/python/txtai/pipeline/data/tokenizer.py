@@ -14,10 +14,15 @@ class Tokenizer(Pipeline):
     """
     Tokenizes text into tokens using one of the following methods.
 
-      1. Backwards compatible tokenization that only accepts alphanumeric tokens from the Latin alphabet.
-
-      2. Split using word boundary rules from the Unicode Text Segmentation algorithm (see Unicode Standard Annex #29).
+      1. Split using word boundary rules from the Unicode Text Segmentation algorithm (see Unicode Standard Annex #29).
          This is similar to the standard tokenizer in Apache Lucene and works well for most languages.
+
+      2. Tokenization method that only accepts alphanumeric tokens from the Latin alphabet. This is a backwards compatible mode
+         that was the default with older versions of txtai.
+
+      3. Tokenize on whitespace
+
+      4. Tokenize using a provided regular expression
     """
 
     # fmt: off
@@ -28,7 +33,7 @@ class Tokenizer(Pipeline):
     # fmt: on
 
     @staticmethod
-    def tokenize(text, lowercase=True, emoji=True, alphanum=True, stopwords=True):
+    def tokenize(text, lowercase=True, emoji=True, alphanum=True, stopwords=True, whitespace=False, regexp=None):
         """
         Tokenizes text into a list of tokens. The default backwards compatible parameters filter out English stop words and only
         accept alphanumeric tokens.
@@ -39,15 +44,17 @@ class Tokenizer(Pipeline):
             emoji: tokenize emoji in text if True, defaults to True
             alphanum: requires 2+ character alphanumeric tokens if True, defaults to True
             stopwords: removes provided stop words if a list, removes default English stop words if True, defaults to True
+            whitespace: tokenize on whitespace if True, defaults to False
+            regexp: tokenize using the provided regular expression, defaults to None
 
         Returns:
             list of tokens
         """
 
         # Create a tokenizer with backwards compatible settings
-        return Tokenizer(lowercase, emoji, alphanum, stopwords)(text)
+        return Tokenizer(lowercase, emoji, alphanum, stopwords, whitespace, regexp)(text)
 
-    def __init__(self, lowercase=True, emoji=True, alphanum=False, stopwords=False):
+    def __init__(self, lowercase=True, emoji=True, alphanum=False, stopwords=False, whitespace=False, regexp=None):
         """
         Creates a new tokenizer. The default parameters segment text per Unicode Standard Annex #29.
 
@@ -56,19 +63,24 @@ class Tokenizer(Pipeline):
             emoji: tokenize emoji in text if True, defaults to True
             alphanum: requires 2+ character alphanumeric tokens if True, defaults to False
             stopwords: removes provided stop words if a list, removes default English stop words if True, defaults to False
+            whitespace: tokenize on whitespace if True, defaults to False
+            regexp: tokenize using the provided regular expression, defaults to None
         """
 
         # Lowercase
         self.lowercase = lowercase
 
         # Text segmentation
-        self.alphanum, self.segment = None, None
+        self.alphanum, self.whitespace, self.regexp, self.segment = None, whitespace, None, None
         if alphanum:
             # Alphanumeric regex that accepts tokens that meet following rules:
             #  - Strings to be at least 2 characters long AND
             #  - At least 1 non-trailing alpha character in string
             # Note: The standard Python re module is much faster than regex for this expression
             self.alphanum = re.compile(r"^\d*[a-z][\-.0-9:_a-z]{1,}$")
+        elif regexp:
+            # Regular expression for tokenization
+            self.regexp = regex.compile(regexp)
         else:
             # Text segmentation per Unicode Standard Annex #29
             pattern = r"\w\p{Extended_Pictographic}\p{WB:RegionalIndicator}" if emoji else r"\w"
@@ -101,6 +113,12 @@ class Tokenizer(Pipeline):
 
             # Filter on alphanumeric strings.
             tokens = [token for token in tokens if re.match(self.alphanum, token)]
+        elif self.whitespace:
+            # Text segmentation using whitespace
+            tokens = text.split()
+        elif self.regexp:
+            # Text segmentation using a custom regular expression
+            tokens = regex.findall(self.regexp, text)
         else:
             # Text segmentation per Unicode Standard Annex #29
             tokens = regex.findall(self.segment, text)
