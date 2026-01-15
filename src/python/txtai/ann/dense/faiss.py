@@ -10,7 +10,7 @@ import numpy as np
 
 # pylint: disable=C0413
 if platform.system() == "Darwin" or os.name == "nt":
-    # Workaround for a Faiss issue with OMP: Error #15
+    # Workaround for a Faiss issue with OMP: Error #15. See txtai FAQ for more.
     os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 from faiss import omp_set_num_threads
