@@ -3,8 +3,8 @@ Faiss module
 """
 
 import math
-import platform
 import os
+import platform
 
 import numpy as np
 
