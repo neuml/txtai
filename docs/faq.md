@@ -105,9 +105,10 @@ __Solution__
 
 Set the following environment parameters.
 
-- OpenMP threading is handled internally on macOS platforms but it can be disabled via `export OMP_NUM_THREADS=1`
+- Disable OpenMP multithreading via `export OMP_NUM_THREADS=1`
 - Disable PyTorch MPS device via `export PYTORCH_MPS_DISABLE=1`
 - Disable llama.cpp metal via `export LLAMA_NO_METAL=1`
+- Workaround `OMP: Error #15` errors via `export KMP_DUPLICATE_LIB_OK=TRUE`
 
 For more details, refer to [this issue on GitHub](https://github.com/kyamagu/faiss-wheels/issues/100).
 
