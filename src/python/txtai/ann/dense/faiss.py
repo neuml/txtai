@@ -9,10 +9,10 @@ import platform
 # pylint: disable=C0413
 if platform.system() == "Darwin" or os.name == "nt":
     # Workaround for a Faiss issue causing segmentation faults. See txtai FAQ for more.
-    os.environ["OMP_NUM_THREADS"] = "1"
+    os.environ["OMP_NUM_THREADS"] = os.environ.get("OMP_NUM_THREADS", "1")
 
     # Workaround for a Faiss issue with OMP: Error #15. See txtai FAQ for more.
-    os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+    os.environ["KMP_DUPLICATE_LIB_OK"] = os.environ.get("KMP_DUPLICATE_LIB_OK", "TRUE")
 
 import numpy as np
 
