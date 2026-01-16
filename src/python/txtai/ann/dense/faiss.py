@@ -6,22 +6,20 @@ import math
 import os
 import platform
 
-import numpy as np
-
 # pylint: disable=C0413
 if platform.system() == "Darwin" or os.name == "nt":
+    # Workaround for a Faiss issue causing segmentation faults. See txtai FAQ for more.
+    os.environ["OMP_NUM_THREADS"] = "1"
+
     # Workaround for a Faiss issue with OMP: Error #15. See txtai FAQ for more.
     os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
-from faiss import omp_set_num_threads
+import numpy as np
+
 from faiss import index_factory, IO_FLAG_MMAP, METRIC_INNER_PRODUCT, read_index, write_index
 from faiss import index_binary_factory, read_index_binary, write_index_binary, IndexBinaryIDMap
 
 from ..base import ANN
-
-if platform.system() == "Darwin" or os.name == "nt":
-    # Workaround for a Faiss issue causing segmentation faults. See txtai FAQ for more.
-    omp_set_num_threads(1)
 
 
 class Faiss(ANN):
