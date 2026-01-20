@@ -7,6 +7,7 @@ from ...util import Resolver
 from .huggingface import HFGeneration
 from .litellm import LiteLLM
 from .llama import LlamaCpp
+from .opencode import OpenCode
 
 
 class GenerationFactory:
@@ -36,6 +37,10 @@ class GenerationFactory:
         if method == "llama.cpp":
             return LlamaCpp(path, **kwargs)
 
+        # OpenCode generation
+        if method == "opencode":
+            return OpenCode(path, **kwargs)
+
         # Hugging Face Transformers generation
         if method == "transformers":
             return HFGeneration(path, **kwargs)
@@ -61,6 +66,8 @@ class GenerationFactory:
                 method = "litellm"
             elif LlamaCpp.ismodel(path):
                 method = "llama.cpp"
+            elif OpenCode.ismodel(path):
+                method = "opencode"
             else:
                 method = "transformers"
 

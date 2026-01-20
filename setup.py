@@ -75,7 +75,7 @@ extras["pipeline-data"] = ["beautifulsoup4>=4.9.3", "chonkie>=1.0.2", "docling>=
 
 extras["pipeline-image"] = ["imagehash>=4.2.1", "pillow>=7.1.2", "timm>=0.4.12"]
 
-extras["pipeline-llm"] = ["litellm>=1.37.16", "llama-cpp-python>=0.2.75"]
+extras["pipeline-llm"] = ["httpx>=0.28.1", "litellm>=1.37.16", "llama-cpp-python>=0.2.75"]
 
 extras["pipeline-text"] = ["gliner>=0.2.23", "sentencepiece>=0.1.91", "staticvectors>=0.2.0"]
 

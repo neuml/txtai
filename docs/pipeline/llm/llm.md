@@ -58,11 +58,14 @@ llm("Answer the following question...", defaultrole="user")
 llm("Answer the following question...", defaultrole="prompt")
 ```
 
-The LLM pipeline automatically detects the underlying LLM framework. This can also be manually set.
+The LLM pipeline automatically detects the underlying LLM framework. This can also be manually set. The following methods are supported.
 
-[Hugging Face Transformers](https://github.com/huggingface/transformers), [llama.cpp](https://github.com/abetlen/llama-cpp-python) and [hosted API models via LiteLLM](https://github.com/BerriAI/litellm) are all supported by this pipeline.
+- [Hugging Face Transformers](https://github.com/huggingface/transformers)
+- [llama.cpp](https://github.com/abetlen/llama-cpp-python)
+- [LLM APIs via LiteLLM](https://github.com/BerriAI/litellm)
+- [OpenCode server](https://github.com/anomalyco/opencode)
 
-See the [LiteLLM documentation](https://litellm.vercel.app/docs/providers) for the options available with LiteLLM models. llama.cpp models support both local and remote GGUF paths on the HF Hub.
+`llama.cpp` models support both local and remote GGUF paths on the HF Hub. See the [LiteLLM documentation](https://litellm.vercel.app/docs/providers) for the options available with LiteLLM models. See the [OpenCode documentation](https://opencode.ai/docs/server/) for more on how to integrate the LLM pipeline with a running OpenCode instance.
 
 ```python
 from txtai import LLM
@@ -87,9 +90,13 @@ llm = LLM("ollama/gpt-oss", api_base="http://localhost:11434")
 llm = LLM("openai/gpt-oss", api_base="http://localhost:4000")
 
 # LLM APIs - must also set API key via environment variable
-llm = LLM("gpt-5.1")
+llm = LLM("gpt-5.2")
 llm = LLM("claude-opus-4-5-20251101")
 llm = LLM("gemini/gemini-3-pro-preview")
+
+# Local OpenCode server started via `opencode serve`
+llm = LLM("opencode")
+llm = LLM("opencode/big-pickle", url="http://localhost:4000")
 ```
 
 Models can be externally loaded and passed to pipelines. This is useful for models that are not yet supported by Transformers and/or need special initialization.
