@@ -49,6 +49,7 @@ Autonomous agents, retrieval augmented generation (RAG), chat with your data, pi
 | [Medical RAG Research with txtai](https://github.com/neuml/txtai/blob/master/examples/75_Medical_RAG_Research_with_txtai.ipynb) | Analyze PubMed article metadata with RAG | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/75_Medical_RAG_Research_with_txtai.ipynb) |
 | [GraphRAG with Wikipedia and GPT OSS](https://github.com/neuml/txtai/blob/master/examples/77_GraphRAG_with_Wikipedia_and_GPT_OSS.ipynb) | Deep graph search powered RAG | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/77_GraphRAG_with_Wikipedia_and_GPT_OSS.ipynb) |
 | [RAG is more than Vector Search](https://github.com/neuml/txtai/blob/master/examples/79_RAG_is_more_than_Vector_Search.ipynb) | Context retrieval via Web, SQL and other sources | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/79_RAG_is_more_than_Vector_Search.ipynb) |
+| [OpenCode as a txtai LLM](https://github.com/neuml/txtai/blob/master/examples/81_OpenCode_as_a_txtai_LLM.ipynb) | Integrate OpenCode with the txtai ecosystem | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/81_OpenCode_as_a_txtai_LLM.ipynb) |
 
 ## Pipelines
 
