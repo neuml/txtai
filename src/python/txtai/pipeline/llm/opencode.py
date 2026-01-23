@@ -2,9 +2,16 @@
 OpenCode module
 """
 
-import httpx
-
 from transformers.utils import cached_file
+
+# Conditional import
+try:
+    import httpx
+
+    HTTPX = True
+except ImportError:
+    HTTPX = False
+
 
 from .generation import Generation
 
@@ -48,6 +55,9 @@ class OpenCode(Generation):
 
     def __init__(self, path, template=None, **kwargs):
         super().__init__(path, template, **kwargs)
+
+        if not HTTPX:
+            raise ImportError('OpenCode is not available - install "pipeline" extra to enable')
 
         # Get model and provider from path
         self.provider, self.model = path.split("/", 1) if "/" in path else (None, None)

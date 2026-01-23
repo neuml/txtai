@@ -35,6 +35,7 @@ class TestOptional(unittest.TestCase):
             "grandcypher",
             "grand",
             "hnswlib",
+            "httpx",
             "imagehash",
             "libcloud.storage.providers",
             "litellm",
@@ -231,6 +232,7 @@ class TestOptional(unittest.TestCase):
             Microphone,
             MLOnnx,
             Objects,
+            OpenCode,
             Segmentation,
             Tabular,
             TextToAudio,
@@ -283,6 +285,9 @@ class TestOptional(unittest.TestCase):
 
         with self.assertRaises(ImportError):
             Objects()
+
+        with self.assertRaises(ImportError):
+            OpenCode("opencode")
 
         with self.assertRaises(ImportError):
             Segmentation(sentences=True)
