@@ -15,6 +15,7 @@ from transformers.utils import chat_template_utils, TypeHintParsingException
 from ...embeddings import Embeddings
 from .embeddings import EmbeddingsTool
 from .function import FunctionTool
+from .skill import SkillTool
 
 
 class ToolFactory:
@@ -65,6 +66,10 @@ class ToolFactory:
             elif isinstance(tool, str) and tool.startswith("http"):
                 tools.extend(mcpadapt.core.MCPAdapt({"url": tool}, SmolAgentsAdapter()).tools())
                 tool = None
+
+            # Load skill.md files
+            elif isinstance(tool, str) and tool.endswith(".md"):
+                tool = SkillTool(tool)
 
             # Add tool
             if tool:

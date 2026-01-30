@@ -15,6 +15,20 @@ from smolagents import CodeAgent, PythonInterpreterTool
 from txtai.agent import Agent
 from txtai.embeddings import Embeddings
 
+# agents.md content
+AGENTS = """
+Basic instructions here
+"""
+
+# Sample skill.md content
+SKILL = """---
+name: hello
+description: says hello world
+---
+
+Says hello world
+"""
+
 
 class TestAgent(unittest.TestCase):
     """
@@ -33,6 +47,45 @@ class TestAgent(unittest.TestCase):
 
         self.assertEqual(agent("Hello"), "Hi")
 
+    def testInstructions(self):
+        """
+        Test loading an agents.md file
+        """
+
+        # Test loading instructions from file
+        agents = os.path.join(tempfile.gettempdir(), "agents.md")
+        with open(agents, "w", encoding="utf-8") as output:
+            output.write(AGENTS)
+
+        agent = Agent(instructions=agents, llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_iterations=1)
+        agent.process.model.llm = lambda *args, **kwargs: 'Action:\n{"name": "final_answer", "arguments": "Hi"}'
+        self.assertEqual(agent("Hello"), "Hi")
+
+        # Test loading from memory
+        agent = Agent(instructions=AGENTS, llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_iterations=1)
+        agent.process.model.llm = lambda *args, **kwargs: 'Action:\n{"name": "final_answer", "arguments": "Hi"}'
+        self.assertEqual(agent("Hello"), "Hi")
+
+    def testMemory(self):
+        """
+        Test agent memory
+        """
+
+        agent = Agent(llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=1, memory=5)
+
+        # Patch LLM to generate answer
+        agent.process.model.llm = lambda *args, **kwargs: 'Action:\n{"name": "final_answer", "arguments": "Hi"}'
+
+        self.assertEqual(agent("Hello"), "Hi")
+        self.assertEqual(agent("Hello"), "Hi")
+
+        # Test that results are stored in memory
+        self.assertEqual(len(agent.memory), 2)
+
+        # Test resetting memory
+        self.assertEqual(agent("Hello", reset=True), "Hi")
+        self.assertEqual(len(agent.memory), 1)
+
     def testMethod(self):
         """
         Test agent process methods
@@ -40,6 +93,19 @@ class TestAgent(unittest.TestCase):
 
         agent = Agent(method="code", llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_iterations=1)
         self.assertIsInstance(agent.process, CodeAgent)
+
+    def testSkill(self):
+        """
+        Test running a skill from a skill.md file
+        """
+
+        skill = os.path.join(tempfile.gettempdir(), "skill.md")
+        with open(skill, "w", encoding="utf-8") as output:
+            output.write(SKILL)
+
+        agent = Agent(tools=[skill], llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_iterations=1)
+
+        self.assertIsInstance(agent.tools["hello"]("say hello"), str)
 
     def testToolsBasic(self):
         """

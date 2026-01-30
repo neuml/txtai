@@ -134,7 +134,7 @@ Agents connect embeddings, pipelines, workflows and other agents together to aut
 
 ![agent](https://raw.githubusercontent.com/neuml/txtai/master/docs/images/agent.png)
 
-txtai agents are built on top of the [smolagents](https://github.com/huggingface/smolagents) framework. This supports all LLMs txtai supports (Hugging Face, llama.cpp, OpenAI / Claude / AWS Bedrock via LiteLLM).
+txtai agents are built on top of the [smolagents](https://github.com/huggingface/smolagents) framework. This supports all LLMs txtai supports (Hugging Face, llama.cpp, OpenAI / Claude / AWS Bedrock via LiteLLM). Agent prompting with [`agents.md`](https://github.com/agentsmd/agents.md) and [`skill.md`](https://agentskills.io/specification) are also supported.
 
 Check out this [Agent Quickstart Example](https://github.com/neuml/txtai/blob/master/examples/agent_quickstart.py). Additional examples are listed below.
 

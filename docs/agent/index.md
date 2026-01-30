@@ -5,6 +5,8 @@
 An agent automatically creates workflows to answer multi-faceted user requests. Agents iteratively prompt and/or interface with tools to
 step through a process and ultimately come to an answer for a request.
 
+Agent prompting with [`agents.md`](https://github.com/agentsmd/agents.md) and [`skill.md`](https://agentskills.io/specification) are also supported. [Read the configuration](./configuration/#tool) for more on how to setup those up.
+
 Agents excel at complex tasks where multiple tools and/or methods are required. They incorporate a level of randomness similar to different
 people working on the same task. When the request is simple and/or there is a rule-based process, other methods such as RAG and Workflows
 should be explored.

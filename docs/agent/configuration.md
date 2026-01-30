@@ -81,14 +81,25 @@ Embeddings indexes have built-in support. Provide the following dictionary confi
 
 ### tool
 
-A tool instance can be provided. Additionally, the following strings load tools directly.
+The following shortcut strings load tools directly. Passing a Tool instance is also supported.
 
 | Tool        | Description                                               |
 |:------------|:----------------------------------------------------------|
-| http.*      | HTTP Path to a Model Context Protocol (MCP) server        |
+| http.*      | HTTP Path to a [Model Context Protocol (MCP)](https://modelcontextprotocol.io/docs/getting-started/intro) server |
 | python      | Runs a Python action                                      |
+| *.md        | Loads a [`skill.md`](https://agentskills.io/specification) file
 | websearch   | Runs a websearch using the built-in websearch tool        |
 | webview     | Extracts content from a web page                          |
+
+## instructions
+
+```yaml
+instructions: string|path
+```
+
+Supports loading an `agents.md` file. Can be provided directly as a string or as a path to a file.
+
+[Read more about agents.md here](https://github.com/agentsmd/agents.md)
 
 ## method
 
