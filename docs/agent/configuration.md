@@ -101,6 +101,23 @@ Supports loading an `agents.md` file. Can be provided directly as a string or as
 
 [Read more about agents.md here](https://github.com/agentsmd/agents.md)
 
+## template
+
+```yaml
+template: string
+```
+
+Customize the prompt template used by this agent. Supports Jinja templates. Uses a default template when this parameter is not provided.
+Must include `{{ text }}` and `{{ memory }}` placeholders.
+
+## memory
+
+```yaml
+memory: int
+```
+
+Keeps a rolling window of `memory` inputs and outputs. These are added to future prompts and serve as "agent memory".
+
 ## method
 
 ```yaml
