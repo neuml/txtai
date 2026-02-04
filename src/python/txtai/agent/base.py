@@ -97,11 +97,11 @@ class Agent:
             if self.template
             else """{{ text }}
 {% if memory %}
-Research carefully before answering. This is what you've currently learned. Only review if
-it's relevant to the current topic above.
+Use the following conversation history to help answer the question above.
 
 {{ memory }}
 
+If the history is irrelevant, forget it and use other tools to answer the question.
 {% endif %}
 """
         )
@@ -111,7 +111,7 @@ it's relevant to the current topic above.
         if self.memory:
             # Add memory context
             for request, output in self.memory:
-                memory.append(f"Input: {request}\nOutput: {output}")
+                memory.append(f"User: {request}\nAssistant: {output}")
 
             memory = "\n\n".join(memory)
 
@@ -134,6 +134,6 @@ it's relevant to the current topic above.
         if path and os.path.isfile(path):
             with open(path, encoding="utf-8") as f:
                 # Read entire file
-                return f"Below is a set of general instructions to follow:\n\n{f.read()}"
+                return f"\nBelow is a set of general instructions to follow:\n\n{f.read()}"
 
         return path
