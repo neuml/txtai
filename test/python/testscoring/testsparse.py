@@ -3,6 +3,7 @@ Sparse module tests
 """
 
 import os
+import platform
 import tempfile
 import unittest
 
@@ -86,6 +87,7 @@ class TestSparse(unittest.TestCase):
         scoring.upsert((uid, {"text": text}, tags) for uid, text, tags in self.data)
         self.assertEqual(scoring.count(), len(self.data))
 
+    @unittest.skipIf(platform.system() == "Darwin", "Torch memory sharing not supported on macOS")
     @patch("torch.cuda.device_count")
     def testGPU(self, count):
         """
