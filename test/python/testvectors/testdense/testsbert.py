@@ -3,6 +3,7 @@ Sentence Transformers module tests
 """
 
 import os
+import platform
 import unittest
 
 from unittest.mock import patch
@@ -34,6 +35,7 @@ class TestSTVectors(unittest.TestCase):
         with open(stream, "rb") as queue:
             self.assertEqual(np.load(queue).shape, (1, 384))
 
+    @unittest.skipIf(platform.system() == "Darwin", "Torch memory sharing not supported on macOS")
     @patch("torch.cuda.device_count")
     def testMultiGPU(self, count):
         """
