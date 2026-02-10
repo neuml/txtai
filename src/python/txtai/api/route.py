@@ -26,7 +26,7 @@ class EncodingAPIRoute(APIRoute):
                 body_field=self.body_field,
                 status_code=self.status_code,
                 response_class=ResponseFactory.create(request),
-                response_field=self.secure_cloned_response_field,
+                response_field=getattr(self, "secure_cloned_response_field", self.response_field),
                 response_model_include=self.response_model_include,
                 response_model_exclude=self.response_model_exclude,
                 response_model_by_alias=self.response_model_by_alias,
