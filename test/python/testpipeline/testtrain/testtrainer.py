@@ -46,9 +46,17 @@ class TestTrainer(unittest.TestCase):
         """
 
         trainer = HFTrainer()
-        model, _ = trainer("hf-internal-testing/tiny-random-gpt2", self.data, maxlength=16, task="language-generation")
 
-        # Test model completed successfully
+        # Test default parameters
+        model, _ = trainer("hf-internal-testing/tiny-random-gpt2", self.data, maxlength=16, task="language-generation")
+        self.assertIsNotNone(model)
+
+        # Test pack merging
+        model, _ = trainer("hf-internal-testing/tiny-random-gpt2", self.data, maxlength=16, task="language-generation", merge="pack")
+        self.assertIsNotNone(model)
+
+        # Test no merging
+        model, _ = trainer("hf-internal-testing/tiny-random-gpt2", self.data, maxlength=16, task="language-generation", merge=None)
         self.assertIsNotNone(model)
 
     def testCustom(self):

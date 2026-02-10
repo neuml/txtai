@@ -98,6 +98,20 @@ See the following PEFT documentation links for more information.
 - [Quantization](https://huggingface.co/docs/peft/developer_guides/quantization)
 - [LoRA](https://huggingface.co/docs/peft/developer_guides/lora)
 
+## Merge
+
+An important parameter for `language-generation` and `language-modeling` tasks is `merge` or the packing of data into chunks.
+
+It supports the following options.
+
+- `concat` (default) - text is split into chunks up to maxlength, data can be split across multiple chunks
+- `pack` - text is split into chunks up to maxlength, data guaranteed to be in same chunk, chunks can be smaller than maxlength
+- `None` - disables merging
+
+Merging helps reduce training time as data can be processed efficiently without padding. `concat` maximizes this as it guarantees each chunk will be up to maxlength size. `pack` is a middle ground where data is combined but records are preserved.
+
+For general language modeling tasks like masked language modeling, `concat` is the best choice. For instruction/prompt fine-tuning, `pack` or None are the better choices as it guarantees complex logic is not split across chunks.
+
 ## Methods 
 
 Python documentation for the pipeline.

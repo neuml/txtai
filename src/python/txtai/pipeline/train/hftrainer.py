@@ -57,6 +57,7 @@ class HFTrainer(Tensors):
         checkpoint=None,
         quantize=None,
         lora=None,
+        merge="concat",
         **args
     ):
         """
@@ -76,6 +77,7 @@ class HFTrainer(Tensors):
             checkpoint: optional resume from checkpoint flag or path to checkpoint directory, defaults to None
             quantize: quantization configuration to pass to base model
             lora: lora configuration to pass to PEFT model
+            merge: determines how chunks are combined for language modeling tasks - "concat" (default), "pack" or None
             args: training arguments
 
         Returns:
@@ -99,7 +101,7 @@ class HFTrainer(Tensors):
         tokenizer.pad_token = tokenizer.pad_token if tokenizer.pad_token is not None else tokenizer.eos_token
 
         # Prepare parameters
-        process, collator, labels = self.prepare(task, train, tokenizer, columns, maxlength, stride, prefix, args)
+        process, collator, labels = self.prepare(task, train, tokenizer, columns, maxlength, stride, prefix, merge, args)
 
         # Tokenize training and validation data
         train, validation = process(train, validation, os.cpu_count() if tokenizers and isinstance(tokenizers, bool) else tokenizers)
@@ -193,7 +195,7 @@ class HFTrainer(Tensors):
 
         return (config, tokenizer, maxlength)
 
-    def prepare(self, task, train, tokenizer, columns, maxlength, stride, prefix, args):
+    def prepare(self, task, train, tokenizer, columns, maxlength, stride, prefix, merge, args):
         """
         Prepares data for model training.
 
@@ -205,22 +207,26 @@ class HFTrainer(Tensors):
             maxlength: maximum sequence length, defaults to tokenizer.model_max_length
             stride: chunk size for splitting data for QA tasks
             prefix: optional source prefix
+            merge: determines how chunks are combined for language modeling tasks - "concat" (default), "pack" or None
             args: training arguments
         """
 
         process, collator, labels = None, None, None
 
+        # 16-bit training
+        fp16 = args.fp16 or args.bf16
+
         if task == "language-generation":
-            process = Texts(tokenizer, columns, maxlength)
-            collator = DataCollatorForLanguageModeling(tokenizer, mlm=False, pad_to_multiple_of=8 if args.fp16 else None)
+            process = Texts(tokenizer, columns, maxlength, merge)
+            collator = DataCollatorForLanguageModeling(tokenizer, mlm=False, pad_to_multiple_of=8 if fp16 else None)
         elif task in ("language-modeling", "token-detection"):
-            process = Texts(tokenizer, columns, maxlength)
-            collator = DataCollatorForLanguageModeling(tokenizer, pad_to_multiple_of=8 if args.fp16 else None)
+            process = Texts(tokenizer, columns, maxlength, merge)
+            collator = DataCollatorForLanguageModeling(tokenizer, pad_to_multiple_of=8 if fp16 else None)
         elif task == "question-answering":
             process = Questions(tokenizer, columns, maxlength, stride)
         elif task == "sequence-sequence":
             process = Sequences(tokenizer, columns, maxlength, prefix)
-            collator = DataCollatorForSeq2Seq(tokenizer, pad_to_multiple_of=8 if args.fp16 else None)
+            collator = DataCollatorForSeq2Seq(tokenizer, pad_to_multiple_of=8 if fp16 else None)
         else:
             process = Labels(tokenizer, columns, maxlength)
             labels = process.labels(train)
