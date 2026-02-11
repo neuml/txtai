@@ -70,12 +70,8 @@ class Agent:
         self.process.model.parameters(maxlength)
 
         # Create memory, if necessary
-        if self.window and session not in self.memory:
+        if self.window and (session not in self.memory or reset):
             self.memory[session] = deque(maxlen=self.window)
-
-        # Clear memory, if reset flag set
-        if reset and session in self.memory:
-            self.memory[session].clear()
 
         # Run agent loop
         output = self.process.run(self.prompt(text, session), stream=stream, **kwargs)
