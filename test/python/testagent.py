@@ -79,12 +79,21 @@ class TestAgent(unittest.TestCase):
         self.assertEqual(agent("Hello"), "Hi")
         self.assertEqual(agent("Hello"), "Hi")
 
-        # Test that results are stored in memory
-        self.assertEqual(len(agent.memory), 2)
+        # Test that results are stored in shared memory
+        self.assertEqual(len(agent.memory.get(None)), 2)
 
-        # Test resetting memory
+        # Test resetting shared memory
         self.assertEqual(agent("Hello", reset=True), "Hi")
-        self.assertEqual(len(agent.memory), 1)
+        self.assertEqual(len(agent.memory.get(None)), 1)
+
+        # Test session memory
+        self.assertEqual(agent("Hello", session="session-0"), "Hi")
+        self.assertEqual(len(agent.memory.get("session-0")), 1)
+
+        # Test resetting session memory
+        self.assertEqual(agent("Hello", session="session-0", reset=True), "Hi")
+        self.assertEqual(len(agent.memory.get("session-0")), 1)
+        self.assertEqual(len(agent.memory.get(None)), 1)
 
     def testMethod(self):
         """

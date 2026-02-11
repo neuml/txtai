@@ -118,6 +118,8 @@ memory: int
 
 Keeps a rolling window of `memory` inputs and outputs. These are added to future prompts and serve as "agent memory".
 
+Supports storing memory by `session` to enable multiple conversation threads. Defaults to shared memory when not set. See the [method documentation](../methods#txtai.agent.base.Agent.__call__) for more information.
+
 ## method
 
 ```yaml

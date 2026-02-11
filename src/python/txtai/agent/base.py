@@ -46,10 +46,11 @@ class Agent:
         self.tools = self.process.tools
 
         # Agent memory
-        self.memory = deque(maxlen=memory) if memory else None
+        self.memory = {}
+        self.window = memory
         self.template = template
 
-    def __call__(self, text, maxlength=8192, stream=False, reset=False, **kwargs):
+    def __call__(self, text, maxlength=8192, stream=False, session=None, reset=False, **kwargs):
         """
         Runs an agent loop.
 
@@ -57,6 +58,7 @@ class Agent:
             text: instructions to run
             maxlength: maximum sequence length
             stream: stream response if True, defaults to False
+            session: session id for stored memory, defaults to None which shares all memory
             reset: clears previously stored memory if True, defaults to False
             kwargs: additional keyword arguments
 
@@ -67,26 +69,31 @@ class Agent:
         # Process parameters
         self.process.model.parameters(maxlength)
 
+        # Create memory, if necessary
+        if self.window and session not in self.memory:
+            self.memory[session] = deque(maxlen=self.window)
+
         # Clear memory, if reset flag set
-        if reset and self.memory:
-            self.memory.clear()
+        if reset and session in self.memory:
+            self.memory[session].clear()
 
         # Run agent loop
-        output = self.process.run(self.prompt(text), stream=stream, **kwargs)
+        output = self.process.run(self.prompt(text, session), stream=stream, **kwargs)
 
         # Add output to memory, if necessary
-        if self.memory is not None:
-            self.memory.append((text, output))
+        if session in self.memory:
+            self.memory[session].append((text, output))
 
         return output
 
-    def prompt(self, text):
+    def prompt(self, text, session):
         """
         Generates the full agent prompt using the input instructions. Adds in agent memory
         if available.
 
         Args:
             text: instructions to run
+            session: session id for stored memory
 
         Returns:
             formatted instructions
@@ -108,9 +115,9 @@ If the history is irrelevant, forget it and use other tools to answer the questi
 
         # pylint: disable=E1133
         memory = []
-        if self.memory:
+        if self.memory.get(session):
             # Add memory context
-            for request, output in self.memory:
+            for request, output in self.memory[session]:
                 memory.append(f"User: {request}\nAssistant: {output}")
 
             memory = "\n\n".join(memory)
