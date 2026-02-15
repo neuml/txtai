@@ -85,6 +85,9 @@ class TestSQL(unittest.TestCase):
         self.assertSql("select", "select [a[0].c[0]] from txtai", "json_extract(data, '$.a[0].c[0]') as \"a[0].c[0]\"")
         self.assertSql("select", "select avg([a]) from txtai", "avg(json_extract(data, '$.a')) as \"avg([a])\"")
 
+        # Test single quote escaping in bracket expressions
+        self.assertSql("select", "select [field'] from txtai", "json_extract(data, '$.field''') as \"field'\"")
+
         self.assertSql("where", "select * from txtai where [a b] < 1 or a > 1", "json_extract(data, '$.a b') < 1 or json_extract(data, '$.a') > 1")
         self.assertSql("where", "select [a[0].c[0]] a from txtai where a < 1", "a < 1")
         self.assertSql("groupby", "select * from txtai group by [a]", "json_extract(data, '$.a')")
