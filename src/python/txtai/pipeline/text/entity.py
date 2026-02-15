@@ -36,7 +36,7 @@ class Entity(HFPipeline):
             # Standard entity pipeline
             super().__init__("token-classification", path, quantize, gpu, model, **kwargs)
 
-    def __call__(self, text, labels=None, aggregate="simple", flatten=None, join=False, workers=0):
+    def __call__(self, text, labels=None, aggregate="simple", flatten=None, join=False, workers=0, **kwargs):
         """
         Applies a token classifier to text and extracts entity/label combinations.
 
@@ -47,13 +47,14 @@ class Entity(HFPipeline):
             flatten: flatten output to a list of labels if present. Accepts a boolean or float value to only keep scores greater than that number.
             join: joins flattened output into a string if True, ignored if flatten not set
             workers: number of concurrent workers to use for processing data, defaults to None
+            kwargs: additional keyword arguments
 
         Returns:
             list of (entity, entity type, score) or list of entities depending on flatten parameter
         """
 
         # Run token classification pipeline
-        results = self.execute(text, labels, aggregate, workers)
+        results = self.execute(text, labels, aggregate, workers, **kwargs)
 
         # Convert results to a list if necessary
         if isinstance(text, str):
@@ -94,7 +95,7 @@ class Entity(HFPipeline):
 
         return False
 
-    def execute(self, text, labels, aggregate, workers):
+    def execute(self, text, labels, aggregate, workers, **kwargs):
         """
         Runs the entity extraction pipeline.
 
@@ -103,6 +104,7 @@ class Entity(HFPipeline):
             labels: list of entity type labels to accept, defaults to None which accepts all
             aggregate: method to combine multi token entities - options are "simple" (default), "first", "average" or "max"
             workers: number of concurrent workers to use for processing data, defaults to None
+            kwargs: additional keyword arguments
 
         Returns:
             list of entities and labels
@@ -111,7 +113,7 @@ class Entity(HFPipeline):
         if self.gliner:
             # Extract entities with GLiNER. Use default CoNLL-2003 labels when not otherwise provided.
             results = self.pipeline.batch_predict_entities(
-                text if isinstance(text, list) else [text], labels if labels else ["person", "organization", "location"]
+                text if isinstance(text, list) else [text], labels if labels else ["person", "organization", "location"], **kwargs
             )
 
             # Map results to same format as Transformers token classifier
@@ -123,7 +125,7 @@ class Entity(HFPipeline):
             return entities if isinstance(text, list) else entities[0]
 
         # Standard Transformers token classification pipeline
-        return self.pipeline(text, aggregation_strategy=aggregate, num_workers=workers)
+        return self.pipeline(text, aggregation_strategy=aggregate, num_workers=workers, **kwargs)
 
     def accept(self, etype, labels):
         """

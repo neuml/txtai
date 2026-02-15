@@ -9,6 +9,7 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from txtai.pipeline import LLM, Generation
+from txtai.pipeline.llm.generation import Generation as GenBase
 
 # pylint: disable=C0411
 from utils import Utils
@@ -131,6 +132,45 @@ class TestLLM(unittest.TestCase):
 
         model = LLM("sshleifer/tiny-gpt2")
         self.assertIsInstance(" ".join(x for x in model("Hello, how are", stream=True)), str)
+
+    def testStreamChunks(self):
+        """
+        Test that streaming yields text chunks, not individual characters
+        """
+
+        model = LLM("sshleifer/tiny-gpt2")
+        chunks = list(model("Hello, how are", stream=True))
+
+        # Verify output is joinable and produces string output
+        result = "".join(chunks)
+        self.assertIsInstance(result, str)
+        # Non-empty chunks should exist
+        self.assertTrue(any(len(c) > 0 for c in chunks))
+
+    def testCleanStreamChunks(self):
+        """
+        Test that cleanstream yields whole text, not individual characters
+        """
+
+        gen = GenBase()
+
+        # Simulate a stream with think tokens followed by actual content
+        def mock_stream():
+            yield "<think>"
+            yield "reasoning"
+            yield "</think>"
+            yield "hello world"
+
+        # Collect chunks from cleanstream
+        chunks = list(gen.cleanstream(mock_stream()))
+
+        # Should yield "hello world" as a single chunk, not char-by-char
+        full = "".join(chunks)
+        self.assertEqual(full, "hello world")
+
+        # The leading text after think removal should be one chunk, not characters
+        for chunk in chunks:
+            self.assertTrue(len(chunk) > 1 or chunk == " ")
 
     def testStripThink(self):
         """

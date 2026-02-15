@@ -21,6 +21,16 @@ class Agent:
     should be explored.
     """
 
+    DEFAULT_TEMPLATE = Template("""{{ text }}
+{% if memory %}
+Use the following conversation history to help answer the question above.
+
+{{ memory }}
+
+If the history is irrelevant, forget it and use other tools to answer the question.
+{% endif %}
+""")
+
     def __init__(self, template=None, memory=None, **kwargs):
         """
         Creates a new Agent.
@@ -48,7 +58,7 @@ class Agent:
         # Agent memory
         self.memory = {}
         self.window = memory
-        self.template = template
+        self.template = Template(template) if isinstance(template, str) else template
 
     def __call__(self, text, maxlength=8192, stream=False, session=None, reset=False, **kwargs):
         """
@@ -95,19 +105,7 @@ class Agent:
             formatted instructions
         """
 
-        template = (
-            self.template
-            if self.template
-            else """{{ text }}
-{% if memory %}
-Use the following conversation history to help answer the question above.
-
-{{ memory }}
-
-If the history is irrelevant, forget it and use other tools to answer the question.
-{% endif %}
-"""
-        )
+        template = self.template if self.template else self.DEFAULT_TEMPLATE
 
         # pylint: disable=E1133
         memory = []
@@ -119,7 +117,7 @@ If the history is irrelevant, forget it and use other tools to answer the questi
             memory = "\n\n".join(memory)
 
         # Command template with memory
-        return Template(template).render(text=text, memory=memory)
+        return template.render(text=text, memory=memory)
 
     def instructions(self, config):
         """

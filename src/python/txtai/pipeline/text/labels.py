@@ -40,13 +40,13 @@ class Labels(HFPipeline):
 
         if self.dynamic:
             # Run zero shot classification pipeline
-            results = self.pipeline(text, labels, multi_label=multilabel, truncation=True, num_workers=workers)
+            results = self.pipeline(text, labels, multi_label=multilabel, truncation=True, num_workers=workers, **kwargs)
         else:
             # Set classification function based on inputs
             function = "none" if multilabel is None else "sigmoid" if multilabel or len(self.labels()) == 1 else "softmax"
 
             # Run text classification pipeline
-            results = self.pipeline(text, top_k=None, function_to_apply=function, num_workers=workers, **kwargs)
+            results = self.pipeline(text, top_k=None, function_to_apply=function, truncation=True, num_workers=workers, **kwargs)
 
         # Convert results to a list if necessary
         if isinstance(text, str):

@@ -59,6 +59,15 @@ class TestLabels(unittest.TestCase):
         results = [l[0] for l in self.labels(["This is the best sentence ever", "This is terrible"], ["positive", "negative"], flatten=True)]
         self.assertEqual(results, ["positive", "negative"])
 
+    def testLabelKwargs(self):
+        """
+        Test labels with **kwargs propagation
+        """
+
+        # Pass batch_size kwarg which gets forwarded to the HF pipeline
+        result = self.labels("This is the best sentence ever", ["positive", "negative"], batch_size=1)
+        self.assertEqual(result[0][0], 0)
+
     def testLabelFixed(self):
         """
         Test labels with a fixed label text classification model
