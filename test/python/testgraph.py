@@ -576,6 +576,108 @@ class TestGraph(unittest.TestCase):
         self.assertIsNotNone(result["topic"])
         self.assertIsNotNone(result["topicrank"])
 
+    def testEntities(self):
+        """
+        Test entity extraction on graph nodes
+        """
+
+        # Build a config with entity extraction enabled
+        config = {
+            "path": "sentence-transformers/nli-mpnet-base-v2",
+            "content": True,
+            "graph": {
+                "limit": 5,
+                "minscore": 0.2,
+                "batchsize": 4,
+                "approximate": False,
+                "entities": {"path": "dslim/bert-base-NER"},
+            },
+        }
+
+        embeddings = Embeddings(config)
+        embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        graph = embeddings.graph
+
+        # Check that entity attributes were added to at least some nodes
+        has_entities = False
+        for node in graph.scan():
+            entities = graph.attribute(node, "entities")
+            if entities:
+                has_entities = True
+                # Each entity should be a (word, type, score) tuple
+                for entity in entities:
+                    self.assertEqual(len(entity), 3)
+                    self.assertIsInstance(entity[0], str)
+                    self.assertIsInstance(entity[1], str)
+                    self.assertIsInstance(entity[2], float)
+                break
+
+        self.assertTrue(has_entities)
+
+        # Clear entities and verify they are removed
+        graph.clearentities()
+        for node in graph.scan():
+            self.assertIsNone(graph.attribute(node, "entities"))
+
+        embeddings.close()
+
+    def testEntitiesWithPipeline(self):
+        """
+        Test entity extraction with a pre-built Entity pipeline
+        """
+
+        from txtai.pipeline import Entity
+
+        # Create embeddings without entity config
+        config = {
+            "path": "sentence-transformers/nli-mpnet-base-v2",
+            "content": True,
+            "graph": {"limit": 5, "minscore": 0.2, "batchsize": 4, "approximate": False},
+        }
+
+        embeddings = Embeddings(config)
+        embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        # Call addentities with an explicit Entity pipeline instance
+        entity = Entity("dslim/bert-base-NER")
+        embeddings.graph.addentities(entity=entity)
+
+        # Check that entities were added
+        has_entities = False
+        for node in embeddings.graph.scan():
+            entities = embeddings.graph.attribute(node, "entities")
+            if entities:
+                has_entities = True
+                break
+
+        self.assertTrue(has_entities)
+        embeddings.close()
+
+    def testEntitiesNoConfig(self):
+        """
+        Test that addentities is a no-op when no config or pipeline is provided
+        """
+
+        # Create embeddings without entity config
+        config = {
+            "path": "sentence-transformers/nli-mpnet-base-v2",
+            "content": True,
+            "graph": {"limit": 5, "minscore": 0.2, "batchsize": 4, "approximate": False},
+        }
+
+        embeddings = Embeddings(config)
+        embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        # addentities should be a no-op
+        embeddings.graph.addentities()
+
+        # No entity attributes should exist
+        for node in embeddings.graph.scan():
+            self.assertIsNone(embeddings.graph.attribute(node, "entities"))
+
+        embeddings.close()
+
     def testUpsert(self):
         """
         Test upsert

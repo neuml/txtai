@@ -53,6 +53,21 @@ class TestEntity(unittest.TestCase):
         entities = self.entity("Canada's last fully intact ice shelf has suddenly collapsed, forming a Manhattan-sized iceberg", labels=["PER"])
         self.assertFalse(entities)
 
+    def testEntityKwargs(self):
+        """
+        Test entity with **kwargs propagation
+        """
+
+        # Use batch_size kwarg (forwarded to HF pipeline)
+        entities = self.entity(
+            ["Canada's last fully intact ice shelf has suddenly collapsed", "Beijing mobilises invasion craft"],
+            batch_size=2,
+        )
+        self.assertEqual(len(entities), 2)
+        # Each result should be a list of entity tuples
+        for result in entities:
+            self.assertIsInstance(result, list)
+
     def testGliner(self):
         """
         Test entity pipeline with a GLiNER model

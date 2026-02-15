@@ -35,8 +35,11 @@ class Objects(HFPipeline):
         type is a 1D list of (label, score). If text is a list, a 2D list of (label, score) is
         returned with a row per image.
 
+        Accepts lists, generators, or iterators of images. File path strings are
+        opened automatically and closed after processing.
+
         Args:
-            images: image|list
+            images: image|list|generator
             flatten: flatten output to a list of objects
             workers: number of concurrent workers to use for processing data, defaults to None
 
@@ -45,36 +48,46 @@ class Objects(HFPipeline):
         """
 
         # Convert single element to list
-        values = [images] if not isinstance(images, list) else images
+        single = isinstance(images, (str, Image.Image))
+        values = [images] if single else list(images)
 
-        # Open images if file strings
-        values = [Image.open(image) if isinstance(image, str) else image for image in values]
+        # Open images if file strings, track which ones we opened
+        opened = []
+        try:
+            for i, image in enumerate(values):
+                if isinstance(image, str):
+                    values[i] = Image.open(image)
+                    opened.append(values[i])
 
-        # Run pipeline
-        results = (
-            self.pipeline(values, num_workers=workers)
-            if self.classification
-            else self.pipeline(values, threshold=self.threshold, num_workers=workers)
-        )
+            # Run pipeline
+            results = (
+                self.pipeline(values, num_workers=workers)
+                if self.classification
+                else self.pipeline(values, threshold=self.threshold, num_workers=workers)
+            )
 
-        # Build list of (id, score)
-        outputs = []
-        for result in results:
-            # Convert to (label, score) tuples
-            result = [(x["label"], x["score"]) for x in result if x["score"] > self.threshold]
+            # Build list of (id, score)
+            outputs = []
+            for result in results:
+                # Convert to (label, score) tuples
+                result = [(x["label"], x["score"]) for x in result if x["score"] > self.threshold]
 
-            # Sort by score descending
-            result = sorted(result, key=lambda x: x[1], reverse=True)
+                # Sort by score descending
+                result = sorted(result, key=lambda x: x[1], reverse=True)
 
-            # Deduplicate labels
-            unique = set()
-            elements = []
-            for label, score in result:
-                if label not in unique:
-                    elements.append(label if flatten else (label, score))
-                    unique.add(label)
+                # Deduplicate labels
+                unique = set()
+                elements = []
+                for label, score in result:
+                    if label not in unique:
+                        elements.append(label if flatten else (label, score))
+                        unique.add(label)
 
-            outputs.append(elements)
+                outputs.append(elements)
+        finally:
+            # Close any images we opened from file paths
+            for img in opened:
+                img.close()
 
         # Return single element if single element passed in
-        return outputs[0] if not isinstance(images, list) else outputs
+        return outputs[0] if single else outputs

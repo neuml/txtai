@@ -194,42 +194,131 @@ class RAG(Pipeline):
         # Score text against queries
         scores, segments, tokenlist = self.score(queries, texts)
 
-        # Build question-context pairs
+        # Delegate to texts or embeddings query strategy
+        if texts:
+            return self.query_texts(queries, scores, segments, tokenlist)
+
+        return self.query_embeddings(queries, scores, segments, tokenlist)
+
+    def query_texts(self, queries, scores, segments, tokenlist):
+        """
+        Build matches when scoring against a static list of texts.
+        Segments and tokenlist are shared across all queries.
+
+        Args:
+            queries: list of query strings
+            scores: list of (id, score) lists per query
+            segments: list of (id, text) tuples (shared for all queries)
+            tokenlist: list of token lists (shared for all queries)
+
+        Returns:
+            list of match lists per query, each match is (id, text, score)
+        """
+
         results = []
         for i, query in enumerate(queries):
-            # Get list of required and prohibited tokens
-            must = [token.strip("+") for token in query.split() if token.startswith("+") and len(token) > 1]
-            mnot = [token.strip("-") for token in query.split() if token.startswith("-") and len(token) > 1]
+            must, mnot = self._parse_query_tokens(query)
 
-            # Segment text is static when texts is passed in but different per query when an embeddings search is run
-            segment = segments if texts else segments[i]
-            tokens = tokenlist if texts else tokenlist[i]
-
-            # List of matches
             matches = []
-            for y, (x, score) in enumerate(scores[i]):
-                # Segments and tokens are statically ordered when texts is passed in, need to resolve values with score id
-                # Scores, segments and tokens all share the same list ordering when an embeddings search is run
-                x = x if texts else y
+            for x, score in scores[i]:
+                text = segments[x][1]
+                if self._matches_filters(text, must, mnot) and self._meets_thresholds(score, tokenlist[x]):
+                    matches.append(segments[x] + (score,))
 
-                # Get segment text
-                text = segment[x][1]
-
-                # Add result if:
-                #   - all required tokens are present or there are not required tokens AND
-                #   - all prohibited tokens are not present or there are not prohibited tokens
-                #   - score is above minimum score required
-                #   - number of tokens is above minimum number of tokens required
-                if (not must or all(token.lower() in text.lower() for token in must)) and (
-                    not mnot or all(token.lower() not in text.lower() for token in mnot)
-                ):
-                    if score >= self.minscore and len(tokens[x]) >= self.mintokens:
-                        matches.append(segment[x] + (score,))
-
-            # Add query matches sorted by highest score
             results.append(matches)
 
         return results
+
+    def query_embeddings(self, queries, scores, segments, tokenlist):
+        """
+        Build matches when scoring against an embeddings search.
+        Segments and tokenlist are per-query lists.
+
+        Args:
+            queries: list of query strings
+            scores: list of (id, score) lists per query
+            segments: list of per-query (id, text) tuple lists
+            tokenlist: list of per-query token lists
+
+        Returns:
+            list of match lists per query, each match is (id, text, score)
+        """
+
+        results = []
+        for i, query in enumerate(queries):
+            must, mnot = self._parse_query_tokens(query)
+
+            matches = []
+            for y, (_, score) in enumerate(scores[i]):
+                text = segments[i][y][1]
+                if self._matches_filters(text, must, mnot) and self._meets_thresholds(score, tokenlist[i][y]):
+                    matches.append(segments[i][y] + (score,))
+
+            results.append(matches)
+
+        return results
+
+    @staticmethod
+    def _parse_query_tokens(query):
+        """
+        Parse required (+) and prohibited (-) tokens from a query string.
+        The query is split once and tokens are lowercased eagerly.
+
+        Args:
+            query: query string
+
+        Returns:
+            tuple of (must, mnot) lowercased token lists
+        """
+
+        must, mnot = [], []
+        for token in query.split():
+            if len(token) > 1:
+                if token.startswith("+"):
+                    must.append(token.strip("+").lower())
+                elif token.startswith("-"):
+                    mnot.append(token.strip("-").lower())
+
+        return must, mnot
+
+    @staticmethod
+    def _matches_filters(text, must, mnot):
+        """
+        Check whether text satisfies required and prohibited token filters.
+        Computes text.lower() once for all token comparisons.
+
+        Args:
+            text: segment text
+            must: list of required tokens (already lowercased)
+            mnot: list of prohibited tokens (already lowercased)
+
+        Returns:
+            True if text passes all filters
+        """
+
+        if not must and not mnot:
+            return True
+
+        text_lower = text.lower()
+        if must and not all(token in text_lower for token in must):
+            return False
+        if mnot and not all(token not in text_lower for token in mnot):
+            return False
+        return True
+
+    def _meets_thresholds(self, score, tokens):
+        """
+        Check whether a score and token count meet minimum thresholds.
+
+        Args:
+            score: similarity score
+            tokens: token list for the segment
+
+        Returns:
+            True if thresholds are met
+        """
+
+        return score >= self.minscore and len(tokens) >= self.mintokens
 
     def score(self, queries, texts):
         """

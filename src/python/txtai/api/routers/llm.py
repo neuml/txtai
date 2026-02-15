@@ -36,7 +36,7 @@ def llm(text: str, maxlength: Optional[int] = None, stream: Optional[bool] = Fal
     result = application.get().pipeline("llm", text, **kwargs)
 
     # Handle both standard and streaming responses
-    return StreamingResponse(result) if stream else result
+    return StreamingResponse(result, media_type="text/plain") if stream else result
 
 
 @router.post("/batchllm")
@@ -67,4 +67,4 @@ def batchllm(
     result = application.get().pipeline("llm", texts, **kwargs)
 
     # Handle both standard and streaming responses
-    return StreamingResponse(result) if stream else result
+    return StreamingResponse(result, media_type="text/plain") if stream else result
