@@ -240,7 +240,7 @@ class Expression:
             tokens[x] = None
 
         # Set last token to resolved bracket expression
-        tokens[x] = self.resolve(self.buildtext(params), None)
+        tokens[x] = self.resolve(self.buildtext(params).replace("'", "''"), None)
 
     def similar(self, iterator, tokens, x, similar):
         """
