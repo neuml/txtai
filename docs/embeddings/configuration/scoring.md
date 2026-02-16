@@ -85,9 +85,14 @@ Enables normalized scoring (ranging from 0 to 1). This setting supports:
 
 - `true` for standard score normalization
 - `"bayes"` for Bayesian normalization using dynamic candidate score statistics
+- `"bb25"` alias for Bayesian BM25 (BB25) normalization
 - `{method: "bayes", alpha: 1.0, beta: null}` for Bayesian normalization with optional custom parameters
 
 When standard normalization is enabled, statistics from the index are used to calculate normalized scores.
+
+Bayesian normalization references:
+- https://github.com/instructkr/bb25
+- https://github.com/cognica-io/bayesian-bm25
 
 ## tokenizer
 ```yaml

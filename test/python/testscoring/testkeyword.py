@@ -342,6 +342,13 @@ class TestKeyword(unittest.TestCase):
         self.assertEqual([uid for uid, _ in base], [uid for uid, _ in bayes])
         self.assertTrue(all(0.0 <= score <= 1.0 for _, score in bayes))
 
+        # BB25 alias should resolve to Bayesian normalization
+        scoring = ScoringFactory.create({**config, **{"terms": True, "normalize": "bb25"}})
+        scoring.index(self.data)
+        bb25 = scoring.search(query, 3)
+        self.assertEqual([uid for uid, _ in base], [uid for uid, _ in bb25])
+        self.assertTrue(all(0.0 <= score <= 1.0 for _, score in bb25))
+
         # Bayesian normalization with custom parameters
         config = {**config, **{"terms": True, "normalize": {"method": "bayes", "alpha": 2.0}}}
         scoring = ScoringFactory.create(config)

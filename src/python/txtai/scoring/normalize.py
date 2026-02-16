@@ -8,6 +8,11 @@ import numpy as np
 class Normalize:
     """
     Applies score normalization methods.
+
+    Bayesian mode supports BB25-style score calibration aliases ("bayes", "bb25", "bayesian-bm25").
+    Reference implementations:
+      - https://github.com/instructkr/bb25
+      - https://github.com/cognica-io/bayesian-bm25
     """
 
     def __init__(self, config):
@@ -42,6 +47,7 @@ class Normalize:
             normalized scores
         """
 
+        # BB25-compatible aliases for Bayesian normalization mode.
         bayesian = ("bayes", "bayesian", "bayesian-bm25", "bb25")
         return self.bayes(scores) if self.method in bayesian else self.default(scores, avgscore)
 
