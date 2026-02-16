@@ -1,4 +1,4 @@
-"""
+﻿"""
 Generation module
 """
 
@@ -181,7 +181,8 @@ class Generation:
                 break
 
         # Yield remaining tokens
-        yield from text.lstrip()
+        if text.lstrip():
+            yield text.lstrip()
         yield from results
 
     def cleanthink(self, text):
