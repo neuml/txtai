@@ -25,6 +25,12 @@ tokenizer("text to tokenize")
 # Tokenize using a regular expression
 tokenizer = Tokenizer(regexp=r"\w{5,}")
 tokenizer("text to tokenize")
+
+# Tokenize into trigrams like pg_trgm
+tokenizer = Tokenizer(ngrams={
+  "ngrams": 3, "lpad": "  ", "rpad": " ", "unique": True
+})
+tokenize("text to tokenize")
 ```
 
 ## Configuration-driven example

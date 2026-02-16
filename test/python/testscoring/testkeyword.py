@@ -447,3 +447,13 @@ class TestKeyword(unittest.TestCase):
 
         self.assertEqual(scoring.search("hello")[0][0], 0)
         self.assertFalse(scoring.search("test"))
+
+        # Test ngram tokenization
+        ngrams = {"ngrams": 3, "lpad": "  ", "rpad": " ", "unique": True}
+        config = {**config, **{"tokenizer": {"ngrams": ngrams}}}
+
+        # Create scoring instance
+        scoring = ScoringFactory.create(config)
+        scoring.index([(0, "hello test", None)])
+
+        self.assertEqual(scoring.search("hello")[0][0], 0)
