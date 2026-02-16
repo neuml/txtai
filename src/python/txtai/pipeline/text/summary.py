@@ -1,4 +1,4 @@
-"""
+﻿"""
 Summary module
 """
 
@@ -15,18 +15,20 @@ class Summary(HFPipeline):
     def __init__(self, path=None, quantize=False, gpu=True, model=None, **kwargs):
         super().__init__("summarization", path, quantize, gpu, model, **kwargs)
 
-    def __call__(self, text, minlength=None, maxlength=None, workers=0):
+    def __call__(self, text, minlength=None, maxlength=None, workers=0, **kwargs):
         """
         Runs a summarization model against a block of text.
 
-        This method supports text as a string or a list. If the input is a string, the return
-        type is text. If text is a list, a list of text is returned with a row per block of text.
+        This method supports text as a string, list, generator, or iterator. If the input is a
+        string, the return type is text. If text is a list or iterable, a list of text is returned
+        with a row per block of text.
 
         Args:
-            text: text|list
+            text: text|list|generator
             minlength: minimum length for summary
             maxlength: maximum length for summary
             workers: number of concurrent workers to use for processing data, defaults to None
+            kwargs: additional keyword arguments
 
         Returns:
             summary text
@@ -35,17 +37,18 @@ class Summary(HFPipeline):
         # Validate text length greater than max length
         check = maxlength if maxlength else self.maxlength()
 
-        # Skip text shorter than max length
-        texts = text if isinstance(text, list) else [text]
-        params = [(x, text if len(text) >= check else None) for x, text in enumerate(texts)]
+        # Materialize generators/iterators, keep original type check for return
+        single = isinstance(text, str)
+        texts = [text] if single else list(text)
+        params = [(x, t if len(t) >= check else None) for x, t in enumerate(texts)]
 
         # Build keyword arguments
-        kwargs = self.args(minlength, maxlength)
+        args = self.args(minlength, maxlength, **kwargs)
 
         inputs = [text for _, text in params if text]
         if inputs:
             # Run summarization pipeline
-            results = self.pipeline(inputs, num_workers=workers, **kwargs)
+            results = self.pipeline(inputs, num_workers=workers, **args)
 
             # Pull out summary text
             results = iter([self.clean(x["summary_text"]) for x in results])
@@ -54,7 +57,7 @@ class Summary(HFPipeline):
             # Return original
             results = texts
 
-        return results[0] if isinstance(text, str) else results
+        return results[0] if single else results
 
     def clean(self, text):
         """
@@ -72,27 +75,28 @@ class Summary(HFPipeline):
 
         return text
 
-    def args(self, minlength, maxlength):
+    def args(self, minlength, maxlength, **kwargs):
         """
         Builds keyword arguments.
 
         Args:
             minlength: minimum length for summary
             maxlength: maximum length for summary
+            kwargs: additional keyword arguments
 
         Returns:
             keyword arguments
         """
 
-        kwargs = {"truncation": True}
+        args = {"truncation": True}
         if minlength:
-            kwargs["min_length"] = minlength
+            args["min_length"] = minlength
         if maxlength:
-            kwargs["max_length"] = maxlength
-            kwargs["max_new_tokens"] = None
+            args["max_length"] = maxlength
+            args["max_new_tokens"] = None
 
             # Default minlength if not provided or it's bigger than maxlength
-            if "min_length" not in kwargs or kwargs["min_length"] > kwargs["max_length"]:
-                kwargs["min_length"] = kwargs["max_length"]
+            if "min_length" not in args or args["min_length"] > args["max_length"]:
+                args["min_length"] = args["max_length"]
 
-        return kwargs
+        return {**kwargs, **args}

@@ -1,4 +1,4 @@
-"""
+﻿"""
 Summary module tests
 """
 
@@ -55,6 +55,38 @@ class TestSummary(unittest.TestCase):
             + "Large-scale general language models are an exciting new capability allowing us to add amazing functionality quickly "
             + "with limited compute and people.",
         )
+
+    def testSummaryGenerator(self):
+        """
+        Test summarization with generator input
+        """
+
+        def text_gen():
+            yield self.text
+            yield self.text
+
+        summaries = self.summary(text_gen(), maxlength=15)
+        self.assertEqual(len(summaries), 2)
+        for s in summaries:
+            self.assertIsInstance(s, str)
+
+    def testSummaryIterator(self):
+        """
+        Test summarization with iterator input
+        """
+
+        summaries = self.summary(iter([self.text, self.text]), maxlength=15)
+        self.assertEqual(len(summaries), 2)
+
+    def testSummaryKwargs(self):
+        """
+        Test summarization with **kwargs propagation
+        """
+
+        # Pass batch_size kwarg which gets forwarded to the HF pipeline via args()
+        result = self.summary(self.text, minlength=15, maxlength=15, batch_size=1)
+        self.assertIsInstance(result, str)
+        self.assertTrue(len(result) > 0)
 
     def testSummaryShort(self):
         """
