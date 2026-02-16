@@ -8,7 +8,7 @@ import unittest
 
 from unittest.mock import patch
 
-from txtai.scoring import ScoringFactory, Scoring
+from txtai.scoring import Normalize, ScoringFactory, Scoring
 
 
 # pylint: disable=R0904
@@ -318,6 +318,7 @@ class TestKeyword(unittest.TestCase):
             method: scoring method
         """
 
+        # Default normalization
         scoring = ScoringFactory.create({**config, **{"terms": True, "normalize": True}})
         scoring.index(self.data)
 
@@ -325,6 +326,44 @@ class TestKeyword(unittest.TestCase):
         index, score = scoring.search(self.data[3][1], 1)[0]
         self.assertEqual(index, 3)
         self.assertEqual(score, 1.0)
+
+        # Bayesian normalization with default dynamic alpha/beta settings
+        baseline = ScoringFactory.create({**config, **{"terms": True}})
+        baseline.index(self.data)
+
+        scoring = ScoringFactory.create({**config, **{"terms": True, "normalize": "bayes"}})
+        scoring.index(self.data)
+
+        query = "wins"
+        base = baseline.search(query, 3)
+        bayes = scoring.search(query, 3)
+
+        # Bayesian normalization should preserve ranking order while mapping scores to [0, 1]
+        self.assertEqual([uid for uid, _ in base], [uid for uid, _ in bayes])
+        self.assertTrue(all(0.0 <= score <= 1.0 for _, score in bayes))
+
+        # BB25 alias should resolve to Bayesian normalization
+        scoring = ScoringFactory.create({**config, **{"terms": True, "normalize": "bb25"}})
+        scoring.index(self.data)
+        bb25 = scoring.search(query, 3)
+        self.assertEqual([uid for uid, _ in base], [uid for uid, _ in bb25])
+        self.assertTrue(all(0.0 <= score <= 1.0 for _, score in bb25))
+
+        # BB25 candidate-set behavior: zero scores remain 0, positive scores are transformed
+        normalizer = Normalize("bb25")
+        scores = normalizer([(0, 0.0), (1, 1.0), (2, 2.0)], scoring.avgscore)
+        self.assertEqual(scores[0][1], 0.0)
+        self.assertGreater(scores[1][1], 0.0)
+        self.assertGreater(scores[2][1], scores[1][1])
+
+        # Bayesian normalization with custom parameters
+        config = {**config, **{"terms": True, "normalize": {"method": "bayes", "alpha": 2.0}}}
+        scoring = ScoringFactory.create(config)
+        scoring.index(self.data)
+
+        custom = scoring.search(query, 3)
+        self.assertEqual([uid for uid, _ in base], [uid for uid, _ in custom])
+        self.assertTrue(all(0.0 <= score <= 1.0 for _, score in custom))
 
     def content(self, config):
         """
