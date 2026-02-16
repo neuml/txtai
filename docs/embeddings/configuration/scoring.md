@@ -89,6 +89,8 @@ Enables normalized scoring (ranging from 0 to 1). This setting supports:
 - `{method: "bayes", alpha: 1.0, beta: null}` for Bayesian normalization with optional custom parameters
 
 When standard normalization is enabled, statistics from the index are used to calculate normalized scores.
+When Bayesian/BB25 normalization is enabled, it uses positive-score candidates, dynamic `beta=median(scores)`, adaptive
+`alpha_eff=alpha/std(scores)` and a sigmoid transform (likelihood-only variant with flat prior) to map scores to `[0, 1]`.
 
 Bayesian normalization references:
 - https://github.com/instructkr/bb25

@@ -71,7 +71,7 @@ class Normalize:
 
     def bayes(self, scores):
         """
-        Bayesian normalization implementation.
+        BB25/Bayesian normalization implementation.
 
         Args:
             scores: list of (id, score)
@@ -80,19 +80,31 @@ class Normalize:
             normalized scores
         """
 
-        # Extract candidate scores
-        values = np.array([score for _, score in scores], dtype=np.float32)
+        # Convert scores to numpy array
+        values = np.array([score for _, score in scores], dtype=np.float64)
+        probabilities = np.zeros(values.shape[0], dtype=np.float64)
+
+        # Follow BB25 candidate-set behavior:
+        #   - estimate statistics on positive-score candidates only
+        #   - assign zero-score candidates a final score of 0.0
+        positive = values > 0.0
+        if not np.any(positive):
+            return [(uid, 0.0) for uid, _ in scores]
+
+        candidates = values[positive]
 
         # Dynamically derive beta using candidate score distribution, if not configured
-        beta = self.beta if self.beta is not None else float(np.median(values))
+        beta = self.beta if self.beta is not None else float(np.median(candidates))
 
         # Scale alpha by standard deviation for score-range invariance
-        std = float(np.std(values))
+        std = float(np.std(candidates))
         alpha = abs(self.alpha / std if std > 0 else self.alpha)
 
-        # Transform to posterior probabilities in [0, 1]
-        logits = np.clip(alpha * (values - beta), -60, 60)
-        probabilities = 1.0 / (1.0 + np.exp(-logits))
+        # Compute sigmoid likelihood for positive-score candidates.
+        # In this generic normalize flow, term-structure priors (tf/doc length) are not available,
+        # so we use the likelihood-only BB25 transform (equivalent to a flat prior of 0.5).
+        logits = np.clip(alpha * (candidates - beta), -500, 500)
+        probabilities[positive] = 1.0 / (1.0 + np.exp(-logits))
         probabilities = np.clip(probabilities, 0.0, 1.0)
 
         # Convert back to score tuples

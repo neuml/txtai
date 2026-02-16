@@ -8,7 +8,7 @@ import unittest
 
 from unittest.mock import patch
 
-from txtai.scoring import ScoringFactory, Scoring
+from txtai.scoring import Normalize, ScoringFactory, Scoring
 
 
 # pylint: disable=R0904
@@ -348,6 +348,13 @@ class TestKeyword(unittest.TestCase):
         bb25 = scoring.search(query, 3)
         self.assertEqual([uid for uid, _ in base], [uid for uid, _ in bb25])
         self.assertTrue(all(0.0 <= score <= 1.0 for _, score in bb25))
+
+        # BB25 candidate-set behavior: zero scores remain 0, positive scores are transformed
+        normalizer = Normalize("bb25")
+        scores = normalizer([(0, 0.0), (1, 1.0), (2, 2.0)], scoring.avgscore)
+        self.assertEqual(scores[0][1], 0.0)
+        self.assertGreater(scores[1][1], 0.0)
+        self.assertGreater(scores[2][1], scores[1][1])
 
         # Bayesian normalization with custom parameters
         config = {**config, **{"terms": True, "normalize": {"method": "bayes", "alpha": 2.0}}}
