@@ -78,10 +78,16 @@ When `terms` is set to `True`, default parameters are used for the `cachelimit` 
 
 ## normalize
 ```yaml
-normalize: boolean
+normalize: boolean|str|dict
 ```
 
-Enables normalized scoring (ranging from 0 to 1). When enabled, statistics from the index will be used to calculate normalized scores.
+Enables normalized scoring (ranging from 0 to 1). This setting supports:
+
+- `true` for standard score normalization
+- `"bayes"` for Bayesian normalization using dynamic candidate score statistics
+- `{method: "bayes", alpha: 1.0, beta: null}` for Bayesian normalization with optional custom parameters
+
+When standard normalization is enabled, statistics from the index are used to calculate normalized scores.
 
 ## tokenizer
 ```yaml

@@ -14,6 +14,7 @@ from ..pipeline import Tokenizer
 from ..serialize import Serializer
 
 from .base import Scoring
+from .normalize import Normalize
 from .terms import Terms
 
 
@@ -53,6 +54,7 @@ class TFIDF(Scoring):
 
         # Normalize scores
         self.normalize = self.config.get("normalize")
+        self.normalizer = Normalize(self.normalize) if self.normalize else None
         self.avgscore = None
 
     def insert(self, documents, index=None, checkpoint=None):
@@ -166,13 +168,8 @@ class TFIDF(Scoring):
             scores = self.terms.search(query, limit)
 
             # Normalize scores, if enabled
-            if self.normalize and scores:
-                # Calculate max score = best score for this query + average index score
-                # Limit max to 6 * average index score
-                maxscore = min(scores[0][1] + self.avgscore, 6 * self.avgscore)
-
-                # Normalize scores between 0 - 1 using maxscore
-                scores = [(x, min(score / maxscore, 1.0)) for x, score in scores]
+            if self.normalizer and scores:
+                scores = self.normalizer(scores, self.avgscore)
 
             # Add content, if available
             return self.results(scores)
@@ -209,6 +206,9 @@ class TFIDF(Scoring):
         # Set parameters on this object
         self.__dict__.update(state)
 
+        # Recreate normalizer
+        self.normalizer = Normalize(self.normalize) if self.normalize else None
+
         # Load terms
         if self.config.get("terms"):
             self.terms = Terms(self.config["terms"], self.score, self.idf)
@@ -216,7 +216,7 @@ class TFIDF(Scoring):
 
     def save(self, path):
         # Don't serialize following fields
-        skipfields = ("config", "terms", "tokenizer")
+        skipfields = ("config", "terms", "tokenizer", "normalizer")
 
         # Get object state
         state = {key: value for key, value in self.__dict__.items() if key not in skipfields}
