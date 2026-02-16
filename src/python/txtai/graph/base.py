@@ -1,4 +1,4 @@
-"""
+﻿"""
 Graph module
 """
 
@@ -485,6 +485,10 @@ class Graph:
         if "topics" in self.config:
             self.addtopics(similarity)
 
+        # Extract entities
+        if "entities" in self.config:
+            self.addentities()
+
     def upsert(self, search, ids, similarity=None):
         """
         Adds relationships for new graph nodes using a score-based search function.
@@ -511,6 +515,10 @@ class Graph:
                 self.infertopics()
             else:
                 self.addtopics(similarity)
+
+        # Extract entities for new/updated nodes
+        if "entities" in self.config:
+            self.addentities()
 
     def filter(self, nodes, graph=None):
         """
@@ -738,6 +746,69 @@ class Graph:
                     self.removeattribute(node, "category")
 
             self.topics, self.categories = None, None
+
+    def addentities(self, entity=None):
+        """
+        Extracts and adds entity attributes to graph nodes.
+
+        When the graph configuration contains an ``entities`` key, this method runs an
+        Entity pipeline over every node's text and stores the results as a node attribute.
+        Each stored attribute is a list of (word, entity_type, score) tuples.
+
+        Configuration example::
+
+            graph:
+                entities:
+                    path: dslim/bert-base-NER
+
+        The ``entities`` value may be a dict of kwargs passed to :class:`Entity` or a
+        string model path.
+
+        Args:
+            entity: optional pre-built Entity pipeline instance.  When *None*, a new
+                    pipeline is created from the ``entities`` section of the graph config.
+        """
+
+        # Read entity config - can be a dict of kwargs or a string model path
+        config = self.config.get("entities")
+        if not config and not entity:
+            return
+
+        # Clear previous entities
+        self.clearentities()
+
+        # Lazy-import to avoid circular / hard dependency on pipeline package
+        if not entity:
+            from ..pipeline.text import Entity  # pylint: disable=import-outside-toplevel
+
+            entity = Entity(**config) if isinstance(config, dict) else Entity(config)
+
+        # Collect (node, text) pairs for batched extraction
+        batch_nodes, batch_texts = [], []
+        for node in self.scan():
+            text = self.attribute(node, "text") or self.attribute(node, "data")
+            if text and isinstance(text, str):
+                batch_nodes.append(node)
+                batch_texts.append(text)
+
+        if not batch_texts:
+            return
+
+        # Run entity extraction in batch
+        results = entity(batch_texts)
+
+        # Store extracted entities as a node attribute
+        for node, entities in zip(batch_nodes, results):
+            if entities:
+                self.addattribute(node, "entities", entities)
+
+    def clearentities(self):
+        """
+        Clears entity attributes from all nodes.
+        """
+
+        for node in self.scan():
+            self.removeattribute(node, "entities")
 
     def infertopics(self):
         """
