@@ -1,4 +1,4 @@
-"""
+﻿"""
 Similarity module tests
 """
 
@@ -103,3 +103,15 @@ class TestSimilarity(unittest.TestCase):
 
         uid = self.similarity("other", ["Very long text " * 1000, "other text"])[0][0]
         self.assertEqual(uid, 1)
+
+    def testCrossEncoderLong(self):
+        """
+        Test cross-encoder with very long text (validates truncation=True)
+        """
+
+        similarity = Similarity("cross-encoder/ms-marco-MiniLM-L-2-v2", crossencode=True)
+
+        # This should not raise an error thanks to truncation=True
+        results = similarity("short query", ["Very long text " * 5000, "short answer"])
+        self.assertEqual(len(results), 2)
+        self.assertIsInstance(results[0][1], float)

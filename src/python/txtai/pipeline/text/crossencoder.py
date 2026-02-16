@@ -1,4 +1,4 @@
-"""
+﻿"""
 CrossEncoder module
 """
 
@@ -37,7 +37,13 @@ class CrossEncoder(HFPipeline):
         scores = []
         for q in [query] if isinstance(query, str) else query:
             # Pass (query, text) pairs to model
-            result = self.pipeline([{"text": q, "text_pair": t} for t in texts], top_k=None, function_to_apply="none", num_workers=workers)
+            result = self.pipeline(
+                [{"text": q, "text_pair": t} for t in texts],
+                top_k=None,
+                function_to_apply="none",
+                truncation=True,
+                num_workers=workers,
+            )
 
             # Apply score transform function
             scores.append(self.function([r[0]["score"] for r in result], multilabel))
