@@ -81,8 +81,8 @@ class Normalize:
         """
 
         # Convert scores to numpy array
-        values = np.array([score for _, score in scores], dtype=np.float64)
-        probabilities = np.zeros(values.shape[0], dtype=np.float64)
+        values = np.array([score for _, score in scores], dtype=np.float32)
+        probabilities = np.zeros(values.shape[0], dtype=np.float32)
 
         # Follow BB25 candidate-set behavior:
         #   - estimate statistics on positive-score candidates only
