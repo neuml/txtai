@@ -150,9 +150,13 @@ class Tokenizer(Pipeline):
 
         # Ngram configuration
         number = self.ngrams.get("ngrams", 3)
+        nmin = self.ngrams.get("nmin", number)
+        nmax = self.ngrams.get("nmax", number)
+
         lpad = self.ngrams.get("lpad", "")
         rpad = self.ngrams.get("rpad", "")
         unique = self.ngrams.get("unique", False)
+        edge = self.ngrams.get("edge", False)
 
         # Split on non-whitespace and apply optional word padding
         words = [f"{lpad}{x}{rpad}" for x in re.split(r"\W+", text.lower()) if x.strip()]
@@ -160,8 +164,10 @@ class Tokenizer(Pipeline):
         # Generate ngrams
         ngrams = []
         for word in words:
-            for x in range(0, len(word) - number + 1):
-                ngrams.append(word[x : x + number])
+            for n in range(nmin, min(nmax, len(word)) + 1):
+                for x in range(0, len(word) - n + 1):
+                    if not edge or x == 0:
+                        ngrams.append(word[x : x + n])
 
         # Reduce to unique ngrams, if necessary and return
         return list(set(ngrams)) if unique else ngrams
