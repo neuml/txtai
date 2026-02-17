@@ -3,12 +3,16 @@ Search module
 """
 
 import logging
+import math
 
 from .errors import IndexNotFoundError
 from .scan import Scan
 
 # Logging configuration
 logger = logging.getLogger(__name__)
+
+# Numerical clamp for log-odds computation
+_EPSILON = 1e-10
 
 
 class Search:
@@ -113,25 +117,22 @@ class Search:
             if isinstance(weights, (int, float)):
                 weights = [weights, 1 - weights]
 
+            # Select fusion strategy based on normalization mode
+            bayes = self.scoring.isbayes()
+
             # Create weighted scores
             results = []
             for vectors in zip(dense, sparse):
-                uids = {}
-                for v, scores in enumerate(vectors):
-                    for r, (uid, score) in enumerate(scores if weights[v] > 0 else []):
-                        # Initialize score
-                        if uid not in uids:
-                            uids[uid] = 0.0
-
-                        # Create hybrid score
-                        #  - Convex Combination when sparse scores are normalized
-                        #  - Reciprocal Rank Fusion (RRF) when sparse scores aren't normalized
-                        if self.scoring.isnormalized():
-                            uids[uid] += score * weights[v]
-                        else:
-                            uids[uid] += (1.0 / (r + 1)) * weights[v]
-
-                results.append(sorted(uids.items(), key=lambda x: x[1], reverse=True)[:limit])
+                if bayes:
+                    # Log-odds conjunction (Paper 2, Section 4-5)
+                    # Fuses calibrated probabilities in logit space
+                    results.append(self.logodds(vectors, weights, limit))
+                elif self.scoring.isnormalized():
+                    # Convex combination for default normalization
+                    results.append(self.convex(vectors, weights, limit))
+                else:
+                    # Reciprocal Rank Fusion when scores are not normalized
+                    results.append(self.rrf(vectors, weights, limit))
 
             return results
 
@@ -141,6 +142,141 @@ class Search:
 
         # Return single query results
         return dense if dense else sparse
+
+    def logodds(self, vectors, weights, limit):
+        """
+        Log-odds conjunction fusion for Bayesian (BB25) normalized scores.
+
+        Implements the framework from "From Bayesian Inference to Neural Computation"
+        (Jeong, 2026) with symmetric dynamic calibration:
+
+          1. Calibrate dense cosine scores via per-query dynamic sigmoid
+             (beta=median, alpha_eff=1/std) to produce logits centered at 0.
+          2. Convert sparse BB25 probabilities to logits.
+          3. Fuse via weighted mean log-odds with confidence scaling.
+
+        Scores are returned as raw logits (not mapped back through sigmoid) to
+        preserve ranking resolution among top candidates.
+
+        Args:
+            vectors: tuple of (dense_results, sparse_results)
+            weights: [dense_weight, sparse_weight]
+            limit: maximum results
+
+        Returns:
+            sorted list of (uid, score) where score is a fused logit
+        """
+
+        # Phase 1: Collect raw scores per document
+        uids = {}
+        dense_raw = []
+        for v, scores in enumerate(vectors):
+            for uid, score in (scores if weights[v] > 0 else []):
+                if uid not in uids:
+                    uids[uid] = [None, None]
+
+                if v == 0:
+                    uids[uid][0] = score
+                    dense_raw.append(score)
+                else:
+                    # Sparse BB25 score: already a calibrated probability
+                    uids[uid][1] = score
+
+        # Phase 2: Compute per-query calibration parameters for dense cosine scores.
+        # Same approach as BB25: beta=median, alpha_eff=1/std. The logit for a dense
+        # score is alpha * (score - median), centering the median candidate at logit 0.
+        if dense_raw:
+            dense_arr = [s for s in dense_raw if s > 0]
+            if dense_arr:
+                d_median = sorted(dense_arr)[len(dense_arr) // 2]
+                d_std = (sum((x - sum(dense_arr) / len(dense_arr)) ** 2 for x in dense_arr) / len(dense_arr)) ** 0.5
+                d_alpha = 1.0 / d_std if d_std > 0 else 1.0
+            else:
+                d_median = 0.0
+                d_alpha = 1.0
+        else:
+            d_median = 0.0
+            d_alpha = 1.0
+
+        # Phase 3: Fuse via weighted mean log-odds with confidence scaling.
+        # Raw logit scores are used for ranking instead of sigmoid(logit) to
+        # preserve fine-grained ordering among top candidates.
+        fused = {}
+        n = 2
+        alpha = 0.5
+        scale = n ** alpha
+
+        for uid, pair in uids.items():
+            raw_dense = pair[0]
+            p_sparse = pair[1]
+
+            if raw_dense is not None and p_sparse is not None:
+                # Calibrate dense score via dynamic sigmoid
+                logit_d = d_alpha * (raw_dense - d_median)
+                logit_d = max(min(logit_d, 500), -500)
+
+                # Sparse BB25 score -> logit
+                p_s = min(max(p_sparse, _EPSILON), 1.0 - _EPSILON)
+                logit_s = math.log(p_s / (1.0 - p_s))
+
+                # Weighted mean log-odds with confidence scaling (Paper 2, Def 4.2.1)
+                l_bar = weights[0] * logit_d + weights[1] * logit_s
+                fused[uid] = l_bar * scale
+            elif raw_dense is not None:
+                # Only dense signal: calibrated logit scaled by weight
+                logit_d = d_alpha * (raw_dense - d_median)
+                logit_d = max(min(logit_d, 500), -500)
+                fused[uid] = logit_d * weights[0]
+            else:
+                # Only sparse signal: logit scaled by weight
+                p_s = min(max(p_sparse, _EPSILON), 1.0 - _EPSILON)
+                fused[uid] = math.log(p_s / (1.0 - p_s)) * weights[1]
+
+        return sorted(fused.items(), key=lambda x: x[1], reverse=True)[:limit]
+
+    def convex(self, vectors, weights, limit):
+        """
+        Convex combination fusion for default normalized scores.
+
+        Args:
+            vectors: tuple of (dense_results, sparse_results)
+            weights: [dense_weight, sparse_weight]
+            limit: maximum results
+
+        Returns:
+            sorted list of (uid, score)
+        """
+
+        uids = {}
+        for v, scores in enumerate(vectors):
+            for uid, score in (scores if weights[v] > 0 else []):
+                if uid not in uids:
+                    uids[uid] = 0.0
+                uids[uid] += score * weights[v]
+
+        return sorted(uids.items(), key=lambda x: x[1], reverse=True)[:limit]
+
+    def rrf(self, vectors, weights, limit):
+        """
+        Reciprocal Rank Fusion for unnormalized scores.
+
+        Args:
+            vectors: tuple of (dense_results, sparse_results)
+            weights: [dense_weight, sparse_weight]
+            limit: maximum results
+
+        Returns:
+            sorted list of (uid, score)
+        """
+
+        uids = {}
+        for v, scores in enumerate(vectors):
+            for r, (uid, score) in enumerate(scores if weights[v] > 0 else []):
+                if uid not in uids:
+                    uids[uid] = 0.0
+                uids[uid] += (1.0 / (r + 1)) * weights[v]
+
+        return sorted(uids.items(), key=lambda x: x[1], reverse=True)[:limit]
 
     def subindex(self, queries, limit, weights, index):
         """

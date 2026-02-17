@@ -241,6 +241,9 @@ class TFIDF(Scoring):
     def isnormalized(self):
         return self.normalize
 
+    def isbayes(self):
+        return self.normalizer is not None and self.normalizer.isbayes()
+
     def computefreq(self, tokens):
         """
         Computes token frequency. Used for token weighting.

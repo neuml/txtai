@@ -186,3 +186,13 @@ class Scoring:
         """
 
         raise NotImplementedError
+
+    def isbayes(self):
+        """
+        Check if this scoring instance uses Bayesian (BB25) normalization.
+
+        Returns:
+            True if BB25/Bayesian normalization is active, False otherwise
+        """
+
+        return False
