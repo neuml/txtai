@@ -356,6 +356,10 @@ class TestKeyword(unittest.TestCase):
         self.assertGreater(scores[1][1], 0.0)
         self.assertGreater(scores[2][1], scores[1][1])
 
+        # Test negative scores
+        scores = normalizer([(0, -100.0)], scoring.avgscore)
+        self.assertEqual(scores[0][1], 0.0)
+
         # Bayesian normalization with custom parameters
         config = {**config, **{"terms": True, "normalize": {"method": "bayes", "alpha": 2.0}}}
         scoring = ScoringFactory.create(config)

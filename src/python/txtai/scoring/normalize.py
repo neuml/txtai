@@ -31,9 +31,7 @@ class Normalize:
         # Bayesian settings
         self.alpha = float(self.config.get("alpha", 1.0))
         self.beta = self.config.get("beta")
-
-        if self.beta is not None:
-            self.beta = float(self.beta)
+        self.beta = float(self.beta) if self.beta is not None else self.beta
 
     def __call__(self, scores, avgscore):
         """
