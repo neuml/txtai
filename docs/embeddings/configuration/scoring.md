@@ -93,8 +93,9 @@ When Bayesian/BB25 normalization is enabled, it uses positive-score candidates, 
 `alpha_eff=alpha/std(scores)` and a sigmoid transform (likelihood-only variant with flat prior) to map scores to `[0, 1]`.
 
 Bayesian normalization references:
-- https://github.com/instructkr/bb25
-- https://github.com/cognica-io/bayesian-bm25
+
+- [https://github.com/instructkr/bb25](https://github.com/instructkr/bb25)
+- [https://github.com/cognica-io/bayesian-bm25](https://github.com/cognica-io/bayesian-bm25)
 
 ## tokenizer
 ```yaml
