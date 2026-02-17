@@ -182,7 +182,8 @@ class Terms:
         scores = np.zeros(len(self.ids), dtype=np.float32)
 
         # Apply term expansion
-        terms = self.expand(terms)
+        with self.lock:
+            terms = self.expand(terms)
 
         # Debug logging for terms
         logger.debug(" ".join(["%s"] * len(terms)), *terms)
