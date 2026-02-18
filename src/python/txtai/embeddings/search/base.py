@@ -5,6 +5,7 @@ Search module
 import logging
 
 from .errors import IndexNotFoundError
+from .hybrid import Hybrid
 from .scan import Scan
 
 # Logging configuration
@@ -113,27 +114,9 @@ class Search:
             if isinstance(weights, (int, float)):
                 weights = [weights, 1 - weights]
 
-            # Create weighted scores
-            results = []
-            for vectors in zip(dense, sparse):
-                uids = {}
-                for v, scores in enumerate(vectors):
-                    for r, (uid, score) in enumerate(scores if weights[v] > 0 else []):
-                        # Initialize score
-                        if uid not in uids:
-                            uids[uid] = 0.0
-
-                        # Create hybrid score
-                        #  - Convex Combination when sparse scores are normalized
-                        #  - Reciprocal Rank Fusion (RRF) when sparse scores aren't normalized
-                        if self.scoring.isnormalized():
-                            uids[uid] += score * weights[v]
-                        else:
-                            uids[uid] += (1.0 / (r + 1)) * weights[v]
-
-                results.append(sorted(uids.items(), key=lambda x: x[1], reverse=True)[:limit])
-
-            return results
+            # Create weighted scores via hybrid fusion strategy
+            fusion = Hybrid(self.scoring)
+            return [fusion(vectors, weights, limit) for vectors in zip(dense, sparse)]
 
         # Raise an error if when no indexes are available
         if not sparse and not dense:

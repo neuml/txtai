@@ -5,6 +5,7 @@ Search imports
 from .base import Search
 from .errors import *
 from .explain import Explain
+from .hybrid import Hybrid
 from .ids import Ids
 from .query import Query
 from .scan import Scan
