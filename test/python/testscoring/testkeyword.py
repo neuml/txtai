@@ -75,6 +75,7 @@ class TestKeyword(unittest.TestCase):
         self.assertRaises(NotImplementedError, scoring.close)
         self.assertRaises(NotImplementedError, scoring.issparse)
         self.assertRaises(NotImplementedError, scoring.isnormalized)
+        self.assertRaises(NotImplementedError, scoring.isbayes)
 
     @patch("sqlalchemy.orm.Query.params")
     def testPGText(self, query):
