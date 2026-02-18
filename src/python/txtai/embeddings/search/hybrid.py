@@ -49,6 +49,31 @@ class Hybrid:
 
         return self.method(vectors, weights, limit)
 
+    def calibrate(self, dense_raw):
+        """
+        Computes per-query calibration parameters for dense cosine scores.
+
+        Uses the same approach as BB25: beta=median, alpha_eff=1/std so the
+        logit for a dense score is alpha * (score - median), centering the
+        median candidate at logit 0.
+
+        Args:
+            dense_raw: list of raw dense cosine scores
+
+        Returns:
+            (median, alpha) calibration parameters
+        """
+
+        d_median, d_alpha = 0.0, 1.0
+
+        dense_arr = [s for s in dense_raw if s > 0]
+        if dense_arr:
+            d_median = sorted(dense_arr)[len(dense_arr) // 2]
+            d_std = (sum((x - sum(dense_arr) / len(dense_arr)) ** 2 for x in dense_arr) / len(dense_arr)) ** 0.5
+            d_alpha = 1.0 / d_std if d_std > 0 else 1.0
+
+        return d_median, d_alpha
+
     def logodds(self, vectors, weights, limit):
         """
         Log-odds conjunction fusion for Bayesian (BB25) normalized scores.
@@ -77,7 +102,7 @@ class Hybrid:
         uids = {}
         dense_raw = []
         for v, scores in enumerate(vectors):
-            for uid, score in (scores if weights[v] > 0 else []):
+            for uid, score in scores if weights[v] > 0 else []:
                 if uid not in uids:
                     uids[uid] = [None, None]
 
@@ -91,18 +116,7 @@ class Hybrid:
         # Phase 2: Compute per-query calibration parameters for dense cosine scores.
         # Same approach as BB25: beta=median, alpha_eff=1/std. The logit for a dense
         # score is alpha * (score - median), centering the median candidate at logit 0.
-        if dense_raw:
-            dense_arr = [s for s in dense_raw if s > 0]
-            if dense_arr:
-                d_median = sorted(dense_arr)[len(dense_arr) // 2]
-                d_std = (sum((x - sum(dense_arr) / len(dense_arr)) ** 2 for x in dense_arr) / len(dense_arr)) ** 0.5
-                d_alpha = 1.0 / d_std if d_std > 0 else 1.0
-            else:
-                d_median = 0.0
-                d_alpha = 1.0
-        else:
-            d_median = 0.0
-            d_alpha = 1.0
+        d_median, d_alpha = self.calibrate(dense_raw)
 
         # Phase 3: Fuse via weighted mean log-odds with confidence scaling.
         # Raw logit scores are used for ranking instead of sigmoid(logit) to
@@ -110,7 +124,7 @@ class Hybrid:
         fused = {}
         n = 2
         alpha = 0.5
-        scale = n ** alpha
+        scale = n**alpha
 
         for uid, pair in uids.items():
             raw_dense = pair[0]
@@ -155,7 +169,7 @@ class Hybrid:
 
         uids = {}
         for v, scores in enumerate(vectors):
-            for uid, score in (scores if weights[v] > 0 else []):
+            for uid, score in scores if weights[v] > 0 else []:
                 if uid not in uids:
                     uids[uid] = 0.0
                 uids[uid] += score * weights[v]
@@ -177,7 +191,7 @@ class Hybrid:
 
         uids = {}
         for v, scores in enumerate(vectors):
-            for r, (uid, score) in enumerate(scores if weights[v] > 0 else []):
+            for r, (uid, _) in enumerate(scores if weights[v] > 0 else []):
                 if uid not in uids:
                     uids[uid] = 0.0
                 uids[uid] += (1.0 / (r + 1)) * weights[v]
