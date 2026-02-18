@@ -67,7 +67,7 @@ class TestSparse(unittest.TestCase):
         self.assertEqual(index, 5)
 
         # Sparse vectors is a normalized sparse index
-        self.assertTrue(scoring.issparse() and scoring.isnormalized())
+        self.assertTrue(scoring.issparse() and scoring.isnormalized() and not scoring.isbayes())
         self.assertIsNone(scoring.weights("This is a test".split()))
 
         # Close scoring

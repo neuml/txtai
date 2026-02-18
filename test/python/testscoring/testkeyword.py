@@ -111,7 +111,7 @@ class TestKeyword(unittest.TestCase):
         self.assertEqual(scoring.count(), len(self.data) - 1)
 
         # PGText is a normalized sparse index
-        self.assertTrue(scoring.issparse() and scoring.isnormalized())
+        self.assertTrue(scoring.issparse() and scoring.isnormalized() and not scoring.isbayes())
         self.assertIsNone(scoring.weights("This is a test".split()))
 
         # Close scoring

@@ -130,6 +130,9 @@ class Sparse(Scoring):
     def isnormalized(self):
         return self.isnormalize or self.model.isnormalize
 
+    def isbayes(self):
+        return False
+
     def start(self, checkpoint):
         """
         Starts an encoding processing thread.

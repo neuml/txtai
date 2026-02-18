@@ -118,6 +118,9 @@ class PGText(Scoring):
     def isnormalized(self):
         return True
 
+    def isbayes(self):
+        return False
+
     def initialize(self, recreate=False):
         """
         Initializes a new database session.
