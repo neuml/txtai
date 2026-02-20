@@ -9,6 +9,7 @@ from ..ann import SparseANNFactory
 from ..vectors import SparseVectorsFactory
 
 from .base import Scoring
+from .normalize import Normalize
 
 
 class Sparse(Scoring):
@@ -33,8 +34,16 @@ class Sparse(Scoring):
         self.model = SparseVectorsFactory.create(config, models)
 
         # Normalize search outputs if vectors are not normalized already
-        # A float can also be provided to set the normalization factor (defaults to 30.0)
+        # Supports: True (default linear, scale=30.0), float (custom scale),
+        #           "bb25"/"bayes" (Bayesian sigmoid calibration), False (disabled)
         self.isnormalize = self.config.get("normalize", True)
+
+        # Create Bayesian normalizer when a Bayesian method is configured
+        self.normalizer = None
+        if isinstance(self.isnormalize, (str, dict)):
+            normalizer = Normalize(self.isnormalize)
+            if normalizer.isbayes():
+                self.normalizer = normalizer
 
         # Sparse ANN
         self.ann = None
@@ -131,7 +140,7 @@ class Sparse(Scoring):
         return self.isnormalize or self.model.isnormalize
 
     def isbayes(self):
-        return False
+        return self.normalizer is not None
 
     def start(self, checkpoint):
         """
@@ -194,7 +203,12 @@ class Sparse(Scoring):
 
     def normalize(self, queries, scores):
         """
-        Normalize query result using the max query score.
+        Normalize query results.
+
+        When Bayesian normalization is configured, applies sigmoid calibration
+        with per-query adaptive parameters (beta=median, alpha=1/std) to produce
+        calibrated probabilities in [0, 1]. Otherwise, applies linear normalization
+        using the max query score.
 
         Args:
             queries: query vectors
@@ -204,7 +218,11 @@ class Sparse(Scoring):
             normalized query results
         """
 
-        # Get normalize scale factor
+        # Bayesian sigmoid calibration
+        if self.normalizer:
+            return [self.normalizer.bayes(result) if result else [] for result in scores]
+
+        # Default linear normalization
         scale = 30.0 if isinstance(self.isnormalize, bool) else self.isnormalize
 
         # Normalize scores using max scores

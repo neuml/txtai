@@ -102,6 +102,77 @@ class TestSparse(unittest.TestCase):
         self.assertIsNotNone(scoring)
         scoring.close()
 
+    def testBayes(self):
+        """
+        Test BB25 Bayesian normalization for sparse scoring
+        """
+
+        config = {
+            "method": "sparse",
+            "path": "sparse-encoder-testing/splade-bert-tiny-nq",
+            "normalize": "bb25",
+        }
+        scoring = ScoringFactory.create(config)
+        scoring.index((uid, {"text": text}, tags) for uid, text, tags in self.data)
+
+        # Verify Bayesian mode flags
+        self.assertTrue(scoring.isbayes())
+        self.assertTrue(scoring.isnormalized())
+
+        # Search and validate scores are calibrated probabilities in [0, 1]
+        results = scoring.search("lottery ticket", 3)
+        self.assertGreater(len(results), 0)
+        for _, score in results:
+            self.assertGreaterEqual(score, 0.0)
+            self.assertLessEqual(score, 1.0)
+
+        # Batch search
+        results = scoring.batchsearch(["lottery ticket", "ice shelf"], 3)
+        self.assertEqual(len(results), 2)
+        for query_results in results:
+            for _, score in query_results:
+                self.assertGreaterEqual(score, 0.0)
+                self.assertLessEqual(score, 1.0)
+
+        scoring.close()
+
+    def testBayesDict(self):
+        """
+        Test BB25 normalization with dict config
+        """
+
+        config = {
+            "method": "sparse",
+            "path": "sparse-encoder-testing/splade-bert-tiny-nq",
+            "normalize": {"method": "bb25", "alpha": 2.0},
+        }
+        scoring = ScoringFactory.create(config)
+        scoring.index((uid, {"text": text}, tags) for uid, text, tags in self.data)
+
+        self.assertTrue(scoring.isbayes())
+
+        results = scoring.search("lottery ticket", 3)
+        self.assertGreater(len(results), 0)
+        for _, score in results:
+            self.assertGreaterEqual(score, 0.0)
+            self.assertLessEqual(score, 1.0)
+
+        scoring.close()
+
+    def testBayesNonBayes(self):
+        """
+        Test that non-Bayesian string normalize values do not activate Bayesian mode
+        """
+
+        config = {
+            "method": "sparse",
+            "path": "sparse-encoder-testing/splade-bert-tiny-nq",
+            "normalize": "default",
+        }
+        scoring = ScoringFactory.create(config)
+        self.assertFalse(scoring.isbayes())
+        scoring.close()
+
     def testIVFFlat(self):
         """
         Test sparse vectors with IVFFlat clustering

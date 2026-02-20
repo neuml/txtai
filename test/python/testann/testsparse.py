@@ -82,6 +82,29 @@ class TestSparse(unittest.TestCase):
         self.assertLess(len(ann.blocks), 15)
         ann.close()
 
+    def testIVFSparseTopnOverLimit(self):
+        """
+        Test IVFSparse topn when limit exceeds the number of indexed documents
+        """
+
+        # Generate a small dataset (5 documents)
+        data = self.generate(5, 30522)
+
+        ann = SparseANNFactory.create({"backend": "ivfsparse"})
+        ann.index(data)
+
+        # Search with limit (10) greater than document count (5)
+        results = ann.search(data[0], 10)
+        self.assertGreater(len(results[0]), 0)
+
+        # Batch search with multiple queries exceeding document count
+        results = ann.search(data, 10)
+        self.assertEqual(len(results), data.shape[0])
+        for result in results:
+            self.assertGreater(len(result), 0)
+
+        ann.close()
+
     @patch("sqlalchemy.orm.Query.limit")
     def testPGSparse(self, query):
         """
