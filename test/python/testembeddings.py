@@ -238,6 +238,14 @@ class TestEmbeddings(unittest.TestCase):
         uid = embeddings.search("feel good story", 1)[0][0]
         self.assertEqual(uid, 4)
 
+        # Index data with sparse + dense vectors and bb25 normalization
+        embeddings.config["scoring"]["normalize"] = "bb25"
+        embeddings.index(data)
+
+        # Run search
+        uid = embeddings.search("canada intact iceberg a", 1)[0][0]
+        self.assertEqual(uid, 1)
+
         # Test upsert
         data[0] = (0, "Feel good story: baby panda born", None)
         embeddings.upsert([data[0]])

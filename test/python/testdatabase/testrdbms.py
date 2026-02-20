@@ -299,6 +299,14 @@ class Common:
             result = embeddings.search("feel good story", 1)[0]
             self.assertEqual(result["text"], data[4][1])
 
+            # Index data with sparse + dense vectors and bb25 normalized scores
+            embeddings.config["scoring"]["normalize"] = "bb25"
+            embeddings.index(data)
+
+            # Run search
+            result = embeddings.search("canada intact iceberg a", 1)[0]
+            self.assertEqual(result["text"], data[1][1])
+
             # Test upsert
             data[0] = (0, "Feel good story: baby panda born", None)
             embeddings.upsert([data[0]])

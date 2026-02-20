@@ -195,4 +195,4 @@ class Scoring:
             True if BB25/Bayesian normalization is active, False otherwise
         """
 
-        return False
+        raise NotImplementedError

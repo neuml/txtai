@@ -33,9 +33,6 @@ class Normalize:
         self.beta = self.config.get("beta")
         self.beta = float(self.beta) if self.beta is not None else self.beta
 
-    # BB25-compatible aliases for Bayesian normalization mode.
-    BAYESIAN_METHODS = ("bayes", "bayesian", "bayesian-bm25", "bb25")
-
     def isbayes(self):
         """
         Checks if Bayesian normalization mode is active.
@@ -44,7 +41,7 @@ class Normalize:
             True if using BB25/Bayesian normalization
         """
 
-        return self.method in self.BAYESIAN_METHODS
+        return self.method in ("bayes", "bayesian", "bayesian-bm25", "bb25")
 
     def __call__(self, scores, avgscore):
         """
