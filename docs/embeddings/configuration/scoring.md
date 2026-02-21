@@ -31,7 +31,7 @@ path: sparse vector model path
 vectormethod: vector embeddings method
 vectornormalize: enable vector embeddings normalization (boolean)
 gpu: boolean|int|string|device
-normalize: enable score normalization (boolean | float)
+normalize: enable score normalization (boolean|float|string|dict)
 batch: Sets the transform batch size
 encodebatch: Sets the encode batch size
 vectors: additional model init args
@@ -43,7 +43,12 @@ Sparse vector scoring options. The sparse scoring instance combines a sparse vec
 
 Vector normalization normalizes all vectors to have a magnitude of 1. By extension, all generated scores will be 0 to 1.
 
-Score normalization scales output scores by a scale factor. When `normalize` is set to `True` it uses a default scale factor. If `normalize` is an integer, then that is used as the scale factor. This scales the scores from 0 to 1.
+Score normalization scales the output between 0 and 1. This setting supports:
+
+- `True` for default scale normalization
+- `float` normalize using this as the scale factor
+- `"bayes"` for Bayesian normalization using dynamic candidate score statistics
+- `{method: "bayes", alpha: 1.0, beta: null}` for Bayesian normalization with optional custom parameters
 
 #### ivfsparse
 ```yaml
@@ -83,9 +88,8 @@ normalize: boolean|str|dict
 
 Enables normalized scoring (ranging from 0 to 1). This setting supports:
 
-- `true` for standard score normalization
-- `"bayes"` for Bayesian normalization using dynamic candidate score statistics
-- `"bb25"` alias for Bayesian BM25 (BB25) normalization
+- `True` for standard score normalization
+- `"bayes"` | `"bb25"` for Bayesian normalization using dynamic candidate score statistics
 - `{method: "bayes", alpha: 1.0, beta: null}` for Bayesian normalization with optional custom parameters
 
 When standard normalization is enabled, statistics from the index are used to calculate normalized scores.
