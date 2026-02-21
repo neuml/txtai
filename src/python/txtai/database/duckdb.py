@@ -5,6 +5,7 @@ DuckDB module
 import os
 import re
 
+from typing import get_type_hints
 from tempfile import TemporaryDirectory
 
 # Conditional import
@@ -80,8 +81,15 @@ class DuckDB(Embedded):
             rows = self.cursor.fetchmany(batch)
 
     def addfunctions(self):
-        # DuckDB doesn't currently support scalar functions
-        return
+        if self.connection and self.functions:
+            for name, _, fn, deterministic in self.functions:
+                # Get function type hints
+                hints = get_type_hints(fn)
+
+                # Create database functions
+                self.connection.create_function(
+                    name, fn, return_type=hints.get("return", str), side_effects=not deterministic if deterministic is not None else False
+                )
 
     def copy(self, path):
         # Delete existing file, if necessary

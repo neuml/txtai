@@ -34,8 +34,9 @@ class SQLite(Embedded):
             # Enable callback tracebacks to show user-defined function errors
             sqlite3.enable_callback_tracebacks(True)
 
-            for name, argcount, fn in self.functions:
-                self.connection.create_function(name, argcount, fn)
+            # Create database functions
+            for name, argcount, fn, deterministic in self.functions:
+                self.connection.create_function(name, argcount, fn, deterministic=deterministic if deterministic is not None else False)
 
     def copy(self, path):
         # Delete existing file, if necessary

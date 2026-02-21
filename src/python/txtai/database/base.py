@@ -263,11 +263,11 @@ class Database:
         if inputs:
             functions = []
             for fn in inputs:
-                name, argcount = None, -1
+                name, argcount, deterministic = None, -1, None
 
                 # Optional function configuration
                 if isinstance(fn, dict):
-                    name, argcount, fn = fn.get("name"), fn.get("argcount", -1), fn["function"]
+                    name, argcount, fn, deterministic = (fn.get("name"), fn.get("argcount", -1), fn["function"], fn.get("deterministic"))
 
                 # Determine if this is a callable object or a function
                 if not isinstance(fn, types.FunctionType) and hasattr(fn, "__call__"):
@@ -277,7 +277,7 @@ class Database:
                     name = name if name else fn.__name__.lower()
 
                 # Store function details
-                functions.append((name, argcount, fn))
+                functions.append((name, argcount, fn, deterministic))
 
             # pylint: disable=W0201
             self.functions = functions

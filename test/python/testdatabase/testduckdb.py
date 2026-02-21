@@ -53,3 +53,32 @@ class TestDuckDB(Common.TestRDBMS):
         """
 
         super().testArchive()
+
+    def testFunction(self):
+        """
+        Test custom functions
+        """
+
+        embeddings = Embeddings(
+            {
+                "path": "sentence-transformers/nli-mpnet-base-v2",
+                "content": self.backend,
+                "functions": [{"name": "length", "function": "testdatabase.testduckdb.length"}],
+            }
+        )
+
+        # Create an index for the list of text
+        embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        # Search for best match
+        result = embeddings.search("select length(text) length from txtai where id = 0", 1)[0]
+
+        self.assertEqual(result["length"], 39)
+
+
+def length(text):
+    """
+    Custom SQL function.
+    """
+
+    return len(text)

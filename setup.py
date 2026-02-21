@@ -55,7 +55,7 @@ extras["cloud"] = ["apache-libcloud>=3.3.1", "fasteners>=0.14.1"]
 
 extras["console"] = ["rich>=12.0.1"]
 
-extras["database"] = ["duckdb>=0.7.1", "pillow>=7.1.2", "sqlalchemy>=2.0.20"]
+extras["database"] = ["duckdb>=0.8.0", "pillow>=7.1.2", "sqlalchemy>=2.0.20"]
 
 extras["graph"] = ["grand-cypher>=0.6.0", "grand-graph>=0.6.0", "networkx>=2.7.1", "sqlalchemy>=2.0.20"]
 
