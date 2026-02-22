@@ -96,3 +96,6 @@ class Statement:
         + "LEFT JOIN scores sc ON s.indexid = sc.indexid"
     )
     IDS_CLAUSE = "s.indexid in (SELECT indexid from batch WHERE batch=%s)"
+
+    # Expression indexes
+    CREATE_EXPRESSION_INDEX = "CREATE INDEX IF NOT EXISTS %s ON %s(%s)"

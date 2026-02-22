@@ -247,6 +247,22 @@ class Common:
 
             self.assertEqual(self.embeddings.explain("select * from txtai limit 1")[0]["id"], "0")
 
+        def testExpressions(self):
+            """
+            Test expressions
+            """
+
+            # Test indexed expressions
+            embeddings = Embeddings(
+                path="sentence-transformers/nli-mpnet-base-v2",
+                content=self.backend,
+                expressions=[{"name": "textlength", "expression": "length(text)", "index": True}],
+            )
+            embeddings.index(self.data)
+
+            result = embeddings.search("SELECT textlength FROM txtai WHERE id = 0", 1)[0]
+            self.assertEqual(result["textlength"], len(self.data[0]))
+
         def testGenerator(self):
             """
             Test index with a generator

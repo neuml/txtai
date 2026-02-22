@@ -52,7 +52,7 @@ class TestSQLite(Common.TestRDBMS):
             {
                 "path": "sentence-transformers/nli-mpnet-base-v2",
                 "content": self.backend,
-                "functions": [{"name": "length", "function": "testdatabase.testsqlite.length"}],
+                "functions": [{"name": "textlength", "function": "testdatabase.testsqlite.length"}],
             }
         )
 
@@ -60,9 +60,9 @@ class TestSQLite(Common.TestRDBMS):
         embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
 
         # Search for best match
-        result = embeddings.search("select length(text) length from txtai where id = 0", 1)[0]
+        result = embeddings.search("select textlength(text) length from txtai where id = 0", 1)[0]
 
-        self.assertEqual(result["length"], 39)
+        self.assertEqual(int(result["length"]), 39)
 
 
 def length(text):

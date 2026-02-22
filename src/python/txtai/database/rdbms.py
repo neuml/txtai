@@ -145,7 +145,7 @@ class RDBMS(Database):
 
         # Resolve expression
         if self.expressions and name in self.expressions:
-            return self.expressions[name]
+            return self.expressions[name]["expression"]
 
         # Name is already resolved, skip
         if name.startswith(self.jsonprefix()) or any(f"s.{s}" == name for s in sections):
@@ -251,6 +251,9 @@ class RDBMS(Database):
             # Create initial table schema
             self.createtables()
 
+            # Create indexes
+            self.createindexes()
+
     def session(self, path=None, connection=None):
         """
         Starts a new database session.
@@ -281,6 +284,23 @@ class RDBMS(Database):
         self.cursor.execute(Statement.CREATE_SECTIONS % "sections")
         self.cursor.execute(Statement.CREATE_SECTIONS_INDEX)
 
+    def createindexes(self):
+        """
+        Creates expression indexes
+        """
+
+        if self.expressions:
+            for key, values in self.expressions.items():
+                # Create index for expression, if enabled
+                if values["index"]:
+                    # Get parameters
+                    name = f"expression_{key}".lower()
+                    expression = values["expression"]
+                    table = "documents" if expression.startswith(self.jsonprefix()) else "sections"
+
+                    # Execute statement
+                    self.cursor.execute(Statement.CREATE_EXPRESSION_INDEX % (name, table, expression))
+
     def finalize(self):
         """
         Post processing logic run after inserting a batch of documents. Default method is no-op.
@@ -306,9 +326,13 @@ class RDBMS(Database):
         # Get and remove object field from document
         obj = document.pop(self.object) if self.object in document else None
 
-        # Insert document as JSON
         if document:
-            self.insertdocument(uid, json.dumps(document, allow_nan=False), tags, entry)
+            # Apply data filters, if necessary
+            data = {key: value for key, value in document.items() if key in self.store} if self.store is not None else document
+
+            # Insert document as JSON
+            if data:
+                self.insertdocument(uid, json.dumps(data, allow_nan=False), tags, entry)
 
         # If text and object are both available, load object as it won't otherwise be used
         if self.text in document and obj:

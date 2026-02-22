@@ -23,6 +23,8 @@ As mentioned above, computed vectors are stored in an ANN. There are various ind
 
 Embeddings indexes can optionally [store content](../configuration/database#content). When this is enabled, the input content is saved in a database alongside the computed vectors. This enables filtering on additional fields and content retrieval.
 
+The columns used for text, object and JSON data storage are set via [column configuration](../configuration/general#columns).
+
 ## Index vs Upsert
 
 Data is loaded into an index with either an [index](../methods#txtai.embeddings.base.Embeddings.index) or [upsert](../methods#txtai.embeddings.base.Embeddings.upsert) call.

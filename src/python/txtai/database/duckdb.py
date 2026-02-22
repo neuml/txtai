@@ -81,15 +81,7 @@ class DuckDB(Embedded):
             rows = self.cursor.fetchmany(batch)
 
     def addfunctions(self):
-        if self.connection and self.functions:
-            for name, _, fn, deterministic in self.functions:
-                # Get function type hints
-                hints = get_type_hints(fn)
-
-                # Create database functions
-                self.connection.create_function(
-                    name, fn, return_type=hints.get("return", str), side_effects=not deterministic if deterministic is not None else False
-                )
+        self.loadfunctions(self.connection)
 
     def copy(self, path):
         # Delete existing file, if necessary
@@ -116,8 +108,14 @@ class DuckDB(Embedded):
             for table in tables:
                 connection.execute(f"COPY {table} FROM '{directory}/{table}.parquet' (FORMAT parquet)")
 
-            # Create indexes and sync data to database file
-            connection.execute(Statement.CREATE_SECTIONS_INDEX)
+            # Copy functions
+            self.loadfunctions(connection)
+
+            # Copy indexes
+            for (sql,) in self.connection.execute("SELECT sql FROM duckdb_indexes()").fetchall():
+                connection.execute(sql)
+
+            # Sync data to database file
             connection.execute("CHECKPOINT")
 
         # Start transaction
@@ -156,3 +154,24 @@ class DuckDB(Embedded):
             args = (query, [value for _, value in sorted(params, key=lambda x: x[0])])
 
         return args
+
+    def loadfunctions(self, connection):
+        """
+        Load database functions.
+
+        Args:
+            connection: connection to create functions
+        """
+
+        if self.functions and connection:
+            for name, _, fn, deterministic in self.functions:
+                # Create function if it doesn't already exist
+                result = connection.execute("SELECT 1 FROM duckdb_functions() WHERE function_name = ?", [name]).fetchone()
+                if not result:
+                    # Get function type hints
+                    hints = get_type_hints(fn)
+
+                    # Create database functions
+                    connection.create_function(
+                        name, fn, return_type=hints.get("return", str), side_effects=not deterministic if deterministic is not None else False
+                    )
