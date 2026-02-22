@@ -236,10 +236,15 @@ class Database:
         encoder = self.config.get("objects")
         self.encoder = EncoderFactory.create(encoder) if encoder else None
 
-        # Transform columns
+        # Columns configuration
         columns = config.get("columns", {})
         self.text = columns.get("text", "text")
         self.object = columns.get("object", "object")
+
+        # JSON data storage. If not set, all columns are stored (default).
+        # Otherwise, only columns stored in store list are kept.
+        # If store is set to None, no columns are stored.
+        self.store = ([] if columns["store"] is None else columns["store"]) if "store" in columns else None
 
         # Custom functions and expressions
         self.functions, self.expressions = None, None
@@ -295,9 +300,9 @@ class Database:
             expressions = {}
             for entry in inputs:
                 name = entry.get("name")
-                expression = entry.get("expression")
-                if name and expression:
-                    expressions[name] = self.sql.snippet(expression)
+                expression = entry.get("expression", name)
+                if name:
+                    expressions[name] = {"expression": self.sql.snippet(expression), "index": entry.get("index", False)}
 
             # pylint: disable=W0201
             self.expressions = expressions
