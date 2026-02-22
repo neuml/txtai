@@ -50,13 +50,26 @@ Object encoding options are:
 functions: list
 ```
 
-List of functions with user-defined SQL functions, only used when [content](#content) is enabled. Each list element must be one of the following:
+List of functions with user-defined SQL functions. Each list element must be one of the following:
 
 - function
 - callable object
-- dict with fields for name, argcount and function
+- dict with fields for name, argcount, function and deterministic
 
 [An example can be found here](../../query#custom-sql-functions).
+
+## expressions
+```yaml
+expressions: list
+```
+
+List of expression shortcuts. Each list element must be a dict with the following fields.
+
+- `name`: name of the expression
+- `expression`: SQL expression, defaults to `name` when empty
+- `index`: if this expression should have a database index, defaults to False when not provided
+
+The expression can be a json data column, sql function or anything that can be run as a SQL snippet.
 
 ## query
 ```yaml

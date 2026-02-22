@@ -169,6 +169,24 @@ LIMIT 1
 """)
 ```
 
+## Expressions
+
+Expression shortcuts expand into more complex SQL snippets. This is useful for making SQL queries more concise. Indexing is also available on expressions as a performance improvement.
+
+The following example indexes a json extraction field (`filepath`) and the length of each field.
+
+```python
+# Create embeddings index
+embeddings = Embeddings(path="sentence-transformers/nli-mpnet-base-v2",
+                        content=True,
+                        expressions=[
+                          {"name": "filepath", "index": True},
+                          {"name": "textlength", "expression": "length(text)", "index": True}
+                        ])
+
+embeddings.search("SELECT textlength, filepath FROM txtai LIMIT 1")
+```
+
 ## Query translation
 
 Natural language queries with filters can be converted to txtai-compatible SQL statements with query translation. For example:
