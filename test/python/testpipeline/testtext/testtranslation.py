@@ -122,7 +122,7 @@ class TestTranslation(unittest.TestCase):
         # Validate no translation
         self.assertEqual(text, translation)
 
-    def testLongTranslationWithShowmodels(self):
+    def testShowmodelsChunked(self):
         """
         Test a long translation with showmodels flag. When text is chunked
         by the tokenizer, results should still be properly concatenated as
