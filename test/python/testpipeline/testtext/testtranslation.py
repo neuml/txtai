@@ -122,6 +122,31 @@ class TestTranslation(unittest.TestCase):
         # Validate no translation
         self.assertEqual(text, translation)
 
+    def testLongTranslationWithShowmodels(self):
+        """
+        Test a long translation with showmodels flag. When text is chunked
+        by the tokenizer, results should still be properly concatenated as
+        a 3-tuple (translation, language, model) rather than a malformed tuple.
+        """
+
+        text = "This is a test translation to Spanish. " * 100
+        result = self.translate(text, "es", showmodels=True)
+
+        # Result should be a tuple of exactly 3 elements
+        self.assertIsInstance(result, tuple)
+        self.assertEqual(len(result), 3)
+
+        translation, language, modelpath = result
+
+        # Translation should be a single string, not a nested tuple
+        self.assertIsInstance(translation, str)
+        self.assertIsNotNone(translation)
+        self.assertGreater(len(translation), 0)
+
+        # Language and model should be valid strings
+        self.assertEqual(language, "en")
+        self.assertIsInstance(modelpath, str)
+
     def testTranslationWithShowmodels(self):
         """
         Test a translation using Marian models and showmodels flag to return
