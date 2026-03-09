@@ -202,11 +202,15 @@ class Translation(HFModel):
         # Combine translations - handle splits on large text from tokenizer
         results, last = [], -1
         for x, i in enumerate(indices):
-            v = (path, translated[x]) if showmodels else translated[x]
             if i == last:
-                results[-1] += v
+                if showmodels:
+                    # Concatenate text portion of (path, text) tuple
+                    prev = results[-1]
+                    results[-1] = (prev[0], prev[1] + translated[x])
+                else:
+                    results[-1] += translated[x]
             else:
-                results.append(v)
+                results.append((path, translated[x]) if showmodels else translated[x])
 
             last = i
 
