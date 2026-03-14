@@ -9,13 +9,20 @@ from types import FunctionType, MethodType
 import mcpadapt.core
 
 from mcpadapt.smolagents_adapter import SmolAgentsAdapter
-from smolagents import PythonInterpreterTool, Tool, tool as CreateTool, VisitWebpageTool, WebSearchTool
+from smolagents import PythonInterpreterTool, Tool, tool as CreateTool, UserInputTool, WebSearchTool
 from transformers.utils import chat_template_utils, TypeHintParsingException
 
 from ...embeddings import Embeddings
+from .bash import BashTool
+from .edit import EditTool
 from .embeddings import EmbeddingsTool
 from .function import FunctionTool
+from .glob import GlobTool
+from .grep import GrepTool
+from .read import ReadTool
 from .skill import SkillTool
+from .todo import TodoWriteTool
+from .write import WriteTool
 
 
 class ToolFactory:
@@ -24,7 +31,21 @@ class ToolFactory:
     """
 
     # Default toolkit
-    DEFAULTS = {"python": PythonInterpreterTool(), "websearch": WebSearchTool(), "webview": VisitWebpageTool()}
+    DEFAULTS = {
+        "bash": BashTool(),
+        "edit": EditTool(),
+        "glob": GlobTool(),
+        "grep": GrepTool(),
+        "python": PythonInterpreterTool(),
+        "question": UserInputTool(),
+        "read": ReadTool(),
+        "todowrite": TodoWriteTool(),
+        "websearch": WebSearchTool(),
+        "write": WriteTool(),
+    }
+
+    # Backwards compatible mappings
+    DEFAULTS["webview"] = DEFAULTS["read"]
 
     @staticmethod
     def create(config):
@@ -61,6 +82,11 @@ class ToolFactory:
             # Get default tool, if applicable
             elif isinstance(tool, str) and tool in ToolFactory.DEFAULTS:
                 tool = ToolFactory.DEFAULTS[tool]
+
+            # Get ALL default tools, if applicable
+            elif isinstance(tool, str) and tool == "defaults":
+                tools.extend(set(ToolFactory.DEFAULTS.values()))
+                tool = None
 
             # Support importing MCP tool collections
             elif isinstance(tool, str) and tool.startswith("http"):

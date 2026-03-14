@@ -7,8 +7,7 @@ from smolagents import Tool
 
 class FunctionTool(Tool):
     """
-    Creates a FunctionTool. A FunctionTool takes descriptive configuration and injects it along with a target function
-    into an LLM prompt.
+    A FunctionTool takes descriptive configuration and injects it along with a target function into an LLM prompt.
     """
 
     # pylint: disable=W0231

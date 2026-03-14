@@ -85,11 +85,19 @@ The following shortcut strings load tools directly. Passing a Tool instance is a
 
 | Tool        | Description                                               |
 |:------------|:----------------------------------------------------------|
+| bash        | Runs a shell command through subprocess                   |
+| defaults    | Loads all of these tools as the default toolkit           |
+| edit        | Edits a file in place and returns a diff                  |
+| glob        | Finds matching file patterns in a directory               |
+| grep        | Finds matching file content in a directory                |
 | http.*      | HTTP Path to a [Model Context Protocol (MCP)](https://modelcontextprotocol.io/docs/getting-started/intro) server |
 | python      | Runs a Python action                                      |
-| *.md        | Loads a [`skill.md`](https://agentskills.io/specification) file
+| read        | Reads file or url content, supports text extraction       |
+| todowrite   | Generates a task list to organize complex tasks           |
 | websearch   | Runs a websearch using the built-in websearch tool        |
-| webview     | Extracts content from a web page                          |
+| webview     | Extracts content from a web page. Alias for `read` tool   |
+| write       | Writes content to file                                    |
+| *.md        | Loads a [`skill.md`](https://agentskills.io/specification) file |
 
 ## instructions
 

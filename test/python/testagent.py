@@ -160,6 +160,29 @@ class TestAgent(unittest.TestCase):
         self.assertIsInstance(agent.tools["today"](True), str)
         self.assertIsInstance(agent.tools["current"](True), str)
 
+    def testToolsDefaults(self):
+        """
+        Test default toolkit tools
+        """
+
+        agent = Agent(tools=["defaults"], llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=1)
+
+        # Working directory
+        work = tempfile.gettempdir()
+
+        # Test file
+        path = os.path.join(work, "agent_tools.txt")
+        agent.tools["write"](path, "hello world")
+
+        # Test default tools
+        self.assertIsNotNone(agent.tools["bash"](["ls", work]))
+        self.assertGreater(len(agent.tools["glob"](work)), 0)
+        self.assertGreater(len(agent.tools["grep"]("world", "*")), 0)
+        self.assertEqual(agent.tools["todowrite"]("plan"), "plan")
+
+        agent.tools["edit"](path, "hello", "goodbye")
+        self.assertEqual(agent.tools["read"](path), "goodbye world".strip())
+
     def testToolsEmbeddings(self):
         """
         Test adding Embeddings as a tool

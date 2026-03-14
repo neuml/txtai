@@ -9,7 +9,7 @@ from smolagents import Tool
 
 class SkillTool(Tool):
     """
-    Creates a SkillTool. A SkillTool loads a skill.md file.
+    A SkillTool loads a skill.md file.
     """
 
     # pylint: disable=W0231
