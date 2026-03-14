@@ -116,9 +116,6 @@ class LogOdds:
         (beta=median, alpha_eff=1/std) to produce logits centered at 0.
     2. Convert sparse BB25 probabilities to logits.
     3. Fuse via weighted mean log-odds with confidence scaling.
-
-    Scores are returned as raw logits (not mapped back through sigmoid) to
-    preserve ranking resolution among top candidates.
     """
 
     # Numerical clamp for log-odds computation
@@ -249,4 +246,5 @@ class LogOdds:
                 psparse = min(max(psparse, LogOdds.EPSILON), 1.0 - LogOdds.EPSILON)
                 fused[uid] = math.log(psparse / (1.0 - psparse)) * weights[1]
 
-        return fused
+        # Transform logits to probabilities
+        return {uid: 1 / (1 + math.exp(-score)) for uid, score in fused.items()}
