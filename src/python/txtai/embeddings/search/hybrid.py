@@ -143,8 +143,6 @@ class LogOdds:
         densemedian, densealpha = self.calibrate(denseraw)
 
         # Phase 3: Fuse via weighted mean log-odds with confidence scaling.
-        # Raw logit scores are used for ranking instead of sigmoid(logit) to
-        # preserve fine-grained ordering among top candidates.
         fused = self.fuse(uids, weights, densemedian, densealpha)
 
         return sorted(fused.items(), key=lambda x: x[1], reverse=True)[:limit]
