@@ -94,6 +94,7 @@ The following shortcut strings load tools directly. Passing a Tool instance is a
 | python      | Runs a Python action                                      |
 | read        | Reads file or url content, supports text extraction       |
 | todowrite   | Generates a task list to organize complex tasks           |
+| tavily      | Runs a web search using the [Tavily API](https://tavily.com). Requires `TAVILY_API_KEY` env var and `tavily-python` package (install via `pip install txtai[agent-tavily]`) |
 | websearch   | Runs a websearch using the built-in websearch tool        |
 | webview     | Extracts content from a web page. Alias for `read` tool   |
 | write       | Writes content to file                                    |
