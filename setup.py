@@ -29,6 +29,7 @@ extras["dev"] = [
 
 extras["agent"] = ["jinja2>=3.1.6", "mcpadapt>=0.1.0", "smolagents>=1.23"]
 
+# Excluded from "all" — requires external Tavily API key
 extras["agent-tavily"] = extras["agent"] + ["tavily-python>=0.5.0"]
 
 extras["ann"] = [
