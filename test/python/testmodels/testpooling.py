@@ -88,6 +88,17 @@ class TestPooling(unittest.TestCase):
             )
             self.assertEqual(pooling.encode(["test"], category="data").shape, (1, 160))
 
+    def testLemur(self):
+        """
+        Test late pooling with LEMUR fixed dimensional encoding
+        """
+
+        # Test LEMUR encoding
+        for model in ["neuml/colbert-bert-tiny", "neuml/pylate-bert-tiny"]:
+            # Test defaults
+            pooling = PoolingFactory.create({"path": model, "device": self.device})
+            self.assertEqual(pooling.encode(["test"], category="query").shape, (1, 2048))
+
     def testPrompts(self):
         """
         Test instruction prompts
