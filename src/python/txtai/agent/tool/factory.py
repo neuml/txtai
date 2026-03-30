@@ -31,7 +31,7 @@ class ToolFactory:
     Methods to create tools.
     """
 
-    # Default toolkit
+    # Default toolkit - included when "defaults" is specified
     DEFAULTS = {
         "bash": BashTool(),
         "edit": EditTool(),
@@ -41,9 +41,13 @@ class ToolFactory:
         "question": UserInputTool(),
         "read": ReadTool(),
         "todowrite": TodoWriteTool(),
-        "tavily": TavilySearchTool(),
         "websearch": WebSearchTool(),
         "write": WriteTool(),
+    }
+
+    # Opt-in tools requiring external API keys - not included in "defaults"
+    OPTIN = {
+        "tavily": TavilySearchTool(),
     }
 
     # Backwards compatible mappings
@@ -81,9 +85,9 @@ class ToolFactory:
                     else ToolFactory.createtool(target, tool)
                 )
 
-            # Get default tool, if applicable
-            elif isinstance(tool, str) and tool in ToolFactory.DEFAULTS:
-                tool = ToolFactory.DEFAULTS[tool]
+            # Get named tool (default or opt-in), if applicable
+            elif isinstance(tool, str) and (tool in ToolFactory.DEFAULTS or tool in ToolFactory.OPTIN):
+                tool = ToolFactory.DEFAULTS.get(tool) or ToolFactory.OPTIN[tool]
 
             # Get ALL default tools, if applicable
             elif isinstance(tool, str) and tool == "defaults":
