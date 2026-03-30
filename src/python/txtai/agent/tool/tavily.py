@@ -2,8 +2,6 @@
 Tavily web search tool
 """
 
-import os
-
 from smolagents import Tool
 
 
@@ -18,8 +16,8 @@ class TavilySearchTool(Tool):
         Creates a TavilySearchTool.
         """
 
-        # Tool parameters
-        self.name = "web_search"
+        # Tool parameters - use distinct name to avoid collision with smolagents WebSearchTool
+        self.name = "tavily_search"
         self.description = (
             "Performs a web search using the Tavily API and returns relevant results. "
             "Use this tool to find current information on any topic."
@@ -47,7 +45,7 @@ class TavilySearchTool(Tool):
         # Import here to make tavily-python an optional dependency
         from tavily import TavilyClient  # pylint: disable=C0415
 
-        client = TavilyClient(api_key=os.environ.get("TAVILY_API_KEY"))
+        client = TavilyClient()
         response = client.search(query=query, max_results=5, search_depth="basic")
 
         results = []

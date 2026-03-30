@@ -27,7 +27,9 @@ extras["dev"] = [
     "pylint",
 ]
 
-extras["agent"] = ["jinja2>=3.1.6", "mcpadapt>=0.1.0", "smolagents>=1.23", "tavily-python>=0.5.0"]
+extras["agent"] = ["jinja2>=3.1.6", "mcpadapt>=0.1.0", "smolagents>=1.23"]
+
+extras["agent-tavily"] = extras["agent"] + ["tavily-python>=0.5.0"]
 
 extras["ann"] = [
     "annoy>=1.16.3",
