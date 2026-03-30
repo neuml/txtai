@@ -21,6 +21,7 @@ from .glob import GlobTool
 from .grep import GrepTool
 from .read import ReadTool
 from .skill import SkillTool
+from .tavily import TavilySearchTool
 from .todo import TodoWriteTool
 from .write import WriteTool
 
@@ -40,6 +41,7 @@ class ToolFactory:
         "question": UserInputTool(),
         "read": ReadTool(),
         "todowrite": TodoWriteTool(),
+        "tavily": TavilySearchTool(),
         "websearch": WebSearchTool(),
         "write": WriteTool(),
     }
