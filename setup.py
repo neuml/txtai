@@ -126,6 +126,7 @@ extras["pipeline"] = (
 extras["scoring"] = ["sqlalchemy>=2.0.20"]
 
 extras["vectors"] = [
+    "ai-edge-litert>=2.1.5",
     "litellm>=1.37.16",
     "llama-cpp-python>=0.2.75",
     "model2vec>=0.3.0",
@@ -134,6 +135,7 @@ extras["vectors"] = [
     "sentence-transformers>=5.0.0",
     "skops>=0.9.0",
     "staticvectors>=0.2.0",
+    "tokenizers>=0.22.2",
 ]
 
 extras["workflow"] = [
