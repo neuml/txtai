@@ -21,7 +21,9 @@ class TestLiteRT(unittest.TestCase):
         Create LiteRT instance.
         """
 
-        cls.model = VectorsFactory.create({"path": "neuml/bert-hash-nano-embeddings-litert/bert-hash-nano-embeddings-int4.tflite"}, None)
+        cls.model = VectorsFactory.create(
+            {"path": "neuml/bert-hash-nano-embeddings-litert/bert-hash-nano-embeddings-int4.tflite", "gpu": False}, None
+        )
 
     def testIndex(self):
         """
