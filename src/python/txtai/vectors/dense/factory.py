@@ -7,6 +7,7 @@ from ...util import Resolver
 from .external import External
 from .huggingface import HFVectors
 from .litellm import LiteLLM
+from .litert import LiteRT
 from .llama import LlamaCpp
 from .m2v import Model2Vec
 from .sbert import STVectors
@@ -42,6 +43,10 @@ class VectorsFactory:
         # LiteLLM vectors
         if method == "litellm":
             return LiteLLM(config, scoring, models)
+
+        # LiteRT vectors
+        if method == "litert":
+            return LiteRT(config, scoring, models)
 
         # llama.cpp vectors
         if method == "llama.cpp":
@@ -87,6 +92,8 @@ class VectorsFactory:
             if path:
                 if LiteLLM.ismodel(path):
                     method = "litellm"
+                elif LiteRT.ismodel(path):
+                    method = "litert"
                 elif LlamaCpp.ismodel(path):
                     method = "llama.cpp"
                 elif Model2Vec.ismodel(path):

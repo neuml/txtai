@@ -22,6 +22,7 @@ class TestOptional(unittest.TestCase):
         """
 
         modules = [
+            "ai_edge_litert.compiled_model",
             "annoy",
             "bitsandbytes",
             "bs4",
@@ -351,6 +352,9 @@ class TestOptional(unittest.TestCase):
         # Test dense vectors
         with self.assertRaises(ImportError):
             VectorsFactory.create({"method": "litellm", "path": "huggingface/sentence-transformers/all-MiniLM-L6-v2"}, None)
+
+        with self.assertRaises(ImportError):
+            VectorsFactory.create({"method": "litert", "path": "neuml/bert-hash-nano-embeddings-litert/bert-hash-nano-embeddings-int4.tflite"}, None)
 
         with self.assertRaises(ImportError):
             VectorsFactory.create({"method": "llama.cpp", "path": "nomic-ai/nomic-embed-text-v1.5-GGUF/nomic-embed-text-v1.5.Q2_K.gguf"}, None)
