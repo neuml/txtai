@@ -8,3 +8,4 @@ from .segmentation import Segmentation
 from .tabular import Tabular
 from .textractor import Textractor
 from .tokenizer import Tokenizer
+from .urlretrieve import URLRetrieve

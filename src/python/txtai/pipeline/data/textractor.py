@@ -2,18 +2,15 @@
 Textractor module
 """
 
-import contextlib
-import ipaddress
 import os
-import socket
 import tempfile
 
 from urllib.parse import urlparse
-from urllib.request import urlopen, Request
 
 from .filetohtml import FileToHTML
 from .htmltomd import HTMLToMarkdown
 from .segmentation import Segmentation
+from .urlretrieve import URLRetrieve
 
 
 class Textractor(Segmentation):
@@ -53,6 +50,9 @@ class Textractor(Segmentation):
 
         # Safe open mode. When set only local temp urls (or a specified directory) and non-private URLs are supported
         self.safeopen = os.path.realpath(tempfile.gettempdir() if isinstance(safeopen, bool) else safeopen) if safeopen else safeopen
+
+        # URL retriever
+        self.urlretrieve = URLRetrieve(self.headers, self.safeopen)
 
     def text(self, text):
         # Check if text is a valid file path or url
@@ -104,7 +104,8 @@ class Textractor(Segmentation):
 
         # Safe open validation
         if not self.safecheck(path):
-            raise IOError(f"Safeopen URL validation failed: path={os.path.realpath(path)}, safeopen={self.safeopen}")
+            path = path if urlparse(path).scheme else os.path.realpath(path)
+            raise IOError(f"Safeopen URL validation failed: path={path}, safeopen={self.safeopen}")
 
         # Consider local files and HTTP urls valid
         return (path if exists or urlparse(path).scheme in ("http", "https") else None, exists)
@@ -145,8 +146,7 @@ class Textractor(Segmentation):
                 return f.read()
 
         # Remote file
-        with contextlib.closing(urlopen(Request(url, headers=self.headers))) as connection:
-            return connection.read()
+        return self.urlretrieve(url)
 
     def safecheck(self, url):
         """
@@ -171,35 +171,6 @@ class Textractor(Segmentation):
                 valid = prefix == self.safeopen
             else:
                 # URL validation
-                valid = url.lower().startswith("http") and not self.isprivateurl(url)
+                valid = url.lower().startswith("http") and not self.urlretrieve.isprivateurl(url)
 
         return valid
-
-    def isprivateurl(self, url):
-        """
-        Checks if URL refers to a private/internal IP address.
-
-        Args:
-            url: input url
-
-        Returns:
-            True if this is a private url, false otherwise
-        """
-
-        # Assume the url is private until proven otherwise
-        private = True
-
-        try:
-            host = urlparse(url).hostname
-            if host:
-                # Resolve IP Address
-                ip = ipaddress.ip_address(socket.gethostbyname(host))
-
-                # Check if it's private
-                private = ip.is_private or ip.is_loopback
-
-        # pylint: disable=W0718
-        except Exception:
-            pass
-
-        return private
