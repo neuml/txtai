@@ -27,6 +27,7 @@ The `LLM` and `RAG` pipelines also have integrations for [llama.cpp](https://git
     - [Tabular](data/tabular)
     - [Text extraction](data/textractor)
     - [Tokenizer](data/tokenizer)
+    - [URLRetrieve](data/urlretrieve)
 - Image
     - [Caption](image/caption)
     - [Image Hash](image/imagehash)

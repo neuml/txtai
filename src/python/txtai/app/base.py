@@ -142,7 +142,7 @@ class Application:
                     config["embeddings"] = None
                     config["similarity"] = self.pipelines["similarity"]
 
-                elif pipeline == "textractor":
+                elif pipeline in ("textractor", "urlretrieve"):
                     # Default to safeopen enabled
                     config["safeopen"] = config.get("safeopen", True)
 

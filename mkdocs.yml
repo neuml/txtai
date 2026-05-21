@@ -92,6 +92,7 @@ nav:
             - Tabular: pipeline/data/tabular.md
             - Textractor: pipeline/data/textractor.md
             - Tokenizer: pipeline/data/tokenizer.md
+            - URL Retrieve: pipeline/data/urlretrieve.md
         - Image:
             - Caption: pipeline/image/caption.md
             - Image Hash: pipeline/image/imagehash.md
