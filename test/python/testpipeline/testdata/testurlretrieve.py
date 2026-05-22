@@ -110,3 +110,6 @@ class TestURLRetrieve(unittest.TestCase):
 
         with self.assertRaises(IOError):
             urlretrieve("https://127.0.0.1")
+
+        with self.assertRaises(IOError):
+            urlretrieve("https://[::1]")

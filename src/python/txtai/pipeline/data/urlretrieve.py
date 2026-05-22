@@ -7,7 +7,7 @@ import ipaddress
 import socket
 
 from http.client import HTTPConnection, HTTPSConnection
-from urllib.parse import urlparse, splitport
+from urllib.parse import urlparse
 from urllib.request import (
     HTTPDefaultErrorHandler,
     HTTPErrorProcessor,
@@ -27,13 +27,15 @@ class URLRetrieve(Pipeline):
     Retrieves content from HTTP(s) URLs.
     """
 
-    def __init__(self, headers=None, safeopen=False):
+    def __init__(self, headers=None, safeopen=False, timeout=30, readlimit=100 * 1024 * 1024):
         """
         Creates a new URLRetrieve pipeline.
 
         Args:
             headers: http headers
             safeopen: if safe validation checks should be enabled
+            timeout: default socket timeout
+            readlimit: default read limit
         """
 
         # HTTP headers
@@ -41,6 +43,12 @@ class URLRetrieve(Pipeline):
 
         # Safeopen mode
         self.safeopen = safeopen
+
+        # Socket timeout
+        self.timeout = timeout
+
+        # Read limit
+        self.readlimit = readlimit
 
         # Create a blank opener
         self.opener = OpenerDirector()
@@ -67,8 +75,9 @@ class URLRetrieve(Pipeline):
             data
         """
 
-        with contextlib.closing(self.opener.open(Request(url, headers=self.headers))) as connection:
-            return connection.read()
+        with contextlib.closing(self.opener.open(Request(url, headers=self.headers), timeout=self.timeout)) as connection:
+            # Read up to readlimit bytes
+            return connection.read(self.readlimit)
 
     def isprivateurl(self, url):
         """
@@ -107,10 +116,18 @@ class URLRetrieve(Pipeline):
         """
 
         # Resolve IP Address
-        ip = socket.gethostbyname(host)
+        infos = socket.getaddrinfo(host, None, type=socket.SOCK_STREAM)
 
-        # Check if it's private
-        return (ip, not ipaddress.ip_address(ip).is_global)
+        # Collect all IP Addresses
+        addresses = []
+        for family, _, _, _, sockaddr in infos:
+            ip = sockaddr[0]
+            addresses.append((family, ip, not ipaddress.ip_address(ip).is_global))
+
+        # Prefer IPv4 + private=False
+        _, ip, private = sorted(addresses, key=lambda x: (x[2], x[0]))[0]
+
+        return (ip, private)
 
 
 class SafeHTTPConnection(HTTPConnection):
@@ -125,7 +142,7 @@ class SafeHTTPConnection(HTTPConnection):
     def connect(self):
         self.sock = socket.create_connection(
             (self.ip, self.port),
-            self.timeout or 5,
+            self.timeout,
             self.source_address,
         )
 
@@ -142,7 +159,7 @@ class SafeHTTPSConnection(HTTPSConnection):
     def connect(self):
         raw = socket.create_connection(
             (self.ip, self.port),
-            self.timeout or 5,
+            self.timeout,
             self.source_address,
         )
 
@@ -168,7 +185,7 @@ class SafeHTTPHandler(HTTPHandler):
         self.instance = instance
 
     def http_open(self, req):
-        host = splitport(req.host)[0]
+        host = urlparse(req.full_url).hostname
 
         # Validate and pin the IP Address
         ip, private = self.instance.resolveip(host)
@@ -200,7 +217,7 @@ class SafeHTTPSHandler(HTTPSHandler):
         self.instance = instance
 
     def https_open(self, req):
-        host = splitport(req.host)[0]
+        host = urlparse(req.full_url).hostname
 
         # Validate and pin the IP Address
         ip, private = self.instance.resolveip(host)
