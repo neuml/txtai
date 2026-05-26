@@ -30,7 +30,7 @@ class LateEncoder(Pipeline):
                 "device": self.device,
                 "tokenizer": kwargs.get("tokenizer"),
                 "maxlength": kwargs.get("maxlength"),
-                "modelargs": {**kwargs.get("vectors", {}), **{"muvera": None}},
+                "modelargs": {**kwargs.get("vectors", {}), **{"muvera": None}, **{"lemur": None}},
             }
         )
 

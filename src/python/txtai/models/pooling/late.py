@@ -4,6 +4,7 @@ Late module
 
 from .base import Pooling
 from .muvera import Muvera
+from .lemur import Lemur
 
 # Core library imports
 from ...util import Download, Library
@@ -23,7 +24,13 @@ class LatePooling(Pooling):
         # Check if fixed dimensional encoder is enabled
         modelargs = modelargs.copy() if modelargs else {}
         muvera = modelargs.pop("muvera", {})
-        self.encoder = Muvera(**muvera) if muvera is not None else None
+        lemur = modelargs.pop("lemur", {})
+        if muvera:
+            self.encoder = Muvera(**muvera)
+        elif lemur:
+            self.encoder = Lemur(**lemur)
+        else:
+            self.encoder = None
 
         # Call parent initialization
         super().__init__(path, device, tokenizer, maxlength, loadprompts, modelargs)
