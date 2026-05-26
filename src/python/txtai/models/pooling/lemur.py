@@ -11,7 +11,6 @@ from torch.utils.data import DataLoader, TensorDataset
 import os
 import json
 from safetensors.torch import load_file
-from txtai.pipeline.train.lemur import FeatureEncoder
 
 
 class Lemur:
@@ -34,14 +33,11 @@ class Lemur:
         # 2. Load the Safetensors Weights into the Feature Encoder
         weights_file = os.path.join(model_path, "model.safetensors")
         
-        # The input_dim must match the dimension of the embeddings (d). 
-        # We assume the config saved this, or we infer it. 
-        # For this architecture, we initialize the encoder blindly and let 
-        # the first forward pass dictate the input size, or we extract it from the tensors.
-        
-        # To make it structurally sound, we load the raw dictionary first
         state_dict = load_file(weights_file)
         input_dim = state_dict["linear.weight"].shape[1]
+        
+        # LOCAL IMPORT TO BREAK CIRCULAR DEPENDENCY
+        from txtai.pipeline.train.lemur import FeatureEncoder
         
         self.encoder = FeatureEncoder(input_dim, self.hidden_dim).to(self.device)
         self.encoder.load_state_dict(state_dict)
