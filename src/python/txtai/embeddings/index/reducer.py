@@ -6,7 +6,8 @@ from zipfile import BadZipFile
 
 # Conditionally import dimensionality reduction libraries as they aren't installed by default
 try:
-    import skops.io as sio
+    # pylint: disable=W0611
+    import skops
 
     from sklearn.decomposition import TruncatedSVD
 
@@ -88,7 +89,10 @@ class Reducer:
 
         # Dimensionality reduction
         try:
-            self.model = sio.load(path)
+            # pylint: disable=C0415
+            from skops.io import load
+
+            self.model = load(path)
         except (BadZipFile, KeyError):
             # Backwards compatible support for pickled models
             self.model = SerializeFactory.create("pickle").load(path)
@@ -101,4 +105,7 @@ class Reducer:
             path: directory path to save model
         """
 
-        sio.dump(self.model, path)
+        # pylint: disable=C0415
+        from skops.io import dump
+
+        dump(self.model, path)
