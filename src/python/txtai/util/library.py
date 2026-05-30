@@ -251,6 +251,23 @@ class Library:
 
         return torch
 
+    def trainer(self):
+        """
+        Import transformers.Trainer
+        """
+
+        try:
+            from transformers import Trainer
+
+        except ImportError:
+
+            class Trainer(Exception):
+                """
+                Stub for Trainfer
+                """
+
+        return Trainer
+
     def transformers(self):
         """
         Imports transformers.

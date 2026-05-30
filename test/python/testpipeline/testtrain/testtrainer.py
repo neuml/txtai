@@ -192,6 +192,21 @@ class TestTrainer(unittest.TestCase):
 
         self.assertIsNone(Data(None, None, None).process(None))
 
+    def testKD(self):
+        """
+        Test knowledge distillation
+        """
+
+        # Base model
+        trainer = HFTrainer()
+        model, tokenizer = trainer("google/bert_uncased_L-2_H-128_A-2", self.data)
+
+        # Train with knowledge distillation
+        model, tokenizer = trainer("google/bert_uncased_L-2_H-128_A-2", self.data, teacher=(model, tokenizer))
+
+        labels = Labels((model, tokenizer), dynamic=False)
+        self.assertEqual(labels("cat")[0][0], 1)
+
     def testMLM(self):
         """
         Test training a model with masked language modeling.

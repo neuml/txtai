@@ -27,6 +27,7 @@ library = Library()
 torch = library.torch()
 transformers = library.transformers()
 HFTrainingArguments = library.arguments()
+Trainer = library.trainer()
 
 
 class HFTrainer(Tensors):
@@ -51,6 +52,8 @@ class HFTrainer(Tensors):
         quantize=None,
         lora=None,
         merge="concat",
+        teacher=None,
+        distillation=(1.0, 0.5),
         **args
     ):
         """
@@ -71,6 +74,8 @@ class HFTrainer(Tensors):
             quantize: quantization configuration to pass to base model
             lora: lora configuration to pass to PEFT model
             merge: determines how chunks are combined for language modeling tasks - "concat" (default), "pack" or None
+            teacher: path to teacher model for distillation, supports same options as base
+            distillation: distillation parameters for (temperature, alpha), defaults to (1.0, 0.5)
             args: training arguments
 
         Returns:
@@ -112,8 +117,17 @@ class HFTrainer(Tensors):
         if collator:
             collator.model = model
 
+        # Distillation trainer
+        if teacher:
+            teacher = self.model(task, teacher, None, None, tokenizer, None)
+            trainer, distillation = DistillationTrainer, {"teacher": teacher, "distillation": distillation}
+
+        # Standard trainer
+        else:
+            trainer, distillation = transformers.Trainer, {}
+
         # Build trainer
-        trainer = transformers.Trainer(
+        trainer = trainer(
             model=model,
             processing_class=tokenizer,
             data_collator=collator,
@@ -121,6 +135,7 @@ class HFTrainer(Tensors):
             train_dataset=train,
             eval_dataset=validation if validation else None,
             compute_metrics=metrics,
+            **distillation
         )
 
         # Run training
@@ -397,3 +412,60 @@ class TrainingArguments(HFTrainingArguments):
         """
 
         return super().should_save if self.output_dir else False
+
+
+class DistillationTrainer(Trainer):
+    """
+    Knowledge distillation trainer. This is a custom trainer that adds a blended KLDiv loss target from a
+    teacher model.
+    """
+
+    def __init__(self, *args, teacher=None, distillation=None, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Move teacher to the same device as the student
+        self.teacher = teacher
+        self.teacher.eval().to(self.model.device)
+
+        # Store distillation parameters
+        self.temperature, self.alpha = distillation
+
+    # pylint: disable=W0221,W0613
+    def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=None):
+        """
+        Custom loss function. Computes loss as a blend of the standard cross entropy loss in combination
+        with KLDiv loss from the teacher.
+
+        Args:
+            model: student model
+            input: model inputs
+
+        Returns:
+            computed loss
+        """
+
+        # Extract true labels
+        labels = inputs.pop("labels")
+
+        # Forward pass student
+        outputs = model(**inputs)
+        logits = outputs.get("logits")
+
+        # Forward pass teacher
+        with torch.no_grad():
+            toutputs = self.teacher(**inputs)
+            tlogits = toutputs.get("logits")
+
+        # Calculate Cross Entropy Loss (hard labels)
+        lossce = torch.nn.functional.cross_entropy(logits, labels)
+
+        # Calculate Distillation Loss (soft labels with temperature)
+        # Scale logits by temperature and calculate KL divergence
+        losskd = torch.nn.KLDivLoss(reduction="batchmean")(
+            torch.nn.functional.log_softmax(logits / self.temperature, dim=-1), torch.nn.functional.softmax(tlogits / self.temperature, dim=-1)
+        ) * (self.temperature**2)
+
+        # Combine losses
+        loss = (1.0 - self.alpha) * lossce + self.alpha * losskd
+
+        return (loss, outputs) if return_outputs else loss
