@@ -228,9 +228,18 @@ Additionally, standard embeddings searches can be returned as graphs.
 
 ```python
 # Find all paths between id: 0 and id: 5 between 1 and 3 hops away
-embeddings.graph.search("""
+embeddings.search("""
 MATCH P=({id: 0})-[*1..3]->({id: 5})
 RETURN P
+""")
+
+# Find related nodes for query matches
+embeddings.search("""
+  MATCH P=(A)-[]->(B)
+  WHERE SIMILAR(A, "query")
+  RETURN B
+  ORDER BY A.score DESC
+  LIMIT 10
 """)
 
 # Standard embeddings search as graph
