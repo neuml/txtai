@@ -250,7 +250,8 @@ class GGMLTensors:
             ggml.ggml_backend_graph_compute(self.backend, self.graph)
 
             # Get size of embeddings data
-            size = utils.get_shape(self.data)[1]
+            size = utils.get_shape(self.data)
+            size = size[1] if len(size) > 1 else 1
 
             # Get and return results
             results = np.zeros((batch.shape[0], size), dtype=np.float32)
