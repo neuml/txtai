@@ -41,7 +41,6 @@ jobs:
           echo "TIKA_STARTUP_MAX_RETRY=10" >> $GITHUB_ENV
           brew install portaudio
           sudo xcode-select -s "/Applications/Xcode_16.app"
-          pip install ggml-python --config-settings=cmake.args='-DGGML_METAL=OFF -DGGML_METAL_EMBED_LIBRARY=OFF'
         if: matrix.os == 'macos-latest'
 
       - name: Install dependencies - Windows
