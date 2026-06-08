@@ -378,6 +378,13 @@ class TestDense(unittest.TestCase):
             ann.delete([0])
             self.assertEqual(ann.count(), 99)
 
+    def testTurboVec(self):
+        """
+        Test turbovec backend
+        """
+
+        self.runTests("turbovec")
+
     def runTests(self, name, params=None, update=True):
         """
         Runs a series of standard backend tests.

@@ -67,6 +67,7 @@ class TestOptional(unittest.TestCase):
             "staticvectors",
             "tika",
             "ttstokenizer",
+            "turbovec",
             "xmltodict",
         ]
 
@@ -137,6 +138,9 @@ class TestOptional(unittest.TestCase):
 
         with self.assertRaises(ImportError):
             ANNFactory.create({"backend": "torch", "torch": {"quantize": True}})
+
+        with self.assertRaises(ImportError):
+            ANNFactory.create({"backend": "turbovec"})
 
         # Test sparse methods
         with self.assertRaises(ImportError):

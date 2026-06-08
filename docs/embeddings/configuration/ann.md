@@ -4,7 +4,7 @@ Approximate Nearest Neighbor (ANN) index configuration for storing vector embedd
 
 ## backend
 ```yaml
-backend: faiss|hnsw|annoy|ggml|numpy|torch|pgvector|sqlite|custom
+backend: faiss|hnsw|annoy|ggml|numpy|torch|turbovec|pgvector|sqlite|custom
 ```
 
 Sets the ANN backend. Defaults to `faiss`. Additional backends are available via the [ann](../../../install/#ann) extras package. Set custom backends via setting this parameter to the fully resolvable class string.
@@ -98,6 +98,14 @@ torch:
         type: quantization type (fp4, nf4, int8)
         blocksize: quantization block size parameter
 ```
+
+### turbovec
+
+The [turbovec](https://github.com/RyanCodrai/turbovec) backend is a k-nearest neighbors backend powered by the [TurboQuant algorithm](https://arxiv.org/abs/2504.19874).
+
+```yaml
+turbovec:
+    bitwidth: number of bits to store each vector dimension as. Supports 2, 3 or 4.
 
 ### pgvector
 ```yaml
