@@ -8,8 +8,8 @@ import os
 try:
     from pgvector.sqlalchemy import BIT, HALFVEC, VECTOR
 
-    from sqlalchemy import create_engine, delete, func, text, Column, Index, Integer, MetaData, StaticPool, Table
-    from sqlalchemy.orm import Session
+    from sqlalchemy import NullPool, create_engine, delete, func, text, Column, Index, Integer, MetaData, Table
+    from sqlalchemy.orm import Session, scoped_session, sessionmaker
     from sqlalchemy.schema import CreateSchema
 
     PGVECTOR = True
@@ -37,7 +37,7 @@ class PGVector(ANN):
             raise ImportError('PGVector is not available - install "ann" extra to enable')
 
         # Database connection
-        self.engine, self.database, self.connection, self.table = None, None, None, None
+        self.engine, self.database, self.table = None, None, None
 
         # Scalar quantization
         quantize = self.config.get("quantize")
@@ -90,18 +90,19 @@ class PGVector(ANN):
         return self.database.query(func.count(self.table.c["indexid"])).scalar()
 
     def save(self, path):
-        # Commit session and connection
+        # Commit the current thread's session
         self.database.commit()
-        self.connection.commit()
 
     def close(self):
         # Parent logic
         super().close()
 
-        # Close database connection
-        if self.database:
-            self.database.close()
+        # Close all thread-local Sessions and dispose the engine
+        if self.engine:
+            self.database.remove()
+            self.database = None
             self.engine.dispose()
+            self.engine = None
 
     def initialize(self, recreate=False):
         """
@@ -123,12 +124,12 @@ class PGVector(ANN):
         # Create vectors table object
         self.table = Table(table, MetaData(), Column("indexid", Integer, primary_key=True, autoincrement=False), Column("embedding", self.column()))
 
-        # Drop table, if necessary
+        # Drop table via engine so DDL auto-commits
         if recreate:
-            self.table.drop(self.connection, checkfirst=True)
+            self.table.drop(self.engine, checkfirst=True)
 
-        # Create table, if necessary
-        self.table.create(self.connection, checkfirst=True)
+        # Create table via engine so DDL auto-commits and is visible to all scoped sessions
+        self.table.create(self.engine, checkfirst=True)
 
     def createindex(self):
         """
@@ -147,9 +148,9 @@ class PGVector(ANN):
             postgresql_ops={"embedding": self.operation()},
         )
 
-        # Create or recreate index
-        index.drop(self.connection, checkfirst=True)
-        index.create(self.connection, checkfirst=True)
+        # Create or recreate index via engine so DDL auto-commits
+        index.drop(self.engine, checkfirst=True)
+        index.create(self.engine, checkfirst=True)
 
     def connect(self):
         """
@@ -157,18 +158,21 @@ class PGVector(ANN):
         """
 
         # Close existing connection
-        if self.database:
+        if self.engine:
             self.close()
 
-        # Create engine
-        self.engine = create_engine(self.url(), poolclass=StaticPool, echo=False)
-        self.connection = self.engine.connect()
+        # Create engine. NullPool disables connection reuse so each thread gets its own
+        # fresh DBAPI connection — a prerequisite for per-thread Session isolation.
+        self.engine = create_engine(self.url(), poolclass=NullPool, echo=False)
 
-        # Start database session
-        self.database = Session(self.connection)
+        # Create a per-thread scoped session factory. scoped_session proxies all Session
+        # calls to a thread-local Session instance, eliminating the shared-Session race that
+        # caused 'prepared'-state corruption when concurrent requests hit the same Session.
+        self.database = scoped_session(sessionmaker(bind=self.engine))
 
-        # Initialize pgvector extension
-        self.sqldialect(text("CREATE EXTENSION IF NOT EXISTS vector"))
+        # Initialize pgvector extension (committed immediately via engine.begin())
+        with self.engine.begin() as conn:
+            self.sqldialect_conn(conn, text("CREATE EXTENSION IF NOT EXISTS vector"))
 
     def schema(self):
         """
@@ -178,8 +182,8 @@ class PGVector(ANN):
         # Set default schema, if necessary
         schema = self.setting("schema")
         if schema:
-            with self.engine.begin():
-                self.sqldialect(CreateSchema(schema, if_not_exists=True))
+            with self.engine.begin() as conn:
+                self.sqldialect_conn(conn, CreateSchema(schema, if_not_exists=True))
 
             self.sqldialect(text("SET search_path TO :schema,public"), {"schema": schema})
 
@@ -195,7 +199,7 @@ class PGVector(ANN):
 
     def sqldialect(self, sql, parameters=None):
         """
-        Executes a SQL statement based on the current SQL dialect.
+        Executes a SQL statement on the current thread's scoped Session.
 
         Args:
             sql: SQL to execute
@@ -204,6 +208,19 @@ class PGVector(ANN):
 
         args = (sql, parameters) if self.engine.dialect.name == "postgresql" else (text("SELECT 1"),)
         self.database.execute(*args)
+
+    def sqldialect_conn(self, conn, sql, parameters=None):
+        """
+        Executes a SQL statement on an explicit Connection (used inside engine.begin() blocks).
+
+        Args:
+            conn: SQLAlchemy Connection
+            sql: SQL to execute
+            parameters: optional bind parameters
+        """
+
+        args = (sql, parameters) if conn.dialect.name == "postgresql" else (text("SELECT 1"),)
+        conn.execute(*args)
 
     def defaulttable(self):
         """
