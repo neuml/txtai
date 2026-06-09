@@ -139,16 +139,17 @@ class TestEmbeddings(unittest.TestCase):
 
     @staticmethod
     @patch.dict(os.environ, {"CONFIG": os.path.join(tempfile.gettempdir(), "testapi.yml"), "API_CLASS": "txtai.api.API"})
-    def start(yaml):
+    def start(yaml, path="testapi"):
         """
         Starts a mock FastAPI client.
 
         Args:
             yaml: input configuration
+            path: output path
         """
 
         config = os.path.join(tempfile.gettempdir(), "testapi.yml")
-        index = os.path.join(tempfile.gettempdir(), "testapi")
+        index = os.path.join(tempfile.gettempdir(), path)
 
         with open(config, "w", encoding="utf-8") as output:
             output.write(yaml % index)
@@ -166,7 +167,7 @@ class TestEmbeddings(unittest.TestCase):
         Create API client on creation of class.
         """
 
-        cls.client = TestEmbeddings.start(INDEX)
+        cls.client = TestEmbeddings.start(INDEX, "testapi")
 
         cls.data = [
             "US tops 5 million confirmed virus cases",
@@ -446,7 +447,7 @@ class TestEmbeddings(unittest.TestCase):
         """
 
         # Re-create application with reindexing disabled
-        self.client = TestEmbeddings.start(REINDEXDISABLED)
+        self.client = TestEmbeddings.start(REINDEXDISABLED, "testapi-reindex")
 
         # Index data
         self.client.post("add", json=[{"id": x, "text": row} for x, row in enumerate(self.data)])
@@ -461,7 +462,7 @@ class TestEmbeddings(unittest.TestCase):
         """
 
         # Re-create application with a reranker pipeline
-        self.client = TestEmbeddings.start(RERANK)
+        self.client = TestEmbeddings.start(RERANK, "testapi-rerank")
 
         # Index data
         self.client.post("add", json=[{"id": x, "text": row} for x, row in enumerate(self.data)])
