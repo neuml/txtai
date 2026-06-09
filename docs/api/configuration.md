@@ -33,7 +33,16 @@ Path to save and load the embeddings index. Each API instance can only access a 
 writable: boolean
 ```
 
-Determines if the input embeddings index is writable (true) or read-only (false). This allows serving a read-only index.
+Sets this embeddings index as writable (true) or read-only (false). This allows serving a read-only index. Defaults to read-only.
+
+### reindex
+```yaml
+reindex: boolean
+```
+
+Enables re-indexing for this embeddings index (defaults to disabled).
+
+Re-indexing accepts new configuration and should only be enabled when the configuration comes from trusted sources.
 
 ### cloud
 [Cloud storage settings](../../embeddings/configuration/cloud) can be set under a `cloud` top level configuration group.
