@@ -21,6 +21,9 @@ path: %s
 # Allow indexing of documents
 writable: True
 
+# Allow reindexing
+reindex: True
+
 # Questions settings
 questions:
     path: distilbert-base-cased-distilled-squad
@@ -92,6 +95,20 @@ rag:
     output: flatten
 """
 
+# Configuration for reindexing disabled
+REINDEXDISABLED = """
+# Index file path
+path: %s
+
+# Allow indexing of documents
+writable: True
+
+# Embeddings settings
+embeddings:
+    path: sentence-transformers/nli-mpnet-base-v2
+    content: True
+"""
+
 # Configuration for reranker
 RERANK = """
 # Index file path
@@ -114,6 +131,7 @@ reranker:
 """
 
 
+# pylint: disable=R0904
 class TestEmbeddings(unittest.TestCase):
     """
     API tests for embeddings indices.
@@ -346,7 +364,7 @@ class TestEmbeddings(unittest.TestCase):
         Test read-only API instance
         """
 
-        # Re-create read-only model
+        # Re-create application with a read-only index
         self.client = TestEmbeddings.start(READONLY)
 
         # Test search
@@ -370,7 +388,7 @@ class TestEmbeddings(unittest.TestCase):
         Test API instance with custom functions
         """
 
-        # Re-create model with custom functions
+        # Re-create application with custom functions
         self.client = TestEmbeddings.start(FUNCTIONS)
 
         # Index data
@@ -409,7 +427,7 @@ class TestEmbeddings(unittest.TestCase):
         Test RAG via API
         """
 
-        # Re-create model with custom functions
+        # Re-create application with a RAG pipeline
         self.client = TestEmbeddings.start(RAG)
 
         # Index data
@@ -422,12 +440,27 @@ class TestEmbeddings(unittest.TestCase):
         response = self.client.post("batchrag", json={"queries": ["bear", "bear"]}).json()
         self.assertEqual(len(response), 2)
 
+    def testXReindexDisabled(self):
+        """
+        Test reindexing is disabled
+        """
+
+        # Re-create application with reindexing disabled
+        self.client = TestEmbeddings.start(REINDEXDISABLED)
+
+        # Index data
+        self.client.post("add", json=[{"id": x, "text": row} for x, row in enumerate(self.data)])
+        self.client.get("index")
+
+        # Assert error raised
+        self.assertEqual(self.client.post("reindex", json={"config": {"path": "sentence-transformers/nli-mpnet-base-v2"}}).status_code, 403)
+
     def testXRerank(self):
         """
         Test rerank via API
         """
 
-        # Re-create model with custom functions
+        # Re-create application with a reranker pipeline
         self.client = TestEmbeddings.start(RERANK)
 
         # Index data

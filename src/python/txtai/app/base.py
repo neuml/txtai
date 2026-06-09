@@ -566,6 +566,10 @@ class Application:
         if not self.config.get("writable"):
             raise ReadOnlyError("Attempting to reindex a read-only index (writable != True)")
 
+        # Raise error if not re-indexable
+        if not self.config.get("reindex"):
+            raise ReindexDisabledError("Attempting to reindex with reindexing disabled (reindex != True)")
+
         if self.embeddings:
             with self.lock:
                 # Resolve function, if necessary
@@ -825,4 +829,10 @@ class Application:
 class ReadOnlyError(Exception):
     """
     Error raised when trying to modify a read-only index
+    """
+
+
+class ReindexDisabledError(Exception):
+    """
+    Error raised when trying to reindex with reindexing disabled
     """

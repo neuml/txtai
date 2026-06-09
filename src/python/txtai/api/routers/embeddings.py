@@ -14,7 +14,7 @@ from .. import application
 from ..responses import ResponseFactory
 from ..route import EncodingAPIRoute
 
-from ...app import ReadOnlyError
+from ...app import ReadOnlyError, ReindexDisabledError
 from ...graph import Graph
 
 router = APIRouter(route_class=EncodingAPIRoute)
@@ -198,7 +198,7 @@ def reindex(config: dict = Body(...), function: str = Body(default=None)):
 
     try:
         application.get().reindex(config, function)
-    except ReadOnlyError as e:
+    except (ReadOnlyError, ReindexDisabledError) as e:
         raise HTTPException(status_code=403, detail=e.args[0]) from e
 
 

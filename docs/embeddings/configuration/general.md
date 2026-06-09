@@ -79,3 +79,5 @@ format: json|pickle
 ```
 
 Sets the configuration storage format. Defaults to `json`.
+
+Note that `pickle` configuration is deprecated and will raise an error with the default settings. Its only kept for reading legacy indexes and requires setting the `ALLOW_PICKLE` environment variable. Only enable for local and/or trusted sources.
