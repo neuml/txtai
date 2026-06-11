@@ -20,7 +20,7 @@ default = [
     "pyyaml>=5.3",
     "safetensors>=0.4.5",
     "torch>=2.4",
-    "transformers>=5.11.0",
+    "transformers>=5.9.0",
 ]
 
 # Optional dependencies
