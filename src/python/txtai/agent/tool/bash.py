@@ -19,7 +19,7 @@ class BashTool(Tool):
         Creates a BashTool.
 
         Args:
-            allowed: list of allowed commands to run, has limited set of defaults
+            allowed: list of allowed commands to run, has limited set of defaults which are a best effort not a sandbox
         """
 
         # Tool parameters
@@ -31,7 +31,7 @@ class BashTool(Tool):
         self.output_type = "any"
 
         # Default list of allowed commands
-        self.allowed = allowed if allowed else ["cat", "cut", "diff", "find", "grep", "head", "ls", "tail"]
+        self.allowed = allowed if allowed else ["cat", "cut", "diff", "grep", "head", "ls", "tail"]
 
         # Validate parameters and initialize tool
         super().__init__()
