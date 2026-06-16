@@ -2,7 +2,7 @@
 Route module
 """
 
-from fastapi.routing import APIRoute, get_request_handler
+from fastapi.routing import APIRoute, _effective_route_context_var, get_request_handler
 
 from .responses import ResponseFactory
 
@@ -20,22 +20,33 @@ class EncodingAPIRoute(APIRoute):
             route handler function
         """
 
+        # Read the effective route context NOW, while _effective_route_context_var is
+        # still set by APIRoute.handle.  The ContextVar is reset in a finally-block
+        # before the returned handler coroutine is ever awaited, so it must be
+        # captured here (synchronously) and held in the closure below.
+        effective_context = _effective_route_context_var.get()
+        route = (
+            effective_context
+            if effective_context is not None and effective_context.original_route is self
+            else self
+        )
+
         async def handler(request):
-            route = get_request_handler(
-                dependant=self.dependant,
-                body_field=self.body_field,
-                status_code=self.status_code,
+            handler_fn = get_request_handler(
+                dependant=route.dependant,
+                body_field=route.body_field,
+                status_code=route.status_code,
                 response_class=ResponseFactory.create(request),
-                response_field=getattr(self, "secure_cloned_response_field", self.response_field),
-                response_model_include=self.response_model_include,
-                response_model_exclude=self.response_model_exclude,
-                response_model_by_alias=self.response_model_by_alias,
-                response_model_exclude_unset=self.response_model_exclude_unset,
-                response_model_exclude_defaults=self.response_model_exclude_defaults,
-                response_model_exclude_none=self.response_model_exclude_none,
-                dependency_overrides_provider=self.dependency_overrides_provider,
+                response_field=getattr(route, "secure_cloned_response_field", route.response_field),
+                response_model_include=route.response_model_include,
+                response_model_exclude=route.response_model_exclude,
+                response_model_by_alias=route.response_model_by_alias,
+                response_model_exclude_unset=route.response_model_exclude_unset,
+                response_model_exclude_defaults=route.response_model_exclude_defaults,
+                response_model_exclude_none=route.response_model_exclude_none,
+                dependency_overrides_provider=route.dependency_overrides_provider,
             )
 
-            return await route(request)
+            return await handler_fn(request)
 
         return handler
