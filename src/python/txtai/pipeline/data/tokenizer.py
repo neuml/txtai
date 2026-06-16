@@ -162,7 +162,7 @@ class Tokenizer(Pipeline):
         edge = self.ngrams.get("edge", False)
 
         # Split on non-whitespace and apply optional word padding
-        words = [f"{lpad}{x}{rpad}" for x in re.split(r"\W+", text.lower()) if x.strip()]
+        words = [f"{lpad}{x}{rpad}" for x in re.split(r"\W+", text) if x.strip()]
 
         # Generate ngrams
         ngrams = []
