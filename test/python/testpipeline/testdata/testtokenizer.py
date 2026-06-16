@@ -51,3 +51,22 @@ class TestTokenizer(unittest.TestCase):
         for test, result in tests:
             # Unicode Text Segmentation per Unicode Annex #29
             self.assertEqual(tokenizer(test), result)
+
+    def testNgramLowercase(self):
+        """
+        Test that the lowercase parameter is honoured inside ngramtokenize.
+        Before the fix, text.lower() was called unconditionally inside
+        ngramtokenize, causing lowercase=False to be silently ignored.
+        """
+
+        # lowercase=False must preserve the original case of ngram tokens
+        tokenizer = Tokenizer(lowercase=False, ngrams=3)
+        result = tokenizer("CAT")
+        self.assertIn("CAT", result)
+        self.assertNotIn("cat", result)
+
+        # lowercase=True (default) must still produce lowercase ngrams
+        tokenizer = Tokenizer(lowercase=True, ngrams=3)
+        result = tokenizer("CAT")
+        self.assertIn("cat", result)
+        self.assertNotIn("CAT", result)
