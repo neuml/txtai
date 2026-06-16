@@ -2,9 +2,11 @@
 Route module
 """
 
-from fastapi.routing import APIRoute, get_request_handler
+import json
 
-from .responses import ResponseFactory
+from fastapi.routing import APIRoute
+
+from .responses import ResponseFactory, MessagePackResponse
 
 
 class EncodingAPIRoute(APIRoute):
@@ -20,22 +22,26 @@ class EncodingAPIRoute(APIRoute):
             route handler function
         """
 
-        async def handler(request):
-            route = get_request_handler(
-                dependant=self.dependant,
-                body_field=self.body_field,
-                status_code=self.status_code,
-                response_class=ResponseFactory.create(request),
-                response_field=getattr(self, "secure_cloned_response_field", self.response_field),
-                response_model_include=self.response_model_include,
-                response_model_exclude=self.response_model_exclude,
-                response_model_by_alias=self.response_model_by_alias,
-                response_model_exclude_unset=self.response_model_exclude_unset,
-                response_model_exclude_defaults=self.response_model_exclude_defaults,
-                response_model_exclude_none=self.response_model_exclude_none,
-                dependency_overrides_provider=self.dependency_overrides_provider,
-            )
+        # Get handle to the original route handler
+        original = super().get_route_handler()
 
-            return await route(request)
+        async def handler(request):
+            # Target response class
+            target = ResponseFactory.create(request)
+            request.state.response_class = target
+
+            # Get response
+            response = await original(request)
+
+            # Force MessagePackResponse when it's requested and response type doesn't match
+            return (
+                target(
+                    content=json.loads(response.body),
+                    status_code=response.status_code,
+                    headers={k: v for k, v in response.headers.items() if k.lower() not in ["content-length", "content-type"]},
+                )
+                if not isinstance(response, target) and target == MessagePackResponse
+                else response
+            )
 
         return handler
