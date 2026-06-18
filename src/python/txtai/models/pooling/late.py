@@ -12,6 +12,7 @@ library = Library()
 np = library.numpy()
 safetensors = library.safetensors()
 torch = library.torch()
+Module = library.module()
 
 
 class LatePooling(Pooling):
@@ -28,27 +29,20 @@ class LatePooling(Pooling):
         # Call parent initialization
         super().__init__(path, device, tokenizer, maxlength, loadprompts, modelargs)
 
-        # Get linear weights path
-        config = self.load(path, "1_Dense/config.json")
+        # Get linear weights paths
+        config = self.load(path, "modules.json")
         if config:
             # PyLate weights format
-            name = "1_Dense/model.safetensors"
+            models = [f"{x['path']}/model.safetensors" for x in config if x["path"].endswith("_Dense")]
         else:
             # Stanford weights format
-            name = "model.safetensors"
+            models = ["model.safetensors"]
 
         # Read model settings
         self.qprefix, self.qlength, self.dprefix, self.dlength = self.settings(path, config)
 
-        # Load linear layer
-        path = Download()(path, name)
-        with safetensors.safe_open(filename=path, framework="pt") as f:
-            weights = f.get_tensor("linear.weight")
-
-            # Load weights into linear layer
-            self.linear = torch.nn.Linear(weights.shape[1], weights.shape[0], bias=False, device=self.device, dtype=weights.dtype)
-            with torch.no_grad():
-                self.linear.weight.copy_(weights)
+        # Load linear model
+        self.linear = self.loadlinear(path, models)
 
     def forward(self, **inputs):
         """
@@ -143,3 +137,67 @@ class LatePooling(Pooling):
             params = ["query_token_id", "query_maxlen", "doc_token_id", "doc_maxlen"]
 
         return [config.get(p) for p in params]
+
+    def loadlinear(self, path, models):
+        """
+        Loads linear model.
+
+        Args:
+            path: model path
+            models: list of paths to each dense model
+
+        Returns:
+            linear model
+        """
+
+        # Load dense layers as a sequential model
+        layers = []
+        for model in models:
+            model = Download()(path, model)
+            with safetensors.safe_open(filename=model, framework="pt") as f:
+                dense = []
+                for name in ["linear.weight", "residual.weight"]:
+                    if name in f.keys():
+                        weights = f.get_tensor(name)
+
+                        # Load weights into linear layer
+                        model = torch.nn.Linear(weights.shape[1], weights.shape[0], bias=False, device=self.device, dtype=weights.dtype)
+                        with torch.no_grad():
+                            model.weight.copy_(weights)
+
+                        dense.append(model)
+
+                layers.append(Dense(*dense))
+
+        return torch.nn.Sequential(*layers)
+
+
+class Dense(Module):
+    """
+    Dense layer. Supports multiple linear layers that sum into a final answer.
+    """
+
+    def __init__(self, *modules):
+        """
+        Create a Dense layer.
+
+        Args:
+            modules: list of modules to sum outputs
+        """
+
+        super().__init__()
+        self.layers = torch.nn.ModuleList(modules)
+
+    def forward(self, x):
+        """
+        Sums the outputs of each module for the input.
+
+        Args:
+            x: input
+
+        Returns:
+            sum of the outputs of each layer
+        """
+
+        # Compute sum of all module outputs
+        return sum(layer(x) for layer in self.layers)
