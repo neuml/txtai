@@ -88,6 +88,17 @@ class TestTextractor(unittest.TestCase):
         # Check number of lines is as expected
         self.assertEqual(len(lines), 35)
 
+    def testLiteParse(self):
+        """
+        Test liteparse backend
+        """
+
+        textractor = Textractor(backend="liteparse")
+
+        # Extract text and check for Markdown formatting
+        text = textractor(Utils.PATH + "/article.pdf")
+        self.assertTrue("# Introducing txtai" in text)
+
     def testHTML(self):
         """
         Test HTML to Markdown
@@ -224,7 +235,7 @@ class TestTextractor(unittest.TestCase):
         """
 
         # Test parsing URLs for each backend
-        for backend in ["docling", "tika"]:
+        for backend in ["docling", "liteparse", "tika"]:
             textractor = Textractor(backend=backend)
             text = textractor("https://github.com/neuml/txtai")
             self.assertTrue("txtai is an all-in-one AI framework" in text)

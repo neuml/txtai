@@ -23,6 +23,14 @@ try:
 except ImportError:
     DOCLING = False
 
+# Conditional import
+try:
+    import liteparse
+
+    LITEPARSE = True
+except ImportError:
+    LITEPARSE = False
+
 from ..base import Pipeline
 
 
@@ -36,7 +44,8 @@ class FileToHTML(Pipeline):
         Creates a new File to HTML pipeline.
 
         Args:
-            backend: backend to use to extract content, supports "tika", "docling" or "available" (default) which finds the first available
+            backend: backend to use to extract content, supports "tika", "docling", "liteparse" or
+                     "available" (default) which finds the first available
         """
 
         # Lowercase backend parameter
@@ -44,10 +53,10 @@ class FileToHTML(Pipeline):
 
         # Check for available backend
         if backend == "available":
-            backend = "tika" if Tika.available() else "docling" if Docling.available() else None
+            backend = "tika" if Tika.available() else "docling" if Docling.available() else "liteparse" if LiteParse.available() else None
 
         # Create backend instance
-        self.backend = Tika() if backend == "tika" else Docling() if backend == "docling" else None
+        self.backend = Tika() if backend == "tika" else Docling() if backend == "docling" else LiteParse() if backend == "liteparse" else None
 
     def __call__(self, path):
         """
@@ -63,7 +72,32 @@ class FileToHTML(Pipeline):
         return self.backend(path) if self.backend else None
 
 
-class Tika:
+class Backend:
+    """
+    Base File to HTML conversion backend.
+    """
+
+    def ishtml(self, path):
+        """
+        Detects if this file looks like HTML.
+
+        Args:
+            path: file path
+
+        Returns:
+            True if this is HTML
+        """
+
+        with open(path, "rb") as f:
+            # Read first 1024 bytes, ignore encoding errors and strip leading/trailing whitespace
+            content = f.read(1024)
+            content = content.decode("ascii", errors="ignore").lower().strip()
+
+            # Check for HTML
+            return re.search(r"<!doctype\s+html|<html|<head|<body", content)
+
+
+class Tika(Backend):
     """
     File to HTML conversion via Apache Tika.
     """
@@ -119,7 +153,7 @@ class Tika:
         return parsed["content"]
 
 
-class Docling:
+class Docling(Backend):
     """
     File to HTML conversion via Docling.
     """
@@ -166,25 +200,6 @@ class Docling:
         # Normalize HTML and return
         return self.normalize(html)
 
-    def ishtml(self, path):
-        """
-        Detects if this file looks like HTML.
-
-        Args:
-            path: file path
-
-        Returns:
-            True if this is HTML
-        """
-
-        with open(path, "rb") as f:
-            # Read first 1024 bytes, ignore encoding errors and strip leading/trailing whitespace
-            content = f.read(1024)
-            content = content.decode("ascii", errors="ignore").lower().strip()
-
-            # Check for HTML
-            return re.search(r"<!doctype\s+html|<html|<head|<body", content)
-
     def normalize(self, html):
         """
         Applies normalization rules to make HTML consistent with other text extraction backends.
@@ -204,3 +219,56 @@ class Docling:
 
         # Add spacing between paragraphs
         return html.replace("</p>", "</p><p/>")
+
+
+class LiteParse(Backend):
+    """
+    File to HTML conversion via LiteParse.
+    """
+
+    @staticmethod
+    def available():
+        """
+        Checks if LiteParse is available.
+
+        Returns:
+            True if LiteParse is available, False otherwise
+        """
+
+        return LITEPARSE
+
+    def __init__(self):
+        """
+        Creates a new LiteParse instance.
+        """
+
+        if not LiteParse.available():
+            raise ImportError('LiteParse is not available - install "pipeline" extra to enable')
+
+        self.liteparse = liteparse.LiteParse(output_format="markdown")
+
+    def __call__(self, path):
+        """
+        Parses content to HTML.
+
+        Args:
+            path: file path
+
+        Returns:
+            html
+        """
+
+        # Skip parsing if input is HTML
+        if self.ishtml(path):
+            return None
+
+        # Output text
+        output = ["<html><body>"]
+
+        # Iterate over each parsed page
+        for page in self.liteparse.parse(path).text.split("\n\n-----\n\n"):
+            output.append(f"<div class='page'>{page}</div>")
+
+        output.append("</body></html>")
+
+        return "\n".join(output)

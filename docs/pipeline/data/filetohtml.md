@@ -17,6 +17,12 @@ Apache Tika requires [Java](https://en.wikipedia.org/wiki/Java_(programming_lang
 
 See [this link](https://github.com/DS4SD/docling?tab=readme-ov-file#features) for a list of supported document formats.
 
+## LiteParse
+
+[LiteParse](https://github.com/run-llama/liteparse) is a fast, helpful, and open-source document parser. It supports PDF out of the box with additional format support via third-party packages.
+
+See [this link](https://github.com/run-llama/liteparse#multi-format-input-support) for more.
+
 ## Example
 
 The following shows a simple example using this pipeline.

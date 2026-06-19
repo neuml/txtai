@@ -41,6 +41,7 @@ class TestOptional(unittest.TestCase):
             "imagehash",
             "libcloud.storage.providers",
             "litellm",
+            "liteparse",
             "litert_lm",
             "llama_cpp",
             "model2vec",
@@ -223,6 +224,7 @@ class TestOptional(unittest.TestCase):
         with self.assertRaises(ImportError):
             OnnxModel(None)
 
+    # pylint: disable=R0915
     def testPipeline(self):
         """
         Test missing pipeline dependencies
@@ -267,6 +269,9 @@ class TestOptional(unittest.TestCase):
 
         with self.assertRaises(ImportError):
             FileToHTML(backend="docling")
+
+        with self.assertRaises(ImportError):
+            FileToHTML(backend="liteparse")
 
         with self.assertRaises(ImportError):
             FileToHTML(backend="tika")
