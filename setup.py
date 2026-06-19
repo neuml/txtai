@@ -97,7 +97,15 @@ extras["pipeline-audio"] = [
     "webrtcvad-wheels>=2.0.14",
 ]
 
-extras["pipeline-data"] = ["beautifulsoup4>=4.9.3", "chonkie>=1.0.2", "docling>=2.8.2", "nltk>=3.5", "pandas>=1.1.0", "tika>=1.24"]
+extras["pipeline-data"] = [
+    "beautifulsoup4>=4.9.3",
+    "chonkie>=1.0.2",
+    "docling>=2.8.2",
+    "liteparse>=2.1.1",
+    "nltk>=3.5",
+    "pandas>=1.1.0",
+    "tika>=1.24",
+]
 
 extras["pipeline-image"] = ["imagehash>=4.2.1", "pillow>=7.1.2", "timm>=0.4.12"]
 
