@@ -73,6 +73,17 @@ class TestTabular(unittest.TestCase):
         self.assertEqual(uid, 0)
         self.assertEqual(text, "This is a test")
 
+    def testInvalid(self):
+        """
+        Test invalid file paths
+        """
+
+        with self.assertRaises(ValueError):
+            self.tabular([Utils.PATH + "/article.pdf"])
+
+        with self.assertRaises(ValueError):
+            self.tabular(["https://invalid.path"])
+
     def testList(self):
         """
         Test parsing a list

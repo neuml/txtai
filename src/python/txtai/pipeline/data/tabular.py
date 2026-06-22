@@ -56,15 +56,16 @@ class Tabular(Pipeline):
         dicts = []
 
         for item in items:
-            # File path
+            # Local CSV file
             if isinstance(item, str):
                 _, extension = os.path.splitext(item)
                 extension = extension.replace(".", "").lower()
 
-                if extension == "csv":
+                if extension == "csv" and os.path.exists(item):
                     df = pd.read_csv(item)
-
-                results.append(self.process(df))
+                    results.append(self.process(df))
+                else:
+                    raise ValueError(f"Invalid local file path or file not found: {item}")
 
             # Dict
             if isinstance(item, dict):
