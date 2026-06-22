@@ -167,7 +167,7 @@ class Textractor(Segmentation):
             if os.path.exists(url):
                 # Validate local file is in safe path
                 path = os.path.realpath(url)
-                prefix = os.path.commonprefix([self.safeopen, path])
+                prefix = os.path.commonpath([self.safeopen, path])
                 valid = prefix == self.safeopen
             else:
                 # URL validation

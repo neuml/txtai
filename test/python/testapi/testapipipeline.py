@@ -125,6 +125,12 @@ class TestPipeline(unittest.TestCase):
             "that enables Natural Language Understanding (NLU) based search in any application."
         )
 
+        # Create invalid test file
+        directory = os.path.join(tempfile.gettempdir(), "txtai-1")
+        os.makedirs(directory, exist_ok=True)
+        with open(os.path.join(directory, "test"), "w", encoding="utf-8") as output:
+            output.write("123")
+
     def testCaption(self):
         """
         Test caption via API
@@ -314,7 +320,7 @@ class TestPipeline(unittest.TestCase):
         self.assertEqual(len(text), 2471)
 
         # Check invalid URLs
-        for url in ["http://192.168.1.1/path", "http://127.0.0.1/path", "http://invalid", "/etc/config"]:
+        for url in ["http://192.168.1.1/path", "http://127.0.0.1/path", "http://invalid", "/etc/config", "/tmp/txtai-1/test"]:
             with self.assertRaises(IOError):
                 self.client.get(f"textract?file={url}").json()
 

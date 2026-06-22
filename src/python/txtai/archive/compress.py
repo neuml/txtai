@@ -46,6 +46,6 @@ class Compress:
 
         directory = os.path.abspath(directory)
         path = os.path.abspath(path)
-        prefix = os.path.commonprefix([directory, path])
+        prefix = os.path.commonpath([directory, path])
 
         return prefix == directory
