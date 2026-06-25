@@ -109,7 +109,7 @@ extras["pipeline-data"] = [
 
 extras["pipeline-image"] = ["imagehash>=4.2.1", "pillow>=7.1.2", "timm>=0.4.12"]
 
-extras["pipeline-llm"] = ["httpx>=0.28.1", "litert-lm-api>=0.11.0", "litellm>=1.37.16", "llama-cpp-python>=0.2.75"]
+extras["pipeline-llm"] = ["httpx>=0.28.1", "litert-lm-api>=0.11.0", "litellm>=1.37.16", "llama-cpp-python>=0.2.75", "twelvelabs>=1.2.8"]
 
 extras["pipeline-text"] = ["gliner-py>=0.2.27", "sentencepiece>=0.1.91", "staticvectors>=0.2.0"]
 
@@ -145,6 +145,7 @@ extras["vectors"] = [
     "skops>=0.9.0",
     "staticvectors>=0.2.0",
     "tokenizers>=0.22.2",
+    "twelvelabs>=1.2.8",
 ]
 
 extras["workflow"] = [

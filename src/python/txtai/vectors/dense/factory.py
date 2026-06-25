@@ -11,6 +11,7 @@ from .litert import LiteRT
 from .llama import LlamaCpp
 from .m2v import Model2Vec
 from .sbert import STVectors
+from .twelvelabs import TwelveLabs
 from .words import WordVectors
 
 
@@ -56,6 +57,10 @@ class VectorsFactory:
         if method == "model2vec":
             return Model2Vec(config, scoring, models)
 
+        # TwelveLabs Marengo vectors
+        if method == "twelvelabs":
+            return TwelveLabs(config, scoring, models)
+
         # Sentence Transformers vectors
         if method == "sentence-transformers":
             return STVectors(config, scoring, models) if config and config.get("path") else None
@@ -98,6 +103,8 @@ class VectorsFactory:
                     method = "llama.cpp"
                 elif Model2Vec.ismodel(path):
                     method = "model2vec"
+                elif TwelveLabs.ismodel(path):
+                    method = "twelvelabs"
                 elif WordVectors.ismodel(path):
                     method = "words"
                 else:

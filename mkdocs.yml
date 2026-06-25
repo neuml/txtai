@@ -107,6 +107,8 @@ nav:
             - Similarity: pipeline/text/similarity.md
             - Summary: pipeline/text/summary.md
             - Translation: pipeline/text/translation.md
+        - Video:
+            - Pegasus: pipeline/video/pegasus.md
         - Train:
             - HF ONNX: pipeline/train/hfonnx.md
             - ML ONNX: pipeline/train/mlonnx.md

@@ -41,6 +41,8 @@ The `LLM` and `RAG` pipelines also have integrations for [llama.cpp](https://git
     - [Similarity](text/similarity)
     - [Summary](text/summary)
     - [Translation](text/translation)
+- Video
+    - [Pegasus](video/pegasus)
 - Training
     - [HF ONNX](train/hfonnx)
     - [ML ONNX](train/mlonnx)

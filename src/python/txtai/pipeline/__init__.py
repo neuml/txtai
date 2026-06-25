@@ -15,3 +15,4 @@ from .nop import Nop
 from .text import *
 from .tensors import Tensors
 from .train import *
+from .video import *
