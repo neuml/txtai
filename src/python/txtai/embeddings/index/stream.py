@@ -2,6 +2,13 @@
 Stream module
 """
 
+# Conditional import for pandas
+try:
+    import pandas as pd
+    PANDAS = True
+except ImportError:
+    PANDAS = False
+
 from .autoid import AutoId
 from .transform import Action
 
@@ -41,6 +48,10 @@ class Stream:
         Args:
             documents: input documents
         """
+
+        # Handle pandas DataFrame input
+        if PANDAS and isinstance(documents, pd.DataFrame):
+            documents = documents.to_dict("records")
 
         # Iterate over documents and yield standard (id, data, tag) tuples
         for document in documents:
