@@ -68,13 +68,17 @@ class Tabular(Pipeline):
                     raise ValueError(f"Invalid local file path or file not found: {item}")
 
             # Dict
-            if isinstance(item, dict):
+            elif isinstance(item, dict):
                 dicts.append(item)
 
             # List of dicts
             elif isinstance(item, list):
                 df = pd.DataFrame(item)
                 results.append(self.process(df))
+
+            # DataFrame
+            elif isinstance(item, pd.DataFrame):
+                results.append(self.process(item))
 
         if dicts:
             df = pd.DataFrame(dicts)

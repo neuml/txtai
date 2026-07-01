@@ -62,6 +62,19 @@ class TestTabular(unittest.TestCase):
         self.assertEqual(uid, 0)
         self.assertEqual(text, "The first sentence")
 
+    def testDataFrame(self):
+        """
+        Test parsing a DataFrame
+        """
+        import pandas as pd
+
+        df = pd.DataFrame({"id": [0, 1], "text": ["This is a test", "Another test"]})
+        rows = self.tabular(df)
+        uid, text, _ = rows[0]
+
+        self.assertEqual(uid, 0)
+        self.assertEqual(text, "This is a test")
+
     def testDict(self):
         """
         Test parsing a dict
