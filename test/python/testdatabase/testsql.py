@@ -70,6 +70,32 @@ class TestSQL(unittest.TestCase):
         with self.assertRaises(SQLError):
             self.db.search("select a b c from txtai where id match id")
 
+    def testUnterminated(self):
+        """
+        Test unterminated bracket, function and similar clauses raise SQLError instead of an internal error.
+        """
+
+        # Unterminated bracket expressions
+        with self.assertRaises(SQLError):
+            self.db.search("select [a from txtai")
+
+        with self.assertRaises(SQLError):
+            self.db.search("select avg([a) from txtai")
+
+        with self.assertRaises(SQLError):
+            self.db.search("select [a[0] from txtai")
+
+        # Unterminated function expressions
+        with self.assertRaises(SQLError):
+            self.db.search("select func(a from txtai")
+
+        with self.assertRaises(SQLError):
+            self.db.search("select * from txtai where coalesce(a")
+
+        # Unterminated similar clause
+        with self.assertRaises(SQLError):
+            self.db.search("select * from txtai where similar('abc'")
+
     def testBracket(self):
         """
         Test bracket expressions
