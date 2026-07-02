@@ -2,6 +2,7 @@
 Expression module
 """
 
+from .error import SQLError
 from .token import Token
 
 
@@ -202,31 +203,6 @@ class Expression:
         # Build alias text expression
         return ", ".join(expression)
 
-    def advance(self, iterator):
-        """
-        Advances the token iterator by one position. This is used when consuming the body of a bracket,
-        function or similar clause, all of which require a closing token. Raises a SQLError if the iterator
-        is exhausted before that closing token is found (i.e. an unterminated clause).
-
-        Args:
-            iterator: tokens iterator
-
-        Returns:
-            (position, token) for the next token
-
-        Raises:
-            SQLError: if the iterator has no more tokens (unterminated bracket, function or similar clause)
-        """
-
-        x, token = next(iterator, (None, None))
-        if x is None:
-            # Local import to avoid a circular import with the base module
-            from .base import SQLError  # pylint: disable=import-outside-toplevel
-
-            raise SQLError("Unterminated clause in SQL expression")
-
-        return x, token
-
     def bracket(self, iterator, tokens, x):
         """
         Consumes a [bracket] expression.
@@ -249,7 +225,7 @@ class Expression:
 
         # Read until token is a end bracket
         while token and (token != "]" or brackets > 0):
-            x, token = self.advance(iterator)
+            x, token = self.readtoken(iterator)
 
             # Increase/decrease bracket counter
             if token == "[":
@@ -288,7 +264,7 @@ class Expression:
 
         # Read until token is a closing paren
         while token and token != ")":
-            x, token = self.advance(iterator)
+            x, token = self.readtoken(iterator)
             if token and token not in ["(", ",", ")"]:
                 # Strip quotes and accumulate tokens
                 params.append(token.replace("'", "").replace('"', ""))
@@ -316,7 +292,7 @@ class Expression:
 
         # Consume function parameters
         while token and token != ")":
-            x, token = self.advance(iterator)
+            x, token = self.readtoken(iterator)
 
             # Check if token is a square bracket
             if Token.isbracket(token):
@@ -427,3 +403,20 @@ class Expression:
             return token
 
         return self.resolver(token)
+
+    def readtoken(self, iterator):
+        """
+        Reads the next token from the token iterator. Raises a SQLError if the iterator has no more tokens.
+
+        Args:
+            iterator: token iterator
+
+        Returns:
+            (x, token) for the next token
+        """
+
+        x, token = next(iterator, (None, None))
+        if x is None:
+            raise SQLError("Unterminated clause in SQL expression")
+
+        return x, token
