@@ -19,6 +19,7 @@ from .embeddings import EmbeddingsTool
 from .function import FunctionTool
 from .glob import GlobTool
 from .grep import GrepTool
+from .keenable import KeenableSearchTool
 from .read import ReadTool
 from .skill import SkillTool
 from .todo import TodoWriteTool
@@ -30,7 +31,7 @@ class ToolFactory:
     Methods to create tools.
     """
 
-    # Default toolkit
+    # Default toolkit - included when "defaults" is specified
     DEFAULTS = {
         "bash": BashTool(),
         "edit": EditTool(),
@@ -42,6 +43,12 @@ class ToolFactory:
         "todowrite": TodoWriteTool(),
         "websearch": WebSearchTool(),
         "write": WriteTool(),
+    }
+
+    # Opt-in tools requested by name (not part of "defaults"). Keenable is keyless,
+    # so it needs no API key; an optional KEENABLE_API_KEY only lifts the rate limit.
+    OPTIN = {
+        "keenable": KeenableSearchTool(),
     }
 
     # Backwards compatible mappings
@@ -79,9 +86,9 @@ class ToolFactory:
                     else ToolFactory.createtool(target, tool)
                 )
 
-            # Get default tool, if applicable
-            elif isinstance(tool, str) and tool in ToolFactory.DEFAULTS:
-                tool = ToolFactory.DEFAULTS[tool]
+            # Get named tool (default or opt-in), if applicable
+            elif isinstance(tool, str) and (tool in ToolFactory.DEFAULTS or tool in ToolFactory.OPTIN):
+                tool = ToolFactory.DEFAULTS.get(tool) or ToolFactory.OPTIN[tool]
 
             # Get ALL default tools, if applicable
             elif isinstance(tool, str) and tool == "defaults":

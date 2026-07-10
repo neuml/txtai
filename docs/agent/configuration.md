@@ -91,6 +91,7 @@ The following shortcut strings load tools directly. Passing a Tool instance is a
 | glob        | Finds matching file patterns in a directory               |
 | grep        | Finds matching file content in a directory                |
 | http.*      | HTTP Path to a [Model Context Protocol (MCP)](https://modelcontextprotocol.io/docs/getting-started/intro) server |
+| keenable    | Runs a web search using the [Keenable](https://keenable.ai) API (keyless; opt-in, not in `defaults`) |
 | python      | Runs a Python action                                      |
 | read        | Reads file or url content, supports text extraction       |
 | todowrite   | Generates a task list to organize complex tasks           |
