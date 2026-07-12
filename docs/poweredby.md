@@ -1,6 +1,6 @@
 # Powered by txtai
 
-The following applications are powered by txtai. 
+The following applications are powered by txtai.
 
 ![apps](https://raw.githubusercontent.com/neuml/txtai/master/apps.jpg)
 

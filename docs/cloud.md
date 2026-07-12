@@ -99,7 +99,7 @@ This section builds a single run workflow. [Example workflows can be found here.
 wget https://raw.githubusercontent.com/neuml/txtai/master/docker/workflow/Dockerfile
 
 # CPU build
-docker build -t txtai-workflow . 
+docker build -t txtai-workflow .
 
 # GPU build
 docker build -t txtai-workflow --build-arg BASE_IMAGE=neuml/txtai-gpu .

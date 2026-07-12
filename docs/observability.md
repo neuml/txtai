@@ -101,7 +101,7 @@ with mlflow.start_run():
 
 ### Workflow
 
-This example runs a [workflow](../workflow). This workflow runs an embeddings query and then translates each result to French. 
+This example runs a [workflow](../workflow). This workflow runs an embeddings query and then translates each result to French.
 
 ```python
 from txtai import Embeddings, Workflow
@@ -136,7 +136,7 @@ def search(query):
     """
     Searches a database of astronomy data.
 
-    Make sure to call this tool only with a string input, never use JSON.    
+    Make sure to call this tool only with a string input, never use JSON.
 
     Args:
         query: concepts to search for using similarity search

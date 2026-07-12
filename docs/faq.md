@@ -134,7 +134,7 @@ __Issue__
 
 __Solution__
 
-Restart the kernel. See issue [#409](https://github.com/neuml/txtai/issues/409) for more on this issue. 
+Restart the kernel. See issue [#409](https://github.com/neuml/txtai/issues/409) for more on this issue.
 
 ----------
 
