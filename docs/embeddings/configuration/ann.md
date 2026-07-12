@@ -4,7 +4,7 @@ Approximate Nearest Neighbor (ANN) index configuration for storing vector embedd
 
 ## backend
 ```yaml
-backend: faiss|hnsw|annoy|ggml|numpy|torch|turbovec|pgvector|sqlite|custom
+backend: faiss|hnsw|annoy|ggml|numpy|torch|zvec|turbovec|pgvector|sqlite|custom
 ```
 
 Sets the ANN backend. Defaults to `faiss`. Additional backends are available via the [ann](../../../install/#ann) extras package. Set custom backends via setting this parameter to the fully resolvable class string.
@@ -97,6 +97,15 @@ torch:
     quantize:
         type: quantization type (fp4, nf4, int8)
         blocksize: quantization block size parameter
+```
+
+### zvec
+
+The [zvec](https://github.com/alibaba/zvec) backend is an embedded, path-based vector index.
+
+```yaml
+zvec:
+    m: number of HNSW links per element (int) - defaults to 50
 ```
 
 ### turbovec
