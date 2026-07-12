@@ -4,7 +4,7 @@ Approximate Nearest Neighbor (ANN) index configuration for storing vector embedd
 
 ## backend
 ```yaml
-backend: faiss|hnsw|annoy|ggml|numpy|torch|turbovec|zvec|pgvector|sqlite|custom
+backend: faiss|hnsw|annoy|ggml|numpy|torch|turbovec|zvec|milvus|pgvector|sqlite|custom
 ```
 
 Sets the ANN backend. Defaults to `faiss`. Additional backends are available via the [ann](../../../install/#ann) extras package. Set custom backends via setting this parameter to the fully resolvable class string.
@@ -116,6 +116,12 @@ zvec:
 ```
 
 The [zvec](https://github.com/alibaba/zvec) backend is an embedded, path-based vector index.
+
+### milvus
+
+The [Milvus](https://milvus.io/docs/milvus_lite.md) backend uses Milvus Lite as an embedded, path-based vector index. It does not require a running Milvus server.
+
+Milvus indexes vectors with `AUTOINDEX` and inner product. Inner product is equivalent to cosine similarity on normalized vectors.
 
 ### pgvector
 ```yaml

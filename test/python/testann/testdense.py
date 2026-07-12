@@ -188,6 +188,13 @@ class TestDense(unittest.TestCase):
         # Test with custom settings
         self.runTests("hnsw", {"hnsw": {"efconstruction": 100, "m": 4, "randomseed": 0, "efsearch": 5}})
 
+    def testMilvus(self):
+        """
+        Test Milvus backend
+        """
+
+        self.runTests("milvus")
+
     def testNotImplemented(self):
         """
         Test exceptions for non-implemented methods
