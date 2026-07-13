@@ -54,6 +54,7 @@ class HFTrainer(Tensors):
         merge="concat",
         teacher=None,
         distillation=(1.0, 0.5),
+        tokenizebatch=1000,
         **args
     ):
         """
@@ -76,6 +77,7 @@ class HFTrainer(Tensors):
             merge: determines how chunks are combined for language modeling tasks - "concat" (default), "pack" or None
             teacher: path to teacher model for distillation, supports same options as base
             distillation: distillation parameters for (temperature, alpha), defaults to (1.0, 0.5)
+            tokenizebatch: batch size for tokenization process
             args: training arguments
 
         Returns:
@@ -102,7 +104,7 @@ class HFTrainer(Tensors):
         process, collator, labels = self.prepare(task, train, tokenizer, columns, maxlength, stride, prefix, merge, args)
 
         # Tokenize training and validation data
-        train, validation = process(train, validation, os.cpu_count() if tokenizers and isinstance(tokenizers, bool) else tokenizers)
+        train, validation = process(train, validation, os.cpu_count() if tokenizers and isinstance(tokenizers, bool) else tokenizers, tokenizebatch)
 
         # Create model to train
         model = self.model(task, base, config, labels, tokenizer, quantize)
