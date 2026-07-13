@@ -4,7 +4,6 @@ zvec module
 
 import os
 import shutil
-import tarfile
 import tempfile
 
 # Conditional import
@@ -15,6 +14,7 @@ try:
 except ImportError:
     ZVEC = False
 
+from ...archive import ArchiveFactory
 from ..base import ANN
 
 
@@ -38,16 +38,8 @@ class Zvec(ANN):
         self.path = os.path.join(self.directory, "index")
 
         try:
-            with tarfile.open(path, "r") as archive:
-                members = archive.getmembers()
-
-                for member in members:
-                    target = os.path.abspath(os.path.join(self.directory, member.name))
-                    if os.path.commonpath([self.directory, target]) != self.directory or member.issym() or member.islnk():
-                        raise ValueError("Invalid zvec index archive")
-
-                archive.extractall(self.directory, members=members)
-
+            archive = ArchiveFactory.create(self.directory)
+            archive.load(path, "tar")
             self.backend = zvec.open(self.path)
         except Exception:
             self.close()
@@ -107,22 +99,8 @@ class Zvec(ANN):
 
     def save(self, path):
         self.backend.flush()
-
-        # Write a single-file artifact that contains the directory-shaped collection
-        descriptor, temporary = tempfile.mkstemp(dir=os.path.dirname(path) or ".")
-        os.close(descriptor)
-
-        try:
-            with tarfile.open(temporary, "w") as archive:
-                archive.add(self.path, arcname="index")
-
-            if os.path.isdir(path):
-                shutil.rmtree(path)
-            os.replace(temporary, path)
-        except Exception:
-            if os.path.exists(temporary):
-                os.remove(temporary)
-            raise
+        archive = ArchiveFactory.create(self.directory)
+        archive.save(path, "tar")
 
     def close(self):
         # Parent logic releases the collection and its file locks
