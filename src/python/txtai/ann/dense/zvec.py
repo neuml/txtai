@@ -2,8 +2,6 @@
 zvec module
 """
 
-import io
-import json
 import os
 import shutil
 import tarfile
@@ -41,7 +39,6 @@ class Zvec(ANN):
 
         try:
             with tarfile.open(path, "r") as archive:
-                metadata = json.loads(archive.extractfile("metadata.json").read())
                 members = archive.getmembers()
 
                 for member in members:
@@ -51,8 +48,6 @@ class Zvec(ANN):
 
                 archive.extractall(self.directory, members=members)
 
-            self.config["dimensions"] = metadata["dimensions"]
-            self.config["offset"] = metadata["offset"]
             self.backend = zvec.open(self.path)
         except Exception:
             self.close()
@@ -112,10 +107,6 @@ class Zvec(ANN):
 
     def save(self, path):
         self.backend.flush()
-        metadata = json.dumps(
-            {"dimensions": self.config["dimensions"], "offset": self.config["offset"]},
-            separators=(",", ":"),
-        ).encode("utf-8")
 
         # Write a single-file artifact that contains the directory-shaped collection
         descriptor, temporary = tempfile.mkstemp(dir=os.path.dirname(path) or ".")
@@ -124,10 +115,6 @@ class Zvec(ANN):
         try:
             with tarfile.open(temporary, "w") as archive:
                 archive.add(self.path, arcname="index")
-
-                info = tarfile.TarInfo("metadata.json")
-                info.size = len(metadata)
-                archive.addfile(info, io.BytesIO(metadata))
 
             if os.path.isdir(path):
                 shutil.rmtree(path)
