@@ -162,13 +162,13 @@ class TestTrainer(unittest.TestCase):
                 return ["text", "label"]
 
             # pylint: disable=W0613
-            def map(self, fn, batched, num_proc, remove_columns):
+            def map(self, fn, batched, batch_size, num_proc, remove_columns):
                 """
                 Map each dataset row using fn.
 
                 Args:
                     fn: function
-                    batched: batch records
+                    args: additional keyword args
 
                 Returns:
                     updated Dataset
