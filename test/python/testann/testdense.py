@@ -12,6 +12,9 @@ from unittest.mock import patch
 
 import numpy as np
 
+from sqlalchemy.dialects.postgresql import BIT
+from sqlalchemy.ext.compiler import compiles
+
 from txtai.ann import ANNFactory, ANN
 from txtai.serialize import SerializeFactory
 
@@ -259,6 +262,11 @@ class TestDense(unittest.TestCase):
         """
         Test PGVector backend
         """
+
+        # pylint: disable=W0613
+        @compiles(BIT, "sqlite")
+        def compile_bit_sqlite(type_, compiler, **kw):
+            return "BLOB"
 
         # Generate test record
         data = np.random.rand(1, 240).astype(np.float32)
