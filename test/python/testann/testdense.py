@@ -393,6 +393,20 @@ class TestDense(unittest.TestCase):
 
         self.runTests("turbovec")
 
+    def testZvec(self):
+        """
+        Test zvec backend
+        """
+
+        self.runTests("zvec")
+
+    def testZvecCustom(self):
+        """
+        Test zvec backend with custom settings
+        """
+
+        self.runTests("zvec", {"zvec": {"m": 16}})
+
     def runTests(self, name, params=None, update=True):
         """
         Runs a series of standard backend tests.

@@ -70,6 +70,7 @@ class TestOptional(unittest.TestCase):
             "ttstokenizer",
             "turbovec",
             "xmltodict",
+            "zvec",
         ]
 
         # Get handle to all currently loaded txtai modules
@@ -142,6 +143,9 @@ class TestOptional(unittest.TestCase):
 
         with self.assertRaises(ImportError):
             ANNFactory.create({"backend": "turbovec"})
+
+        with self.assertRaises(ImportError):
+            ANNFactory.create({"backend": "zvec"})
 
         # Test sparse methods
         with self.assertRaises(ImportError):
