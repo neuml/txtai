@@ -4,7 +4,7 @@ Approximate Nearest Neighbor (ANN) index configuration for storing vector embedd
 
 ## backend
 ```yaml
-backend: faiss|hnsw|annoy|ggml|numpy|torch|zvec|turbovec|pgvector|sqlite|custom
+backend: faiss|hnsw|annoy|ggml|numpy|torch|turbovec|zvec|pgvector|sqlite|custom
 ```
 
 Sets the ANN backend. Defaults to `faiss`. Additional backends are available via the [ann](../../../install/#ann) extras package. Set custom backends via setting this parameter to the fully resolvable class string.
@@ -76,19 +76,15 @@ The [GGML](https://github.com/ggml-org/ggml) backend is a k-nearest neighbors ba
 
 ### numpy
 
-The NumPy backend is a k-nearest neighbors backend. It's designed for simplicity and works well with smaller datasets that fit into memory.
-
 ```yaml
 numpy:
     safetensors: stores vectors using the safetensors format
                  defaults to NumPy array storage
 ```
 
+The NumPy backend is a k-nearest neighbors backend. It's designed for simplicity and works well with smaller datasets that fit into memory.
+
 ### torch
-
-The Torch backend is a k-nearest neighbors backend like NumPy. It supports GPU-enabled operations. It also has support for quantization which enables fitting larger arrays into GPU memory.
-
-When quantization is enabled, vectors are _always_ stored in safetensors. _Note that macOS support for quantization is limited._
 
 ```yaml
 torch:
@@ -99,22 +95,27 @@ torch:
         blocksize: quantization block size parameter
 ```
 
-### zvec
+The Torch backend is a k-nearest neighbors backend like NumPy. It supports GPU-enabled operations. It also has support for quantization which enables fitting larger arrays into GPU memory.
 
-The [zvec](https://github.com/alibaba/zvec) backend is an embedded, path-based vector index.
+When quantization is enabled, vectors are _always_ stored in safetensors. _Note that macOS support for quantization is limited._
+
+### turbovec
+
+```yaml
+turbovec:
+    bitwidth: number of bits to store each vector dimension as. Supports 2, 3 or 4.
+```
+
+The [turbovec](https://github.com/RyanCodrai/turbovec) backend is a k-nearest neighbors backend powered by the [TurboQuant algorithm](https://arxiv.org/abs/2504.19874).
+
+### zvec
 
 ```yaml
 zvec:
     m: number of HNSW links per element (int) - defaults to 50
 ```
 
-### turbovec
-
-The [turbovec](https://github.com/RyanCodrai/turbovec) backend is a k-nearest neighbors backend powered by the [TurboQuant algorithm](https://arxiv.org/abs/2504.19874).
-
-```yaml
-turbovec:
-    bitwidth: number of bits to store each vector dimension as. Supports 2, 3 or 4.
+The [zvec](https://github.com/alibaba/zvec) backend is an embedded, path-based vector index.
 
 ### pgvector
 ```yaml
