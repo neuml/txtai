@@ -407,6 +407,11 @@ class TestDense(unittest.TestCase):
 
         self.runTests("zvec", {"zvec": {"m": 16}})
 
+        # Test invalid file path handled
+        with self.assertRaises(FileNotFoundError):
+            ann = ANNFactory.create({"backend": "zvec"})
+            ann.load("non-exist-path")
+
     def runTests(self, name, params=None, update=True):
         """
         Runs a series of standard backend tests.

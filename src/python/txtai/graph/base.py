@@ -536,24 +536,21 @@ class Graph:
             # Unpack node and score, if available
             node, score = node if isinstance(node, tuple) else (node, None)
 
-            # Skip ids that don't exist in this graph
-            nodeattrs = self.node(node)
-            if nodeattrs is None:
-                continue
+            # Add node if it exists
+            if self.hasnode(node):
+                # Add nodes
+                graph.addnode(node, **self.node(node))
 
-            # Add nodes
-            graph.addnode(node, **nodeattrs)
+                # Add score if present
+                if score is not None:
+                    graph.addattribute(node, "score", score)
 
-            # Add score if present
-            if score is not None:
-                graph.addattribute(node, "score", score)
-
-            # Add edges
-            edges = self.edges(node)
-            if edges:
-                for target, attributes in self.edges(node).items():
-                    if target in nodeids:
-                        graph.addedge(node, target, **attributes)
+                # Add edges
+                edges = self.edges(node)
+                if edges:
+                    for target, attributes in self.edges(node).items():
+                        if target in nodeids:
+                            graph.addedge(node, target, **attributes)
 
         # Filter categories and topics
         if self.topics:
