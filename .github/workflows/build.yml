@@ -18,7 +18,7 @@ jobs:
       - name: Install Python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.10.20"
+          python-version: "3.10"
 
       - name: Install Java
         uses: actions/setup-java@v5
@@ -40,6 +40,7 @@ jobs:
           echo "TIKA_STARTUP_SLEEP=30" >> $GITHUB_ENV
           echo "TIKA_STARTUP_MAX_RETRY=10" >> $GITHUB_ENV
           brew install portaudio
+          pip install torch==2.12.1
         if: matrix.os == 'macos-latest'
 
       - name: Install dependencies - Windows
@@ -51,7 +52,7 @@ jobs:
       - name: Build
         run: |
           pip install -U wheel
-          pip install .[all,dev] "setuptools<82"
+          pip install .[all,dev]
           pip cache purge
           python -c "import nltk; nltk.download(['punkt', 'punkt_tab', 'averaged_perceptron_tagger_eng'])"
           python --version
