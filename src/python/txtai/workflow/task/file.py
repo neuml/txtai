@@ -17,11 +17,15 @@ class FileTask(Task):
     FILE = r"file:\/\/"
 
     def accept(self, element):
+        # Only process string elements
+        if not isinstance(element, str):
+            return False
+
         # Replace file prefixes
         element = re.sub(FileTask.FILE, "", element)
 
         # Only accept file paths that exist
-        return super().accept(element) and isinstance(element, str) and os.path.exists(element)
+        return super().accept(element) and os.path.exists(element)
 
     def prepare(self, element):
         # Replace file prefixes

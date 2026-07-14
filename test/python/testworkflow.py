@@ -27,6 +27,7 @@ from txtai.workflow import (
     RetrieveTask,
     StorageTask,
     TemplateTask,
+    UrlTask,
     WorkflowTask,
 )
 
@@ -224,6 +225,27 @@ class TestWorkflow(unittest.TestCase):
         results = list(workflow([Utils.PATH + "/books.jpg"]))
 
         self.assertEqual(results[0].size, (1024, 682))
+
+    def testFileUrlTaskNonStringElements(self):
+        """
+        Test that FileTask/UrlTask/ImageTask pass through non-string and non-matching
+        elements instead of crashing, matching the base Task.accept contract for
+        heterogeneous batches.
+        """
+
+        with tempfile.NamedTemporaryFile() as temp:
+            # Elements: a real file path (matches FileTask), a url (matches UrlTask),
+            # a non-string, None and a non-matching string - none of these should crash.
+            data = [temp.name, "http://example.com", 5, None, "no match here"]
+
+            urls = list(Workflow([UrlTask(lambda x: [y.upper() for y in x])])(list(data)))
+            self.assertEqual(urls, [temp.name, "HTTP://EXAMPLE.COM", 5, None, "no match here"])
+
+            files = list(Workflow([FileTask(lambda x: [f.upper() for f in x])])(list(data)))
+            self.assertEqual(files, [temp.name.upper(), "http://example.com", 5, None, "no match here"])
+
+            images = list(Workflow([ImageTask()])(list(data)))
+            self.assertEqual(images, [temp.name, "http://example.com", 5, None, "no match here"])
 
     def testInvalidWorkflow(self):
         """
