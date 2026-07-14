@@ -409,6 +409,12 @@ class Graph:
             # Manually provided relationships and attributes to copy
             relations, attributes = None, {}
 
+            # Tracks whether this document consumes an indexid slot. Must match the same
+            # key-presence criterion Transform.stream() uses to compute its offset, so node
+            # ids stay in sync with the real vector index even when a text/object field is
+            # present but set to None.
+            hasfield = True
+
             # Extract data from dictionary
             if isinstance(document, dict):
                 # Extract relationships
@@ -423,18 +429,20 @@ class Graph:
                 }
 
                 # Require text or object field
+                hasfield = self.text in document or self.object in document
                 document = document.get(self.text, document.get(self.object))
 
-            if document is not None:
-                if isinstance(document, list):
-                    # Join tokens as text
-                    document = " ".join(document)
+            if hasfield:
+                if document is not None:
+                    if isinstance(document, list):
+                        # Join tokens as text
+                        document = " ".join(document)
 
-                # Create node
-                nodes.append((index, {**{"id": uid, "data": document}, **attributes}))
+                    # Create node
+                    nodes.append((index, {**{"id": uid, "data": document}, **attributes}))
 
-                # Add relationships
-                self.addrelations(index, relations)
+                    # Add relationships
+                    self.addrelations(index, relations)
 
                 index += 1
 
