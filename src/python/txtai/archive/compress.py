@@ -10,14 +10,13 @@ class Compress:
     Base class for Compress instances.
     """
 
-    def pack(self, path, output, exclude=None):
+    def pack(self, path, output):
         """
         Compresses files in directory path to file output.
 
         Args:
             path: input directory path
             output: output file
-            exclude: optional callable that returns True for archive member names to exclude
         """
 
         raise NotImplementedError
