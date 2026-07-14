@@ -188,6 +188,26 @@ class TestGraph(unittest.TestCase):
         self.assertTrue(graph.hasedge(0))
         self.assertTrue(graph.hasedge(0, 1))
 
+    def testFilterUnknownId(self):
+        """
+        Test that filter() skips ids that don't exist in the graph instead of
+        crashing when unpacking self.node(node) (which returns None for a
+        missing node).
+        """
+
+        graph = GraphFactory.create({})
+        graph.initialize()
+        graph.addnode(0, id="a", data="hello")
+        graph.addnode(1, id="b", data="world")
+        graph.addedge(0, 1)
+
+        subgraph = graph.filter([0, 1, 99])
+
+        self.assertTrue(subgraph.hasnode(0))
+        self.assertTrue(subgraph.hasnode(1))
+        self.assertFalse(subgraph.hasnode(99))
+        self.assertTrue(subgraph.hasedge(0, 1))
+
     def testInsertNoneTextIndexSync(self):
         """
         Test that a document with a present but None text/object field consumes an
