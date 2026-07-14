@@ -40,6 +40,13 @@ class Zvec(ANN):
         try:
             archive = ArchiveFactory.create(self.directory)
             archive.load(path, "tar")
+
+            # zvec requires the root runtime lock file to exist before opening a collection
+            lock = os.path.join(self.path, "LOCK")
+            if not os.path.exists(lock):
+                with open(lock, "w", encoding="utf-8"):
+                    pass
+
             self.backend = zvec.open(self.path)
         except Exception:
             self.close()
@@ -100,7 +107,21 @@ class Zvec(ANN):
     def save(self, path):
         self.backend.flush()
         archive = ArchiveFactory.create(self.directory)
-        archive.save(path, "tar")
+        archive.save(path, "tar", exclude=self.lockfile)
+
+    @staticmethod
+    def lockfile(name):
+        """
+        Tests if archive member name is a zvec runtime lock file.
+
+        Args:
+            name: archive member name
+
+        Returns:
+            True if this is a zvec runtime lock file, False otherwise
+        """
+
+        return name.replace("\\", "/").split("/")[-1] == "LOCK"
 
     def close(self):
         # Parent logic releases the collection and its file locks

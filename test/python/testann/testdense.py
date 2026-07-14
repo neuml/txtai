@@ -5,6 +5,7 @@ Dense ANN module tests
 import os
 import platform
 import sys
+import tarfile
 import tempfile
 import unittest
 
@@ -406,6 +407,42 @@ class TestDense(unittest.TestCase):
         """
 
         self.runTests("zvec", {"zvec": {"m": 16}})
+
+    def testZvecSave(self):
+        """
+        Test saving a zvec index without runtime lock files
+        """
+
+        # Generate deterministic data and queries
+        generator = np.random.default_rng(1130)
+        data = generator.random((100, 16), dtype=np.float32)
+        queries = generator.random((5, 16), dtype=np.float32)
+        self.normalize(data)
+        self.normalize(queries)
+
+        # Create ANN index and capture search results before save
+        model = ANNFactory.create({"backend": "zvec", "dimensions": 16, "zvec": {"m": 16}})
+        model.index(data)
+        count = model.count()
+        results = model.search(queries, 5)
+
+        with tempfile.TemporaryDirectory() as directory:
+            index = os.path.join(directory, "ann")
+            model.save(index)
+
+            # Runtime lock files must not be included in the saved index
+            with tarfile.open(index, "r") as archive:
+                self.assertFalse(any(member.name.replace("\\", "/").split("/")[-1] == "LOCK" for member in archive.getmembers()))
+
+            # Reload index and validate count and search results
+            model.load(index)
+            self.assertEqual(model.count(), count)
+            reloaded = model.search(queries, 5)
+            self.assertEqual([[uid for uid, _ in row] for row in reloaded], [[uid for uid, _ in row] for row in results])
+            for expected, actual in zip(results, reloaded):
+                np.testing.assert_allclose([score for _, score in actual], [score for _, score in expected], rtol=0, atol=1e-6)
+
+        model.close()
 
     def runTests(self, name, params=None, update=True):
         """

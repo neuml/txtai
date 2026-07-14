@@ -67,13 +67,14 @@ class Archive:
         compress = self.create(path, compression)
         compress.unpack(path, self.path())
 
-    def save(self, path, compression=None):
+    def save(self, path, compression=None, exclude=None):
         """
         Archives files in archive working directory to file at path.
 
         Args:
             path: path to archive file
             compression: compression format, infers from path if not provided
+            exclude: optional callable that returns True for archive member names to exclude
         """
 
         # Create output directory, if necessary
@@ -83,7 +84,7 @@ class Archive:
 
         # Pack into compressed file
         compress = self.create(path, compression)
-        compress.pack(self.path(), path)
+        compress.pack(self.path(), path, exclude)
 
     def create(self, path, compression):
         """

@@ -14,7 +14,7 @@ class Zip(Compress):
     Zip compression
     """
 
-    def pack(self, path, output):
+    def pack(self, path, output, exclude=None):
         with ZipFile(output, "w", ZIP_DEFLATED) as zfile:
             for root, _, files in sorted(os.walk(path)):
                 for f in files:
@@ -22,7 +22,8 @@ class Zip(Compress):
                     name = os.path.join(os.path.relpath(root, path), f)
 
                     # Write file to zip
-                    zfile.write(os.path.join(root, f), arcname=name)
+                    if not exclude or not exclude(name):
+                        zfile.write(os.path.join(root, f), arcname=name)
 
     def unpack(self, path, output):
         with ZipFile(path, "r") as zfile:

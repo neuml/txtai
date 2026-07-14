@@ -13,12 +13,16 @@ class Tar(Compress):
     Tar compression
     """
 
-    def pack(self, path, output):
+    def pack(self, path, output, exclude=None):
         # Infer compression type
         compression = self.compression(output)
 
+        # Build optional archive member filter
+        def filter_member(member):
+            return None if exclude and exclude(member.name) else member
+
         with tarfile.open(output, f"w:{compression}" if compression else "w") as tar:
-            tar.add(path, arcname=".")
+            tar.add(path, arcname=".", filter=filter_member)
 
     def unpack(self, path, output):
         # Infer compression type
