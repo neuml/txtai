@@ -10,3 +10,4 @@ from .numpy import NumPy
 from .pgvector import PGVector
 from .torch import Torch
 from .turbovec import TurboVec
+from .zvec import Zvec

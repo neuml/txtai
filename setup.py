@@ -65,6 +65,7 @@ extras["ann"] = [
     "sqlalchemy>=2.0.20",
     "sqlite-vec>=0.1.1",
     "turbovec>=0.7.0",
+    "zvec>=0.5.1",
 ]
 
 extras["api"] = [

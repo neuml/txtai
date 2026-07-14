@@ -13,6 +13,7 @@ from .pgvector import PGVector
 from .sqlite import SQLite
 from .torch import Torch
 from .turbovec import TurboVec
+from .zvec import Zvec
 
 
 class ANNFactory:
@@ -55,6 +56,8 @@ class ANNFactory:
             ann = Torch(config)
         elif backend == "turbovec":
             ann = TurboVec(config)
+        elif backend == "zvec":
+            ann = Zvec(config)
         else:
             ann = ANNFactory.resolve(backend, config)
 
