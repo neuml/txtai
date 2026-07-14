@@ -536,8 +536,13 @@ class Graph:
             # Unpack node and score, if available
             node, score = node if isinstance(node, tuple) else (node, None)
 
+            # Skip ids that don't exist in this graph
+            nodeattrs = self.node(node)
+            if nodeattrs is None:
+                continue
+
             # Add nodes
-            graph.addnode(node, **self.node(node))
+            graph.addnode(node, **nodeattrs)
 
             # Add score if present
             if score is not None:

@@ -188,6 +188,50 @@ class TestGraph(unittest.TestCase):
         self.assertTrue(graph.hasedge(0))
         self.assertTrue(graph.hasedge(0, 1))
 
+    def testFilterUnknownId(self):
+        """
+        Test that filter() skips ids that don't exist in the graph instead of
+        crashing when unpacking self.node(node) (which returns None for a
+        missing node).
+        """
+
+        graph = GraphFactory.create({})
+        graph.initialize()
+        graph.addnode(0, id="a", data="hello")
+        graph.addnode(1, id="b", data="world")
+        graph.addedge(0, 1)
+
+        subgraph = graph.filter([0, 1, 99])
+
+        self.assertTrue(subgraph.hasnode(0))
+        self.assertTrue(subgraph.hasnode(1))
+        self.assertFalse(subgraph.hasnode(99))
+        self.assertTrue(subgraph.hasedge(0, 1))
+
+    def testInsertNoneTextIndexSync(self):
+        """
+        Test that a document with a present but None text/object field consumes an
+        indexid slot without creating a node, keeping later node ids in sync with
+        the real vector index offset (which increments on key presence, not on the
+        resolved value being non-None - see Transform.stream()).
+        """
+
+        graph = GraphFactory.create({})
+        graph.initialize()
+
+        documents = [
+            ("d0", {"text": "alpha content"}, None),
+            ("d1", {"text": None}, None),
+            ("d2", {"text": "gamma content"}, None),
+        ]
+        graph.insert(documents, index=0)
+
+        # d1's slot (index 1) is consumed but has no node - d2 must land at index 2, not 1
+        self.assertTrue(graph.hasnode(0))
+        self.assertFalse(graph.hasnode(1))
+        self.assertTrue(graph.hasnode(2))
+        self.assertEqual(graph.node(2)["id"], "d2")
+
     def testFilter(self):
         """
         Test creating filtered subgraphs
