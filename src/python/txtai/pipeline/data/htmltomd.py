@@ -135,7 +135,7 @@ class HTMLToMarkdown(Pipeline):
         metadata = [f"**{title.text.strip()}**"] if title and title.text else []
 
         description = node.find("meta", attrs={"name": "description"})
-        if description and description["content"]:
+        if description and description.get("content"):
             metadata.append(f"\n*{description['content'].strip()}*")
 
         # Add separator
