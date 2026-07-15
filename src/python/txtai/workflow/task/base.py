@@ -120,7 +120,9 @@ class Task:
         results = self.execute([self.prepare(element) for _, element in data], executor)
 
         # Pack results back into elements
-        if self.merge:
+        # Single-action tasks are always flattened by postprocess (regardless of merge),
+        # so results is already a single per-element list - same condition as postprocess.
+        if self.merge or len(self.action) <= 1:
             elements = self.filteredpack(results, indexed, ids)
         else:
             elements = [self.filteredpack(r, indexed, ids) for r in results]
