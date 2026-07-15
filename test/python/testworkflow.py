@@ -448,6 +448,11 @@ class TestWorkflow(unittest.TestCase):
         results = list(workflow([{"text": "prompt"}]))
         self.assertEqual(results[0], "This is a prompt")
 
+        # Test rule key missing from element
+        workflow = Workflow([TemplateTask(template="This is a {text}", rules={"category": "skip"})])
+        results = list(workflow([{"text": "prompt"}]))
+        self.assertEqual(results[0], "This is a prompt")
+
     def testTemplateRag(self):
         """
         Test rag template task
