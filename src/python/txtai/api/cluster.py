@@ -196,11 +196,11 @@ class Cluster:
         shards = [[] for _ in range(len(self.shards))]
         for document in documents:
             uid = document.get("id") if isinstance(document, dict) else document
-            if uid and isinstance(uid, str):
-                # Quick int hash of string to help derive shard id
+            if isinstance(uid, str):
+                # Quick int hash of string to help derive shard id (handles empty strings too)
                 uid = zlib.adler32(uid.encode("utf-8"))
-            elif uid is None:
-                # Get random shard id when uid isn't set
+            elif not isinstance(uid, int):
+                # Get random shard id when uid isn't a usable int (None, a tuple document, etc.)
                 uid = random.randint(0, len(shards) - 1)
 
             shards[uid % len(self.shards)].append(document)
