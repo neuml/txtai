@@ -186,6 +186,10 @@ class Expression:
             if x not in aliases.values():
                 alias = tokens[x]
 
+                # An empty expression (e.g. a stray comma in the select clause) has no alias
+                if not alias:
+                    raise SQLError("Empty expression in SQL clause")
+
                 # Strip leading/trailing brackets from alias name that doesn't have operators
                 if not any(Token.isoperator(t) for t in alias) and alias[0] in ("[", "(") and alias[-1] in ("]", ")"):
                     alias = alias[1:-1]
@@ -336,6 +340,10 @@ class Expression:
         # If this is an alias token, get next token
         if token in Token.ALIAS:
             x, token = next(iterator, (None, None))
+
+            # A trailing AS with no alias name exhausts the stream
+            if x is None:
+                raise SQLError("Missing alias name in SQL expression")
 
         # Consume tokens until end of stream or a separator is found. Evaluate next token to prevent consuming here.
         while x + 1 < len(tokens) and not Token.isseparator(Token.get(tokens, x + 1)):
