@@ -393,6 +393,25 @@ class TestDense(unittest.TestCase):
 
         self.runTests("turbovec")
 
+    def testMilvusLite(self):
+        """
+        Test milvus-lite backend
+        """
+
+        self.runTests("milvuslite")
+
+    def testMilvusLiteCustom(self):
+        """
+        Test milvus-lite backend with custom settings
+        """
+
+        self.runTests("milvuslite", {"milvuslite": {"m": 16}})
+
+        # Test invalid file path handled
+        with self.assertRaises(FileNotFoundError):
+            ann = ANNFactory.create({"backend": "milvuslite"})
+            ann.load("non-exist-path")
+
     def testZvec(self):
         """
         Test zvec backend
