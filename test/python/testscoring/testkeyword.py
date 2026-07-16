@@ -49,6 +49,21 @@ class TestKeyword(unittest.TestCase):
 
         self.runTests("txtai.scoring.BM25")
 
+    def testTermsEmpty(self):
+        """
+        Test searching a terms index with nothing indexed
+        """
+
+        # No documents ever inserted
+        scoring = ScoringFactory.create({"method": "bm25", "terms": True})
+        self.assertEqual(scoring.search("bear", 1), [])
+
+        # Documents present but all skipped (missing text field) - term database never initialized
+        scoring = ScoringFactory.create({"method": "bm25", "terms": True})
+        scoring.index([(0, {"other": "value"}, None)])
+        self.assertEqual(scoring.count(), 0)
+        self.assertEqual(scoring.search("bear", 1), [])
+
     def testCustomNotFound(self):
         """
         Test unresolvable custom method
