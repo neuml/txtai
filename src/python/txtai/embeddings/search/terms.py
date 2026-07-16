@@ -37,8 +37,8 @@ class Terms:
                 # Parse query
                 parse = self.database.parse(query)
 
-                # Join terms from similar clauses
-                terms.append(" ".join(" ".join(s) for s in parse["similar"]))
+                # Join terms from similar clauses (absent when the query has no similar() clause)
+                terms.append(" ".join(" ".join(s) for s in parse.get("similar", [])))
 
             return terms
 

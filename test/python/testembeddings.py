@@ -363,6 +363,23 @@ class TestEmbeddings(unittest.TestCase):
         uid = embeddings.search("feel good story", 1)[0][0]
         self.assertEqual(uid, 0)
 
+    def testTerms(self):
+        """
+        Test extracting keyword terms from queries
+        """
+
+        embeddings = Embeddings({"keyword": True, "content": True})
+        embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        # Plain keyword query is returned unchanged
+        self.assertEqual(embeddings.terms("feel good story"), "feel good story")
+
+        # SQL query with a similar() clause extracts its terms
+        self.assertEqual(embeddings.terms("select id, text from txtai where similar('feel good story')"), "feel good story")
+
+        # SQL query without a similar() clause has no keyword terms (previously raised KeyError)
+        self.assertEqual(embeddings.terms("select id, text from txtai where id = 1"), "")
+
     def testQuantize(self):
         """
         Test scalar quantization
