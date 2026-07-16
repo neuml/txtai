@@ -363,6 +363,21 @@ class TestEmbeddings(unittest.TestCase):
         uid = embeddings.search("feel good story", 1)[0][0]
         self.assertEqual(uid, 0)
 
+    def testLimitBindParameter(self):
+        """
+        Test a LIMIT bind parameter in a content SQL query
+        """
+
+        embeddings = Embeddings({"keyword": True, "content": True})
+        embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        # A ":n" LIMIT bind parameter must not crash on the candidate-count parse (str vs int)
+        results = embeddings.search("select id from txtai order by id limit :n", parameters={"n": 2})
+        self.assertEqual(len(results), 2)
+
+        # A plain integer limit still works
+        self.assertEqual(len(embeddings.search("select id from txtai order by id limit 3")), 3)
+
     def testQuantize(self):
         """
         Test scalar quantization
