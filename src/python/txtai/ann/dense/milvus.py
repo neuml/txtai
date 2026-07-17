@@ -10,15 +10,15 @@ import tempfile
 try:
     import milvus_lite
 
-    MILVUSLITE = True
+    MILVUS = True
 except ImportError:
-    MILVUSLITE = False
+    MILVUS = False
 
 from ...archive import ArchiveFactory
 from ..base import ANN
 
 
-class MilvusLite(ANN):
+class Milvus(ANN):
     """
     Builds an ANN index using the milvus-lite library.
     """
@@ -26,7 +26,7 @@ class MilvusLite(ANN):
     def __init__(self, config):
         super().__init__(config)
 
-        if not MILVUSLITE:
+        if not MILVUS:
             raise ImportError('milvus-lite is not available - install "ann" extra to enable')
 
         self.collection = None
@@ -73,7 +73,7 @@ class MilvusLite(ANN):
 
         # Add id offset and index build metadata
         self.config["offset"] = embeddings.shape[0]
-        self.metadata({"m": m, "milvuslite": milvus_lite.__version__})
+        self.metadata({"m": m, "milvus": milvus_lite.__version__})
 
     def append(self, embeddings):
         self.insert(embeddings, self.config["offset"])
