@@ -74,6 +74,13 @@ The [GGML](https://github.com/ggml-org/ggml) backend is a k-nearest neighbors ba
 
 [See this](https://github.com/ggml-org/ggml/blob/master/include/ggml.h#L379) for a list of quantization types.
 
+### milvus
+
+```yaml
+milvus:
+    m: number of HNSW links per element (int) - defaults to 50
+```
+
 ### numpy
 
 ```yaml
