@@ -113,6 +113,24 @@ class TestSparse(unittest.TestCase):
 
         ann.close()
 
+    def testIVFSparseSortOrder(self):
+        """
+        Test IVFSparse returns results sorted by score descending
+        """
+
+        # Generate test data
+        data = self.generate(50, 30522)
+
+        ann = SparseANNFactory.create({"backend": "ivfsparse"})
+        ann.index(data)
+
+        # Each result list must be ranked by score descending
+        for results in ann.search(data[:5], 10):
+            scores = [score for _, score in results]
+            self.assertEqual(scores, sorted(scores, reverse=True))
+
+        ann.close()
+
     @patch("sqlalchemy.orm.Query.limit")
     def testPGSparse(self, query):
         """
