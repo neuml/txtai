@@ -278,9 +278,7 @@ class TestWorkflow(unittest.TestCase):
         results = list(workflow([(1, "text", "tags")]))
         self.assertEqual(results[0], (0, "text", None))
 
-        # Test no merge with a single-action task - postprocess already flattens single-action
-        # results regardless of merge, so filteredrun's merge branch must match that (not
-        # iterate over already-flat per-element results as if they were per-action lists)
+        # Test no merge with a single-action task
         task = Task(lambda x: [pow(y, 2) for y in x], merge=None)
         workflow = Workflow([task])
         results = list(workflow([2, 4, 6]))
