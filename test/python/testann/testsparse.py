@@ -90,6 +90,24 @@ class TestSparse(unittest.TestCase):
         self.assertLess(len(ann.blocks), 15)
         ann.close()
 
+    def testIVFSparseSortOrder(self):
+        """
+        Test IVFSparse returns results sorted by score descending
+        """
+
+        # Generate test data
+        data = self.generate(50, 30522)
+
+        ann = SparseANNFactory.create({"backend": "ivfsparse"})
+        ann.index(data)
+
+        # Each result list must be ranked by score descending
+        for results in ann.search(data[:5], 10):
+            scores = [score for _, score in results]
+            self.assertEqual(scores, sorted(scores, reverse=True))
+
+        ann.close()
+
     def testIVFSparseTopnOverLimit(self):
         """
         Test IVFSparse topn when limit exceeds the number of indexed documents
@@ -110,24 +128,6 @@ class TestSparse(unittest.TestCase):
         self.assertEqual(len(results), data.shape[0])
         for result in results:
             self.assertGreater(len(result), 0)
-
-        ann.close()
-
-    def testIVFSparseSortOrder(self):
-        """
-        Test IVFSparse returns results sorted by score descending
-        """
-
-        # Generate test data
-        data = self.generate(50, 30522)
-
-        ann = SparseANNFactory.create({"backend": "ivfsparse"})
-        ann.index(data)
-
-        # Each result list must be ranked by score descending
-        for results in ann.search(data[:5], 10):
-            scores = [score for _, score in results]
-            self.assertEqual(scores, sorted(scores, reverse=True))
 
         ann.close()
 
