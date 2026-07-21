@@ -140,6 +140,16 @@ class TestTextractor(unittest.TestCase):
         self.assertMarkdown("<p>This is a <strong><em>test</em></strong></p>", "This is a **test**")
         self.assertMarkdown("<p>This is a <em><strong>test</strong></em></p>", "This is a *test*")
 
+    def testHTMLMetadataNoContent(self):
+        """
+        Test HTML with a meta description tag that has no content attribute
+        """
+
+        # A <meta name="description"> without a content attribute must not crash
+        textractor = Textractor()
+        html = "<html><head><meta name='description'></head><body><p>This is a test</p></body></html>"
+        self.assertEqual(textractor(html), "This is a test")
+
     def testParagraphs(self):
         """
         Test extraction to paragraphs
