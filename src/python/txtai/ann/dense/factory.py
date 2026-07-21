@@ -9,6 +9,7 @@ from .annoy import Annoy
 from .faiss import Faiss, FAISS
 from .ggml import GGML
 from .hnsw import HNSW
+from .milvus import Milvus
 from .numpy import NumPy
 from .pgvector import PGVector
 from .sqlite import SQLite
@@ -45,6 +46,8 @@ class ANNFactory:
             ann = Faiss(config)
         elif backend == "hnsw":
             ann = HNSW(config)
+        elif backend == "milvus":
+            ann = Milvus(config)
         elif backend == "ggml":
             ann = GGML(config)
         elif backend == "numpy":
