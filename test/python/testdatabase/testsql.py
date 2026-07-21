@@ -282,11 +282,6 @@ class TestSQL(unittest.TestCase):
         with self.assertRaises(SQLError):
             self.db.search("select * from txtai where similar('abc'")
 
-    def testMalformedExpression(self):
-        """
-        Test malformed select expressions raise a SQLError instead of an internal exception
-        """
-
         # Empty select components (stray commas) raised IndexError
         with self.assertRaises(SQLError):
             self.db.search("select a,,b from txtai")

@@ -100,6 +100,7 @@ class Zvec(ANN):
     def save(self, path):
         self.backend.flush()
         self.backend = None
+
         archive = ArchiveFactory.create(self.directory)
         archive.save(path, "tar")
         self.backend = zvec.open(self.path)

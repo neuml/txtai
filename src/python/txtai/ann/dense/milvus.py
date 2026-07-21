@@ -98,6 +98,7 @@ class Milvus(ANN):
         self.backend.close()
         self.collection = None
         self.backend = None
+
         archive = ArchiveFactory.create(self.directory)
         archive.save(path, "tar")
         self.open()
@@ -106,6 +107,7 @@ class Milvus(ANN):
         # Release milvus-lite collection handles and the directory lock
         if self.backend:
             self.backend.close()
+
         self.collection = None
         super().close()
 
@@ -127,12 +129,12 @@ class Milvus(ANN):
         if embeddings.shape[0]:
             for start in range(0, embeddings.shape[0], 1024):
                 batch = embeddings[start : start + 1024]
-                self.collection.insert(
-                    [{"id": offset + start + uid, "embedding": embedding.tolist()} for uid, embedding in enumerate(batch)]
-                )
+                self.collection.insert([{"id": offset + start + uid, "embedding": embedding.tolist()} for uid, embedding in enumerate(batch)])
 
     def open(self):
-        """Opens the milvus-lite database and collection."""
+        """
+        Opens the milvus-lite database and collection
+        """
 
         self.backend = milvus_lite.MilvusLite(self.path)
         self.collection = self.backend.get_collection("txtai")
