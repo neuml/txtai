@@ -273,6 +273,10 @@ class IVFSparse(ANN):
         indices = np.argpartition(-scores, limit if limit < scores.shape[1] else scores.shape[1] - 1)[:, :limit]
         scores = np.take_along_axis(scores, indices, axis=1)
 
+        # argpartition doesn't order within the top n - sort each row by score descending
+        order = np.argsort(-scores, axis=1)
+        indices, scores = np.take_along_axis(indices, order, axis=1), np.take_along_axis(scores, order, axis=1)
+
         return indices, scores
 
     def scan(self, query, limit, blockids):
