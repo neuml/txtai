@@ -141,11 +141,11 @@ class Segmentation(Pipeline):
         elif self.sentences:
             content = [self.clean(x) for x in sent_tokenize(text)]
         elif self.lines:
-            content = [self.clean(x) for x in re.split(r"\n{1,}", text)]
+            content = [self.clean(x) for x in re.split(r"(?:\r?\n)+", text)]
         elif self.paragraphs:
-            content = [self.clean(x) for x in re.split(r"\n{2,}", text)]
+            content = [self.clean(x) for x in re.split(r"(?:\r?\n){2,}", text)]
         elif self.sections:
-            split = r"\f" if "\f" in text else r"\n{3,}"
+            split = r"\f" if "\f" in text else r"(?:\r?\n){3,}"
             content = [self.clean(x) for x in re.split(split, text)]
         else:
             content = self.clean(text)
