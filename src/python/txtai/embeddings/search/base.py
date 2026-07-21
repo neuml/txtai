@@ -287,12 +287,12 @@ class Search:
         # Override limit with largest limit from database queries
         qlimit = 0
         for query in queries:
-            # Parse out qlimit
+            # Parse out qlimit; a non-numeric limit (e.g. a ":n" bind parameter) isn't a
+            # candidate-count override and must not be compared as a str against an int.
             l = query.get("limit")
-            if l and l.isdigit():
-                l = int(l)
+            l = int(l) if l and l.isdigit() else 0
 
-            qlimit = l if l and l > qlimit else qlimit
+            qlimit = l if l > qlimit else qlimit
 
         return qlimit
 
