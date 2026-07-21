@@ -196,6 +196,27 @@ class TestDense(unittest.TestCase):
         # Test with custom settings
         self.runTests("hnsw", {"hnsw": {"efconstruction": 100, "m": 4, "randomseed": 0, "efsearch": 5}})
 
+    @unittest.skipIf(os.name == "nt", "Skip Milvus on Windows")
+    def testMilvus(self):
+        """
+        Test milvus-lite backend
+        """
+
+        self.runTests("milvus")
+
+    @unittest.skipIf(os.name == "nt", "Skip Milvus on Windows")
+    def testMilvusCustom(self):
+        """
+        Test milvus-lite backend with custom settings
+        """
+
+        self.runTests("milvus", {"milvus": {"m": 16}})
+
+        # Test invalid file path handled
+        with self.assertRaises(FileNotFoundError):
+            ann = ANNFactory.create({"backend": "milvus"})
+            ann.load("non-exist-path")
+
     def testNotImplemented(self):
         """
         Test exceptions for non-implemented methods
@@ -400,25 +421,6 @@ class TestDense(unittest.TestCase):
         """
 
         self.runTests("turbovec")
-
-    def testMilvus(self):
-        """
-        Test milvus-lite backend
-        """
-
-        self.runTests("milvus")
-
-    def testMilvusCustom(self):
-        """
-        Test milvus-lite backend with custom settings
-        """
-
-        self.runTests("milvus", {"milvus": {"m": 16}})
-
-        # Test invalid file path handled
-        with self.assertRaises(FileNotFoundError):
-            ann = ANNFactory.create({"backend": "milvus"})
-            ann.load("non-exist-path")
 
     def testZvec(self):
         """
