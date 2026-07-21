@@ -63,6 +63,13 @@ class TestKeyword(unittest.TestCase):
         scoring.index([(0, {"other": "value"}, None)])
         self.assertEqual(scoring.count(), 0)
         self.assertEqual(scoring.search("bear", 1), [])
+    def testCustomInvalid(self):
+        """
+        Test invalid custom method
+        """
+
+        with self.assertRaises(ImportError):
+            ScoringFactory.create("pprint.pprint")
 
     def testCustomNotFound(self):
         """

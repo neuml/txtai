@@ -90,7 +90,7 @@ class TemplateTask(Task):
         if self.rules and isinstance(element, dict):
             # Check if any rules are matched
             for key, value in self.rules.items():
-                if element[key] == value:
+                if key in element and element[key] == value:
                     return element[key]
 
         return None

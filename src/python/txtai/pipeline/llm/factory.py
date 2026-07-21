@@ -4,6 +4,7 @@ Factory module
 
 from ...util import Resolver
 
+from .generation import Generation
 from .huggingface import HFGeneration
 from .litellm import LiteLLM
 from .litert import LiteRT
@@ -95,6 +96,6 @@ class GenerationFactory:
         """
 
         try:
-            return Resolver()(method)(path, **kwargs)
+            return Resolver()(method, Generation)(path, **kwargs)
         except Exception as e:
             raise ImportError(f"Unable to resolve generation framework: '{method}'") from e

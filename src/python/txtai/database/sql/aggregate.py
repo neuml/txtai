@@ -32,8 +32,9 @@ class Aggregate(SQL):
         # Parse query
         query = super().__call__(query)
 
-        # Check if this is a SQL query
-        if "select" in query:
+        # Check if this is a SQL query with results. A sharded query that matches
+        # nothing across all shards yields empty results, so guard before indexing.
+        if "select" in query and results:
             # Get list of unique and aggregate columns. If no aggregate columns or order by found, skip
             columns = list(results[0].keys())
             aggcolumns = self.aggcolumns(columns)

@@ -7,6 +7,18 @@ import unittest
 from txtai.vectors import SparseVectors, SparseVectorsFactory
 
 
+class InvalidVectors:
+    """
+    Invalid vectors class
+    """
+
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __call__(self, *args, **kwargs):
+        return None
+
+
 class TestSparseVectors(unittest.TestCase):
     """
     Sparse Vectors tests.
@@ -28,6 +40,14 @@ class TestSparseVectors(unittest.TestCase):
 
         vectors = SparseVectors(None, None, None)
         self.assertFalse(vectors.defaultnormalize())
+
+    def testInvalid(self):
+        """
+        Test invalid vector backend
+        """
+
+        with self.assertRaises(ImportError):
+            SparseVectorsFactory.create({"method": "testvectors.testsparse.testvectors.InvalidVectors"})
 
     def testNotSupported(self):
         """

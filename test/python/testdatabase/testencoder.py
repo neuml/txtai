@@ -86,6 +86,22 @@ class TestEncoder(unittest.TestCase):
         self.assertTrue(result["id"].endswith("stars.jpg"))
         self.assertTrue(isinstance(result["object"], Image.Image))
 
+    def testInvalid(self):
+        """
+        Test an invalid encoder
+        """
+
+        try:
+            with self.assertRaises(ImportError):
+                # Set invalid encoder
+                self.embeddings.config["objects"] = "pprint.pprint"
+                data = [(0, {"object": [1, 2, 3, 4, 5], "text": "default test"}, None)]
+
+                # Create an index
+                self.embeddings.index(data)
+        finally:
+            self.embeddings.config["objects"] = "image"
+
     @patch.dict(os.environ, {"ALLOW_PICKLE": "True"})
     def testPickle(self):
         """

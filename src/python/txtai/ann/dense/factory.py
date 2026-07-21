@@ -4,6 +4,7 @@ Factory module
 
 from ...util import Resolver
 
+from ..base import ANN
 from .annoy import Annoy
 from .faiss import Faiss, FAISS
 from .ggml import GGML
@@ -80,6 +81,6 @@ class ANNFactory:
         """
 
         try:
-            return Resolver()(backend)(config)
+            return Resolver()(backend, ANN)(config)
         except Exception as e:
             raise ImportError(f"Unable to resolve ann backend: '{backend}'") from e

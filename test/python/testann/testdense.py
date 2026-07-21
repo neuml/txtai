@@ -47,6 +47,14 @@ class TestDense(unittest.TestCase):
 
         self.runTests("txtai.ann.Faiss")
 
+    def testCustomBackendInvalid(self):
+        """
+        Test resolving an invalid backend
+        """
+
+        with self.assertRaises(ImportError):
+            ANNFactory.create({"backend": "pprint.pprint"})
+
     def testCustomBackendNotFound(self):
         """
         Test resolving an unresolvable backend

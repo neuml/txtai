@@ -6,6 +6,7 @@ from urllib.parse import urlparse
 
 from ..util import Resolver
 
+from .base import Database
 from .client import Client
 from .duckdb import DuckDB
 from .sqlite import SQLite
@@ -72,6 +73,6 @@ class DatabaseFactory:
         """
 
         try:
-            return Resolver()(backend)(config)
+            return Resolver()(backend, Database)(config)
         except Exception as e:
             raise ImportError(f"Unable to resolve database backend: '{backend}'") from e

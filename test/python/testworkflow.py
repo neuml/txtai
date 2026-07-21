@@ -278,6 +278,12 @@ class TestWorkflow(unittest.TestCase):
         results = list(workflow([(1, "text", "tags")]))
         self.assertEqual(results[0], (0, "text", None))
 
+        # Test no merge with a single-action task
+        task = Task(lambda x: [pow(y, 2) for y in x], merge=None)
+        workflow = Workflow([task])
+        results = list(workflow([2, 4, 6]))
+        self.assertEqual(results, [4, 16, 36])
+
     def testMergeUnbalancedWorkflow(self):
         """
         Test merge tasks with unbalanced outputs (i.e. one action produce more output than another for same input).
@@ -445,6 +451,11 @@ class TestWorkflow(unittest.TestCase):
         self.assertEqual(results[0], "Test skip")
 
         # Test rule not applied
+        results = list(workflow([{"text": "prompt"}]))
+        self.assertEqual(results[0], "This is a prompt")
+
+        # Test rule key missing from element
+        workflow = Workflow([TemplateTask(template="This is a {text}", rules={"category": "skip"})])
         results = list(workflow([{"text": "prompt"}]))
         self.assertEqual(results[0], "This is a prompt")
 

@@ -30,7 +30,7 @@ class EncoderFactory:
             # Get parent package
             encoder = ".".join(__name__.split(".")[:-1]) + "." + encoder.capitalize() + "Encoder"
 
-        return Resolver()(encoder)
+        return Resolver()(encoder, Encoder)
 
     @staticmethod
     def create(encoder):

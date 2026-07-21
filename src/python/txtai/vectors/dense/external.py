@@ -2,6 +2,7 @@
 External module
 """
 
+import os
 import types
 
 from ...util import Library, Resolver
@@ -47,8 +48,18 @@ class External(Vectors):
         """
 
         if transform:
+            # Check if transform function resolution is allowed
+            if isinstance(transform, str) and os.environ.get("ALLOW_RESOLVE_TRANSFORM", "False") not in ("True", "1"):
+                raise ImportError(
+                    (
+                        "External transform function resolution is disabled. "
+                        "Set the env variable `ALLOW_RESOLVE_TRANSFORM=True` to enable transform function resolution. "
+                        "This should only be done for trusted and/or reviewed code. "
+                    )
+                )
+
             # Resolve transform instance, if necessary
-            transform = Resolver()(transform) if transform and isinstance(transform, str) else transform
+            transform = Resolver()(transform) if isinstance(transform, str) else transform
 
             # Get function or callable instance
             transform = transform if isinstance(transform, types.FunctionType) else transform()

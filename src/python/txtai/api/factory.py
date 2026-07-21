@@ -4,6 +4,8 @@ API factory module
 
 from ..util import Resolver
 
+from .base import API
+
 
 class APIFactory:
     """
@@ -11,18 +13,19 @@ class APIFactory:
     """
 
     @staticmethod
-    def get(api):
+    def get(path, base=None):
         """
-        Gets a new instance of api class.
+        Gets a new instance of a class.
 
         Args:
-            api: API instance class
+            path: class path
+            base: optional required base class
 
         Returns:
-            API
+            Class
         """
 
-        return Resolver()(api)
+        return Resolver()(path, base)
 
     @staticmethod
     def create(config, api):
@@ -37,4 +40,4 @@ class APIFactory:
             API instance
         """
 
-        return APIFactory.get(api)(config)
+        return APIFactory.get(api, API)(config)
