@@ -154,6 +154,11 @@ class Console(Cmd):
         else:
             results = self.app.search(query, limit=self.vlimit)
 
+        # No matches, nothing to render
+        if not results:
+            self.console.print("No results")
+            return
+
         columns, table = {}, Table(box=box.SQUARE, style="#03a9f4")
 
         # Build column list

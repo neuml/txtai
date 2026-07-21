@@ -78,6 +78,18 @@ class TestConsole(unittest.TestCase):
 
         self.assertIn("tasks", self.command(".config"))
 
+    def testNoResults(self):
+        """
+        Test a query that matches nothing renders a message instead of a traceback
+        """
+
+        console = Console()
+        console.app = self.embeddings
+
+        output = self.command("select id, text from txtai where id = 'missing'", console)
+        self.assertNotIn("Traceback", output)
+        self.assertIn("No results", output)
+
     def testEmbeddings(self):
         """
         Test embeddings index
