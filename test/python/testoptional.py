@@ -44,6 +44,7 @@ class TestOptional(unittest.TestCase):
             "liteparse",
             "litert_lm",
             "llama_cpp",
+            "milvus_lite",
             "model2vec",
             "msgpack",
             "networkx",
@@ -131,6 +132,9 @@ class TestOptional(unittest.TestCase):
 
         with self.assertRaises(ImportError):
             ANNFactory.create({"backend": "hnsw"})
+
+        with self.assertRaises(ImportError):
+            ANNFactory.create({"backend": "milvus"})
 
         with self.assertRaises(ImportError):
             ANNFactory.create({"backend": "pgvector"})
