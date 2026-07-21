@@ -25,6 +25,22 @@ class TestSQL(unittest.TestCase):
 
         cls.sql = SQL(cls.db)
 
+    def testAggregateEmptyResults(self):
+        """
+        Test Aggregate returns empty results for a SQL query with no results
+        """
+
+        aggregate = Aggregate()
+
+        # SQL query, no results across shards - must not raise IndexError
+        self.assertEqual(aggregate("select id, text, score from txtai where similar('x')", []), [])
+
+        # Non-SQL query with no results stays consistent
+        self.assertEqual(aggregate("plain text query", []), [])
+
+        # SQL query with results still aggregates as before
+        self.assertEqual(aggregate("select count(*) from txtai", [{"count(*)": 1}, {"count(*)": 2}]), [{"count(*)": 3}])
+
     def testAlias(self):
         """
         Test alias clauses
@@ -312,21 +328,6 @@ class TestSQL(unittest.TestCase):
         self.assertSql("where", prefix + "where (id = 1 AND id = 2) OR indexid = 3", "(s.id = 1 AND s.id = 2) OR s.indexid = 3")
         self.assertSql("where", prefix + "where f(id) = b(id)", "f(s.id) = b(s.id)")
         self.assertSql("where", prefix + "WHERE f(id)", "f(s.id)")
-
-    def testAggregateEmptyResults(self):
-        """
-        Test Aggregate returns empty results for a SQL query that matched nothing
-        (e.g. a sharded query with zero hits across all shards) instead of crashing.
-        """
-
-        aggregate = Aggregate()
-
-        # SQL query, no results across shards - must not raise IndexError
-        self.assertEqual(aggregate("select id, text, score from txtai where similar('x')", []), [])
-        # Non-SQL query with no results stays consistent
-        self.assertEqual(aggregate("plain text query", []), [])
-        # SQL query with results still aggregates as before
-        self.assertEqual(aggregate("select count(*) from txtai", [{"count(*)": 1}, {"count(*)": 2}]), [{"count(*)": 3}])
 
     def assertSql(self, clause, query, expected):
         """

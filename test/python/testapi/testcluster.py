@@ -14,7 +14,8 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-from txtai.api import application
+from txtai.api import application, Cluster
+
 
 # Configuration for an embeddings cluster
 CLUSTER = """
@@ -147,21 +148,6 @@ class TestCluster(unittest.TestCase):
         cls.httpd1.shutdown()
         cls.httpd2.shutdown()
 
-    def testShard(self):
-        """
-        Test sharding handles all id shapes without crashing
-        """
-
-        from txtai.api.cluster import Cluster
-
-        cluster = Cluster({"shards": [{"base": "h1"}, {"base": "h2"}, {"base": "h3"}]})
-
-        # str id, tuple document, empty-string id, int id and a missing id must all be placed.
-        documents = [{"id": "doc1"}, (1, "text", None), {"id": ""}, {"id": 0}, {"other": "x"}]
-        shards = cluster.shard(documents)
-
-        self.assertEqual(sum(len(shard) for shard in shards), len(documents))
-
     def testCount(self):
         """
         Test cluster count
@@ -234,6 +220,19 @@ class TestCluster(unittest.TestCase):
 
         uids = [result[0]["id"] for result in results]
         self.assertEqual(uids, [4, 1])
+
+    def testShard(self):
+        """
+        Test sharding handles all id shapes without crashing
+        """
+
+        cluster = Cluster({"shards": [{"base": "h1"}, {"base": "h2"}, {"base": "h3"}]})
+
+        # str id, tuple document, empty-string id, int id and a missing id must all be placed.
+        documents = [{"id": "doc1"}, (1, "text", None), {"id": ""}, {"id": 0}, {"other": "x"}]
+        shards = cluster.shard(documents)
+
+        self.assertEqual(sum(len(shard) for shard in shards), len(documents))
 
     def testSQL(self):
         """
