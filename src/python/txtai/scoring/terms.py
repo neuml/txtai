@@ -181,6 +181,10 @@ class Terms:
             list of (id, score)
         """
 
+        # Nothing indexed - term database was never initialized (self.cursor is None)
+        if not self.ids:
+            return []
+
         # Initialize scores array
         scores = np.zeros(len(self.ids), dtype=np.float32)
 
