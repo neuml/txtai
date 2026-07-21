@@ -2,6 +2,7 @@
 External module
 """
 
+import random
 import types
 
 from ...util import Library, Resolver
@@ -47,10 +48,18 @@ class External(Vectors):
         """
 
         if transform:
+            # Save transform name
+            name = transform
+
             # Resolve transform instance, if necessary
             transform = Resolver()(transform) if transform and isinstance(transform, str) else transform
 
             # Get function or callable instance
             transform = transform if isinstance(transform, types.FunctionType) else transform()
+
+            # Validate transform function - must return a np.array or list of float arrays
+            result = transform([str(random.randint(1_000, 100_000))])
+            if len(result) == 0 or (not isinstance(result[0], np.ndarray) and not isinstance(result[0][0], float)):
+                raise ImportError(f"Invalid transform function {name}")
 
         return transform

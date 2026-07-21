@@ -101,6 +101,15 @@ class TestGraph(unittest.TestCase):
         graph.initialize()
         self.assertIsNotNone(graph)
 
+    def testCustomBackendInvalid(self):
+        """
+        Test resolving an invalid backend
+        """
+
+        with self.assertRaises(ImportError):
+            graph = GraphFactory.create({"backend": "pprint.pprint"})
+            graph.initialize()
+
     def testCustomBackendNotFound(self):
         """
         Test resolving an unresolvable backend

@@ -49,6 +49,14 @@ class TestLLM(unittest.TestCase):
         model = LLM("hf-internal-testing/tiny-random-gpt2", task="language-generation", method="txtai.pipeline.HFGeneration")
         self.assertIsNotNone(model("Hello, how are"))
 
+    def testCustomInvalid(self):
+        """
+        Test resolving an invalid LLM framework
+        """
+
+        with self.assertRaises(ImportError):
+            LLM("hf-internal-testing/tiny-random-gpt2", method="pprint.pprint")
+
     def testCustomNotFound(self):
         """
         Test resolving an unresolvable LLM framework

@@ -26,6 +26,14 @@ class TestSparse(unittest.TestCase):
 
         self.assertIsNotNone(SparseANNFactory.create({"backend": "txtai.ann.IVFSparse"}))
 
+    def testCustomBackendInvalid(self):
+        """
+        Test resolving an invalid backend
+        """
+
+        with self.assertRaises(ImportError):
+            SparseANNFactory.create({"backend": "pprint.pprint"})
+
     def testCustomBackendNotFound(self):
         """
         Test resolving an unresolvable backend

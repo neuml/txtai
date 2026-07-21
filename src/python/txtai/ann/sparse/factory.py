@@ -4,6 +4,7 @@ Factory module
 
 from ...util import Resolver
 
+from ..base import ANN
 from .ivfsparse import IVFSparse
 from .pgsparse import PGSparse
 
@@ -56,6 +57,6 @@ class SparseANNFactory:
         """
 
         try:
-            return Resolver()(backend)(config)
+            return Resolver()(backend, ANN)(config)
         except Exception as e:
             raise ImportError(f"Unable to resolve sparse ann backend: '{backend}'") from e

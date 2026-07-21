@@ -49,6 +49,14 @@ class TestKeyword(unittest.TestCase):
 
         self.runTests("txtai.scoring.BM25")
 
+    def testCustomInvalid(self):
+        """
+        Test invalid custom method
+        """
+
+        with self.assertRaises(ImportError):
+            ScoringFactory.create("pprint.pprint")
+
     def testCustomNotFound(self):
         """
         Test unresolvable custom method

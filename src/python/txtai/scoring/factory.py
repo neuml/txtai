@@ -4,6 +4,7 @@ Factory module
 
 from ..util import Resolver
 
+from .base import Scoring
 from .bm25 import BM25
 from .pgtext import PGText
 from .sif import SIF
@@ -90,6 +91,6 @@ class ScoringFactory:
         """
 
         try:
-            return Resolver()(backend)(config)
+            return Resolver()(backend, Scoring)(config)
         except Exception as e:
             raise ImportError(f"Unable to resolve scoring backend: '{backend}'") from e

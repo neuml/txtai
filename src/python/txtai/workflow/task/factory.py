@@ -6,6 +6,8 @@ import functools
 
 from ...util import Resolver
 
+from .base import Task
+
 
 class TaskFactory:
     """
@@ -30,7 +32,7 @@ class TaskFactory:
             task = ".".join(__name__.split(".")[:-1]) + "." + task.capitalize() + "Task"
 
         # Attempt to load custom task
-        return Resolver()(task)
+        return Resolver()(task, Task)
 
     @staticmethod
     def create(config, task):

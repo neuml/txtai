@@ -4,6 +4,7 @@ Factory module
 
 from ...util import Resolver
 
+from ..base import Vectors
 from .external import External
 from .huggingface import HFVectors
 from .litellm import LiteLLM
@@ -123,6 +124,6 @@ class VectorsFactory:
         """
 
         try:
-            return Resolver()(backend)(config, scoring, models)
+            return Resolver()(backend, Vectors)(config, scoring, models)
         except Exception as e:
             raise ImportError(f"Unable to resolve vectors backend: '{backend}'") from e

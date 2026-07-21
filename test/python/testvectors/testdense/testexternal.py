@@ -10,6 +10,15 @@ import numpy as np
 from txtai.vectors import External, VectorsFactory
 
 
+class Transform:
+    """
+    Transform function
+    """
+
+    def __call__(self, data):
+        return ["invalid"]
+
+
 class TestExternal(unittest.TestCase):
     """
     External vectors tests
@@ -45,10 +54,18 @@ class TestExternal(unittest.TestCase):
         with open(stream, "rb") as queue:
             self.assertEqual(np.load(queue).shape, (500, 768))
 
+    def testInvalid(self):
+        """
+        Test invalid transform function
+        """
+
+        with self.assertRaises(ImportError):
+            VectorsFactory.create({"transform": "testvectors.testdense.testexternal.Transform"}, None)
+
     def testMethod(self):
         """
         Test method is derived when transform function passed
         """
 
-        model = VectorsFactory.create({"transform": lambda x: x}, None)
+        model = VectorsFactory.create({"transform": lambda _: [[0.0, 1.0]]}, None)
         self.assertTrue(isinstance(model, External))

@@ -4,6 +4,7 @@ Factory module
 
 from ..util import Resolver
 
+from .base import Cloud
 from .hub import HuggingFaceHub
 from .storage import ObjectStorage, LIBCLOUD
 
@@ -58,7 +59,7 @@ class CloudFactory:
         """
 
         try:
-            return Resolver()(backend)(config)
+            return Resolver()(backend, Cloud)(config)
 
         except Exception as e:
             # Failure message
