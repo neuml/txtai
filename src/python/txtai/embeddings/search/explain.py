@@ -2,11 +2,6 @@
 Explain module
 """
 
-# Core library imports
-from ...util import Library
-
-np = Library().numpy()
-
 
 class Explain:
     """
@@ -111,7 +106,7 @@ class Explain:
                 permutations.append([" ".join(data)])
 
             # Calculate similarity for each input text permutation and get score delta as importance
-            scores = [(i, result["score"] - np.abs(s)) for i, s in self.embeddings.similarity(query, permutations)]
+            scores = [(i, result["score"] - abs(s)) for i, s in self.embeddings.similarity(query, permutations)]
 
             # Append tokens to result
             result["tokens"] = [(tokens[i], score) for i, score in sorted(scores, key=lambda x: x[0])]
