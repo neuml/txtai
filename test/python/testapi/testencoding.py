@@ -121,6 +121,34 @@ class TestEncoding(unittest.TestCase):
         # Test reading image
         self.assertIsInstance(PIL.Image.open(BytesIO(results[0]["object"])), PIL.Image.Image)
 
+    def testMessagePackStreaming(self):
+        """
+        Test a streaming response is passed through unchanged when msgpack is requested
+        """
+
+        from fastapi import FastAPI
+        from fastapi.responses import StreamingResponse
+
+        from txtai.api.route import EncodingAPIRoute
+
+        app = FastAPI()
+        app.router.route_class = EncodingAPIRoute
+
+        @app.get("/stream")
+        def stream():
+            def generate():
+                yield b"hello"
+                yield b"world"
+
+            return StreamingResponse(generate())
+
+        client = TestClient(app)
+
+        # A msgpack Accept header on a streaming endpoint must not try to re-wrap it (no .body)
+        response = client.get("stream", headers={"Accept": "application/msgpack"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content, b"helloworld")
+
     def testObjects(self):
         """
         Test object encoding

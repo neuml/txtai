@@ -4,6 +4,7 @@ Route module
 
 import json
 
+from fastapi.responses import StreamingResponse
 from fastapi.routing import APIRoute
 
 from .responses import ResponseFactory, MessagePackResponse
@@ -40,7 +41,7 @@ class EncodingAPIRoute(APIRoute):
                     status_code=response.status_code,
                     headers={k: v for k, v in response.headers.items() if k.lower() not in ["content-length", "content-type"]},
                 )
-                if not isinstance(response, target) and target == MessagePackResponse
+                if not isinstance(response, (target, StreamingResponse)) and target == MessagePackResponse
                 else response
             )
 
