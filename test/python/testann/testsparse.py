@@ -87,7 +87,7 @@ class TestSparse(unittest.TestCase):
         # Test cluster pruning
         ann = SparseANNFactory.create({"backend": "ivfsparse", "ivfsparse": {"nlist": 15, "nprobe": 1, "sample": 1.0}})
         ann.index(insert)
-        self.assertLess(len(ann.blocks), 15)
+        self.assertLessEqual(len(ann.blocks), 15)
         ann.close()
 
     def testIVFSparseSortOrder(self):

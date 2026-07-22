@@ -68,7 +68,9 @@ Embeddings are created via an external model or API. Requires setting the [trans
 transform: function
 ```
 
-When method is `external`, this function transforms input content into embeddings. The input to this function is a list of data. This method must return either a numpy array or list of numpy arrays.
+When method is `external`, this function transforms input content into embeddings. The input to this function is a list of data. This method must return either a numpy array, list of numpy arrays or list of float arrays.
+
+Note that this method is deprecated and will raise an error with the default settings. Adding a custom `Vectors` implementation is a cleaner approach. The `ALLOW_RESOLVE_TRANSFORM` environment variable must be set to enable. Only enable for trusted and/or reviewed code.
 
 ## gpu
 ```yaml
