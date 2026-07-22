@@ -488,7 +488,8 @@ class Embeddings:
             query reduced down to keyword terms
         """
 
-        return self.batchterms([query])[0]
+        results = self.batchterms([query])
+        return results[0] if results else None
 
     def batchterms(self, queries):
         """
