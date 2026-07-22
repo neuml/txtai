@@ -4,7 +4,7 @@ Approximate Nearest Neighbor (ANN) index configuration for storing vector embedd
 
 ## backend
 ```yaml
-backend: faiss|hnsw|annoy|ggml|numpy|torch|turbovec|zvec|pgvector|sqlite|custom
+backend: faiss|hnsw|annoy|ggml|milvus|numpy|torch|turbovec|zvec|pgvector|sqlite|custom
 ```
 
 Sets the ANN backend. Defaults to `faiss`. Additional backends are available via the [ann](../../../install/#ann) extras package. Set custom backends via setting this parameter to the fully resolvable class string.
@@ -73,6 +73,13 @@ ggml:
 The [GGML](https://github.com/ggml-org/ggml) backend is a k-nearest neighbors backend. It stores tensors using GGML and [GGUF](https://huggingface.co/docs/hub/en/gguf). It supports GPU-enabled operations and supports quantization. GGML is the framework used by [llama.cpp](https://github.com/ggml-org/llama.cpp).
 
 [See this](https://github.com/ggml-org/ggml/blob/master/include/ggml.h#L379) for a list of quantization types.
+
+### milvus
+
+```yaml
+milvus:
+    m: number of HNSW links per element (int) - defaults to 50
+```
 
 ### numpy
 

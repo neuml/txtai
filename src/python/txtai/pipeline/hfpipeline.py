@@ -6,11 +6,12 @@ import inspect
 
 
 from ..models import Models
-from ..util import Library, Resolver
+from ..util import Library
 
 from .tensors import Tensors
 
 # Core library imports
+torch = Library().torch()
 transformers = Library().transformers()
 
 
@@ -82,7 +83,7 @@ class HFPipeline(Tensors):
         # Resolve torch dtype, if necessary
         dtype = kwargs.get("dtype")
         if dtype and isinstance(dtype, str) and dtype != "auto":
-            kwargs["dtype"] = Resolver()(dtype)
+            kwargs["dtype"] = getattr(torch, dtype.split(".")[-1])
 
         # Split into modelargs and kwargs
         return ({arg: value for arg, value in kwargs.items() if arg not in args}, {arg: value for arg, value in kwargs.items() if arg in args})

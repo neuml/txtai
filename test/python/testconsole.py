@@ -122,6 +122,18 @@ class TestConsole(unittest.TestCase):
         self.assertIn("wins", self.command("feel good story"))
         self.assertIn("Taiwan", self.command("asia"))
 
+    def testNoResults(self):
+        """
+        Test a query that matches nothing renders a message instead of a traceback
+        """
+
+        console = Console()
+        console.app = self.embeddings
+
+        output = self.command("select id, text from txtai where id = 'missing'", console)
+        self.assertNotIn("Traceback", output)
+        self.assertIn("No results", output)
+
     def testPreloop(self):
         """
         Test preloop

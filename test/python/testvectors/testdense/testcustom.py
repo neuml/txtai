@@ -10,6 +10,18 @@ import numpy as np
 from txtai.vectors import VectorsFactory
 
 
+class InvalidVectors:
+    """
+    Invalid vectors class
+    """
+
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __call__(self, *args, **kwargs):
+        return None
+
+
 class TestCustom(unittest.TestCase):
     """
     Custom vectors tests
@@ -41,6 +53,14 @@ class TestCustom(unittest.TestCase):
         # Test shape of serialized embeddings
         with open(stream, "rb") as queue:
             self.assertEqual(np.load(queue).shape, (500, 768))
+
+    def testInvalid(self):
+        """
+        Test invalid vector backend
+        """
+
+        with self.assertRaises(ImportError):
+            VectorsFactory.create({"method": "testvectors.testdense.testcustom.InvalidVectors"})
 
     def testNotFound(self):
         """

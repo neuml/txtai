@@ -4,6 +4,7 @@ Factory module
 
 from ...util import Resolver
 
+from ..base import Vectors
 from .sbert import SparseSTVectors
 
 
@@ -50,6 +51,6 @@ class SparseVectorsFactory:
         """
 
         try:
-            return Resolver()(backend)(config, None, models)
+            return Resolver()(backend, Vectors)(config, None, models)
         except Exception as e:
             raise ImportError(f"Unable to resolve sparse vectors backend: '{backend}'") from e

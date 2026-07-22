@@ -12,6 +12,7 @@ from httpx import AsyncClient, ASGITransport
 
 from .authorization import Authorization
 from .base import API
+from .extension import Extension
 from .factory import APIFactory
 
 from ..app import Application
@@ -111,7 +112,7 @@ def lifespan(application):
     if extensions:
         for extension in extensions.split(","):
             # Create instance and execute extension
-            extension = APIFactory.get(extension.strip())()
+            extension = APIFactory.get(extension.strip(), Extension)()
             extension(application)
 
     # Add Model Context Protocol (MCP) service, if applicable

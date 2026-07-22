@@ -67,10 +67,14 @@ class TestCloud(unittest.TestCase):
         Test invalid provider identifier
         """
 
-        # Test invalid external provider
+        # Test invalid external providers
         with self.assertRaises(ImportError):
             embeddings = Embeddings()
             embeddings.load(provider="ProviderNoExist", container="Invalid")
+
+        with self.assertRaises(ImportError):
+            embeddings = Embeddings()
+            embeddings.load(provider="pprint.pprint", container="Invalid")
 
     def testNotImplemented(self):
         """

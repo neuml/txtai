@@ -366,6 +366,9 @@ class TestEmbeddings(unittest.TestCase):
     def testTerms(self):
         """
         Test extracting keyword terms from queries
+    def testLimitBindParameter(self):
+        """
+        Test a LIMIT bind parameter in a content SQL query
         """
 
         embeddings = Embeddings({"keyword": True, "content": True})
@@ -379,6 +382,12 @@ class TestEmbeddings(unittest.TestCase):
 
         # SQL query without a similar() clause has no keyword terms (previously raised KeyError)
         self.assertEqual(embeddings.terms("select id, text from txtai where id = 1"), "")
+        # A ":n" LIMIT bind parameter must not crash on the candidate-count parse (str vs int)
+        results = embeddings.search("select id from txtai order by id limit :n", parameters={"n": 2})
+        self.assertEqual(len(results), 2)
+
+        # A plain integer limit still works
+        self.assertEqual(len(embeddings.search("select id from txtai order by id limit 3")), 3)
 
     def testQuantize(self):
         """

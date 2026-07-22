@@ -5,9 +5,20 @@ External module tests
 import os
 import unittest
 
+from unittest.mock import patch
+
 import numpy as np
 
 from txtai.vectors import External, VectorsFactory
+
+
+class Transform:
+    """
+    Transform function
+    """
+
+    def __call__(self, data):
+        return [[0.0, 1.0]]
 
 
 class TestExternal(unittest.TestCase):
@@ -22,6 +33,14 @@ class TestExternal(unittest.TestCase):
         """
 
         cls.model = VectorsFactory.create({"method": "external"}, None)
+
+    def testDisabled(self):
+        """
+        Test that transforms are disabled by default
+        """
+
+        with self.assertRaises(ImportError):
+            VectorsFactory.create({"transform": "testvectors.testdense.testexternal.Transform"}, None)
 
     def testIndex(self):
         """
@@ -45,10 +64,19 @@ class TestExternal(unittest.TestCase):
         with open(stream, "rb") as queue:
             self.assertEqual(np.load(queue).shape, (500, 768))
 
+    @patch.dict(os.environ, {"ALLOW_RESOLVE_TRANSFORM": "True"})
+    def testResolution(self):
+        """
+        Test resolving an external transform function
+        """
+
+        transform = VectorsFactory.create({"transform": "testvectors.testdense.testexternal.Transform"}, None)
+        self.assertTrue(np.array_equal(transform.encode(["test"]), np.array([[0.0, 1.0]])))
+
     def testMethod(self):
         """
         Test method is derived when transform function passed
         """
 
-        model = VectorsFactory.create({"transform": lambda x: x}, None)
+        model = VectorsFactory.create({"transform": lambda _: [[0.0, 1.0]]}, None)
         self.assertTrue(isinstance(model, External))

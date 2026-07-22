@@ -1,5 +1,5 @@
 """
-zvec module
+milvus-lite module
 """
 
 import os
@@ -8,27 +8,28 @@ import tempfile
 
 # Conditional import
 try:
-    import zvec
+    import milvus_lite
 
-    ZVEC = True
+    MILVUS = True
 except ImportError:
-    ZVEC = False
+    MILVUS = False
 
 from ...archive import ArchiveFactory
 from ..base import ANN
 
 
-class Zvec(ANN):
+class Milvus(ANN):
     """
-    Builds an ANN index using the zvec library.
+    Builds an ANN index using the milvus-lite library.
     """
 
     def __init__(self, config):
         super().__init__(config)
 
-        if not ZVEC:
-            raise ImportError('zvec is not available - install "ann" extra to enable')
+        if not MILVUS:
+            raise ImportError('milvus-lite is not available - install "ann" extra to enable')
 
+        self.collection = None
         self.directory = None
         self.path = None
 
@@ -40,7 +41,7 @@ class Zvec(ANN):
         try:
             archive = ArchiveFactory.create(self.directory)
             archive.load(path, "tar")
-            self.backend = zvec.open(self.path)
+            self.open()
         except Exception:
             self.close()
             raise
@@ -54,23 +55,25 @@ class Zvec(ANN):
         # Create collection
         self.directory = tempfile.mkdtemp()
         self.path = os.path.join(self.directory, "index")
-        schema = zvec.CollectionSchema(
-            name="txtai",
-            vectors=zvec.VectorSchema(
-                "embedding",
-                zvec.DataType.VECTOR_FP32,
-                self.config["dimensions"],
-                index_param=zvec.HnswIndexParam(metric_type=zvec.MetricType.IP, m=m),
-            ),
+
+        # Use milvus-lite's native embedded API directly and keep this integration thin
+        self.backend = milvus_lite.MilvusLite(self.path)
+        schema = milvus_lite.CollectionSchema(
+            fields=[
+                milvus_lite.FieldSchema("id", milvus_lite.DataType.INT64, is_primary=True),
+                milvus_lite.FieldSchema("embedding", milvus_lite.DataType.FLOAT_VECTOR, dim=self.config["dimensions"]),
+            ]
         )
-        self.backend = zvec.create_and_open(path=self.path, schema=schema)
+        self.collection = self.backend.create_collection("txtai", schema)
+        self.collection.create_index("embedding", {"index_type": "HNSW", "metric_type": "IP", "params": {"M": m}})
+        self.collection.load()
 
         # Add items - position in embeddings is used as the id
         self.insert(embeddings, 0)
 
         # Add id offset and index build metadata
         self.config["offset"] = embeddings.shape[0]
-        self.metadata({"m": m, "zvec": zvec.__version__})
+        self.metadata({"m": m, "milvus": milvus_lite.__version__})
 
     def append(self, embeddings):
         self.insert(embeddings, self.config["offset"])
@@ -81,32 +84,31 @@ class Zvec(ANN):
 
     def delete(self, ids):
         if ids:
-            self.backend.delete([str(uid) for uid in ids])
+            self.collection.delete(ids)
 
     def search(self, queries, limit):
-        results = []
-        for query in queries:
-            matches = self.backend.query(
-                zvec.Query(field_name="embedding", vector=query.tolist()),
-                topk=limit,
-            )
-            results.append([(int(match.id), float(match.score)) for match in matches])
-
-        return results
+        matches = self.collection.search(queries.tolist(), top_k=limit, metric_type="IP", anns_field="embedding")
+        return [[(int(match["id"]), float(match["distance"])) for match in results] for results in matches]
 
     def count(self):
-        return self.backend.stats.doc_count
+        return self.collection.num_entities
 
     def save(self, path):
-        self.backend.flush()
+        self.collection.flush()
+        self.backend.close()
+        self.collection = None
         self.backend = None
 
         archive = ArchiveFactory.create(self.directory)
         archive.save(path, "tar")
-        self.backend = zvec.open(self.path)
+        self.open()
 
     def close(self):
-        # Parent logic releases the collection and its file locks
+        # Release milvus-lite collection handles and the directory lock
+        if self.backend:
+            self.backend.close()
+
+        self.collection = None
         super().close()
 
         if self.directory and os.path.exists(self.directory):
@@ -127,6 +129,12 @@ class Zvec(ANN):
         if embeddings.shape[0]:
             for start in range(0, embeddings.shape[0], 1024):
                 batch = embeddings[start : start + 1024]
-                self.backend.insert(
-                    [zvec.Doc(id=str(offset + start + uid), vectors={"embedding": embedding.tolist()}) for uid, embedding in enumerate(batch)]
-                )
+                self.collection.insert([{"id": offset + start + uid, "embedding": embedding.tolist()} for uid, embedding in enumerate(batch)])
+
+    def open(self):
+        """
+        Opens the milvus-lite database and collection
+        """
+
+        self.backend = milvus_lite.MilvusLite(self.path)
+        self.collection = self.backend.get_collection("txtai")

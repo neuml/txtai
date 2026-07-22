@@ -5,6 +5,7 @@ SQL module tests
 import unittest
 
 from txtai.database import DatabaseFactory, SQL, SQLError
+from txtai.database.sql import Aggregate
 
 
 class TestSQL(unittest.TestCase):
@@ -23,6 +24,22 @@ class TestSQL(unittest.TestCase):
         cls.db.initialize()
 
         cls.sql = SQL(cls.db)
+
+    def testAggregateEmptyResults(self):
+        """
+        Test Aggregate returns empty results for a SQL query with no results
+        """
+
+        aggregate = Aggregate()
+
+        # SQL query, no results across shards - must not raise IndexError
+        self.assertEqual(aggregate("select id, text, score from txtai where similar('x')", []), [])
+
+        # Non-SQL query with no results stays consistent
+        self.assertEqual(aggregate("plain text query", []), [])
+
+        # SQL query with results still aggregates as before
+        self.assertEqual(aggregate("select count(*) from txtai", [{"count(*)": 1}, {"count(*)": 2}]), [{"count(*)": 3}])
 
     def testAlias(self):
         """
@@ -264,6 +281,17 @@ class TestSQL(unittest.TestCase):
         # Unterminated similar clause
         with self.assertRaises(SQLError):
             self.db.search("select * from txtai where similar('abc'")
+
+        # Empty select components (stray commas) raised IndexError
+        with self.assertRaises(SQLError):
+            self.db.search("select a,,b from txtai")
+
+        with self.assertRaises(SQLError):
+            self.db.search("select ,a from txtai")
+
+        # A trailing AS with no alias name raised TypeError
+        with self.assertRaises(SQLError):
+            self.db.search("select a as from txtai")
 
     def testUpper(self):
         """

@@ -4,6 +4,7 @@ Factory module
 
 from ..util import Resolver
 
+from .base import Graph
 from .networkx import NetworkX
 from .rdbms import RDBMS
 
@@ -56,6 +57,6 @@ class GraphFactory:
         """
 
         try:
-            return Resolver()(backend)(config)
+            return Resolver()(backend, Graph)(config)
         except Exception as e:
             raise ImportError(f"Unable to resolve graph backend: '{backend}'") from e

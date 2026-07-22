@@ -4,10 +4,12 @@ Factory module
 
 from ...util import Resolver
 
+from ..base import ANN
 from .annoy import Annoy
 from .faiss import Faiss, FAISS
 from .ggml import GGML
 from .hnsw import HNSW
+from .milvus import Milvus
 from .numpy import NumPy
 from .pgvector import PGVector
 from .sqlite import SQLite
@@ -44,6 +46,8 @@ class ANNFactory:
             ann = Faiss(config)
         elif backend == "hnsw":
             ann = HNSW(config)
+        elif backend == "milvus":
+            ann = Milvus(config)
         elif backend == "ggml":
             ann = GGML(config)
         elif backend == "numpy":
@@ -80,6 +84,6 @@ class ANNFactory:
         """
 
         try:
-            return Resolver()(backend)(config)
+            return Resolver()(backend, ANN)(config)
         except Exception as e:
             raise ImportError(f"Unable to resolve ann backend: '{backend}'") from e

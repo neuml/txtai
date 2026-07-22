@@ -100,6 +100,10 @@ class LateEncoder(Pipeline):
         indices = np.argpartition(-scores, limit if limit and limit < scores.shape[0] else scores.shape[0] - 1)[:, :limit]
         scores = np.take_along_axis(scores, indices, axis=1)
 
+        # argpartition doesn't order within the top n - sort each row by score descending
+        order = np.argsort(-scores, axis=1)
+        indices, scores = np.take_along_axis(indices, order, axis=1), np.take_along_axis(scores, order, axis=1)
+
         results = []
         for x, index in enumerate(indices):
             results.append(list(zip(index.tolist(), scores[x].tolist())))

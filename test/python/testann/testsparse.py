@@ -26,6 +26,14 @@ class TestSparse(unittest.TestCase):
 
         self.assertIsNotNone(SparseANNFactory.create({"backend": "txtai.ann.IVFSparse"}))
 
+    def testCustomBackendInvalid(self):
+        """
+        Test resolving an invalid backend
+        """
+
+        with self.assertRaises(ImportError):
+            SparseANNFactory.create({"backend": "pprint.pprint"})
+
     def testCustomBackendNotFound(self):
         """
         Test resolving an unresolvable backend
@@ -80,6 +88,24 @@ class TestSparse(unittest.TestCase):
         ann = SparseANNFactory.create({"backend": "ivfsparse", "ivfsparse": {"nlist": 15, "nprobe": 1, "sample": 1.0}})
         ann.index(insert)
         self.assertLess(len(ann.blocks), 15)
+        ann.close()
+
+    def testIVFSparseSortOrder(self):
+        """
+        Test IVFSparse returns results sorted by score descending
+        """
+
+        # Generate test data
+        data = self.generate(50, 30522)
+
+        ann = SparseANNFactory.create({"backend": "ivfsparse"})
+        ann.index(data)
+
+        # Each result list must be ranked by score descending
+        for results in ann.search(data[:5], 10):
+            scores = [score for _, score in results]
+            self.assertEqual(scores, sorted(scores, reverse=True))
+
         ann.close()
 
     def testIVFSparseTopnOverLimit(self):

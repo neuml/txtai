@@ -47,6 +47,14 @@ class TestDense(unittest.TestCase):
 
         self.runTests("txtai.ann.Faiss")
 
+    def testCustomBackendInvalid(self):
+        """
+        Test resolving an invalid backend
+        """
+
+        with self.assertRaises(ImportError):
+            ANNFactory.create({"backend": "pprint.pprint"})
+
     def testCustomBackendNotFound(self):
         """
         Test resolving an unresolvable backend
@@ -187,6 +195,27 @@ class TestDense(unittest.TestCase):
 
         # Test with custom settings
         self.runTests("hnsw", {"hnsw": {"efconstruction": 100, "m": 4, "randomseed": 0, "efsearch": 5}})
+
+    @unittest.skipIf(os.name == "nt", "Skip Milvus on Windows")
+    def testMilvus(self):
+        """
+        Test milvus-lite backend
+        """
+
+        self.runTests("milvus")
+
+    @unittest.skipIf(os.name == "nt", "Skip Milvus on Windows")
+    def testMilvusCustom(self):
+        """
+        Test milvus-lite backend with custom settings
+        """
+
+        self.runTests("milvus", {"milvus": {"m": 16}})
+
+        # Test invalid file path handled
+        with self.assertRaises(FileNotFoundError):
+            ann = ANNFactory.create({"backend": "milvus"})
+            ann.load("non-exist-path")
 
     def testNotImplemented(self):
         """
