@@ -85,8 +85,8 @@ class HNSW(ANN):
         if ef:
             self.backend.set_ef(ef)
 
-        # Run the query
-        ids, distances = self.backend.knn_query(queries, k=limit)
+        # Run the query, clamp k to the current element count as hnswlib errors when k exceeds it
+        ids, distances = self.backend.knn_query(queries, k=min(limit, self.count()))
 
         # Map results to [(id, score)]
         results = []

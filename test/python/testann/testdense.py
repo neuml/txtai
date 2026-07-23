@@ -196,6 +196,21 @@ class TestDense(unittest.TestCase):
         # Test with custom settings
         self.runTests("hnsw", {"hnsw": {"efconstruction": 100, "m": 4, "randomseed": 0, "efsearch": 5}})
 
+    def testHnswSearchLimitExceedsCount(self):
+        """
+        Test Hnswlib backend search when limit exceeds the indexed element count
+        """
+
+        data = np.random.rand(3, 240).astype(np.float32)
+        self.normalize(data)
+
+        ann = ANNFactory.create({"backend": "hnsw", "dimensions": 240})
+        ann.index(data)
+
+        # Query limit (10) exceeds the number of indexed elements (3), previously raised a RuntimeError
+        results = ann.search(data[0:1], 10)
+        self.assertEqual(len(results[0]), 3)
+
     @unittest.skipIf(os.name == "nt", "Skip Milvus on Windows")
     def testMilvus(self):
         """
