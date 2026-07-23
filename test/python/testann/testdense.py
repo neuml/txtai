@@ -196,21 +196,6 @@ class TestDense(unittest.TestCase):
         # Test with custom settings
         self.runTests("hnsw", {"hnsw": {"efconstruction": 100, "m": 4, "randomseed": 0, "efsearch": 5}})
 
-    def testHnswSearchLimitExceedsCount(self):
-        """
-        Test Hnswlib backend search when limit exceeds the indexed element count
-        """
-
-        data = np.random.rand(3, 240).astype(np.float32)
-        self.normalize(data)
-
-        ann = ANNFactory.create({"backend": "hnsw", "dimensions": 240})
-        ann.index(data)
-
-        # Query limit (10) exceeds the number of indexed elements (3), previously raised a RuntimeError
-        results = ann.search(data[0:1], 10)
-        self.assertEqual(len(results[0]), 3)
-
     @unittest.skipIf(os.name == "nt", "Skip Milvus on Windows")
     def testMilvus(self):
         """
@@ -475,6 +460,7 @@ class TestDense(unittest.TestCase):
             self.assertEqual(self.delete(name, params, [100000]).count(), 10000)
 
         self.assertGreater(self.search(name, params), 0)
+        self.assertGreater(self.limit(name, params), 0)
 
     def backend(self, name, params=None, length=10000):
         """
@@ -592,6 +578,28 @@ class TestDense(unittest.TestCase):
 
         # Ensure top result has similarity > 0
         return model.search(np.array([query]), 1)[0][0][1]
+
+    def limit(self, name, params=None):
+        """
+        Test ANN limit search.
+
+        Args:
+            name: backend name
+            params: additional config parameters
+
+        Returns:
+            search results
+        """
+
+        # Generate ANN index
+        model = self.backend(name, params, 50)
+
+        # Generate query vector
+        query = np.random.rand(240).astype(np.float32)
+        self.normalize(query)
+
+        # Ensure limit being > count doesn't throw an error
+        return model.search(np.array([query]), 100)[0][0][1]
 
     def normalize(self, embeddings):
         """

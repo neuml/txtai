@@ -24,7 +24,6 @@ class TestAuthorization(unittest.TestCase):
         os.environ,
         {
             "CONFIG": os.path.join(tempfile.gettempdir(), "testapi.yml"),
-            "DEPENDENCIES": "txtai.api.Authorization",
             "TOKEN": hashlib.sha256("token".encode("utf-8")).hexdigest(),
         },
     )
