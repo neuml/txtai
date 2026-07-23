@@ -3,9 +3,10 @@ Authorization module
 """
 
 import hashlib
-import os
+import hmac
 
-from fastapi import Header, HTTPException
+from fastapi import Depends, HTTPException
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 
 class Authorization:
@@ -13,17 +14,17 @@ class Authorization:
     Basic token authorization.
     """
 
-    def __init__(self, token=None):
+    def __init__(self, token):
         """
         Creates a new Authorization instance.
 
         Args:
-            token: SHA-256 hash of token to check
+            token: SHA-256 hash of the valid authorization token
         """
 
-        self.token = token if token else os.environ.get("TOKEN")
+        self.token = token
 
-    def __call__(self, authorization: str = Header(default=None)):
+    def __call__(self, authorization: HTTPAuthorizationCredentials = Depends(HTTPBearer())):
         """
         Validates authorization header is present and equal to current token.
 
@@ -31,23 +32,19 @@ class Authorization:
             authorization: authorization header
         """
 
-        if not authorization or self.token != self.digest(authorization):
+        # Authorization header is parsed into {scheme="Bearer", credentials="<token>"}
+        if not hmac.compare_digest(self.token, self.digest(authorization.credentials)):
             raise HTTPException(status_code=401, detail="Invalid Authorization Token")
 
-    def digest(self, authorization):
+    def digest(self, token):
         """
         Computes a SHA-256 hash for input authorization token.
 
         Args:
-            authorization: authorization header
+            token: authorization token
 
         Returns:
             SHA-256 hash of authorization token
         """
 
-        # Replace Bearer prefix
-        prefix = "Bearer "
-        token = authorization[len(prefix) :] if authorization.startswith(prefix) else authorization
-
-        # Compute SHA-256 hash
         return hashlib.sha256(token.encode("utf-8")).hexdigest()
