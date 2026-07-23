@@ -194,7 +194,7 @@ class TestDense(unittest.TestCase):
         """
 
         # Test with custom settings
-        self.runTests("hnsw", {"hnsw": {"efconstruction": 100, "m": 4, "randomseed": 0, "efsearch": 5}})
+        self.runTests("hnsw", {"hnsw": {"efconstruction": 100, "m": 8, "randomseed": 0, "efsearch": 15}})
 
     @unittest.skipIf(os.name == "nt", "Skip Milvus on Windows")
     def testMilvus(self):
