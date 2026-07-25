@@ -1,3 +1,5 @@
+[![MCP Toplist](https://mcptoplist.com/badge/glama%2Fneuml%2Ftxtai.svg)](https://mcptoplist.com/server/glama%2Fneuml%2Ftxtai)
+
 <p align="center">
     <img src="https://raw.githubusercontent.com/neuml/txtai/master/logo.png"/>
 </p>
