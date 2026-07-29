@@ -155,6 +155,18 @@ muvera:
 
 Settings to control the size of MUVERA fixed dimensional outputs. Default is 20 * 2^5 * 16 = 10,240 dimensions.
 
+### lemur
+```yaml
+lemur:
+    path: local artifact directory or Hugging Face Hub path
+```
+
+Loads a trained [LEMUR](../../../pipeline/train/lemur) fixed dimensional encoder. LEMUR artifacts are corpus-specific and must be
+created with `LemurTrainer` before configuring an embeddings index. Query vectors are summed learned features and document vectors
+are ordinary least squares weights over the artifact's stored token sample. Each artifact contains `config.json` and
+`model.safetensors`; the Safetensors file contains inference state only. See the trainer page for score filtering and Faiss exact/IVF
+search behavior.
+
 ### trust_remote_code
 ```yaml
 trust_remote_code: boolean

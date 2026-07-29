@@ -109,6 +109,7 @@ nav:
             - Translation: pipeline/text/translation.md
         - Train:
             - HF ONNX: pipeline/train/hfonnx.md
+            - LEMUR Trainer: pipeline/train/lemur.md
             - ML ONNX: pipeline/train/mlonnx.md
             - Trainer: pipeline/train/trainer.md
     - Workflow:
