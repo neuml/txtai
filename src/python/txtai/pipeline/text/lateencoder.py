@@ -22,6 +22,9 @@ class LateEncoder(Pipeline):
         # Get device
         self.device = Models.device(Models.deviceid(kwargs.get("gpu", True)))
 
+        # Disable fixed dimensional encoders to preserve raw multi-vectors
+        encoders = {"muvera": None, "lemur": None}
+
         # Load model
         self.model = PoolingFactory.create(
             {
@@ -30,7 +33,7 @@ class LateEncoder(Pipeline):
                 "device": self.device,
                 "tokenizer": kwargs.get("tokenizer"),
                 "maxlength": kwargs.get("maxlength"),
-                "modelargs": {**kwargs.get("vectors", {}), **{"muvera": None}},
+                "modelargs": {**kwargs.get("vectors", {}), **encoders},
             }
         )
 
