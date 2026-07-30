@@ -291,6 +291,10 @@ class Application:
             # Save resolved action(s)
             task["action"] = actions[0] if not isinstance(action, list) else actions
 
+        if "task" in task and task["task"] == "retrieve":
+            # Default to safeopen enabled
+            task["safeopen"] = task.get("safeopen", True)
+
         # Resolve initializer
         if "initialize" in task and isinstance(task["initialize"], str):
             task["initialize"] = self.function(task["initialize"])
@@ -350,6 +354,9 @@ class Application:
             resolved function
         """
 
+        # Function configuration
+        config = {}
+
         # Check if function is a pipeline
         if function in self.pipelines:
             return self.pipelines[function]
@@ -358,8 +365,12 @@ class Application:
         if function in self.workflows:
             return self.workflows[function]
 
+        if function in ("textractor", "urlretrieve"):
+            # Default to safeopen enabled
+            config["safeopen"] = config.get("safeopen", True)
+
         # Attempt to resolve action as a callable function
-        return PipelineFactory.create({}, function)
+        return PipelineFactory.create(config, function)
 
     def search(self, query, limit=10, weights=None, index=None, parameters=None, graph=False):
         """

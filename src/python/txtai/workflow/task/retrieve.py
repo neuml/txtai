@@ -5,24 +5,26 @@ RetrieveTask module
 import os
 import tempfile
 
-from urllib.request import urlretrieve
 from urllib.parse import urlparse
 
-from .url import UrlTask
+from ...pipeline import SafeOpen
+from .base import Task
 
 
-class RetrieveTask(UrlTask):
+class RetrieveTask(Task):
     """
-    Task that retrieves urls (local or remote) to a local directory.
+    Task that retrieves files and urls (local or remote) to a local directory.
     """
 
-    def register(self, directory=None, flatten=True):
+    def register(self, directory=None, flatten=True, headers=None, safeopen=False):
         """
         Adds retrieve parameters to task.
 
         Args:
             directory: local directory used to store retrieved files
             flatten: flatten input directory structure, defaults to True
+            headers: http headers
+            safeopen: if safe validation checks should be enabled
         """
 
         # pylint: disable=W0201
@@ -38,24 +40,32 @@ class RetrieveTask(UrlTask):
 
         self.directory = directory
         self.flatten = flatten
+        self.safeopen = SafeOpen(headers, safeopen)
 
     def prepare(self, element):
         # Extract file path from URL
         path = urlparse(element).path
 
-        if self.flatten:
-            # Flatten directory structure (default)
-            path = os.path.join(self.directory, os.path.basename(path))
-        else:
-            # Derive output path
-            path = os.path.join(self.directory, os.path.normpath(path.lstrip("/")))
-            directory = os.path.dirname(path)
+        # Validate input element
+        url, _ = self.safeopen.valid(element)
+        if url:
+            if self.flatten:
+                # Flatten directory structure (default)
+                path = os.path.join(self.directory, os.path.basename(path))
+            else:
+                # Derive output path
+                path = os.path.join(self.directory, os.path.normpath(path.lstrip("/")))
+                directory = os.path.dirname(path)
 
-            # Create local directory, if necessary
-            os.makedirs(directory, exist_ok=True)
+                # Create local directory, if necessary
+                os.makedirs(directory, exist_ok=True)
 
-        # Retrieve URL
-        urlretrieve(element, path)
+            # Retrieve data
+            data = self.safeopen.retrieve(url)
+
+            # Write to destination path
+            with open(path, "wb") as output:
+                output.write(data)
 
         # Return new file path
         return path

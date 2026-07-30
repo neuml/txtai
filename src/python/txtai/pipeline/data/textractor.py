@@ -5,12 +5,10 @@ Textractor module
 import os
 import tempfile
 
-from urllib.parse import urlparse
-
 from .filetohtml import FileToHTML
 from .htmltomd import HTMLToMarkdown
+from .safeopen import SafeOpen
 from .segmentation import Segmentation
-from .urlretrieve import URLRetrieve
 
 
 class Textractor(Segmentation):
@@ -45,18 +43,12 @@ class Textractor(Segmentation):
         # HTML to Markdown pipeline
         self.markdown = HTMLToMarkdown(self.paragraphs, self.sections)
 
-        # HTTP headers
-        self.headers = headers if headers else {}
-
         # Safe open mode. When set only local temp urls (or a specified directory) and non-private URLs are supported
-        self.safeopen = os.path.realpath(tempfile.gettempdir() if isinstance(safeopen, bool) else safeopen) if safeopen else safeopen
-
-        # URL retriever
-        self.urlretrieve = URLRetrieve(self.headers, self.safeopen)
+        self.safeopen = SafeOpen(headers, safeopen)
 
     def text(self, text):
         # Check if text is a valid file path or url
-        path, exists = self.valid(text)
+        path, exists = self.safeopen.valid(text)
 
         if not path:
             # Not a valid file path, treat input as data
@@ -71,7 +63,7 @@ class Textractor(Segmentation):
             html = self.html(path)
 
             # FiletoHTML pipeline returns None when input is already HTML
-            html = html if html else self.retrieve(path)
+            html = html if html else self.safeopen.retrieve(path)
 
             # Delete temporary file
             if not exists:
@@ -79,36 +71,10 @@ class Textractor(Segmentation):
 
         else:
             # Read data from url/path
-            html = self.retrieve(path)
+            html = self.safeopen.retrieve(path)
 
         # HTML to Markdown
         return self.markdown(html)
-
-    def valid(self, path):
-        """
-        Checks if path is a valid local file or web url. Returns path if valid along with a flag
-        denoting if the path exists locally.
-
-        Args:
-            path: path to check
-
-        Returns:
-            (path, exists)
-        """
-
-        # Convert file urls to local paths
-        path = path.replace("file://", "")
-
-        # Check if this is a local file path or local file url
-        exists = os.path.exists(path)
-
-        # Safe open validation
-        if not self.safecheck(path):
-            path = path if urlparse(path).scheme else os.path.realpath(path)
-            raise IOError(f"Safeopen URL validation failed: path={path}, safeopen={self.safeopen}")
-
-        # Consider local files and HTTP urls valid
-        return (path if exists or urlparse(path).scheme in ("http", "https") else None, exists)
 
     def download(self, url):
         """
@@ -125,52 +91,6 @@ class Textractor(Segmentation):
             path = output.name
 
             # Retrieve and write data to temporary file
-            output.write(self.retrieve(url))
+            output.write(self.safeopen.retrieve(url))
 
         return path
-
-    def retrieve(self, url):
-        """
-        Retrieves content from url.
-
-        Args:
-            url: input url
-
-        Returns:
-            data
-        """
-
-        # Local file
-        if os.path.exists(url):
-            with open(url, "rb") as f:
-                return f.read()
-
-        # Remote file
-        return self.urlretrieve(url)
-
-    def safecheck(self, url):
-        """
-        Safe open url validation. Validates a local path is within the safeopen directory and
-        that URLs are a public HTTP(s) URLs.
-
-        Args:
-            url: input url
-
-        Returns:
-            True if url is valid, false otherwise
-        """
-
-        # Default to allow all urls when safe open is disabled
-        valid = True
-
-        if self.safeopen:
-            if os.path.exists(url):
-                # Validate local file is in safe path
-                path = os.path.realpath(url)
-                prefix = os.path.commonpath([self.safeopen, path])
-                valid = prefix == self.safeopen
-            else:
-                # URL validation
-                valid = url.lower().startswith("http") and not self.urlretrieve.isprivateurl(url)
-
-        return valid

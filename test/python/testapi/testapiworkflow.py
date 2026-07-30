@@ -50,6 +50,10 @@ workflow:
               args:
                 - [[positive, negative], false, True]
                 - null
+    retrieve:
+        tasks:
+            - task: retrieve
+              safeopen: /tmp/txtai
     schedule:
         schedule:
             cron: '* * * * * *'
@@ -62,6 +66,9 @@ workflow:
         tasks:
             - action: segmentation
             - action: index
+    textract:
+        tasks:
+            - action: textractor
     get:
         tasks:
             - task: service
@@ -236,6 +243,20 @@ class TestWorkflow(unittest.TestCase):
         results = self.client.post("workflow", json={"name": "multiaction", "elements": [text]}).json()
         self.assertEqual(results[0], "['positive']. This is the best")
 
+    def testWorkflowRetrieve(self):
+        """
+        Test workflow with retrieve via API
+        """
+
+        # Check valid URL
+        results = self.client.post("workflow", json={"name": "retrieve", "elements": ["https://github.com/neuml/txtai"]}).json()
+        self.assertTrue(results[0].endswith("txtai"))
+
+        # Check invalid URLs
+        for url in ["http://192.168.1.1/path", "http://127.0.0.1/path", "http://invalid", "/etc/config", "/tmp/txtai-1/test"]:
+            with self.assertRaises(IOError):
+                self.client.post("workflow", json={"name": "retrieve", "elements": [url]})
+
     def testWorkflowSegment(self):
         """
         Test workflow with segmentation via API
@@ -248,6 +269,20 @@ class TestWorkflow(unittest.TestCase):
 
         results = self.client.post("workflow", json={"name": "segment", "elements": [[0, text]]}).json()
         self.assertEqual(len(results), 2)
+
+    def testWorkflowTextract(self):
+        """
+        Test workflow with textractor via API
+        """
+
+        # Check valid URL
+        results = self.client.post("workflow", json={"name": "textract", "elements": ["https://github.com/neuml/txtai"]}).json()
+        self.assertTrue("txtai is an all-in-one AI framework" in results[0])
+
+        # Check invalid URLs
+        for url in ["http://192.168.1.1/path", "http://127.0.0.1/path", "http://invalid", "/etc/config"]:
+            with self.assertRaises(IOError):
+                self.client.post("workflow", json={"name": "textract", "elements": [url]})
 
 
 class TestInitFinal:

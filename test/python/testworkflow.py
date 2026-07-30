@@ -27,6 +27,7 @@ from txtai.workflow import (
     RetrieveTask,
     StorageTask,
     TemplateTask,
+    UrlTask,
     WorkflowTask,
 )
 
@@ -518,6 +519,16 @@ class TestWorkflow(unittest.TestCase):
         task.merge = None
         results = np.array([x.numpy() for x in workflow(torch.tensor([2, 4, 6]))])
         self.assertTrue(np.array_equal(np.array(results), np.array([[4, 16, 36], [8, 64, 216]])))
+
+    def testUrlWorkflow(self):
+        """
+        Test a url task
+        """
+
+        # Test url task
+        workflow = Workflow([UrlTask()])
+        results = list(workflow(["file://" + Utils.PATH + "/books.jpg"]))
+        self.assertTrue(results[0].endswith("books.jpg"))
 
     def testYamlFunctionWorkflow(self):
         """
