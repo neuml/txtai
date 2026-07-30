@@ -22,8 +22,9 @@ This task can also be created with workflow configuration.
 
 ```yaml
 workflow:
-  tasks:
-    - task: image
+  name:
+    tasks:
+      - task: image
 ```
 
 ## Methods

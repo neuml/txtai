@@ -22,9 +22,10 @@ This task can also be created with workflow configuration.
 
 ```yaml
 workflow:
-  tasks:
-    - task: retrieve
-      directory: /tmp
+  name:
+    tasks:
+      - task: retrieve
+        directory: /tmp
 ```
 
 ## Methods

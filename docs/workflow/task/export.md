@@ -22,8 +22,9 @@ This task can also be created with workflow configuration.
 
 ```yaml
 workflow:
-  tasks:
-    - task: export
+  name:
+    tasks:
+      - task: export
 ```
 
 ## Methods

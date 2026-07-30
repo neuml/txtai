@@ -35,8 +35,9 @@ Tasks can also be created with configuration as part of a workflow.
 
 ```yaml
 workflow:
-  tasks:
-    - action: summary 
+  name:
+    tasks:
+      - action: summary
 ```
 
 ::: txtai.workflow.Task.__init__

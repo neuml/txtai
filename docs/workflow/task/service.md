@@ -22,9 +22,10 @@ This task can also be created with workflow configuration.
 
 ```yaml
 workflow:
-  tasks:
-    - task: service
-      url: https://service.url/action
+  name:
+    tasks:
+      - task: service
+        url: https://service.url/action
 ```
 
 ## Methods
