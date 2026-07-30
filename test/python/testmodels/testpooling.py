@@ -2,6 +2,7 @@
 Pooling module tests
 """
 
+import json
 import os
 import tempfile
 import unittest
@@ -194,6 +195,47 @@ class TestPooling(unittest.TestCase):
             self.assertIsNone(loaded.selected_loss)
             self.assertIsNone(loaded.selection_metric)
 
+            with self.assertRaisesRegex(ValueError, "LEMUR training readout is not available in a loaded inference artifact"):
+                loaded.model(torch.ones((1, 6)))
+
+            config = dict(loaded.config)
+            config["model_type"] = "invalid"
+            with open(os.path.join(output, "config.json"), "w", encoding="utf-8") as target:
+                json.dump(config, target)
+
+            with self.assertRaisesRegex(ValueError, "model_type must be elm or mlp"):
+                Lemur(output)
+
+    def testLemurDocuments(self):
+        """
+        Test LEMUR document input conversions and validation
+        """
+
+        lemur = Lemur()
+        matrix = np.ones((2, 3), dtype=np.float32)
+        batches = np.ones((2, 2, 3), dtype=np.float32)
+
+        documents = lemur.documents(matrix)
+        self.assertEqual(len(documents), 1)
+        self.assertEqual(documents[0].shape, (2, 3))
+
+        documents = lemur.documents(batches)
+        self.assertEqual(len(documents), 2)
+        self.assertTrue(all(document.shape == (2, 3) for document in documents))
+
+        tensor = torch.ones((2, 3), dtype=torch.float64)
+        document = lemur.documents([tensor])[0]
+        self.assertEqual(document.dtype, torch.float32)
+        self.assertEqual(document.shape, (2, 3))
+
+        document = lemur.documents([[[1.0, 2.0], [3.0, 4.0]]])[0]
+        self.assertEqual(document.shape, (2, 2))
+
+        for invalid in ([np.ones(3, dtype=np.float32)], [np.empty((0, 3), dtype=np.float32)]):
+            with self.subTest(shape=invalid[0].shape):
+                with self.assertRaisesRegex(ValueError, "each document must be a non-empty 2D token-vector array"):
+                    lemur.documents(invalid)
+
     def testLemurEpochChoice(self):
         """
         Test LEMUR requires an explicit MLP or ELM epoch choice
@@ -326,6 +368,71 @@ class TestPooling(unittest.TestCase):
                 with self.subTest(setting=setting, value=value):
                     with self.assertRaisesRegex(ValueError, f"{setting} must be greater than 0"):
                         Lemur().fit(documents, epochs=0, **{setting: value})
+
+    def testLemurFitValidation(self):
+        """
+        Test LEMUR rejects invalid fit inputs
+        """
+
+        documents = [
+            np.array([[1.0, 0.0], [0.0, 1.0]], dtype=np.float32),
+            np.array([[0.5, 0.5]], dtype=np.float32),
+        ]
+        tests = [
+            ("epochs", documents, {"epochs": -1}, "epochs must be greater than or equal to 0"),
+            ("final hidden dimension", documents, {"epochs": 0, "final_hidden_dim": 0}, "final_hidden_dim must be greater than 0"),
+            (
+                "validation split",
+                documents,
+                {"epochs": 0, "validation_split": 1.0},
+                "validation_split must be greater than or equal to 0 and less than 1",
+            ),
+            ("empty data", [], {"epochs": 0}, "data must contain at least one document"),
+            (
+                "data dimension",
+                [np.ones((1, 2), dtype=np.float32), np.ones((1, 3), dtype=np.float32)],
+                {"epochs": 0},
+                "all token vectors must have the same dimension",
+            ),
+            ("empty learn", documents, {"epochs": 0, "learn": []}, "learn must contain at least one document"),
+            (
+                "learn dimension",
+                documents,
+                {"epochs": 0, "learn": [np.ones((1, 3), dtype=np.float32)]},
+                "all learn token vectors must match the data dimension",
+            ),
+            (
+                "validation training subset",
+                documents,
+                {"epochs": 0, "learn": [np.ones((1, 2), dtype=np.float32)], "validation_split": 0.5},
+                "validation_split must leave at least one learn token for training",
+            ),
+            (
+                "zero variance",
+                [np.ones((1, 2), dtype=np.float32), np.ones((1, 2), dtype=np.float32)],
+                {"epochs": 0},
+                "LEMUR targets have zero variance",
+            ),
+        ]
+
+        for name, data, settings, message in tests:
+            with self.subTest(name=name):
+                with self.assertRaisesRegex(ValueError, message):
+                    Lemur().fit(data, **settings)
+
+    def testLemurStateValidation(self):
+        """
+        Test LEMUR rejects invalid categories and unfitted encoding
+        """
+
+        lemur = Lemur()
+        documents = [np.ones((1, 2), dtype=np.float32)]
+
+        with self.assertRaisesRegex(ValueError, "category must be query or data"):
+            lemur(documents, "invalid")
+
+        with self.assertRaisesRegex(ValueError, "LEMUR must be fitted or loaded before encoding"):
+            lemur(documents, "query")
 
     def testLemurActivations(self):
         """

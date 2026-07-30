@@ -318,6 +318,26 @@ class TestTrainer(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "corpus_subset_size must be a positive integer"):
             LemurTrainer()("model", corpus, "output", gpu=False, epochs=0, corpus_subset_size=0)
 
+    def testLemurTrainerValidation(self):
+        """
+        Test LEMUR trainer validates inputs before loading a model
+        """
+
+        tests = [
+            ([], {"epochs": 0}, "data must contain at least one corpus text"),
+            (["text"], {"epochs": 0, "learn_category": "invalid"}, "learn_category must be data or query"),
+            (["text"], {}, "epochs must be set explicitly"),
+            (["text"], {"epochs": 0, "learn": []}, "learn must contain at least one text"),
+        ]
+
+        with patch("txtai.pipeline.train.lemur.PoolingFactory.create") as create:
+            for data, settings, message in tests:
+                with self.subTest(message=message):
+                    with self.assertRaisesRegex(ValueError, message):
+                        LemurTrainer()("model", data, "output", gpu=False, **settings)
+
+            create.assert_not_called()
+
     def testMLM(self):
         """
         Test training a model with masked language modeling.
