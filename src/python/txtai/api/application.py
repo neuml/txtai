@@ -96,15 +96,15 @@ def lifespan(application):
 
     # Conditionally add routes based on configuration
     for name, router in routers.items():
-        if name in config:
+        if name in config and enabled(config, name):
             application.include_router(router)
 
     # Special case for embeddings clusters
-    if "cluster" in config and "embeddings" not in config:
+    if "cluster" in config and "embeddings" not in config and enabled(config, "embeddings"):
         application.include_router(routers["embeddings"])
 
     # Special case to add similarity instance for embeddings
-    if "embeddings" in config and "similarity" not in config:
+    if "embeddings" in config and "similarity" not in config and enabled(config, "similarity"):
         application.include_router(routers["similarity"])
 
     # Execute extensions if present
@@ -119,6 +119,21 @@ def lifespan(application):
     createmcp(application, config)
 
     yield
+
+
+def enabled(config, name):
+    """
+    Check configuration to determine if a route is enabled or disabled
+
+    Args:
+        config: configuration
+        name: route name
+
+    Returns:
+        True if a route is enabled, False otherwise
+    """
+
+    return config.get("routes", {}).get(name, True)
 
 
 def createmcp(application, config):
