@@ -129,8 +129,8 @@ class Terms:
             ids: ids to delete
         """
 
-        # Set index ids as deleted
-        self.deletes.extend([self.ids.index(i) for i in ids])
+        # Set index ids as deleted, ignore ids that were never indexed
+        self.deletes.extend([self.ids.index(i) for i in ids if i in self.ids])
 
     def index(self):
         """

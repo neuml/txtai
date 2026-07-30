@@ -147,6 +147,25 @@ class TestKeyword(unittest.TestCase):
         self.assertEqual(scoring.count(), 0)
         self.assertEqual(scoring.search("bear", 1), [])
 
+    def testDeleteUnknownId(self):
+        """
+        Test that deleting an id that was never indexed is a no-op, not a crash
+        """
+
+        # Terms index (bm25): Terms.delete used self.ids.index(), raising ValueError
+        scoring = ScoringFactory.create({"method": "bm25", "terms": True, "content": True})
+        scoring.index(self.data)
+
+        scoring.delete([0, len(self.data) + 100])
+        self.assertFalse(scoring.search("tops", 1))
+
+        # TFIDF content only, terms disabled: TFIDF.delete used dict.pop(), raising KeyError
+        scoring = ScoringFactory.create({"method": "tfidf", "content": True})
+        scoring.index(self.data)
+
+        scoring.delete([0, len(self.data) + 100])
+        self.assertNotIn(0, scoring.documents)
+
     def testTFIDF(self):
         """
         Test tfidf
