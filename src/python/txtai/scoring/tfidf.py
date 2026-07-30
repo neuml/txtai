@@ -95,10 +95,10 @@ class TFIDF(Scoring):
         if self.terms:
             self.terms.delete(ids)
 
-        # Delete content
+        # Delete content, ignore ids that were never indexed
         if self.documents:
             for uid in ids:
-                self.documents.pop(uid)
+                self.documents.pop(uid, None)
 
     def index(self, documents=None):
         # Call base method
