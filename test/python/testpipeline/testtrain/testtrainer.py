@@ -5,13 +5,16 @@ Trainer module tests
 import os
 import unittest
 import tempfile
+from unittest.mock import patch
 
+import numpy as np
 import torch
 
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
 from txtai.data import Data
-from txtai.pipeline import HFTrainer, Labels, Questions, Sequences
+from txtai.models import Lemur, Models, PoolingFactory
+from txtai.pipeline import HFTrainer, Labels, LemurTrainer, Questions, Sequences
 
 
 class TestTrainer(unittest.TestCase):
@@ -206,6 +209,134 @@ class TestTrainer(unittest.TestCase):
 
         labels = Labels((model, tokenizer), dynamic=False)
         self.assertEqual(labels("cat")[0][0], 1)
+
+    def testLemurTrainer(self):
+        """
+        Test LEMUR trainer artifact round-trip and seeded determinism
+        """
+
+        model = "neuml/colbert-bert-tiny"
+        corpus = [
+            "alpha beta gamma",
+            "beta gamma delta",
+            "retrieval with token vectors",
+            "fixed dimensional document weights",
+            "learned maximum similarity",
+            "deterministic trainer artifacts",
+        ] * 2
+        settings = {
+            "gpu": False,
+            "epochs": 0,
+            "final_hidden_dim": 128,
+            "train_subset_size": 12,
+            "learn_subset_size": 128,
+            "ols_sample_size": 64,
+            "seed": 42,
+        }
+
+        raw = PoolingFactory.create(
+            {
+                "path": model,
+                "device": Models.deviceid(False),
+                "modelargs": {"muvera": None, "lemur": None},
+            }
+        )
+        documents = [raw.encode([text], batch=1, category="data")[0] for text in corpus[:3]]
+        queries = [raw.encode([text], batch=1, category="query")[0] for text in corpus[:2]]
+
+        with (
+            tempfile.TemporaryDirectory() as first,
+            tempfile.TemporaryDirectory() as second,
+            tempfile.TemporaryDirectory() as third,
+        ):
+            trained = LemurTrainer()(model, corpus, first, **settings)
+            reloaded = Lemur(first)
+            explicit_query = LemurTrainer()(model, corpus, second, learn=corpus, learn_category="query", **settings)
+            data_learn = LemurTrainer()(model, corpus, third, learn=corpus, learn_category="data", **settings)
+            query_reloaded = Lemur(second)
+
+            trained_queries = torch.from_numpy(trained(queries, "query"))
+            trained_documents = torch.from_numpy(trained(documents, "data"))
+            data_documents = torch.from_numpy(data_learn(documents, "data"))
+
+            # Float32 encoder and SVD kernels can vary across Torch/BLAS builds.
+            self.assertTrue(torch.allclose(trained_queries, torch.from_numpy(reloaded(queries, "query")), rtol=1e-5, atol=1e-6))
+            self.assertTrue(torch.allclose(trained_documents, torch.from_numpy(reloaded(documents, "data")), rtol=1e-5, atol=1e-6))
+            np.testing.assert_allclose(trained_queries.numpy(), explicit_query(queries, "query"), rtol=1e-5, atol=1e-6)
+            np.testing.assert_allclose(trained_documents.numpy(), explicit_query(documents, "data"), rtol=1e-5, atol=1e-6)
+            self.assertFalse(torch.allclose(trained.sample, data_learn.sample, rtol=1e-5, atol=1e-6))
+            self.assertFalse(torch.allclose(trained_documents, data_documents, rtol=1e-5, atol=1e-6))
+            self.assertTrue(torch.allclose(trained_documents, torch.from_numpy(query_reloaded(documents, "data")), rtol=1e-5, atol=1e-6))
+
+    def testLemurTrainerCorpusSubset(self):
+        """
+        Test LEMUR samples corpus texts before deterministic encoding
+        """
+
+        class Pooling:
+            """
+            Records raw text encoding calls.
+            """
+
+            def __init__(self):
+                self.calls = []
+
+            def encode(self, texts, batch, category):
+                """
+                Records and returns a synthetic token vector.
+                """
+
+                self.calls.append((texts[0], category, batch))
+                return [torch.ones((1, 2))]
+
+        corpus = [f"document {index}" for index in range(12)]
+        runs = []
+        for _ in range(2):
+            pooling = Pooling()
+            with (
+                patch("txtai.pipeline.train.lemur.PoolingFactory.create", return_value=pooling),
+                patch.object(Lemur, "fit", autospec=True, return_value=None),
+            ):
+                LemurTrainer()("model", corpus, "output", gpu=False, epochs=0, corpus_subset_size=4, seed=7)
+            runs.append(pooling.calls)
+
+        self.assertEqual(runs[0], runs[1])
+        data = [text for text, category, _ in runs[0] if category == "data"]
+        learn = [text for text, category, _ in runs[0] if category == "query"]
+        self.assertEqual(len(data), 4)
+        self.assertEqual(data, learn)
+
+        pooling = Pooling()
+        with (
+            patch("txtai.pipeline.train.lemur.PoolingFactory.create", return_value=pooling),
+            patch.object(Lemur, "fit", autospec=True, return_value=None),
+        ):
+            LemurTrainer()("model", corpus, "output", gpu=False, epochs=0)
+        self.assertEqual(len([call for call in pooling.calls if call[1] == "data"]), len(corpus))
+        self.assertEqual(len([call for call in pooling.calls if call[1] == "query"]), len(corpus))
+
+        with self.assertRaisesRegex(ValueError, "corpus_subset_size must be a positive integer"):
+            LemurTrainer()("model", corpus, "output", gpu=False, epochs=0, corpus_subset_size=0)
+
+    def testLemurTrainerValidation(self):
+        """
+        Test LEMUR trainer validates inputs before loading a model
+        """
+
+        tests = [
+            ([], {"epochs": 0}, "data must contain at least one corpus text"),
+            (["text"], {"epochs": 0, "learn_category": "invalid"}, "learn_category must be data or query"),
+            (["text"], {}, "epochs must be set explicitly"),
+            (["text"], {"epochs": 0, "learn": []}, "learn must contain at least one text"),
+        ]
+
+        with patch("txtai.pipeline.train.lemur.PoolingFactory.create") as create:
+            for data, settings, message in tests:
+                with self.subTest(message=message):
+                    with self.assertRaisesRegex(ValueError, message):
+                        LemurTrainer()("model", data, "output", gpu=False, **settings)
+
+            create.assert_not_called()
 
     def testMLM(self):
         """

@@ -2,9 +2,17 @@
 Pooling module tests
 """
 
+import json
+import os
+import tempfile
 import unittest
 
-from txtai.models import Models, ClsPooling, LastPooling, MeanPooling, PoolingFactory
+import numpy as np
+import torch
+
+from txtai.models import Models, ClsPooling, LastPooling, Lemur, MeanPooling, PoolingFactory
+from txtai.models.pooling.lemur import Activation
+from txtai.pipeline import LemurTrainer
 
 
 class TestPooling(unittest.TestCase):
@@ -102,6 +110,351 @@ class TestPooling(unittest.TestCase):
                 {"path": model, "device": self.device, "modelargs": {"muvera": {"repetitions": 5, "hashes": 2, "projection": 8}}}
             )
             self.assertEqual(pooling.encode(["test"], category="data").shape, (1, 160))
+
+    def testLemur(self):
+        """
+        Test late pooling with LEMUR fixed dimensional encoding
+        """
+
+        corpus = [
+            "Machine learning models retrieve relevant passages.",
+            "Late interaction compares token embeddings.",
+            "Dense indexes search fixed dimensional vectors.",
+            "A query encoder produces contextual token vectors.",
+            "Document encoders represent passages for retrieval.",
+            "Maximum similarity aggregates token matches.",
+            "LEMUR learns a corpus specific reduction.",
+            "MUVERA uses randomized fixed dimensional encodings.",
+            "The trainer stores reusable pooling artifacts.",
+            "New documents can be encoded after training.",
+            "Short text.",
+            "A considerably longer synthetic document exercises padding behavior.",
+        ] * 2
+
+        for model in ["neuml/colbert-bert-tiny", "neuml/pylate-bert-tiny"]:
+            with tempfile.TemporaryDirectory() as output:
+                LemurTrainer()(
+                    model,
+                    corpus,
+                    output,
+                    gpu=False,
+                    epochs=0,
+                    final_hidden_dim=128,
+                    train_subset_size=24,
+                    learn_subset_size=256,
+                    ols_sample_size=128,
+                    seed=42,
+                )
+
+                pooling = PoolingFactory.create({"path": model, "device": self.device, "modelargs": {"lemur": {"path": output}}})
+                texts = ["Short text.", "A considerably longer synthetic document exercises padding behavior."]
+                queries = pooling.encode(texts, category="query")
+                documents = pooling.encode(texts, category="data")
+
+                self.assertEqual(queries.shape, (2, 128))
+                self.assertEqual(documents.shape, (2, 128))
+                self.assertTrue(np.isfinite(queries).all())
+                self.assertTrue(np.isfinite(documents).all())
+
+                # LEMUR must use true token counts, independent of batch padding
+                singles = np.vstack([pooling.encode([text], category="data") for text in texts])
+                np.testing.assert_allclose(documents, singles, rtol=1e-5, atol=1e-6)
+
+            # MUVERA remains the default when LEMUR is absent
+            pooling = PoolingFactory.create({"path": model, "device": self.device})
+            self.assertEqual(pooling.encode(["test"], category="query").shape, (1, 10240))
+
+    def testLemurRoundTrip(self):
+        """
+        Test an ordinary LEMUR artifact save/load round-trip
+        """
+
+        random = np.random.default_rng(42)
+        documents = [random.normal(size=(5, 6)).astype(np.float32) for _ in range(8)]
+        queries = [random.normal(size=(3, 6)).astype(np.float32) for _ in range(2)]
+
+        with tempfile.TemporaryDirectory() as output:
+            fitted = Lemur().fit(
+                documents,
+                output=output,
+                epochs=0,
+                final_hidden_dim=10,
+                train_subset_size=8,
+                learn_subset_size=40,
+                ols_sample_size=24,
+                seed=42,
+            )
+            self.assertEqual(set(os.listdir(output)), {"config.json", "model.safetensors"})
+            loaded = Lemur(output)
+
+            # Float32 feature and SVD kernels can vary across Torch/BLAS builds.
+            np.testing.assert_allclose(loaded(queries, "query"), fitted(queries, "query"), rtol=1e-5, atol=1e-6)
+            np.testing.assert_allclose(loaded(documents, "data"), fitted(documents, "data"), rtol=1e-5, atol=1e-6)
+            self.assertIsNone(loaded.model.output_layer)
+            self.assertIsNone(loaded.selected_epoch)
+            self.assertIsNone(loaded.selected_loss)
+            self.assertIsNone(loaded.selection_metric)
+
+            with self.assertRaisesRegex(ValueError, "LEMUR training readout is not available in a loaded inference artifact"):
+                loaded.model(torch.ones((1, 6)))
+
+            config = dict(loaded.config)
+            config["model_type"] = "invalid"
+            with open(os.path.join(output, "config.json"), "w", encoding="utf-8") as target:
+                json.dump(config, target)
+
+            with self.assertRaisesRegex(ValueError, "model_type must be elm or mlp"):
+                Lemur(output)
+
+    def testLemurDocuments(self):
+        """
+        Test LEMUR document input conversions and validation
+        """
+
+        lemur = Lemur()
+        matrix = np.ones((2, 3), dtype=np.float32)
+        batches = np.ones((2, 2, 3), dtype=np.float32)
+
+        documents = lemur.documents(matrix)
+        self.assertEqual(len(documents), 1)
+        self.assertEqual(documents[0].shape, (2, 3))
+
+        documents = lemur.documents(batches)
+        self.assertEqual(len(documents), 2)
+        self.assertTrue(all(document.shape == (2, 3) for document in documents))
+
+        tensor = torch.ones((2, 3), dtype=torch.float64)
+        document = lemur.documents([tensor])[0]
+        self.assertEqual(document.dtype, torch.float32)
+        self.assertEqual(document.shape, (2, 3))
+
+        document = lemur.documents([[[1.0, 2.0], [3.0, 4.0]]])[0]
+        self.assertEqual(document.shape, (2, 2))
+
+        for invalid in ([np.ones(3, dtype=np.float32)], [np.empty((0, 3), dtype=np.float32)]):
+            with self.subTest(shape=invalid[0].shape):
+                with self.assertRaisesRegex(ValueError, "each document must be a non-empty 2D token-vector array"):
+                    lemur.documents(invalid)
+
+    def testLemurEpochChoice(self):
+        """
+        Test LEMUR requires an explicit MLP or ELM epoch choice
+        """
+
+        random = np.random.default_rng(42)
+        documents = [random.normal(size=(5, 6)).astype(np.float32) for _ in range(8)]
+
+        with self.assertRaisesRegex(ValueError, r"epochs must be set explicitly.*epochs=100.*epochs=0"):
+            Lemur().fit(documents)
+
+    def testLemurDefaultEquivalence(self):
+        """
+        Test implicit and explicit fit defaults are numerically equivalent
+        """
+
+        random = np.random.default_rng(42)
+        documents = [random.normal(size=(5, 6)).astype(np.float32) for _ in range(8)]
+        queries = [random.normal(size=(3, 6)).astype(np.float32) for _ in range(2)]
+        settings = {
+            "epochs": 4,
+            "lr": 0.01,
+            "batch_size": 8,
+            "hidden_dim": 12,
+            "final_hidden_dim": 10,
+            "train_subset_size": 8,
+            "learn_subset_size": 40,
+            "ols_sample_size": 24,
+            "seed": 42,
+        }
+        implicit = Lemur().fit(documents, **settings)
+        explicit = Lemur().fit(documents, validation_split=0.0, **settings)
+
+        # Verify portable numerical equivalence instead of cross-platform bit identity.
+        np.testing.assert_allclose(implicit(queries, "query"), explicit(queries, "query"), rtol=1e-5, atol=1e-6)
+        np.testing.assert_allclose(implicit(documents, "data"), explicit(documents, "data"), rtol=1e-5, atol=1e-6)
+
+    def testLemurValidationSelection(self):
+        """
+        Test validation loss selects and records the retained MLP epoch
+        """
+
+        random = np.random.default_rng(1)
+        documents = [random.normal(size=(5, 6)).astype(np.float32) for _ in range(8)]
+
+        with tempfile.TemporaryDirectory() as output:
+            lemur = Lemur().fit(
+                documents,
+                output=output,
+                epochs=20,
+                lr=0.03,
+                batch_size=8,
+                hidden_dim=12,
+                final_hidden_dim=10,
+                train_subset_size=8,
+                learn_subset_size=40,
+                ols_sample_size=24,
+                validation_split=0.25,
+                seed=7,
+            )
+            reloaded = Lemur(output)
+
+            self.assertEqual(lemur.selection_metric, "validation_loss")
+            self.assertGreaterEqual(lemur.selected_epoch, 1)
+            self.assertLess(lemur.selected_epoch, 20)
+            self.assertTrue(np.isfinite(lemur.selected_loss))
+            self.assertEqual(reloaded.selected_epoch, lemur.selected_epoch)
+            self.assertEqual(reloaded.selected_loss, lemur.selected_loss)
+            self.assertEqual(reloaded.selection_metric, lemur.selection_metric)
+
+    def testLemurRanking(self):
+        """
+        Test LEMUR ranking quality on pinned synthetic data
+        """
+
+        np.random.seed(42)
+        torch.manual_seed(42)
+
+        documents = []
+        for _ in range(64):
+            vectors = np.random.normal(size=(np.random.randint(4, 13), 32)).astype(np.float32)
+            documents.append(vectors / np.linalg.norm(vectors, axis=1, keepdims=True))
+
+        targets = np.random.choice(64, size=8, replace=False)
+        queries = []
+        for target in targets:
+            vectors = documents[target] + np.random.normal(0.0, 0.1, size=documents[target].shape).astype(np.float32)
+            queries.append(vectors / np.linalg.norm(vectors, axis=1, keepdims=True))
+
+        exact = np.asarray([[np.einsum("qd,nd->qn", query, document).max(axis=1).sum() for document in documents] for query in queries])
+        exact = np.argsort(-exact, axis=1)
+
+        lemur = Lemur()
+        lemur.fit(
+            documents,
+            epochs=0,
+            final_hidden_dim=256,
+            train_subset_size=64,
+            learn_subset_size=sum(len(document) for document in documents),
+            ols_sample_size=sum(len(document) for document in documents),
+            seed=42,
+        )
+        approximate = lemur(queries, "query") @ lemur(documents, "data").T
+        approximate = np.argsort(-approximate, axis=1)
+
+        overlap = np.mean([len(set(exact[x, :10]) & set(approximate[x, :10])) / 10 for x in range(8)])
+        top1 = np.sum(exact[:, 0] == approximate[:, 0])
+
+        self.assertGreaterEqual(overlap, 0.6)
+        self.assertGreaterEqual(top1, 6)
+
+    def testLemurSettingsValidation(self):
+        """
+        Test LEMUR rejects non-positive settings
+        """
+
+        random = np.random.default_rng(42)
+        documents = [random.normal(size=(5, 6)).astype(np.float32) for _ in range(8)]
+        settings = [
+            "ols_sample_size",
+            "query_scale",
+            "num_layers",
+            "batch_size",
+            "train_subset_size",
+            "learn_subset_size",
+        ]
+
+        for setting in settings:
+            for value in (0, -1):
+                with self.subTest(setting=setting, value=value):
+                    with self.assertRaisesRegex(ValueError, f"{setting} must be greater than 0"):
+                        Lemur().fit(documents, epochs=0, **{setting: value})
+
+    def testLemurFitValidation(self):
+        """
+        Test LEMUR rejects invalid fit inputs
+        """
+
+        documents = [
+            np.array([[1.0, 0.0], [0.0, 1.0]], dtype=np.float32),
+            np.array([[0.5, 0.5]], dtype=np.float32),
+        ]
+        tests = [
+            ("epochs", documents, {"epochs": -1}, "epochs must be greater than or equal to 0"),
+            ("final hidden dimension", documents, {"epochs": 0, "final_hidden_dim": 0}, "final_hidden_dim must be greater than 0"),
+            (
+                "validation split",
+                documents,
+                {"epochs": 0, "validation_split": 1.0},
+                "validation_split must be greater than or equal to 0 and less than 1",
+            ),
+            ("empty data", [], {"epochs": 0}, "data must contain at least one document"),
+            (
+                "data dimension",
+                [np.ones((1, 2), dtype=np.float32), np.ones((1, 3), dtype=np.float32)],
+                {"epochs": 0},
+                "all token vectors must have the same dimension",
+            ),
+            ("empty learn", documents, {"epochs": 0, "learn": []}, "learn must contain at least one document"),
+            (
+                "learn dimension",
+                documents,
+                {"epochs": 0, "learn": [np.ones((1, 3), dtype=np.float32)]},
+                "all learn token vectors must match the data dimension",
+            ),
+            (
+                "validation training subset",
+                documents,
+                {"epochs": 0, "learn": [np.ones((1, 2), dtype=np.float32)], "validation_split": 0.5},
+                "validation_split must leave at least one learn token for training",
+            ),
+            (
+                "zero variance",
+                [np.ones((1, 2), dtype=np.float32), np.ones((1, 2), dtype=np.float32)],
+                {"epochs": 0},
+                "LEMUR targets have zero variance",
+            ),
+        ]
+
+        for name, data, settings, message in tests:
+            with self.subTest(name=name):
+                with self.assertRaisesRegex(ValueError, message):
+                    Lemur().fit(data, **settings)
+
+    def testLemurStateValidation(self):
+        """
+        Test LEMUR rejects invalid categories and unfitted encoding
+        """
+
+        lemur = Lemur()
+        documents = [np.ones((1, 2), dtype=np.float32)]
+
+        with self.assertRaisesRegex(ValueError, "category must be query or data"):
+            lemur(documents, "invalid")
+
+        with self.assertRaisesRegex(ValueError, "LEMUR must be fitted or loaded before encoding"):
+            lemur(documents, "query")
+
+    def testLemurActivations(self):
+        """
+        Test LEMUR activations resolve to Torch modules and functions
+        """
+
+        data = torch.tensor([-1.0, 0.0, 0.5, 2.0])
+        expected = {
+            "relu": (torch.nn.ReLU, torch.relu),
+            "gelu": (torch.nn.GELU, torch.nn.functional.gelu),
+            "silu": (torch.nn.SiLU, torch.nn.functional.silu),
+            "mish": (torch.nn.Mish, torch.nn.functional.mish),
+        }
+
+        for name, (module, function) in expected.items():
+            with self.subTest(activation=name):
+                self.assertIsInstance(Activation.module(name), module)
+                self.assertTrue(torch.equal(Activation.function(name)(data), function(data)))
+
+        for method in (Activation.module, Activation.function):
+            with self.assertRaisesRegex(ValueError, "activation must be one of: relu, gelu, silu, mish"):
+                method("invalid")
 
     def testPrompts(self):
         """

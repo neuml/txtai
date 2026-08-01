@@ -3,6 +3,7 @@ Late module
 """
 
 from .base import Pooling
+from .lemur import Lemur
 from .muvera import Muvera
 
 # Core library imports
@@ -24,10 +25,14 @@ class LatePooling(Pooling):
         # Check if fixed dimensional encoder is enabled
         modelargs = modelargs.copy() if modelargs else {}
         muvera = modelargs.pop("muvera", {})
-        self.encoder = Muvera(**muvera) if muvera is not None else None
+        lemur = modelargs.pop("lemur", None)
 
         # Call parent initialization
         super().__init__(path, device, tokenizer, maxlength, loadprompts, modelargs)
+
+        # Create fixed dimensional encoder
+        self.encoder = Lemur(device=self.device, **lemur) if lemur is not None else Muvera(**muvera) if muvera is not None else None
+        self.lengths = None
 
         # Get linear weights paths
         config = self.load(path, "modules.json")
@@ -55,6 +60,10 @@ class LatePooling(Pooling):
             Late pooled embeddings using output token embeddings (i.e. last hidden state)
         """
 
+        # Track true token counts for encoders that can't consume padding
+        if getattr(self.encoder, "unpadded", False):
+            self.lengths.extend(inputs["attention_mask"].sum(dim=1).cpu().tolist())
+
         # Run through transformers model
         tokens = super().forward(**inputs)
 
@@ -69,6 +78,10 @@ class LatePooling(Pooling):
             documents: list of documents used to build embeddings
             category: embeddings category (query or data)
         """
+
+        # Reset true token counts for this encoding pass
+        if getattr(self.encoder, "unpadded", False):
+            self.lengths = []
 
         results = []
 
@@ -97,6 +110,16 @@ class LatePooling(Pooling):
         Returns:
             normalized results with padding
         """
+
+        # LEMUR operates on normalized true token rows before batch padding
+        if getattr(self.encoder, "unpadded", False):
+            data = []
+            for vectors, length in zip(results, self.lengths):
+                vectors = vectors[:length]
+                vectors /= np.linalg.norm(vectors, axis=1)[:, np.newaxis]
+                data.append(vectors)
+
+            return self.encoder(data, category)
 
         length = 0
         for vectors in results:
