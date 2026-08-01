@@ -145,6 +145,27 @@ vectors: dict
 
 Passes these additional parameters to the underlying vector model.
 
+### center
+```yaml
+center: boolean | dict
+```
+
+Centers normalized late-interaction token vectors and normalizes them again before MUVERA or LEMUR encoding. Centering is applied to
+both query and document vectors. `true` uses document scope and `false` disables centering. When omitted, centering defaults to document
+scope only for late-interaction models that load more than one `torch.nn.Linear` layer; models with zero or one loaded linear layer keep
+their previous output.
+
+Dictionary configuration supports the following scopes:
+
+```yaml
+center:
+    scope: document | batch | collection
+```
+
+`document` subtracts the mean of each document or query independently. `batch` subtracts the mean of all real token rows in the current
+model batch. `collection` requires a caller-provided, one-dimensional mean vector through either `mean` (an array-like value) or `path`
+(a NumPy `.npy` file), but not both. Zero-padding rows are never centered and remain zero.
+
 ### muvera
 ```yaml
 muvera:

@@ -2,6 +2,8 @@
 Pooling module tests
 """
 
+# pylint: disable=too-many-public-methods
+
 import json
 import os
 import tempfile
@@ -10,7 +12,7 @@ import unittest
 import numpy as np
 import torch
 
-from txtai.models import Models, ClsPooling, LastPooling, Lemur, MeanPooling, PoolingFactory
+from txtai.models import Models, ClsPooling, LastPooling, LatePooling, Lemur, MeanPooling, PoolingFactory
 from txtai.models.pooling.lemur import Activation
 from txtai.pipeline import LemurTrainer
 
@@ -110,6 +112,126 @@ class TestPooling(unittest.TestCase):
                 {"path": model, "device": self.device, "modelargs": {"muvera": {"repetitions": 5, "hashes": 2, "projection": 8}}}
             )
             self.assertEqual(pooling.encode(["test"], category="data").shape, (1, 160))
+
+    def testLateCenterDefaults(self):
+        """
+        Test late pooling token centering defaults
+        """
+
+        empty = torch.nn.Sequential()
+        single = torch.nn.Sequential(torch.nn.Linear(2, 2, bias=False))
+        multiple = torch.nn.Sequential(torch.nn.Sequential(torch.nn.Linear(2, 2, bias=False), torch.nn.Linear(2, 2, bias=False)))
+
+        self.assertIsNone(LatePooling.centersettings(None, empty, False))
+        self.assertIsNone(LatePooling.centersettings(None, single, False))
+        self.assertEqual(LatePooling.centersettings(None, multiple, False), {"scope": "document"})
+        self.assertIsNone(LatePooling.centersettings(False, multiple, True))
+        self.assertEqual(LatePooling.centersettings(True, empty, True), {"scope": "document"})
+        self.assertEqual(LatePooling.centersettings({"scope": "batch"}, empty, True), {"scope": "batch"})
+
+    def testLateCenterSettings(self):
+        """
+        Test late pooling token centering settings
+        """
+
+        linear = torch.nn.Sequential()
+        mean = np.array([0.25, -0.25], dtype=np.float32)
+        settings = LatePooling.centersettings({"scope": "collection", "mean": mean.tolist()}, linear, True)
+        np.testing.assert_array_equal(settings["mean"], mean)
+
+        with tempfile.TemporaryDirectory() as output:
+            path = os.path.join(output, "mean.npy")
+            np.save(path, mean)
+            settings = LatePooling.centersettings({"scope": "collection", "path": path}, linear, True)
+            np.testing.assert_array_equal(settings["mean"], mean)
+
+        tests = [
+            (None, "center must be a boolean or dictionary"),
+            ({"scope": "invalid"}, "center scope must be one of"),
+            ({"scope": "collection"}, "requires exactly one"),
+            ({"scope": "collection", "mean": mean, "path": "mean.npy"}, "requires exactly one"),
+            ({"scope": "document", "mean": mean}, "only valid with collection scope"),
+            ({"scope": "document", "invalid": True}, "unknown center setting"),
+            ({"scope": "collection", "mean": [[0.0, 1.0]]}, "finite one-dimensional array"),
+        ]
+
+        for center, message in tests:
+            with self.subTest(center=center):
+                with self.assertRaisesRegex(ValueError, message):
+                    LatePooling.centersettings(center, linear, True)
+
+    def testLateCenterScopes(self):
+        """
+        Test document, batch and collection token centering
+        """
+
+        data = np.array(
+            [
+                [[1.0, 0.0], [0.0, 1.0], [0.0, 0.0]],
+                [[1.0, 0.0], [-1.0, 0.0], [0.0, 0.0]],
+            ],
+            dtype=np.float32,
+        )
+
+        outputs = {}
+        for scope in ("document", "batch", "collection"):
+            pooling = LatePooling.__new__(LatePooling)
+            object.__setattr__(pooling, "center", {"scope": scope, "mean": np.array([0.25, 0.25])} if scope == "collection" else {"scope": scope})
+            outputs[scope] = pooling.centerdata(data)
+
+            np.testing.assert_array_equal(outputs[scope][:, 2], np.zeros((2, 2), dtype=np.float32))
+            norms = np.linalg.norm(outputs[scope][:, :2], axis=2)
+            self.assertTrue(np.all((norms == 0.0) | np.isclose(norms, 1.0)))
+
+        self.assertFalse(np.array_equal(outputs["document"], outputs["batch"]))
+        self.assertFalse(np.array_equal(outputs["batch"], outputs["collection"]))
+
+        # Document centering is batch-independent and equals batch centering for one item
+        pooling = LatePooling.__new__(LatePooling)
+        object.__setattr__(pooling, "center", {"scope": "document"})
+        separate = np.vstack([pooling.centerdata(data[x : x + 1]) for x in range(len(data))])
+        np.testing.assert_array_equal(outputs["document"], separate)
+
+        object.__setattr__(pooling, "center", {"scope": "batch"})
+        object.__setattr__(pooling, "batches", [1, 1])
+        for x in range(len(data)):
+            np.testing.assert_array_equal(pooling.centerdata(data[x : x + 1]), outputs["document"][x : x + 1])
+        np.testing.assert_array_equal(pooling.centerdata(data), outputs["document"])
+
+        object.__setattr__(pooling, "center", {"scope": "document"})
+        object.__setattr__(pooling, "encoder", None)
+        object.__setattr__(pooling, "lengths", [2, 2])
+        query = pooling.postencode([value.copy() for value in data[:, :2]], "query")
+        documents = pooling.postencode([value.copy() for value in data[:, :2]], "data")
+        np.testing.assert_array_equal(query, documents)
+
+        object.__setattr__(pooling, "center", {"scope": "collection", "mean": np.zeros(3)})
+        with self.assertRaisesRegex(ValueError, "dimension must match"):
+            pooling.centerdata(data)
+
+    def testLateCenterDisabled(self):
+        """
+        Test omitted and explicitly disabled centering are byte-identical
+        """
+
+        base = PoolingFactory.create({"path": "neuml/colbert-bert-tiny", "device": self.device, "modelargs": {"muvera": None}})
+        disabled = PoolingFactory.create({"path": "neuml/colbert-bert-tiny", "device": self.device, "modelargs": {"muvera": None, "center": False}})
+
+        self.assertIsNone(base.center)
+        self.assertIsNone(disabled.center)
+        np.testing.assert_array_equal(base.encode(["test"], category="query"), disabled.encode(["test"], category="query"))
+
+        centered = PoolingFactory.create({"path": "neuml/colbert-bert-tiny", "device": self.device, "modelargs": {"muvera": None, "center": True}})
+        texts = ["Short text.", "A considerably longer text exercises padding behavior."]
+        separate = centered.encode(texts, batch=1, category="data")
+        together = centered.encode(texts, batch=2, category="data")
+        np.testing.assert_allclose(separate, together, rtol=1e-5, atol=1e-6)
+        self.assertTrue(np.any(np.all(together == 0.0, axis=2)))
+
+        centered.center = {"scope": "batch"}
+        batch = centered.encode(texts, batch=1, category="data")
+        self.assertEqual(centered.batches, [1, 1])
+        np.testing.assert_allclose(batch, separate, rtol=1e-5, atol=1e-6)
 
     def testLemur(self):
         """
