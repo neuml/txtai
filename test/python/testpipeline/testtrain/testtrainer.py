@@ -2,6 +2,8 @@
 Trainer module tests
 """
 
+# pylint: disable=too-many-public-methods
+
 import json
 import os
 import tempfile
@@ -483,6 +485,10 @@ class TestTrainer(unittest.TestCase):
 
             @staticmethod
             def isatty():
+                """
+                Returns whether the stream is interactive.
+                """
+
                 return False
 
         progress = []
