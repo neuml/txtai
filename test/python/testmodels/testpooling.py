@@ -10,6 +10,7 @@ import tempfile
 import unittest
 
 import numpy as np
+from safetensors.numpy import save_file
 import torch
 
 from txtai.models import Models, ClsPooling, LastPooling, LatePooling, Lemur, MeanPooling, PoolingFactory
@@ -124,10 +125,11 @@ class TestPooling(unittest.TestCase):
 
         self.assertIsNone(LatePooling.centersettings(None, empty, False))
         self.assertIsNone(LatePooling.centersettings(None, single, False))
-        self.assertEqual(LatePooling.centersettings(None, multiple, False), {"scope": "document"})
+        self.assertEqual(LatePooling.centersettings(None, multiple, False), {"scope": "batch"})
         self.assertIsNone(LatePooling.centersettings(False, multiple, True))
-        self.assertEqual(LatePooling.centersettings(True, empty, True), {"scope": "document"})
+        self.assertEqual(LatePooling.centersettings(True, empty, True), {"scope": "batch"})
         self.assertEqual(LatePooling.centersettings({"scope": "batch"}, empty, True), {"scope": "batch"})
+        self.assertEqual(LatePooling.centersettings({"scope": "document"}, empty, True), {"scope": "document"})
 
     def testLateCenterSettings(self):
         """
@@ -140,8 +142,8 @@ class TestPooling(unittest.TestCase):
         np.testing.assert_array_equal(settings["mean"], mean)
 
         with tempfile.TemporaryDirectory() as output:
-            path = os.path.join(output, "mean.npy")
-            np.save(path, mean)
+            path = os.path.join(output, "mean.safetensors")
+            save_file({"center.mean": mean}, path)
             settings = LatePooling.centersettings({"scope": "collection", "path": path}, linear, True)
             np.testing.assert_array_equal(settings["mean"], mean)
 
@@ -149,7 +151,7 @@ class TestPooling(unittest.TestCase):
             (None, "center must be a boolean or dictionary"),
             ({"scope": "invalid"}, "center scope must be one of"),
             ({"scope": "collection"}, "requires exactly one"),
-            ({"scope": "collection", "mean": mean, "path": "mean.npy"}, "requires exactly one"),
+            ({"scope": "collection", "mean": mean, "path": "mean.safetensors"}, "requires exactly one"),
             ({"scope": "document", "mean": mean}, "only valid with collection scope"),
             ({"scope": "document", "invalid": True}, "unknown center setting"),
             ({"scope": "collection", "mean": [[0.0, 1.0]]}, "finite one-dimensional array"),
@@ -223,15 +225,17 @@ class TestPooling(unittest.TestCase):
 
         centered = PoolingFactory.create({"path": "neuml/colbert-bert-tiny", "device": self.device, "modelargs": {"muvera": None, "center": True}})
         texts = ["Short text.", "A considerably longer text exercises padding behavior."]
-        separate = centered.encode(texts, batch=1, category="data")
+        self.assertEqual(centered.center, {"scope": "batch"})
         together = centered.encode(texts, batch=2, category="data")
-        np.testing.assert_allclose(separate, together, rtol=1e-5, atol=1e-6)
+        repeated = centered.encode(texts, batch=2, category="data")
+        np.testing.assert_array_equal(together, repeated)
+        self.assertEqual(centered.batches, [2])
         self.assertTrue(np.any(np.all(together == 0.0, axis=2)))
 
-        centered.center = {"scope": "batch"}
-        batch = centered.encode(texts, batch=1, category="data")
-        self.assertEqual(centered.batches, [1, 1])
-        np.testing.assert_allclose(batch, separate, rtol=1e-5, atol=1e-6)
+        centered.center = {"scope": "document"}
+        separate = centered.encode(texts, batch=1, category="data")
+        document = centered.encode(texts, batch=2, category="data")
+        np.testing.assert_allclose(document, separate, rtol=1e-5, atol=1e-6)
 
     def testLemur(self):
         """
@@ -285,6 +289,55 @@ class TestPooling(unittest.TestCase):
             # MUVERA remains the default when LEMUR is absent
             pooling = PoolingFactory.create({"path": model, "device": self.device})
             self.assertEqual(pooling.encode(["test"], category="query").shape, (1, 10240))
+
+    def testLemurCenter(self):
+        """
+        Test late pooling with centered LEMUR fixed dimensional encoding
+        """
+
+        corpus = [
+            "Machine learning models retrieve relevant passages.",
+            "Late interaction compares token embeddings.",
+            "Dense indexes search fixed dimensional vectors.",
+            "A query encoder produces contextual token vectors.",
+            "Document encoders represent passages for retrieval.",
+            "Maximum similarity aggregates token matches.",
+            "LEMUR learns a corpus specific reduction.",
+            "MUVERA uses randomized fixed dimensional encodings.",
+            "The trainer stores reusable pooling artifacts.",
+            "New documents can be encoded after training.",
+            "Short text.",
+            "A considerably longer synthetic document exercises padding behavior.",
+        ] * 2
+        texts = ["Short text.", "A considerably longer synthetic document exercises padding behavior."]
+
+        for model in ["neuml/colbert-bert-tiny", "neuml/pylate-bert-tiny"]:
+            with tempfile.TemporaryDirectory() as output:
+                LemurTrainer()(
+                    model,
+                    corpus,
+                    output,
+                    gpu=False,
+                    epochs=0,
+                    final_hidden_dim=128,
+                    train_subset_size=24,
+                    learn_subset_size=256,
+                    ols_sample_size=128,
+                    seed=42,
+                )
+
+                pooling = PoolingFactory.create({"path": model, "device": self.device, "modelargs": {"lemur": {"path": output}, "center": True}})
+                self.assertEqual(pooling.center, {"scope": "batch"})
+
+                queries = pooling.encode(texts, batch=2, category="query")
+                documents = pooling.encode(texts, batch=2, category="data")
+                self.assertEqual(queries.shape, (2, 128))
+                self.assertEqual(documents.shape, (2, 128))
+                self.assertTrue(np.isfinite(queries).all())
+                self.assertTrue(np.isfinite(documents).all())
+
+                np.testing.assert_array_equal(pooling.encode(texts, batch=2, category="query"), queries)
+                np.testing.assert_array_equal(pooling.encode(texts, batch=2, category="data"), documents)
 
     def testLemurRoundTrip(self):
         """

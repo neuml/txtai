@@ -179,12 +179,12 @@ class LatePooling(Pooling):
             resolved token centering configuration
         """
 
-        # Enable document centering by default for multi-linear models
+        # Enable batch centering by default for multi-linear models
         if not configured:
             center = sum(isinstance(module, torch.nn.Linear) for module in linear.modules()) > 1
 
         if isinstance(center, bool):
-            return {"scope": "document"} if center else None
+            return {"scope": "batch"} if center else None
 
         if not isinstance(center, dict):
             raise ValueError("center must be a boolean or dictionary")
@@ -206,7 +206,12 @@ class LatePooling(Pooling):
             if (mean is None) == (path is None):
                 raise ValueError("collection center scope requires exactly one of mean or path")
 
-            mean = np.load(path, allow_pickle=False) if path is not None else np.asarray(mean)
+            if path is not None:
+                with safetensors.safe_open(path, framework="np") as source:
+                    mean = source.get_tensor("center.mean")
+            else:
+                mean = np.asarray(mean)
+
             if mean.ndim != 1 or not np.isfinite(mean).all():
                 raise ValueError("collection center mean must be a finite one-dimensional array")
 
@@ -242,18 +247,16 @@ class LatePooling(Pooling):
             means = [self.center["mean"]] * len(vectors)
 
         for x, (value, mask) in enumerate(zip(vectors, masks)):
-            if not mask.any():
-                continue
+            if mask.any():
+                current = value[mask]
+                average = current.mean(axis=0) if scope == "document" else means[x]
+                if average is not None and average.shape != (current.shape[1],):
+                    raise ValueError("center mean dimension must match token vector dimension")
 
-            current = value[mask]
-            average = current.mean(axis=0) if scope == "document" else means[x]
-            if average is not None and average.shape != (current.shape[1],):
-                raise ValueError("center mean dimension must match token vector dimension")
-
-            current = current - average
-            norms = np.linalg.norm(current, axis=1, keepdims=True)
-            current = np.divide(current, norms, out=np.zeros_like(current), where=norms != 0)
-            vectors[x][mask] = current
+                current = current - average
+                norms = np.linalg.norm(current, axis=1, keepdims=True)
+                current = np.divide(current, norms, out=np.zeros_like(current), where=norms != 0)
+                vectors[x][mask] = current
 
         return np.asarray(vectors) if array else vectors
 
