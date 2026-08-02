@@ -6,6 +6,9 @@
 Trains a LEMUR fixed dimensional encoder for a late interaction model and corpus. Training is a separate pipeline step; the saved
 artifact is then loaded through the embeddings `vectors.lemur` configuration.
 
+`LemurTrainer` owns training-data construction, feature-model setup, epoch training and validation-based selection. The loaded LEMUR
+pooler remains responsible for query-feature and document-weight encoding.
+
 ## Example
 
 ```python
@@ -41,6 +44,9 @@ been created. `corpussubsetsize` applies to `data`; a separate `learn` iterable 
 For trained MLP features, set `validationsplit` to a fraction greater than zero and less than one to retain the epoch with the lowest
 held-out loss. The default is `0.0`, which preserves training-loss selection. The selected one-based epoch, loss and metric are
 available as `selectedepoch`, `selectedloss` and `selectionmetric` on the fitted or reloaded encoder.
+
+MLP training displays a `tqdm` progress bar on an interactive terminal, including percent complete and the current validation loss
+when `validationsplit` is enabled (or training loss otherwise). Progress output is disabled for non-interactive runs.
 
 The artifact contains `config.json` and `model.safetensors`. It stores the inference feature model, output-normalization statistics
 and token sample needed to encode documents added after training. The training-only output readout is not saved.
