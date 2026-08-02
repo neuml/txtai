@@ -5,7 +5,17 @@ LEMUR trainer module
 import random
 import sys
 
-from tqdm.auto import tqdm
+# Conditional import. Minimal installs do not include the model stack that
+# provides tqdm and only need this module to remain importable.
+try:
+    from tqdm.auto import tqdm
+except ImportError:
+
+    def tqdm(values, **_):
+        """Returns values unchanged when training dependencies are unavailable."""
+
+        return values
+
 
 from ...models import Lemur, Models, PoolingFactory
 from ...models.pooling.lemur import LemurModel
