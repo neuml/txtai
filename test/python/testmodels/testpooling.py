@@ -272,7 +272,7 @@ class TestPooling(unittest.TestCase):
                     seed=42,
                 )
 
-                pooling = PoolingFactory.create({"path": model, "device": self.device, "modelargs": {"lemur": {"path": output}}})
+                pooling = PoolingFactory.create({"path": model, "device": self.device, "modelargs": {"lemur": {"path": output}, "center": False}})
                 texts = ["Short text.", "A considerably longer synthetic document exercises padding behavior."]
                 queries = pooling.encode(texts, category="query")
                 documents = pooling.encode(texts, category="data")
