@@ -50,9 +50,9 @@ class Lemur:
         self.std = None
         self.config = None
         self.pinv = None
-        self.selected_epoch = None
-        self.selected_loss = None
-        self.selection_metric = None
+        self.selectedepoch = None
+        self.selectedloss = None
+        self.selectionmetric = None
 
         if path:
             self.load(path)
@@ -70,9 +70,9 @@ class Lemur:
         """
 
         if category == "query":
-            vectors = self.compute_features(data)
+            vectors = self.computefeatures(data)
         elif category == "data":
-            vectors = self.compute_weights(data)
+            vectors = self.computeweights(data)
         else:
             raise ValueError("category must be query or data")
 
@@ -83,20 +83,20 @@ class Lemur:
         self,
         data,
         output=None,
-        train_subset_size=8192,
-        learn_subset_size=100000,
-        ols_sample_size=16384,
-        num_layers=1,
-        hidden_dim=512,
-        final_hidden_dim=2048,
+        trainsubsetsize=8192,
+        learnsubsetsize=100000,
+        olssamplesize=16384,
+        layers=1,
+        hiddendim=512,
+        finalhiddendim=2048,
         activation="gelu",
         epochs=None,
         lr=3e-3,
-        batch_size=512,
-        grad_clip=0.5,
-        query_scale=32,
+        batchsize=512,
+        gradclip=0.5,
+        queryscale=32,
         seed=42,
-        validation_split=0.0,
+        validationsplit=0.0,
         learn=None,
     ):
         """
@@ -105,20 +105,20 @@ class Lemur:
         Args:
             data: iterable of unpadded corpus token-vector arrays
             output: optional artifact output directory
-            train_subset_size: maximum number of documents used to build targets
-            learn_subset_size: maximum number of token vectors used to learn features
-            ols_sample_size: maximum number of token vectors stored for document weights
-            num_layers: number of MLP feature layers
-            hidden_dim: MLP hidden dimension
-            final_hidden_dim: fixed output dimension
+            trainsubsetsize: maximum number of documents used to build targets
+            learnsubsetsize: maximum number of token vectors used to learn features
+            olssamplesize: maximum number of token vectors stored for document weights
+            layers: number of MLP feature layers
+            hiddendim: MLP hidden dimension
+            finalhiddendim: fixed output dimension
             activation: feature activation
             epochs: required training choice; 100 is the quality MLP setting and 0 selects deterministic ELM features
             lr: Adam learning rate
-            batch_size: training batch size
-            grad_clip: optional gradient clipping value
-            query_scale: query feature sum scale
+            batchsize: training batch size
+            gradclip: optional gradient clipping value
+            queryscale: query feature sum scale
             seed: random seed
-            validation_split: fraction of sampled learn tokens held out for validation
+            validationsplit: fraction of sampled learn tokens held out for validation
             learn: optional iterable of learn-token arrays, defaults to data
 
         Returns:
@@ -130,50 +130,50 @@ class Lemur:
         if epochs < 0:
             raise ValueError("epochs must be greater than or equal to 0")
         for name, value in [
-            ("ols_sample_size", ols_sample_size),
-            ("query_scale", query_scale),
-            ("num_layers", num_layers),
-            ("batch_size", batch_size),
-            ("train_subset_size", train_subset_size),
-            ("learn_subset_size", learn_subset_size),
+            ("olssamplesize", olssamplesize),
+            ("queryscale", queryscale),
+            ("layers", layers),
+            ("batchsize", batchsize),
+            ("trainsubsetsize", trainsubsetsize),
+            ("learnsubsetsize", learnsubsetsize),
         ]:
             if value <= 0:
                 raise ValueError(f"{name} must be greater than 0")
-        if final_hidden_dim < 1:
-            raise ValueError("final_hidden_dim must be greater than 0")
-        if validation_split < 0 or validation_split >= 1:
-            raise ValueError("validation_split must be greater than or equal to 0 and less than 1")
+        if finalhiddendim < 1:
+            raise ValueError("finalhiddendim must be greater than 0")
+        if validationsplit < 0 or validationsplit >= 1:
+            raise ValueError("validationsplit must be greater than or equal to 0 and less than 1")
 
-        self.selected_epoch = None
-        self.selected_loss = None
-        self.selection_metric = None
+        self.selectedepoch = None
+        self.selectedloss = None
+        self.selectionmetric = None
 
         generator = torch.Generator(device="cpu")
         generator.manual_seed(seed)
-        training = self._create_training_data(
+        training = self.createtrainingdata(
             data,
             learn,
-            (train_subset_size, learn_subset_size),
-            validation_split,
+            (trainsubsetsize, learnsubsetsize),
+            validationsplit,
             generator,
         )
 
-        model_type = "elm" if epochs == 0 else "mlp"
+        modeltype = "elm" if epochs == 0 else "mlp"
         config = {
-            "model_type": model_type,
-            "input_dim": training["dimension"],
-            "hidden_dim": hidden_dim,
-            "final_hidden_dim": final_hidden_dim,
-            "num_layers": num_layers,
+            "modeltype": modeltype,
+            "inputdim": training["dimension"],
+            "hiddendim": hiddendim,
+            "finalhiddendim": finalhiddendim,
+            "layers": layers,
             "activation": activation,
-            "query_scale": query_scale,
+            "queryscale": queryscale,
             "seed": seed,
         }
 
         # Isolate seeded model construction from the caller's global RNG state
         with torch.random.fork_rng():
             torch.manual_seed(seed)
-            self.model = LemurModel(output_dim=training["train_size"], **config).to(self.device)
+            self.model = LemurModel(outputdim=training["trainsize"], **config).to(self.device)
 
         if epochs:
             self.train(
@@ -181,24 +181,24 @@ class Lemur:
                 training["targets"],
                 epochs,
                 lr,
-                batch_size,
-                grad_clip,
+                batchsize,
+                gradclip,
                 seed,
-                training["validation_inputs"],
-                training["validation_targets"],
+                training["validationinputs"],
+                training["validationtargets"],
             )
             config["training"] = {
-                "selected_epoch": self.selected_epoch,
-                "selected_loss": self.selected_loss,
-                "selection_metric": self.selection_metric,
-                "validation_split": validation_split,
+                "selectedepoch": self.selectedepoch,
+                "selectedloss": self.selectedloss,
+                "selectionmetric": self.selectionmetric,
+                "validationsplit": validationsplit,
             }
 
         # Persist the exact learn-token sample used by future document upserts
-        learn_tokens = training["learn"]
-        sample_size = min(ols_sample_size, len(learn_tokens))
-        sample_indices = torch.randperm(len(learn_tokens), generator=generator)[:sample_size].to(learn_tokens.device)
-        self.sample = learn_tokens[sample_indices].detach()
+        learntokens = training["learn"]
+        samplesize = min(olssamplesize, len(learntokens))
+        sampleindices = torch.randperm(len(learntokens), generator=generator)[:samplesize].to(learntokens.device)
+        self.sample = learntokens[sampleindices].detach()
         self.config = config
         self.pinv = None
 
@@ -207,15 +207,15 @@ class Lemur:
 
         return self
 
-    def _create_training_data(self, data, learn, subset_sizes, validation_split, generator):
+    def createtrainingdata(self, data, learn, subsetsizes, validationsplit, generator):
         """
         Creates sampled training and optional validation data.
 
         Args:
             data: iterable of unpadded corpus token-vector arrays
             learn: optional iterable of learn-token arrays
-            subset_sizes: train-document and learn-token sample limits
-            validation_split: fraction of sampled learn tokens held out for validation
+            subsetsizes: train-document and learn-token sample limits
+            validationsplit: fraction of sampled learn tokens held out for validation
             generator: seeded random generator
 
         Returns:
@@ -230,30 +230,30 @@ class Lemur:
         if any(document.shape[1] != dimension for document in documents):
             raise ValueError("all token vectors must have the same dimension")
 
-        learn_documents = documents if learn is None else self.documents(learn)
-        if not learn_documents:
+        learndocuments = documents if learn is None else self.documents(learn)
+        if not learndocuments:
             raise ValueError("learn must contain at least one document")
-        if any(document.shape[1] != dimension for document in learn_documents):
+        if any(document.shape[1] != dimension for document in learndocuments):
             raise ValueError("all learn token vectors must match the data dimension")
 
-        train_subset_size, learn_subset_size = subset_sizes
-        train_size = min(train_subset_size, len(documents))
-        train_indices = torch.randperm(len(documents), generator=generator)[:train_size].tolist()
-        train = [documents[index] for index in train_indices]
+        trainsubsetsize, learnsubsetsize = subsetsizes
+        trainsize = min(trainsubsetsize, len(documents))
+        trainindices = torch.randperm(len(documents), generator=generator)[:trainsize].tolist()
+        train = [documents[index] for index in trainindices]
 
-        tokens = torch.cat(learn_documents)
-        learn_size = min(learn_subset_size, len(tokens))
-        learn_indices = torch.randperm(len(tokens), generator=generator)[:learn_size].to(tokens.device)
-        learn_tokens = tokens[learn_indices]
+        tokens = torch.cat(learndocuments)
+        learnsize = min(learnsubsetsize, len(tokens))
+        learnindices = torch.randperm(len(tokens), generator=generator)[:learnsize].to(tokens.device)
+        learntokens = tokens[learnindices]
 
-        inputs, validation_inputs = learn_tokens, None
-        if validation_split:
-            validation_size = max(1, int(len(learn_tokens) * validation_split))
-            if validation_size >= len(learn_tokens):
-                raise ValueError("validation_split must leave at least one learn token for training")
+        inputs, validationinputs = learntokens, None
+        if validationsplit:
+            validationsize = max(1, int(len(learntokens) * validationsplit))
+            if validationsize >= len(learntokens):
+                raise ValueError("validationsplit must leave at least one learn token for training")
 
-            validation_inputs = learn_tokens[:validation_size]
-            inputs = learn_tokens[validation_size:]
+            validationinputs = learntokens[:validationsize]
+            inputs = learntokens[validationsize:]
 
         targets = self.maxsim(train, inputs)
         self.mean = targets.mean()
@@ -262,18 +262,18 @@ class Lemur:
             raise ValueError("LEMUR targets have zero variance")
 
         targets = (targets - self.mean) / self.std
-        validation_targets = None
-        if validation_inputs is not None:
-            validation_targets = (self.maxsim(train, validation_inputs) - self.mean) / self.std
+        validationtargets = None
+        if validationinputs is not None:
+            validationtargets = (self.maxsim(train, validationinputs) - self.mean) / self.std
 
         return {
             "dimension": dimension,
-            "train_size": train_size,
-            "learn": learn_tokens,
+            "trainsize": trainsize,
+            "learn": learntokens,
             "inputs": inputs,
             "targets": targets,
-            "validation_inputs": validation_inputs,
-            "validation_targets": validation_targets,
+            "validationinputs": validationinputs,
+            "validationtargets": validationtargets,
         }
 
     def train(
@@ -282,11 +282,11 @@ class Lemur:
         targets,
         epochs,
         lr,
-        batch_size,
-        grad_clip,
+        batchsize,
+        gradclip,
         seed,
-        validation_inputs=None,
-        validation_targets=None,
+        validationinputs=None,
+        validationtargets=None,
     ):
         """
         Trains the MLP feature extractor and temporary readout layer.
@@ -296,17 +296,17 @@ class Lemur:
             targets: standardized maxsim targets
             epochs: number of training epochs
             lr: Adam learning rate
-            batch_size: training batch size
-            grad_clip: optional gradient clipping value
+            batchsize: training batch size
+            gradclip: optional gradient clipping value
             seed: random seed
-            validation_inputs: optional held-out learn-token vectors
-            validation_targets: optional standardized validation targets
+            validationinputs: optional held-out learn-token vectors
+            validationtargets: optional standardized validation targets
         """
 
         inputs, targets = inputs.to(self.device), targets.to(self.device)
-        if validation_inputs is not None:
-            validation_inputs = validation_inputs.to(self.device)
-            validation_targets = validation_targets.to(self.device)
+        if validationinputs is not None:
+            validationinputs = validationinputs.to(self.device)
+            validationtargets = validationtargets.to(self.device)
 
         optimizer = torch.optim.Adam(self.model.parameters(), lr=lr)
         lossfn = torch.nn.MSELoss()
@@ -319,14 +319,14 @@ class Lemur:
             indices = torch.randperm(len(inputs), generator=generator)
             total, batches = 0.0, 0
 
-            for start in range(0, len(inputs), batch_size):
-                batch = indices[start : start + batch_size].to(inputs.device)
+            for start in range(0, len(inputs), batchsize):
+                batch = indices[start : start + batchsize].to(inputs.device)
                 optimizer.zero_grad(set_to_none=True)
                 loss = lossfn(self.model(inputs[batch]), targets[batch])
                 loss.backward()
 
-                if grad_clip is not None and grad_clip > 0:
-                    torch.nn.utils.clip_grad_norm_(self.model.parameters(), grad_clip)
+                if gradclip is not None and gradclip > 0:
+                    torch.nn.utils.clip_grad_norm_(self.model.parameters(), gradclip)
 
                 optimizer.step()
                 total += loss.detach().item()
@@ -334,24 +334,24 @@ class Lemur:
 
             score = total / batches
             metric = score
-            selection_metric = "training_loss"
-            if validation_inputs is not None:
+            selectionmetric = "trainingloss"
+            if validationinputs is not None:
                 self.model.eval()
                 with torch.inference_mode():
-                    metric = lossfn(self.model(validation_inputs), validation_targets).item()
-                selection_metric = "validation_loss"
+                    metric = lossfn(self.model(validationinputs), validationtargets).item()
+                selectionmetric = "validationloss"
 
             if metric < best:
                 best = metric
                 state = {name: value.detach().cpu().clone() for name, value in self.model.state_dict().items()}
-                self.selected_epoch = epoch + 1
-                self.selected_loss = metric
-                self.selection_metric = selection_metric
+                self.selectedepoch = epoch + 1
+                self.selectedloss = metric
+                self.selectionmetric = selectionmetric
 
         if state:
             self.model.load_state_dict(state)
 
-    def compute_features(self, data):
+    def computefeatures(self, data):
         """
         Computes summed query features.
 
@@ -367,9 +367,9 @@ class Lemur:
         self.model.eval()
 
         with torch.inference_mode():
-            return torch.stack([self.model.features(document).sum(dim=0) / self.config["query_scale"] for document in documents])
+            return torch.stack([self.model.features(document).sum(dim=0) / self.config["queryscale"] for document in documents])
 
-    def compute_weights(self, data):
+    def computeweights(self, data):
         """
         Computes ordinary least squares document weights.
 
@@ -459,7 +459,7 @@ class Lemur:
             json.dump(self.config, output, indent=2, sort_keys=True)
             output.write("\n")
 
-        tensors = {name: value.detach().cpu().contiguous() for name, value in self.model.state_dict().items() if not name.startswith("output_layer.")}
+        tensors = {name: value.detach().cpu().contiguous() for name, value in self.model.state_dict().items() if not name.startswith("outputlayer.")}
         tensors.update(
             {
                 "lemur.mean": self.mean.detach().cpu().reshape(1),
@@ -485,9 +485,9 @@ class Lemur:
 
         self.model = LemurModel(**self.config).to(self.device)
         training = self.config.get("training", {})
-        self.selected_epoch = training.get("selected_epoch")
-        self.selected_loss = training.get("selected_loss")
-        self.selection_metric = training.get("selection_metric")
+        self.selectedepoch = training.get("selectedepoch")
+        self.selectedloss = training.get("selectedloss")
+        self.selectionmetric = training.get("selectionmetric")
         with safetensors.safe_open(weights, framework="pt", device=str(self.device)) as source:
             tensors = {name: source.get_tensor(name) for name in source.keys()}
 
@@ -517,53 +517,53 @@ class LemurModel(Module):
     # pylint: disable=R0913,R0917
     def __init__(
         self,
-        model_type,
-        input_dim,
-        hidden_dim,
-        final_hidden_dim,
-        num_layers,
+        modeltype,
+        inputdim,
+        hiddendim,
+        finalhiddendim,
+        layers,
         activation,
-        query_scale,
+        queryscale,
         seed,
-        output_dim=None,
+        outputdim=None,
         training=None,
     ):
         """
         Creates a LEMUR feature model.
 
         Args:
-            model_type: elm or mlp
-            input_dim: token-vector dimension
-            hidden_dim: MLP hidden dimension
-            final_hidden_dim: fixed output dimension
-            num_layers: number of MLP feature layers
+            modeltype: elm or mlp
+            inputdim: token-vector dimension
+            hiddendim: MLP hidden dimension
+            finalhiddendim: fixed output dimension
+            layers: number of MLP feature layers
             activation: feature activation
-            query_scale: query feature sum scale
+            queryscale: query feature sum scale
             seed: artifact seed
-            output_dim: optional number of training target documents
+            outputdim: optional number of training target documents
             training: optional fit-selection metadata
         """
 
         # Unused by model construction but retained in the serialized configuration
-        del query_scale, seed, training
+        del queryscale, seed, training
         super().__init__()
 
-        if model_type == "elm":
+        if modeltype == "elm":
             features = [
-                RandomFeatures(input_dim, final_hidden_dim, activation),
-                torch.nn.LayerNorm(final_hidden_dim, elementwise_affine=False),
+                RandomFeatures(inputdim, finalhiddendim, activation),
+                torch.nn.LayerNorm(finalhiddendim, elementwise_affine=False),
             ]
-        elif model_type == "mlp":
+        elif modeltype == "mlp":
             features = []
-            dimensions = [input_dim] + [hidden_dim] * (num_layers - 1)
+            dimensions = [inputdim] + [hiddendim] * (layers - 1)
             for index, dimension in enumerate(dimensions):
-                output = final_hidden_dim if index == len(dimensions) - 1 else hidden_dim
+                output = finalhiddendim if index == len(dimensions) - 1 else hiddendim
                 features.extend([torch.nn.Linear(dimension, output), torch.nn.LayerNorm(output), Activation.module(activation)])
         else:
-            raise ValueError("model_type must be elm or mlp")
+            raise ValueError("modeltype must be elm or mlp")
 
-        self.feature_extractor = torch.nn.Sequential(*features)
-        self.output_layer = torch.nn.Linear(final_hidden_dim, output_dim, bias=False) if output_dim is not None else None
+        self.featureextractor = torch.nn.Sequential(*features)
+        self.outputlayer = torch.nn.Linear(finalhiddendim, outputdim, bias=False) if outputdim is not None else None
 
     def forward(self, data):
         """
@@ -576,10 +576,10 @@ class LemurModel(Module):
             predicted standardized maxsim targets
         """
 
-        if self.output_layer is None:
+        if self.outputlayer is None:
             raise ValueError("LEMUR training readout is not available in a loaded inference artifact")
 
-        return self.output_layer(self.features(data))
+        return self.outputlayer(self.features(data))
 
     def features(self, data):
         """
@@ -592,7 +592,7 @@ class LemurModel(Module):
             token features
         """
 
-        return self.feature_extractor(data)
+        return self.featureextractor(data)
 
 
 class RandomFeatures(Module):
@@ -600,20 +600,20 @@ class RandomFeatures(Module):
     Seeded random activation features used by the ELM model.
     """
 
-    def __init__(self, input_dim, output_dim, activation):
+    def __init__(self, inputdim, outputdim, activation):
         """
         Creates random activation features.
 
         Args:
-            input_dim: input token-vector dimension
-            output_dim: fixed feature dimension
+            inputdim: input token-vector dimension
+            outputdim: fixed feature dimension
             activation: feature activation
         """
 
         super().__init__()
-        self.register_buffer("weight", torch.randn(input_dim, output_dim))
+        self.register_buffer("weight", torch.randn(inputdim, outputdim))
         self.activation = activation
-        self.scale = math.sqrt(2.0 / output_dim)
+        self.scale = math.sqrt(2.0 / outputdim)
 
     def forward(self, data):
         """

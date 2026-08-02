@@ -265,10 +265,10 @@ class TestPooling(unittest.TestCase):
                     output,
                     gpu=False,
                     epochs=0,
-                    final_hidden_dim=128,
-                    train_subset_size=24,
-                    learn_subset_size=256,
-                    ols_sample_size=128,
+                    finalhiddendim=128,
+                    trainsubsetsize=24,
+                    learnsubsetsize=256,
+                    olssamplesize=128,
                     seed=42,
                 )
 
@@ -319,10 +319,10 @@ class TestPooling(unittest.TestCase):
                     output,
                     gpu=False,
                     epochs=0,
-                    final_hidden_dim=128,
-                    train_subset_size=24,
-                    learn_subset_size=256,
-                    ols_sample_size=128,
+                    finalhiddendim=128,
+                    trainsubsetsize=24,
+                    learnsubsetsize=256,
+                    olssamplesize=128,
                     seed=42,
                 )
 
@@ -353,10 +353,10 @@ class TestPooling(unittest.TestCase):
                 documents,
                 output=output,
                 epochs=0,
-                final_hidden_dim=10,
-                train_subset_size=8,
-                learn_subset_size=40,
-                ols_sample_size=24,
+                finalhiddendim=10,
+                trainsubsetsize=8,
+                learnsubsetsize=40,
+                olssamplesize=24,
                 seed=42,
             )
             self.assertEqual(set(os.listdir(output)), {"config.json", "model.safetensors"})
@@ -365,20 +365,20 @@ class TestPooling(unittest.TestCase):
             # Float32 feature and SVD kernels can vary across Torch/BLAS builds.
             np.testing.assert_allclose(loaded(queries, "query"), fitted(queries, "query"), rtol=1e-5, atol=1e-6)
             np.testing.assert_allclose(loaded(documents, "data"), fitted(documents, "data"), rtol=1e-5, atol=1e-6)
-            self.assertIsNone(loaded.model.output_layer)
-            self.assertIsNone(loaded.selected_epoch)
-            self.assertIsNone(loaded.selected_loss)
-            self.assertIsNone(loaded.selection_metric)
+            self.assertIsNone(loaded.model.outputlayer)
+            self.assertIsNone(loaded.selectedepoch)
+            self.assertIsNone(loaded.selectedloss)
+            self.assertIsNone(loaded.selectionmetric)
 
             with self.assertRaisesRegex(ValueError, "LEMUR training readout is not available in a loaded inference artifact"):
                 loaded.model(torch.ones((1, 6)))
 
             config = dict(loaded.config)
-            config["model_type"] = "invalid"
+            config["modeltype"] = "invalid"
             with open(os.path.join(output, "config.json"), "w", encoding="utf-8") as target:
                 json.dump(config, target)
 
-            with self.assertRaisesRegex(ValueError, "model_type must be elm or mlp"):
+            with self.assertRaisesRegex(ValueError, "modeltype must be elm or mlp"):
                 Lemur(output)
 
     def testLemurDocuments(self):
@@ -433,16 +433,16 @@ class TestPooling(unittest.TestCase):
         settings = {
             "epochs": 4,
             "lr": 0.01,
-            "batch_size": 8,
-            "hidden_dim": 12,
-            "final_hidden_dim": 10,
-            "train_subset_size": 8,
-            "learn_subset_size": 40,
-            "ols_sample_size": 24,
+            "batchsize": 8,
+            "hiddendim": 12,
+            "finalhiddendim": 10,
+            "trainsubsetsize": 8,
+            "learnsubsetsize": 40,
+            "olssamplesize": 24,
             "seed": 42,
         }
         implicit = Lemur().fit(documents, **settings)
-        explicit = Lemur().fit(documents, validation_split=0.0, **settings)
+        explicit = Lemur().fit(documents, validationsplit=0.0, **settings)
 
         # Verify portable numerical equivalence instead of cross-platform bit identity.
         np.testing.assert_allclose(implicit(queries, "query"), explicit(queries, "query"), rtol=1e-5, atol=1e-6)
@@ -462,24 +462,24 @@ class TestPooling(unittest.TestCase):
                 output=output,
                 epochs=20,
                 lr=0.03,
-                batch_size=8,
-                hidden_dim=12,
-                final_hidden_dim=10,
-                train_subset_size=8,
-                learn_subset_size=40,
-                ols_sample_size=24,
-                validation_split=0.25,
+                batchsize=8,
+                hiddendim=12,
+                finalhiddendim=10,
+                trainsubsetsize=8,
+                learnsubsetsize=40,
+                olssamplesize=24,
+                validationsplit=0.25,
                 seed=7,
             )
             reloaded = Lemur(output)
 
-            self.assertEqual(lemur.selection_metric, "validation_loss")
-            self.assertGreaterEqual(lemur.selected_epoch, 1)
-            self.assertLess(lemur.selected_epoch, 20)
-            self.assertTrue(np.isfinite(lemur.selected_loss))
-            self.assertEqual(reloaded.selected_epoch, lemur.selected_epoch)
-            self.assertEqual(reloaded.selected_loss, lemur.selected_loss)
-            self.assertEqual(reloaded.selection_metric, lemur.selection_metric)
+            self.assertEqual(lemur.selectionmetric, "validationloss")
+            self.assertGreaterEqual(lemur.selectedepoch, 1)
+            self.assertLess(lemur.selectedepoch, 20)
+            self.assertTrue(np.isfinite(lemur.selectedloss))
+            self.assertEqual(reloaded.selectedepoch, lemur.selectedepoch)
+            self.assertEqual(reloaded.selectedloss, lemur.selectedloss)
+            self.assertEqual(reloaded.selectionmetric, lemur.selectionmetric)
 
     def testLemurRanking(self):
         """
@@ -507,10 +507,10 @@ class TestPooling(unittest.TestCase):
         lemur.fit(
             documents,
             epochs=0,
-            final_hidden_dim=256,
-            train_subset_size=64,
-            learn_subset_size=sum(len(document) for document in documents),
-            ols_sample_size=sum(len(document) for document in documents),
+            finalhiddendim=256,
+            trainsubsetsize=64,
+            learnsubsetsize=sum(len(document) for document in documents),
+            olssamplesize=sum(len(document) for document in documents),
             seed=42,
         )
         approximate = lemur(queries, "query") @ lemur(documents, "data").T
@@ -530,12 +530,12 @@ class TestPooling(unittest.TestCase):
         random = np.random.default_rng(42)
         documents = [random.normal(size=(5, 6)).astype(np.float32) for _ in range(8)]
         settings = [
-            "ols_sample_size",
-            "query_scale",
-            "num_layers",
-            "batch_size",
-            "train_subset_size",
-            "learn_subset_size",
+            "olssamplesize",
+            "queryscale",
+            "layers",
+            "batchsize",
+            "trainsubsetsize",
+            "learnsubsetsize",
         ]
 
         for setting in settings:
@@ -555,12 +555,12 @@ class TestPooling(unittest.TestCase):
         ]
         tests = [
             ("epochs", documents, {"epochs": -1}, "epochs must be greater than or equal to 0"),
-            ("final hidden dimension", documents, {"epochs": 0, "final_hidden_dim": 0}, "final_hidden_dim must be greater than 0"),
+            ("final hidden dimension", documents, {"epochs": 0, "finalhiddendim": 0}, "finalhiddendim must be greater than 0"),
             (
                 "validation split",
                 documents,
-                {"epochs": 0, "validation_split": 1.0},
-                "validation_split must be greater than or equal to 0 and less than 1",
+                {"epochs": 0, "validationsplit": 1.0},
+                "validationsplit must be greater than or equal to 0 and less than 1",
             ),
             ("empty data", [], {"epochs": 0}, "data must contain at least one document"),
             (
@@ -579,8 +579,8 @@ class TestPooling(unittest.TestCase):
             (
                 "validation training subset",
                 documents,
-                {"epochs": 0, "learn": [np.ones((1, 2), dtype=np.float32)], "validation_split": 0.5},
-                "validation_split must leave at least one learn token for training",
+                {"epochs": 0, "learn": [np.ones((1, 2), dtype=np.float32)], "validationsplit": 0.5},
+                "validationsplit must leave at least one learn token for training",
             ),
             (
                 "zero variance",
