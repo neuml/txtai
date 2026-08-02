@@ -227,10 +227,10 @@ class TestTrainer(unittest.TestCase):
         settings = {
             "gpu": False,
             "epochs": 0,
-            "final_hidden_dim": 128,
-            "train_subset_size": 12,
-            "learn_subset_size": 128,
-            "ols_sample_size": 64,
+            "finalhiddendim": 128,
+            "trainsubsetsize": 12,
+            "learnsubsetsize": 128,
+            "olssamplesize": 64,
             "seed": 42,
         }
 
@@ -251,22 +251,22 @@ class TestTrainer(unittest.TestCase):
         ):
             trained = LemurTrainer()(model, corpus, first, **settings)
             reloaded = Lemur(first)
-            explicit_query = LemurTrainer()(model, corpus, second, learn=corpus, learn_category="query", **settings)
-            data_learn = LemurTrainer()(model, corpus, third, learn=corpus, learn_category="data", **settings)
-            query_reloaded = Lemur(second)
+            explicitquery = LemurTrainer()(model, corpus, second, learn=corpus, learncategory="query", **settings)
+            datalearn = LemurTrainer()(model, corpus, third, learn=corpus, learncategory="data", **settings)
+            queryreloaded = Lemur(second)
 
-            trained_queries = torch.from_numpy(trained(queries, "query"))
-            trained_documents = torch.from_numpy(trained(documents, "data"))
-            data_documents = torch.from_numpy(data_learn(documents, "data"))
+            trainedqueries = torch.from_numpy(trained(queries, "query"))
+            traineddocuments = torch.from_numpy(trained(documents, "data"))
+            datadocuments = torch.from_numpy(datalearn(documents, "data"))
 
             # Float32 encoder and SVD kernels can vary across Torch/BLAS builds.
-            self.assertTrue(torch.allclose(trained_queries, torch.from_numpy(reloaded(queries, "query")), rtol=1e-5, atol=1e-6))
-            self.assertTrue(torch.allclose(trained_documents, torch.from_numpy(reloaded(documents, "data")), rtol=1e-5, atol=1e-6))
-            np.testing.assert_allclose(trained_queries.numpy(), explicit_query(queries, "query"), rtol=1e-5, atol=1e-6)
-            np.testing.assert_allclose(trained_documents.numpy(), explicit_query(documents, "data"), rtol=1e-5, atol=1e-6)
-            self.assertFalse(torch.allclose(trained.sample, data_learn.sample, rtol=1e-5, atol=1e-6))
-            self.assertFalse(torch.allclose(trained_documents, data_documents, rtol=1e-5, atol=1e-6))
-            self.assertTrue(torch.allclose(trained_documents, torch.from_numpy(query_reloaded(documents, "data")), rtol=1e-5, atol=1e-6))
+            self.assertTrue(torch.allclose(trainedqueries, torch.from_numpy(reloaded(queries, "query")), rtol=1e-5, atol=1e-6))
+            self.assertTrue(torch.allclose(traineddocuments, torch.from_numpy(reloaded(documents, "data")), rtol=1e-5, atol=1e-6))
+            np.testing.assert_allclose(trainedqueries.numpy(), explicitquery(queries, "query"), rtol=1e-5, atol=1e-6)
+            np.testing.assert_allclose(traineddocuments.numpy(), explicitquery(documents, "data"), rtol=1e-5, atol=1e-6)
+            self.assertFalse(torch.allclose(trained.sample, datalearn.sample, rtol=1e-5, atol=1e-6))
+            self.assertFalse(torch.allclose(traineddocuments, datadocuments, rtol=1e-5, atol=1e-6))
+            self.assertTrue(torch.allclose(traineddocuments, torch.from_numpy(queryreloaded(documents, "data")), rtol=1e-5, atol=1e-6))
 
     def testLemurTrainerCorpusSubset(self):
         """
@@ -297,7 +297,7 @@ class TestTrainer(unittest.TestCase):
                 patch("txtai.pipeline.train.lemur.PoolingFactory.create", return_value=pooling),
                 patch.object(Lemur, "fit", autospec=True, return_value=None),
             ):
-                LemurTrainer()("model", corpus, "output", gpu=False, epochs=0, corpus_subset_size=4, seed=7)
+                LemurTrainer()("model", corpus, "output", gpu=False, epochs=0, corpussubsetsize=4, seed=7)
             runs.append(pooling.calls)
 
         self.assertEqual(runs[0], runs[1])
@@ -315,8 +315,8 @@ class TestTrainer(unittest.TestCase):
         self.assertEqual(len([call for call in pooling.calls if call[1] == "data"]), len(corpus))
         self.assertEqual(len([call for call in pooling.calls if call[1] == "query"]), len(corpus))
 
-        with self.assertRaisesRegex(ValueError, "corpus_subset_size must be a positive integer"):
-            LemurTrainer()("model", corpus, "output", gpu=False, epochs=0, corpus_subset_size=0)
+        with self.assertRaisesRegex(ValueError, "corpussubsetsize must be a positive integer"):
+            LemurTrainer()("model", corpus, "output", gpu=False, epochs=0, corpussubsetsize=0)
 
     def testLemurTrainerValidation(self):
         """
@@ -325,7 +325,7 @@ class TestTrainer(unittest.TestCase):
 
         tests = [
             ([], {"epochs": 0}, "data must contain at least one corpus text"),
-            (["text"], {"epochs": 0, "learn_category": "invalid"}, "learn_category must be data or query"),
+            (["text"], {"epochs": 0, "learncategory": "invalid"}, "learncategory must be data or query"),
             (["text"], {}, "epochs must be set explicitly"),
             (["text"], {"epochs": 0, "learn": []}, "learn must contain at least one text"),
         ]
