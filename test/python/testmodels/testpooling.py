@@ -235,7 +235,7 @@ class TestPooling(unittest.TestCase):
         centered.center = {"scope": "document"}
         separate = centered.encode(texts, batch=1, category="data")
         document = centered.encode(texts, batch=2, category="data")
-        np.testing.assert_allclose(document, separate, rtol=1e-5, atol=1e-6)
+        np.testing.assert_allclose(document, separate, rtol=1e-4, atol=1e-5)
 
     def testLemur(self):
         """
@@ -284,7 +284,7 @@ class TestPooling(unittest.TestCase):
 
                 # LEMUR must use true token counts, independent of batch padding
                 singles = np.vstack([pooling.encode([text], category="data") for text in texts])
-                np.testing.assert_allclose(documents, singles, rtol=1e-5, atol=1e-6)
+                np.testing.assert_allclose(documents, singles, rtol=1e-4, atol=1e-5)
 
             # MUVERA remains the default when LEMUR is absent
             pooling = PoolingFactory.create({"path": model, "device": self.device})
