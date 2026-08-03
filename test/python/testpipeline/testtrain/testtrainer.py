@@ -502,7 +502,7 @@ class TestTrainer(unittest.TestCase):
         documents = [random.normal(size=(5, 6)).astype(np.float32) for _ in range(8)]
         with (
             patch("txtai.pipeline.train.lemur.sys.stderr", new=Stream()),
-            patch("txtai.pipeline.train.lemur.tqdm", side_effect=create),
+            patch("txtai.pipeline.train.lemur.tqdm.tqdm", side_effect=create),
         ):
             lemur = LemurTrainer().fit(
                 documents,

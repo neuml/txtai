@@ -5,18 +5,6 @@ LEMUR trainer module
 import random
 import sys
 
-# Conditional import. Minimal installs do not include the model stack that
-# provides tqdm and only need this module to remain importable.
-try:
-    from tqdm.auto import tqdm
-except ImportError:
-
-    def tqdm(values, **_):
-        """Returns values unchanged when training dependencies are unavailable."""
-
-        return values
-
-
 from ...models import Lemur, Models, PoolingFactory
 from ...models.pooling.lemur import LemurModel
 from ...util import Library
@@ -25,6 +13,7 @@ from ..base import Pipeline
 
 library = Library()
 torch = library.torch()
+tqdm = library.tqdm()
 
 
 class LemurTrainer(Pipeline):
@@ -360,7 +349,7 @@ class LemurTrainer(Pipeline):
         generator.manual_seed(seed)
         best, state = float("inf"), None
 
-        progress = tqdm(range(epochs), desc="LEMUR training", unit="epoch", disable=not sys.stderr.isatty())
+        progress = tqdm.tqdm(range(epochs), desc="LEMUR training", unit="epoch", disable=not sys.stderr.isatty())
         for epoch in progress:
             lemur.model.train()
             indices = torch.randperm(len(inputs), generator=generator)
