@@ -20,6 +20,7 @@ default = [
     "pyyaml>=5.3",
     "safetensors>=0.4.5",
     "torch>=2.4",
+    "tqdm>=4.66.3",
     "transformers>=5.9.0",
 ]
 

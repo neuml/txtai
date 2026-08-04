@@ -251,6 +251,31 @@ class Library:
 
         return torch
 
+    def tqdm(self):
+        """
+        Imports tqdm.
+
+        Returns:
+            tqdm
+        """
+
+        try:
+            from tqdm import auto as tqdm
+
+        except ImportError:
+
+            class Tqdm:
+                """
+                Stub for tqdm
+                """
+
+                def __getattr__(self, name):
+                    raise ImportError("Tqdm is not installed, install tqdm to use this module")
+
+            tqdm = Tqdm()
+
+        return tqdm
+
     def trainer(self):
         """
         Import transformers.Trainer
