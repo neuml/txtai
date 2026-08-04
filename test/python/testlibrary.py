@@ -34,6 +34,8 @@ class TestLibrary(unittest.TestCase):
             "torch.nn",
             "torch.onnx",
             "torch.utils.data",
+            "tqdm",
+            "tqdm.auto",
             "yaml",
         ]
 
@@ -94,6 +96,9 @@ class TestLibrary(unittest.TestCase):
 
         with self.assertRaises(ImportError):
             lib.torch().device
+
+        with self.assertRaises(ImportError):
+            lib.tqdm().tqdm
 
         with self.assertRaises(ImportError):
             lib.transformers().AutoModel
