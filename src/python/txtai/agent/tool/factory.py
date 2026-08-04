@@ -30,22 +30,53 @@ class ToolFactory:
     Methods to create tools.
     """
 
-    # Default toolkit
+    # Default toolkit. Stores constructors, not instances - these are built on first use by `default`.
+    #
+    # Instances must not be created here. A class body runs at import time, so a tool that needs an
+    # optional dependency would raise while `txtai.agent` is being imported. That ImportError is
+    # caught in agent/__init__.py, which then installs the placeholder Agent and reports that
+    # smolagents is missing - regardless of which dependency was actually missing. ReadTool builds a
+    # Textractor, which needs the "pipeline" extra, so installing only the documented "agent" extra
+    # disabled agents entirely and pointed at the wrong package.
     DEFAULTS = {
-        "bash": BashTool(),
-        "edit": EditTool(),
-        "glob": GlobTool(),
-        "grep": GrepTool(),
-        "python": PythonInterpreterTool(),
-        "question": UserInputTool(),
-        "read": ReadTool(),
-        "todowrite": TodoWriteTool(),
-        "websearch": WebSearchTool(),
-        "write": WriteTool(),
+        "bash": BashTool,
+        "edit": EditTool,
+        "glob": GlobTool,
+        "grep": GrepTool,
+        "python": PythonInterpreterTool,
+        "question": UserInputTool,
+        "read": ReadTool,
+        "todowrite": TodoWriteTool,
+        "websearch": WebSearchTool,
+        "write": WriteTool,
     }
 
     # Backwards compatible mappings
     DEFAULTS["webview"] = DEFAULTS["read"]
+
+    # Cache of default tool instances, keyed by constructor
+    INSTANCES = {}
+
+    @staticmethod
+    def default(name):
+        """
+        Gets a default tool by alias name, creating it on first use.
+
+        Instances are cached, so an alias and its backwards compatible mapping share a single tool,
+        as do repeated agents in the same process.
+
+        Args:
+            name: default tool alias name
+
+        Returns:
+            Tool
+        """
+
+        constructor = ToolFactory.DEFAULTS[name]
+        if constructor not in ToolFactory.INSTANCES:
+            ToolFactory.INSTANCES[constructor] = constructor()
+
+        return ToolFactory.INSTANCES[constructor]
 
     @staticmethod
     def create(config):
@@ -81,11 +112,11 @@ class ToolFactory:
 
             # Get default tool, if applicable
             elif isinstance(tool, str) and tool in ToolFactory.DEFAULTS:
-                tool = ToolFactory.DEFAULTS[tool]
+                tool = ToolFactory.default(tool)
 
             # Get ALL default tools, if applicable
             elif isinstance(tool, str) and tool == "defaults":
-                tools.extend(set(ToolFactory.DEFAULTS.values()))
+                tools.extend({ToolFactory.default(name) for name in ToolFactory.DEFAULTS})
                 tool = None
 
             # Support importing MCP tool collections

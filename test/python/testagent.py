@@ -3,6 +3,8 @@ Agent module tests
 """
 
 import os
+import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -10,9 +12,11 @@ from unittest.mock import patch
 
 from datetime import datetime
 
-from smolagents import CodeAgent, PythonInterpreterTool
+from smolagents import CodeAgent, PythonInterpreterTool, Tool
 
 from txtai.agent import Agent
+from txtai.agent.tool import ToolFactory
+from txtai.agent.tool.glob import GlobTool
 from txtai.embeddings import Embeddings
 
 # agents.md content
@@ -227,3 +231,177 @@ class TestAgent(unittest.TestCase):
 
         agent = Agent(tools=["http://localhost:8000/mcp"], llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=1)
         self.assertEqual(len(agent.tools), 2)
+
+
+class TestToolFactory(unittest.TestCase):
+    """
+    ToolFactory tests.
+    """
+
+    def testDefaultsAreConstructors(self):
+        """
+        Test the default toolkit stores constructors and not instances
+        """
+
+        # Instances built in the class body run at import time. A tool needing an optional
+        # dependency would then raise while txtai.agent is importing, which agent/__init__.py
+        # turns into the placeholder Agent and a message naming the wrong package.
+        for name, constructor in ToolFactory.DEFAULTS.items():
+            self.assertTrue(isinstance(constructor, type), f"{name} is not a constructor")
+            self.assertTrue(issubclass(constructor, Tool), f"{name} is not a Tool")
+
+    def testDefaultCreatesTool(self):
+        """
+        Test resolving a default tool by alias name
+        """
+
+        tool = ToolFactory.default("bash")
+
+        self.assertIsInstance(tool, Tool)
+        self.assertEqual(tool.name, "bash")
+
+    def testDefaultCaches(self):
+        """
+        Test default tool instances are created once and reused
+        """
+
+        self.assertIs(ToolFactory.default("glob"), ToolFactory.default("glob"))
+
+    def testDefaultCachesAliases(self):
+        """
+        Test an alias and its backwards compatible mapping share a single instance
+        """
+
+        # webview is an alias for read
+        self.assertIs(ToolFactory.DEFAULTS["webview"], ToolFactory.DEFAULTS["read"])
+
+    def testDefaultUnknownName(self):
+        """
+        Test an unknown default tool name raises
+        """
+
+        with self.assertRaises(KeyError):
+            ToolFactory.default("notatool")
+
+    def testDefaultDeferred(self):
+        """
+        Test a default tool is not constructed until it is requested
+        """
+
+        calls = []
+
+        class Counted(Tool):
+            """
+            Tool that records each construction
+            """
+
+            name = "counted"
+            description = "Counts constructions"
+            inputs = {}
+            output_type = "any"
+
+            def __init__(self):
+                calls.append(1)
+                super().__init__()
+
+            # pylint: disable=W0221
+            def forward(self):
+                return len(calls)
+
+        with patch.dict(ToolFactory.DEFAULTS, {"counted": Counted}), patch.dict(ToolFactory.INSTANCES, {}, clear=True):
+            # Registering the tool must not construct it
+            self.assertEqual(len(calls), 0)
+
+            # Requesting it constructs once, then reuses the instance
+            ToolFactory.default("counted")
+            ToolFactory.default("counted")
+            self.assertEqual(len(calls), 1)
+
+    def testDefaultRaisesWhenRequested(self):
+        """
+        Test a broken default tool only raises when that tool is requested
+        """
+
+        class Broken(Tool):
+            """
+            Tool standing in for one whose optional dependency is missing
+            """
+
+            name = "broken"
+            description = "Always fails to build"
+            inputs = {}
+            output_type = "any"
+
+            # pylint: disable=W0231
+            def __init__(self):
+                raise ImportError('example pipeline is not available - install "pipeline" extra to enable')
+
+            # pylint: disable=W0221
+            def forward(self):
+                return None
+
+        with patch.dict(ToolFactory.DEFAULTS, {"broken": Broken}), patch.dict(ToolFactory.INSTANCES, {}, clear=True):
+            # Other tools still resolve
+            self.assertIsInstance(ToolFactory.default("bash"), Tool)
+
+            # The failure surfaces only for the requested tool, naming the extra that is missing
+            with self.assertRaises(ImportError) as context:
+                ToolFactory.default("broken")
+
+            self.assertIn("pipeline", str(context.exception))
+
+    def testCreateDefaultAlias(self):
+        """
+        Test create resolves a default tool alias
+        """
+
+        tools = ToolFactory.create({"tools": ["bash"]})
+
+        self.assertEqual(len(tools), 1)
+        self.assertEqual(tools[0].name, "bash")
+
+    def testCreateDefaultsToolkit(self):
+        """
+        Test create resolves the default toolkit without duplicates
+        """
+
+        # Small toolkit with an alias, mirroring webview -> read
+        toolkit = {"glob": GlobTool, "files": GlobTool}
+
+        with patch.dict(ToolFactory.DEFAULTS, toolkit, clear=True), patch.dict(ToolFactory.INSTANCES, {}, clear=True):
+            tools = ToolFactory.create({"tools": ["defaults"]})
+
+            # Both names map to one constructor, so the toolkit holds a single instance
+            self.assertEqual(len(tools), 1)
+            self.assertEqual(tools[0].name, "glob")
+
+    def testCreateEmpty(self):
+        """
+        Test create with no tools configured
+        """
+
+        self.assertEqual(ToolFactory.create({}), [])
+
+    def testImportWithMissingExtra(self):
+        """
+        Test a default tool with a missing optional dependency doesn't disable agents
+        """
+
+        # Run in a subprocess to get a clean import of txtai.agent. bs4 backs the Textractor the
+        # read tool builds and ships in the "pipeline" extra, so blocking it stands in for an
+        # install that only has the documented "agent" extra.
+        program = """
+import sys
+
+# Block the "pipeline" extra dependency backing the read tool
+sys.modules["bs4"] = None
+
+from txtai.agent import Agent
+
+print(Agent.__module__)
+"""
+
+        result = subprocess.run([sys.executable, "-c", program], capture_output=True, text=True, check=False)
+
+        # Agents must still be available, and must not fall back to the placeholder stub
+        self.assertEqual(result.stdout.strip().splitlines()[-1], "txtai.agent.base", result.stderr)
