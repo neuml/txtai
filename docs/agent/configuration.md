@@ -99,9 +99,6 @@ The following shortcut strings load tools directly. Passing a Tool instance is a
 | write       | Writes content to file                                    |
 | *.md        | Loads a [`skill.md`](https://agentskills.io/specification) file |
 
-Tools are created when requested. The `read` tool (and its `webview` alias) extracts text with the
-[Textractor](../../pipeline/data/textractor) pipeline, so it additionally needs the `pipeline` extra.
-Requesting it without that extra installed raises an error naming the missing extra.
 
 ## instructions
 
