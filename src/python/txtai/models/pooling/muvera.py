@@ -27,6 +27,9 @@ class Muvera:
       - Python port of the original C++ code: https://github.com/sigridjineth/muvera-py
     """
 
+    # Signals LatePooling that this encoder must receive true, unpadded token rows
+    unpadded = True
+
     def __init__(self, repetitions=20, hashes=5, projection=16, seed=42):
         """
         Creates a Muvera instance.
