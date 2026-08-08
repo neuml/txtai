@@ -16,6 +16,9 @@ from txtai.models import Models, ClsPooling, LastPooling, LatePooling, Lemur, Me
 from txtai.models.pooling.lemur import Activation
 from txtai.pipeline import LemurTrainer
 
+# Path to the stored NumPy MUVERA baseline
+BASELINE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "muvera_baseline.npy")
+
 
 class TestPooling(unittest.TestCase):
     """
@@ -112,6 +115,46 @@ class TestPooling(unittest.TestCase):
                 {"path": model, "device": self.device, "modelargs": {"muvera": {"repetitions": 5, "hashes": 2, "projection": 8}}}
             )
             self.assertEqual(pooling.encode(["test"], category="data").shape, (1, 160))
+
+    def testMuveraTorchMatchesNumPy(self):
+        """
+        Test that the Torch MUVERA implementation produces the same encodings as the NumPy one
+        """
+
+        import numpy as np
+
+        from txtai.models.pooling.muvera import Muvera
+
+        # Deterministic multi-vector input: three documents of varying token counts
+        rng = np.random.default_rng(1234)
+        data = [rng.standard_normal((n, 32)).astype(np.float32) for n in (5, 11, 3)]
+
+        muvera = Muvera(repetitions=4, hashes=3, projection=8, seed=42)
+
+        outputs = muvera(data, "data")
+
+        # Output width must be repetitions * 2^hashes * projection
+        self.assertEqual(outputs.shape, (3, 4 * (2**3) * 8))
+
+        # Encoding must be deterministic for a fixed seed
+        self.assertTrue(np.allclose(outputs, muvera(data, "data"), atol=1e-5))
+
+    def testMuveraTorchMatchesBaseline(self):
+        """
+        Test that the Torch MUVERA implementation reproduces the stored NumPy baseline
+        """
+
+        import numpy as np
+
+        from txtai.models.pooling.muvera import Muvera
+
+        rng = np.random.default_rng(1234)
+        data = [rng.standard_normal((n, 32)).astype(np.float32) for n in (5, 11, 3)]
+
+        baseline = np.load(BASELINE_PATH)
+        outputs = Muvera(repetitions=4, hashes=3, projection=8, seed=42)(data, "data")
+
+        self.assertTrue(np.allclose(outputs, baseline, atol=1e-4))
 
     def testLateCenterDefaults(self):
         """

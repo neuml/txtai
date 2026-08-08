@@ -6,6 +6,7 @@ Muvera module
 from ...util import Library
 
 np = Library().numpy()
+torch = Library().torch()
 
 
 class Muvera:
@@ -70,73 +71,72 @@ class Muvera:
         partitions = 2**self.hashes
 
         # Document tracking
-        lengths = np.array([len(doc) for doc in data], dtype=np.int32)
-        total = np.sum(lengths)
-        documents = np.repeat(np.arange(length), lengths)
+        lengths = torch.tensor([len(doc) for doc in data], dtype=torch.int64)
+        total = lengths.sum().item()
+        documents = torch.repeat_interleave(torch.arange(length), lengths)
 
         # Stack all vectors
-        points = np.vstack(data).astype(np.float32)
+        points = torch.cat([torch.as_tensor(doc, dtype=torch.float32) for doc in data])
 
         # Output vectors
         size = self.repetitions * partitions * projection
-        vectors = np.zeros((length, size), dtype=np.float32)
+        vectors = torch.zeros((length, size), dtype=torch.float32)
 
         # Process each repetition
         for number in range(self.repetitions):
             seed = self.seed + number
 
             # Calculate the simhash
-            sketches = points @ self.random(dimension, self.hashes, seed)
+            sketches = torch.matmul(points, self.random(dimension, self.hashes, seed))
 
             # Dimensionality reduction, if necessary
-            projected = points if identity else (points @ self.reducer(dimension, projection, seed))
+            projected = points if identity else torch.matmul(points, self.reducer(dimension, projection, seed))
 
             # Get partition indices
-            bits = (sketches > 0).astype(np.uint32)
-            indices = np.zeros(total, dtype=np.uint32)
+            bits = (sketches > 0).to(torch.int64)
+            indices = torch.zeros(total, dtype=torch.int64)
 
             # Calculate vector indices
             for x in range(self.hashes):
                 indices = (indices << 1) + (bits[:, x] ^ (indices & 1))
 
             # Initialize storage
-            fdesum = np.zeros((length * partitions * projection,), dtype=np.float32)
-            counts = np.zeros((length, partitions), dtype=np.int32)
+            fdesum = torch.zeros((length * partitions * projection,), dtype=torch.float32)
+            counts = torch.zeros((length * partitions,), dtype=torch.int32)
 
             # Count vectors per partition per document
-            np.add.at(counts, (documents, indices), 1)
+            flat = documents * partitions + indices
+            counts.index_add_(0, flat, torch.ones(total, dtype=torch.int32))
+            counts = counts.reshape(length, partitions)
 
             # Aggregate vectors using flattened indexing for efficiency
-            part = documents * partitions + indices
-            base = part * projection
+            base = flat * projection
 
             for d in range(projection):
-                flat = base + d
-                np.add.at(fdesum, flat, projected[:, d])
+                fdesum.index_add_(0, base + d, projected[:, d])
 
             # Reshape for easier manipulation
-            # pylint: disable=E1121
             fdesum = fdesum.reshape(length, partitions, projection)
 
             # Convert sums to averages for data category
             if category == "data":
                 # Safe division (avoid divide by zero)
-                counts = counts[:, :, np.newaxis]
-                np.divide(fdesum, counts, out=fdesum, where=counts > 0)
+                counts = counts[:, :, None]
+                fdesum = torch.where(counts > 0, fdesum / counts.to(torch.float32), fdesum)
 
             # Save results
             start = number * partitions * projection
             vectors[:, start : start + partitions * projection] = fdesum.reshape(length, -1)
 
-        return vectors
+        return vectors.cpu().numpy()
 
     def random(self, dimension, projection, seed):
         """
         Generates a random matrix for simhash projections.
 
         Args:
-            dimensions: number of dimensions for input vectors
-            projections: number of projection dimensions
+            dimension: number of dimensions for input vectors
+            projection: number of projection dimensions
             seed: random seed
 
         Returns:
@@ -144,7 +144,7 @@ class Muvera:
         """
 
         rng = np.random.default_rng(seed)
-        return rng.normal(loc=0.0, scale=1.0, size=(dimension, projection)).astype(np.float32)
+        return torch.from_numpy(rng.normal(loc=0.0, scale=1.0, size=(dimension, projection)).astype(np.float32))
 
     def reducer(self, dimension, projection, seed):
         """
@@ -152,7 +152,7 @@ class Muvera:
 
         Args:
             dimension: number of input dimensions
-            projected: number of dimensions to project inputs to
+            projection: number of dimensions to project inputs to
 
         Returns:
             Dimensionality reduced matrix
@@ -164,4 +164,4 @@ class Muvera:
         signs = rng.choice([-1.0, 1.0], size=dimension)
         out[np.arange(dimension), indices] = signs
 
-        return out
+        return torch.from_numpy(out)
