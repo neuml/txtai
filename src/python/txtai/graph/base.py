@@ -744,7 +744,7 @@ class Graph:
     def infertopics(self):
         """
         Infers topics for all nodes with an "updated" attribute. This method analyzes the direct node
-        neighbors and set the most commonly occuring topic and category for each node.
+        neighbors and set the most commonly occurring topic and category for each node.
         """
 
         # Iterate over nodes missing topic attribute (only occurs for new nodes)

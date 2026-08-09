@@ -15,7 +15,7 @@ class Serializer:
     def load(path):
         """
         Loads data from path. This method first tries to load the default serialization format.
-        If that fails, it will fallback to pickle format for backwards-compatability purposes.
+        If that fails, it will fallback to pickle format for backwards-compatibility purposes.
 
         Note that loading pickle files requires the env variable `ALLOW_PICKLE=True`.
 
