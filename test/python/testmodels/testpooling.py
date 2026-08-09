@@ -14,6 +14,7 @@ import torch
 
 from txtai.models import Models, ClsPooling, LastPooling, LatePooling, Lemur, MeanPooling, PoolingFactory
 from txtai.models.pooling.lemur import Activation
+from txtai.models.pooling.muvera import Muvera
 from txtai.pipeline import LemurTrainer
 
 # Path to the stored NumPy MUVERA baseline
@@ -121,10 +122,6 @@ class TestPooling(unittest.TestCase):
         Test that the Torch MUVERA implementation produces the same encodings as the NumPy one
         """
 
-        import numpy as np
-
-        from txtai.models.pooling.muvera import Muvera
-
         # Deterministic multi-vector input: three documents of varying token counts
         rng = np.random.default_rng(1234)
         data = [rng.standard_normal((n, 32)).astype(np.float32) for n in (5, 11, 3)]
@@ -143,10 +140,6 @@ class TestPooling(unittest.TestCase):
         """
         Test that the Torch MUVERA implementation reproduces the stored NumPy baseline
         """
-
-        import numpy as np
-
-        from txtai.models.pooling.muvera import Muvera
 
         rng = np.random.default_rng(1234)
         data = [rng.standard_normal((n, 32)).astype(np.float32) for n in (5, 11, 3)]
