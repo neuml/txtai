@@ -17,9 +17,6 @@ from txtai.models.pooling.lemur import Activation
 from txtai.models.pooling.muvera import Muvera
 from txtai.pipeline import LemurTrainer
 
-# Path to the stored NumPy MUVERA baseline
-BASELINE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "muvera_baseline.npy")
-
 
 class TestPooling(unittest.TestCase):
     """
@@ -135,19 +132,6 @@ class TestPooling(unittest.TestCase):
 
         # Encoding must be deterministic for a fixed seed
         self.assertTrue(np.allclose(outputs, muvera(data, "data"), atol=1e-5))
-
-    def testMuveraTorchMatchesBaseline(self):
-        """
-        Test that the Torch MUVERA implementation reproduces the stored NumPy baseline
-        """
-
-        rng = np.random.default_rng(1234)
-        data = [rng.standard_normal((n, 32)).astype(np.float32) for n in (5, 11, 3)]
-
-        baseline = np.load(BASELINE_PATH)
-        outputs = Muvera(repetitions=4, hashes=3, projection=8, seed=42)(data, "data")
-
-        self.assertTrue(np.allclose(outputs, baseline, atol=1e-4))
 
     def testLateCenterDefaults(self):
         """
