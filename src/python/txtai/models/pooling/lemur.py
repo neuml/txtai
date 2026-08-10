@@ -31,9 +31,6 @@ class Lemur:
       - GitHub: https://github.com/ejaasaari/lemur
     """
 
-    # Signals LatePooling that this encoder must receive true, unpadded token rows
-    unpadded = True
-
     def __init__(self, path=None, device=None):
         """
         Creates a LEMUR encoder.
@@ -156,8 +153,7 @@ class Lemur:
 
         return documents
 
-    @staticmethod
-    def maxsim(documents, queries):
+    def maxsim(self, documents, queries):
         """
         Computes single-token maxsim targets.
 

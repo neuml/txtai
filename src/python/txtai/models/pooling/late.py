@@ -66,9 +66,8 @@ class LatePooling(Pooling):
             Late pooled embeddings using output token embeddings (i.e. last hidden state)
         """
 
-        # Track true token counts for centering and encoders that can't consume padding
-        if self.center or getattr(self.encoder, "unpadded", False):
-            self.lengths.extend(inputs["attention_mask"].sum(dim=1).cpu().tolist())
+        # Track true token counts
+        self.lengths.extend(inputs["attention_mask"].sum(dim=1).cpu().tolist())
 
         # Track model batch boundaries for batch-scoped centering
         if self.center and self.center["scope"] == "batch":
@@ -90,8 +89,7 @@ class LatePooling(Pooling):
         """
 
         # Reset true token counts for this encoding pass
-        if self.center or getattr(self.encoder, "unpadded", False):
-            self.lengths = []
+        self.lengths = []
 
         if self.center and self.center["scope"] == "batch":
             self.batches = []
@@ -124,49 +122,33 @@ class LatePooling(Pooling):
             normalized results with padding
         """
 
-        # LEMUR operates on normalized true token rows before batch padding
-        if getattr(self.encoder, "unpadded", False):
-            data = []
-            for vectors, length in zip(results, self.lengths):
-                vectors = vectors[:length]
-                vectors /= np.linalg.norm(vectors, axis=1)[:, np.newaxis]
-                data.append(vectors)
+        data, maxlength = [], 0
+        for vectors, length in zip(results, self.lengths):
+            # Calculate max length
+            maxlength = max(length, maxlength)
 
-            if self.center:
-                data = self.centerdata(data)
-
-            return self.encoder(data, category)
-
-        # Remove model padding before normalization. Padding is restored as exact zeros below.
-        if self.center:
-            results = [vectors[:length] for vectors, length in zip(results, self.lengths)]
-
-        length = 0
-        for vectors in results:
-            # Get max length
-            if vectors.shape[0] > length:
-                length = vectors.shape[0]
-
-            # Normalize vectors
+            # Normalize vector
+            vectors = vectors[:length]
             vectors /= np.linalg.norm(vectors, axis=1)[:, np.newaxis]
+            data.append(vectors)
 
-        # Pad values
-        data = []
-        for vectors in results:
-            data.append(np.pad(vectors, [(0, length - vectors.shape[0]), (0, 0)]))
-
-        # Build NumPy array
-        data = np.asarray(data)
-
-        # Center true token rows before fixed dimensional encoding
+        # Apply vector centering
         if self.center:
             data = self.centerdata(data)
 
-        # Apply fixed dimesional encoder, if necessary
-        return self.encoder(data, category) if self.encoder else data
+        # Fixed dimensional output
+        if self.encoder:
+            return self.encoder(data, category)
 
-    @staticmethod
-    def centersettings(center, linear, configured):
+        # Standard multi-vector output - pad values to maxlength
+        padded = []
+        for vectors in data:
+            padded.append(np.pad(vectors, [(0, maxlength - vectors.shape[0]), (0, 0)]))
+
+        # Build NumPy array
+        return np.asarray(padded)
+
+    def centersettings(self, center, linear, configured):
         """
         Validates and resolves token centering settings.
 

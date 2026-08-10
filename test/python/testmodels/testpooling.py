@@ -2,22 +2,21 @@
 Pooling module tests
 """
 
-# pylint: disable=too-many-public-methods
-
 import os
 import tempfile
 import unittest
 
 import numpy as np
-from safetensors.numpy import save_file
 import torch
 
-from txtai.models import Models, ClsPooling, LastPooling, LatePooling, Lemur, MeanPooling, PoolingFactory
+from safetensors.numpy import save_file
+
+from txtai.models import Models, ClsPooling, LastPooling, LatePooling, Lemur, MeanPooling, Muvera, PoolingFactory
 from txtai.models.pooling.lemur import Activation
-from txtai.models.pooling.muvera import Muvera
 from txtai.pipeline import LemurTrainer
 
 
+# pylint: disable=R0904
 class TestPooling(unittest.TestCase):
     """
     Pooling tests.
@@ -62,90 +61,6 @@ class TestPooling(unittest.TestCase):
         # Test last pooling encoding
         self.assertEqual(pooling.encode(["test"])[0].shape, (768,))
 
-    def testLength(self):
-        """
-        Test pooling with max_seq_length
-        """
-
-        # Test reading max_seq_length parmaeter
-        pooling = PoolingFactory.create({"path": "sentence-transformers/nli-mpnet-base-v2", "device": self.device, "maxlength": True})
-        self.assertEqual(pooling.maxlength, 75)
-
-        # Test specified maxlength
-        pooling = PoolingFactory.create({"path": "sentence-transformers/nli-mpnet-base-v2", "device": self.device, "maxlength": 256})
-        self.assertEqual(pooling.maxlength, 256)
-
-        # Test max_seq_length is ignored when parameter is omitted
-        pooling = PoolingFactory.create({"path": "sentence-transformers/nli-mpnet-base-v2", "device": self.device})
-        self.assertEqual(pooling.maxlength, 512)
-
-        # Test maxlength when max_seq_length not present
-        pooling = PoolingFactory.create({"path": "hf-internal-testing/tiny-random-gpt2", "device": self.device, "maxlength": True})
-        self.assertEqual(pooling.maxlength, 1024)
-
-    def testMean(self):
-        """
-        Test mean pooling
-        """
-
-        # Test mean pooling
-        pooling = PoolingFactory.create({"path": "sentence-transformers/nli-mpnet-base-v2", "device": self.device})
-        self.assertEqual(type(pooling), MeanPooling)
-
-        pooling = PoolingFactory.create(
-            {"method": "meanpooling", "path": "flax-sentence-embeddings/multi-qa_v1-MiniLM-L6-cls_dot", "device": self.device}
-        )
-        self.assertEqual(type(pooling), MeanPooling)
-
-    def testMuvera(self):
-        """
-        Test late pooling with MUVERA fixed dimensional encoding
-        """
-
-        # Test MUVERA encoding
-        for model in ["neuml/colbert-bert-tiny", "neuml/pylate-bert-tiny"]:
-            # Test defaults
-            pooling = PoolingFactory.create({"path": model, "device": self.device})
-            self.assertEqual(pooling.encode(["test"], category="query").shape, (1, 10240))
-
-            # Test custom settings
-            pooling = PoolingFactory.create(
-                {"path": model, "device": self.device, "modelargs": {"muvera": {"repetitions": 5, "hashes": 2, "projection": 8}}}
-            )
-            self.assertEqual(pooling.encode(["test"], category="data").shape, (1, 160))
-
-    def testMuveraPadding(self):
-        """
-        Test MUVERA vectors don't change with batch padding
-        """
-
-        pooling = PoolingFactory.create({"path": "neuml/colbert-bert-tiny", "device": self.device})
-        texts = ["Short text.", "A considerably longer text exercises padding behavior."]
-
-        # The shorter text must encode the same alone as it does batched with a longer text
-        for category in ["query", "data"]:
-            alone = pooling.encode([texts[0]], category=category)
-            batched = pooling.encode(texts, batch=2, category=category)
-            self.assertTrue(np.allclose(alone[0], batched[0], atol=1e-4))
-    def testMuveraTorchMatchesNumPy(self):
-        """
-        Test that the Torch MUVERA implementation produces the same encodings as the NumPy one
-        """
-
-        # Deterministic multi-vector input: three documents of varying token counts
-        rng = np.random.default_rng(1234)
-        data = [rng.standard_normal((n, 32)).astype(np.float32) for n in (5, 11, 3)]
-
-        muvera = Muvera(repetitions=4, hashes=3, projection=8, seed=42)
-
-        outputs = muvera(data, "data")
-
-        # Output width must be repetitions * 2^hashes * projection
-        self.assertEqual(outputs.shape, (3, 4 * (2**3) * 8))
-
-        # Encoding must be deterministic for a fixed seed
-        self.assertTrue(np.allclose(outputs, muvera(data, "data"), atol=1e-5))
-
     def testLateCenterDefaults(self):
         """
         Test late pooling token centering defaults
@@ -155,44 +70,42 @@ class TestPooling(unittest.TestCase):
         single = torch.nn.Sequential(torch.nn.Linear(2, 2, bias=False))
         multiple = torch.nn.Sequential(torch.nn.Sequential(torch.nn.Linear(2, 2, bias=False), torch.nn.Linear(2, 2, bias=False)))
 
-        self.assertIsNone(LatePooling.centersettings(None, empty, False))
-        self.assertIsNone(LatePooling.centersettings(None, single, False))
-        self.assertEqual(LatePooling.centersettings(None, multiple, False), {"scope": "batch"})
-        self.assertIsNone(LatePooling.centersettings(False, multiple, True))
-        self.assertEqual(LatePooling.centersettings(True, empty, True), {"scope": "batch"})
-        self.assertEqual(LatePooling.centersettings({"scope": "batch"}, empty, True), {"scope": "batch"})
-        self.assertEqual(LatePooling.centersettings({"scope": "document"}, empty, True), {"scope": "document"})
+        # Create pooling instance
+        pool = PoolingFactory.create({"path": "neuml/colbert-bert-tiny", "device": self.device, "modelargs": {"muvera": None}})
 
-    def testLateCenterSettings(self):
+        self.assertIsNone(pool.centersettings(None, empty, False))
+        self.assertIsNone(pool.centersettings(None, single, False))
+        self.assertEqual(pool.centersettings(None, multiple, False), {"scope": "batch"})
+        self.assertIsNone(pool.centersettings(False, multiple, True))
+        self.assertEqual(pool.centersettings(True, empty, True), {"scope": "batch"})
+        self.assertEqual(pool.centersettings({"scope": "batch"}, empty, True), {"scope": "batch"})
+        self.assertEqual(pool.centersettings({"scope": "document"}, empty, True), {"scope": "document"})
+
+    def testLateCenterDisabled(self):
         """
-        Test late pooling token centering settings
+        Test omitted and explicitly disabled centering are byte-identical
         """
 
-        linear = torch.nn.Sequential()
-        mean = np.array([0.25, -0.25], dtype=np.float32)
-        settings = LatePooling.centersettings({"scope": "collection", "mean": mean.tolist()}, linear, True)
-        np.testing.assert_array_equal(settings["mean"], mean)
+        base = PoolingFactory.create({"path": "neuml/colbert-bert-tiny", "device": self.device, "modelargs": {"muvera": None}})
+        disabled = PoolingFactory.create({"path": "neuml/colbert-bert-tiny", "device": self.device, "modelargs": {"muvera": None, "center": False}})
 
-        with tempfile.TemporaryDirectory() as output:
-            path = os.path.join(output, "mean.safetensors")
-            save_file({"center.mean": mean}, path)
-            settings = LatePooling.centersettings({"scope": "collection", "path": path}, linear, True)
-            np.testing.assert_array_equal(settings["mean"], mean)
+        self.assertIsNone(base.center)
+        self.assertIsNone(disabled.center)
+        np.testing.assert_array_equal(base.encode(["test"], category="query"), disabled.encode(["test"], category="query"))
 
-        tests = [
-            (None, "center must be a boolean or dictionary"),
-            ({"scope": "invalid"}, "center scope must be one of"),
-            ({"scope": "collection"}, "requires exactly one"),
-            ({"scope": "collection", "mean": mean, "path": "mean.safetensors"}, "requires exactly one"),
-            ({"scope": "document", "mean": mean}, "only valid with collection scope"),
-            ({"scope": "document", "invalid": True}, "unknown center setting"),
-            ({"scope": "collection", "mean": [[0.0, 1.0]]}, "finite one-dimensional array"),
-        ]
+        centered = PoolingFactory.create({"path": "neuml/colbert-bert-tiny", "device": self.device, "modelargs": {"muvera": None, "center": True}})
+        texts = ["Short text.", "A considerably longer text exercises padding behavior."]
+        self.assertEqual(centered.center, {"scope": "batch"})
+        together = centered.encode(texts, batch=2, category="data")
+        repeated = centered.encode(texts, batch=2, category="data")
+        np.testing.assert_array_equal(together, repeated)
+        self.assertEqual(centered.batches, [2])
+        self.assertTrue(np.any(np.all(together == 0.0, axis=2)))
 
-        for center, message in tests:
-            with self.subTest(center=center):
-                with self.assertRaisesRegex(ValueError, message):
-                    LatePooling.centersettings(center, linear, True)
+        centered.center = {"scope": "document"}
+        separate = centered.encode(texts, batch=1, category="data")
+        document = centered.encode(texts, batch=2, category="data")
+        np.testing.assert_allclose(document, separate, rtol=1e-4, atol=1e-5)
 
     def testLateCenterScopes(self):
         """
@@ -243,31 +156,39 @@ class TestPooling(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "dimension must match"):
             pooling.centerdata(data)
 
-    def testLateCenterDisabled(self):
+    def testLateCenterSettings(self):
         """
-        Test omitted and explicitly disabled centering are byte-identical
+        Test late pooling token centering settings
         """
 
-        base = PoolingFactory.create({"path": "neuml/colbert-bert-tiny", "device": self.device, "modelargs": {"muvera": None}})
-        disabled = PoolingFactory.create({"path": "neuml/colbert-bert-tiny", "device": self.device, "modelargs": {"muvera": None, "center": False}})
+        # Create pooling instance
+        pool = PoolingFactory.create({"path": "neuml/colbert-bert-tiny", "device": self.device, "modelargs": {"muvera": None}})
 
-        self.assertIsNone(base.center)
-        self.assertIsNone(disabled.center)
-        np.testing.assert_array_equal(base.encode(["test"], category="query"), disabled.encode(["test"], category="query"))
+        linear = torch.nn.Sequential()
+        mean = np.array([0.25, -0.25], dtype=np.float32)
+        settings = pool.centersettings({"scope": "collection", "mean": mean.tolist()}, linear, True)
+        np.testing.assert_array_equal(settings["mean"], mean)
 
-        centered = PoolingFactory.create({"path": "neuml/colbert-bert-tiny", "device": self.device, "modelargs": {"muvera": None, "center": True}})
-        texts = ["Short text.", "A considerably longer text exercises padding behavior."]
-        self.assertEqual(centered.center, {"scope": "batch"})
-        together = centered.encode(texts, batch=2, category="data")
-        repeated = centered.encode(texts, batch=2, category="data")
-        np.testing.assert_array_equal(together, repeated)
-        self.assertEqual(centered.batches, [2])
-        self.assertTrue(np.any(np.all(together == 0.0, axis=2)))
+        with tempfile.TemporaryDirectory() as output:
+            path = os.path.join(output, "mean.safetensors")
+            save_file({"center.mean": mean}, path)
+            settings = pool.centersettings({"scope": "collection", "path": path}, linear, True)
+            np.testing.assert_array_equal(settings["mean"], mean)
 
-        centered.center = {"scope": "document"}
-        separate = centered.encode(texts, batch=1, category="data")
-        document = centered.encode(texts, batch=2, category="data")
-        np.testing.assert_allclose(document, separate, rtol=1e-4, atol=1e-5)
+        tests = [
+            (None, "center must be a boolean or dictionary"),
+            ({"scope": "invalid"}, "center scope must be one of"),
+            ({"scope": "collection"}, "requires exactly one"),
+            ({"scope": "collection", "mean": mean, "path": "mean.safetensors"}, "requires exactly one"),
+            ({"scope": "document", "mean": mean}, "only valid with collection scope"),
+            ({"scope": "document", "invalid": True}, "unknown center setting"),
+            ({"scope": "collection", "mean": [[0.0, 1.0]]}, "finite one-dimensional array"),
+        ]
+
+        for center, message in tests:
+            with self.subTest(center=center):
+                with self.assertRaisesRegex(ValueError, message):
+                    pool.centersettings(center, linear, True)
 
     def testLemur(self):
         """
@@ -321,6 +242,28 @@ class TestPooling(unittest.TestCase):
             # MUVERA remains the default when LEMUR is absent
             pooling = PoolingFactory.create({"path": model, "device": self.device})
             self.assertEqual(pooling.encode(["test"], category="query").shape, (1, 10240))
+
+    def testLemurActivations(self):
+        """
+        Test LEMUR activations resolve to Torch modules and functions
+        """
+
+        data = torch.tensor([-1.0, 0.0, 0.5, 2.0])
+        expected = {
+            "relu": (torch.nn.ReLU, torch.relu),
+            "gelu": (torch.nn.GELU, torch.nn.functional.gelu),
+            "silu": (torch.nn.SiLU, torch.nn.functional.silu),
+            "mish": (torch.nn.Mish, torch.nn.functional.mish),
+        }
+
+        for name, (module, function) in expected.items():
+            with self.subTest(activation=name):
+                self.assertIsInstance(Activation.module(name), module)
+                self.assertTrue(torch.equal(Activation.function(name)(data), function(data)))
+
+        for method in (Activation.module, Activation.function):
+            with self.assertRaisesRegex(ValueError, "activation must be one of: relu, gelu, silu, mish"):
+                method("invalid")
 
     def testLemurCenter(self):
         """
@@ -415,27 +358,90 @@ class TestPooling(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "LEMUR must be fitted or loaded before encoding"):
             lemur(documents, "query")
 
-    def testLemurActivations(self):
+    def testLength(self):
         """
-        Test LEMUR activations resolve to Torch modules and functions
+        Test pooling with max_seq_length
         """
 
-        data = torch.tensor([-1.0, 0.0, 0.5, 2.0])
-        expected = {
-            "relu": (torch.nn.ReLU, torch.relu),
-            "gelu": (torch.nn.GELU, torch.nn.functional.gelu),
-            "silu": (torch.nn.SiLU, torch.nn.functional.silu),
-            "mish": (torch.nn.Mish, torch.nn.functional.mish),
-        }
+        # Test reading max_seq_length parmaeter
+        pooling = PoolingFactory.create({"path": "sentence-transformers/nli-mpnet-base-v2", "device": self.device, "maxlength": True})
+        self.assertEqual(pooling.maxlength, 75)
 
-        for name, (module, function) in expected.items():
-            with self.subTest(activation=name):
-                self.assertIsInstance(Activation.module(name), module)
-                self.assertTrue(torch.equal(Activation.function(name)(data), function(data)))
+        # Test specified maxlength
+        pooling = PoolingFactory.create({"path": "sentence-transformers/nli-mpnet-base-v2", "device": self.device, "maxlength": 256})
+        self.assertEqual(pooling.maxlength, 256)
 
-        for method in (Activation.module, Activation.function):
-            with self.assertRaisesRegex(ValueError, "activation must be one of: relu, gelu, silu, mish"):
-                method("invalid")
+        # Test max_seq_length is ignored when parameter is omitted
+        pooling = PoolingFactory.create({"path": "sentence-transformers/nli-mpnet-base-v2", "device": self.device})
+        self.assertEqual(pooling.maxlength, 512)
+
+        # Test maxlength when max_seq_length not present
+        pooling = PoolingFactory.create({"path": "hf-internal-testing/tiny-random-gpt2", "device": self.device, "maxlength": True})
+        self.assertEqual(pooling.maxlength, 1024)
+
+    def testMean(self):
+        """
+        Test mean pooling
+        """
+
+        # Test mean pooling
+        pooling = PoolingFactory.create({"path": "sentence-transformers/nli-mpnet-base-v2", "device": self.device})
+        self.assertEqual(type(pooling), MeanPooling)
+
+        pooling = PoolingFactory.create(
+            {"method": "meanpooling", "path": "flax-sentence-embeddings/multi-qa_v1-MiniLM-L6-cls_dot", "device": self.device}
+        )
+        self.assertEqual(type(pooling), MeanPooling)
+
+    def testMuvera(self):
+        """
+        Test late pooling with MUVERA fixed dimensional encoding
+        """
+
+        # Test MUVERA encoding
+        for model in ["neuml/colbert-bert-tiny", "neuml/pylate-bert-tiny"]:
+            # Test defaults
+            pooling = PoolingFactory.create({"path": model, "device": self.device})
+            self.assertEqual(pooling.encode(["test"], category="query").shape, (1, 10240))
+
+            # Test custom settings
+            pooling = PoolingFactory.create(
+                {"path": model, "device": self.device, "modelargs": {"muvera": {"repetitions": 5, "hashes": 2, "projection": 8}}}
+            )
+            self.assertEqual(pooling.encode(["test"], category="data").shape, (1, 160))
+
+    def testMuveraPadding(self):
+        """
+        Test MUVERA vectors don't change with batch padding
+        """
+
+        pooling = PoolingFactory.create({"path": "neuml/colbert-bert-tiny", "device": self.device})
+        texts = ["Short text.", "A considerably longer text exercises padding behavior."]
+
+        # The shorter text must encode the same alone as it does batched with a longer text
+        for category in ["query", "data"]:
+            alone = pooling.encode([texts[0]], category=category)
+            batched = pooling.encode(texts, batch=2, category=category)
+            self.assertTrue(np.allclose(alone[0], batched[0], atol=1e-4))
+
+    def testMuveraTorchMatchesNumPy(self):
+        """
+        Test that the Torch MUVERA implementation produces the same encodings as the NumPy one
+        """
+
+        # Deterministic multi-vector input: three documents of varying token counts
+        rng = np.random.default_rng(1234)
+        data = [rng.standard_normal((n, 32)).astype(np.float32) for n in (5, 11, 3)]
+
+        muvera = Muvera(repetitions=4, hashes=3, projection=8, seed=42)
+
+        outputs = muvera(data, "data")
+
+        # Output width must be repetitions * 2^hashes * projection
+        self.assertEqual(outputs.shape, (3, 4 * (2**3) * 8))
+
+        # Encoding must be deterministic for a fixed seed
+        self.assertTrue(np.allclose(outputs, muvera(data, "data"), atol=1e-5))
 
     def testPrompts(self):
         """
