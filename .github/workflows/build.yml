@@ -61,6 +61,7 @@ jobs:
           HF_HUB_ETAG_TIMEOUT: 100
           HF_HUB_DOWNLOAD_TIMEOUT: 100
           HF_XET_CHUNK_CACHE_SIZE_BYTES: 0
+          DOCLING_INFERENCE_COMPILE_TORCH_MODELS: false
 
       - uses: pre-commit/action@v3.0.1
         if: matrix.os == 'ubuntu-latest'
