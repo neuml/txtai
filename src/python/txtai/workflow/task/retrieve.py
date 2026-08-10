@@ -52,11 +52,17 @@ class RetrieveTask(Task):
             if self.flatten:
                 # Flatten directory structure (default)
                 path = os.path.join(self.directory, os.path.basename(path))
+                directory = None
             else:
                 # Derive output path
                 path = os.path.join(self.directory, os.path.normpath(path.lstrip("/")))
                 directory = os.path.dirname(path)
 
+            # Validate output path
+            self.safeopen.valid(path)
+
+            # Create output directory, if necessary
+            if directory:
                 # Create local directory, if necessary
                 os.makedirs(directory, exist_ok=True)
 
