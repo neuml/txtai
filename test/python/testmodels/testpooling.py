@@ -114,6 +114,19 @@ class TestPooling(unittest.TestCase):
             )
             self.assertEqual(pooling.encode(["test"], category="data").shape, (1, 160))
 
+    def testMuveraPadding(self):
+        """
+        Test MUVERA vectors don't change with batch padding
+        """
+
+        pooling = PoolingFactory.create({"path": "neuml/colbert-bert-tiny", "device": self.device})
+        texts = ["Short text.", "A considerably longer text exercises padding behavior."]
+
+        # The shorter text must encode the same alone as it does batched with a longer text
+        for category in ["query", "data"]:
+            alone = pooling.encode([texts[0]], category=category)
+            batched = pooling.encode(texts, batch=2, category=category)
+            self.assertTrue(np.allclose(alone[0], batched[0], atol=1e-4))
     def testMuveraTorchMatchesNumPy(self):
         """
         Test that the Torch MUVERA implementation produces the same encodings as the NumPy one
