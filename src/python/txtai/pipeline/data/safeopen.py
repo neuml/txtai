@@ -18,12 +18,13 @@ class SafeOpen:
       - URLs must be public URLs (also has checks for redirects and DNS rebind attempts)
     """
 
-    def __init__(self, headers=None, safeopen=False):
+    def __init__(self, headers=None, safeopen=False, allowurl=True):
         """
         Creates a new safeopen instance.
 
         Args:
             safeopen: if safe validation checks should be enabled
+            allowurl: if urls should be allowed
         """
 
         # HTTP headers
@@ -34,6 +35,9 @@ class SafeOpen:
 
         # URL retriever
         self.urlretrieve = URLRetrieve(self.headers, self.safeopen)
+
+        # Enable URL validation
+        self.allowurl = allowurl
 
     def valid(self, path):
         """
@@ -96,7 +100,7 @@ class SafeOpen:
         valid = True
 
         if self.safeopen:
-            if os.path.exists(url):
+            if os.path.exists(url) or not self.allowurl:
                 # Validate local file is in safe path
                 path = os.path.realpath(url)
                 prefix = os.path.commonpath([self.safeopen, path])

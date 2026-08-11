@@ -40,14 +40,15 @@ class RetrieveTask(Task):
 
         self.directory = directory
         self.flatten = flatten
-        self.safeopen = SafeOpen(headers, safeopen)
+        self.safeinput = SafeOpen(headers, safeopen)
+        self.safeoutput = SafeOpen(safeopen=directory if safeopen else safeopen, allowurl=False)
 
     def prepare(self, element):
         # Extract file path from URL
         path = urlparse(element).path
 
         # Validate input element
-        url, _ = self.safeopen.valid(element)
+        url, _ = self.safeinput.valid(element)
         if url:
             if self.flatten:
                 # Flatten directory structure (default)
@@ -59,7 +60,7 @@ class RetrieveTask(Task):
                 directory = os.path.dirname(path)
 
             # Validate output path
-            self.safeopen.valid(path)
+            self.safeoutput.valid(path)
 
             # Create output directory, if necessary
             if directory:
@@ -67,7 +68,7 @@ class RetrieveTask(Task):
                 os.makedirs(directory, exist_ok=True)
 
             # Retrieve data
-            data = self.safeopen.retrieve(url)
+            data = self.safeinput.retrieve(url)
 
             # Write to destination path
             with open(path, "wb") as output:
