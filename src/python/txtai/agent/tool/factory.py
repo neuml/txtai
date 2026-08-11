@@ -57,28 +57,23 @@ class ToolFactory:
             Tool
         """
 
-        if name == "bash":
-            return BashTool()
-        if name == "edit":
-            return EditTool()
-        if name == "glob":
-            return GlobTool()
-        if name == "grep":
-            return GrepTool()
-        if name == "python":
-            return PythonInterpreterTool()
-        if name == "question":
-            return UserInputTool()
-        if name in {"read", "webview"}:
-            return ReadTool()
-        if name == "todowrite":
-            return TodoWriteTool()
-        if name == "websearch":
-            return WebSearchTool()
-        if name == "write":
-            return WriteTool()
+        tools = {
+            "bash": BashTool,
+            "edit": EditTool,
+            "glob": GlobTool,
+            "grep": GrepTool,
+            "python": PythonInterpreterTool,
+            "question": UserInputTool,
+            "read": ReadTool,
+            "webview": ReadTool,
+            "todowrite": TodoWriteTool,
+            "websearch": WebSearchTool,
+            "write": WriteTool,
+        }
+        if name not in tools:
+            raise KeyError(name)
 
-        raise KeyError(name)
+        return tools[name]()
 
     @staticmethod
     def create(config):
