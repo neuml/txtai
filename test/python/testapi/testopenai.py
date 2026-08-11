@@ -122,6 +122,24 @@ class TestOpenAI(unittest.TestCase):
 
         self.assertIsNotNone(response["choices"][0]["message"]["content"])
 
+    def testChatLatestMessage(self):
+        """
+        Test a chat completion with multiple messages
+        """
+
+        response = self.client.post(
+            "/v1/chat/completions",
+            json={
+                "messages": [
+                    {"role": "system", "content": "You are a helpful assistant"},
+                    {"role": "user", "content": "Hello"},
+                ],
+                "model": "segmentation",
+            },
+        ).json()
+
+        self.assertEqual(response["choices"][0]["message"]["content"], "Hello")
+
     def testChatPipeline(self):
         """
         Test a chat completion with a pipeline
