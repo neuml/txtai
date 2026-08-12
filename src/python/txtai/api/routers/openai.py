@@ -44,8 +44,8 @@ def chat(
     # Build keyword arguments
     kwargs = {key: value for key, value in [("stream", stream), ("maxlength", max_completion_tokens)] if value}
 
-    # Get first message
-    message = messages[0]["content"]
+    # Get latest message
+    message = messages[-1]["content"]
 
     # Agent
     if model in application.get().agents:
