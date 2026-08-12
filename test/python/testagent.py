@@ -3,6 +3,7 @@ Agent module tests
 """
 
 import os
+import subprocess
 import tempfile
 import unittest
 
@@ -13,6 +14,7 @@ from datetime import datetime
 from smolagents import CodeAgent, PythonInterpreterTool
 
 from txtai.agent import Agent
+from txtai.agent.tool import ToolFactory
 from txtai.embeddings import Embeddings
 
 # agents.md content
@@ -227,3 +229,18 @@ class TestAgent(unittest.TestCase):
 
         agent = Agent(tools=["http://localhost:8000/mcp"], llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=1)
         self.assertEqual(len(agent.tools), 2)
+
+
+class TestToolFactory(unittest.TestCase):
+    """
+    ToolFactory tests.
+    """
+
+    def testDefaultToolCreation(self):
+        """
+        Test default tools are created on demand.
+        """
+
+        tool = ToolFactory.default("bash")
+        self.assertEqual(tool.name, "bash")
+        self.assertIsNot(tool, ToolFactory.default("bash"))

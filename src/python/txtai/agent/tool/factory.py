@@ -30,22 +30,50 @@ class ToolFactory:
     Methods to create tools.
     """
 
-    # Default toolkit
-    DEFAULTS = {
-        "bash": BashTool(),
-        "edit": EditTool(),
-        "glob": GlobTool(),
-        "grep": GrepTool(),
-        "python": PythonInterpreterTool(),
-        "question": UserInputTool(),
-        "read": ReadTool(),
-        "todowrite": TodoWriteTool(),
-        "websearch": WebSearchTool(),
-        "write": WriteTool(),
-    }
+    # Names in the default toolkit.
+    DEFAULTS = (
+        "bash",
+        "edit",
+        "glob",
+        "grep",
+        "python",
+        "question",
+        "read",
+        "todowrite",
+        "websearch",
+        "webview",
+        "write",
+    )
 
-    # Backwards compatible mappings
-    DEFAULTS["webview"] = DEFAULTS["read"]
+    @staticmethod
+    def default(name):
+        """
+        Creates a default tool by alias name.
+
+        Args:
+            name: default tool alias name
+
+        Returns:
+            Tool
+        """
+
+        tools = {
+            "bash": BashTool,
+            "edit": EditTool,
+            "glob": GlobTool,
+            "grep": GrepTool,
+            "python": PythonInterpreterTool,
+            "question": UserInputTool,
+            "read": ReadTool,
+            "webview": ReadTool,
+            "todowrite": TodoWriteTool,
+            "websearch": WebSearchTool,
+            "write": WriteTool,
+        }
+        if name not in tools:
+            raise KeyError(name)
+
+        return tools[name]()
 
     @staticmethod
     def create(config):
@@ -81,11 +109,11 @@ class ToolFactory:
 
             # Get default tool, if applicable
             elif isinstance(tool, str) and tool in ToolFactory.DEFAULTS:
-                tool = ToolFactory.DEFAULTS[tool]
+                tool = ToolFactory.default(tool)
 
             # Get ALL default tools, if applicable
             elif isinstance(tool, str) and tool == "defaults":
-                tools.extend(set(ToolFactory.DEFAULTS.values()))
+                tools.extend(ToolFactory.default(name) for name in ToolFactory.DEFAULTS if name != "webview")
                 tool = None
 
             # Support importing MCP tool collections
