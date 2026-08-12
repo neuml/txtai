@@ -3,7 +3,6 @@ Agent module tests
 """
 
 import os
-import subprocess
 import tempfile
 import unittest
 
@@ -185,6 +184,11 @@ class TestAgent(unittest.TestCase):
         agent.tools["edit"](path, "hello", "goodbye")
         self.assertEqual(agent.tools["read"](path), "goodbye world".strip())
 
+        # Test dynamic default tool creation
+        tool = ToolFactory.default("bash")
+        self.assertEqual(tool.name, "bash")
+        self.assertIsNot(tool, ToolFactory.default("bash"))
+
     def testToolsEmbeddings(self):
         """
         Test adding Embeddings as a tool
@@ -229,18 +233,3 @@ class TestAgent(unittest.TestCase):
 
         agent = Agent(tools=["http://localhost:8000/mcp"], llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=1)
         self.assertEqual(len(agent.tools), 2)
-
-
-class TestToolFactory(unittest.TestCase):
-    """
-    ToolFactory tests.
-    """
-
-    def testDefaultToolCreation(self):
-        """
-        Test default tools are created on demand.
-        """
-
-        tool = ToolFactory.default("bash")
-        self.assertEqual(tool.name, "bash")
-        self.assertIsNot(tool, ToolFactory.default("bash"))

@@ -30,50 +30,22 @@ class ToolFactory:
     Methods to create tools.
     """
 
-    # Names in the default toolkit.
-    DEFAULTS = (
-        "bash",
-        "edit",
-        "glob",
-        "grep",
-        "python",
-        "question",
-        "read",
-        "todowrite",
-        "websearch",
-        "webview",
-        "write",
-    )
+    # Default toolkit
+    DEFAULTS = {
+        "bash": BashTool,
+        "edit": EditTool,
+        "glob": GlobTool,
+        "grep": GrepTool,
+        "python": PythonInterpreterTool,
+        "question": UserInputTool,
+        "read": ReadTool,
+        "todowrite": TodoWriteTool,
+        "websearch": WebSearchTool,
+        "write": WriteTool,
+    }
 
-    @staticmethod
-    def default(name):
-        """
-        Creates a default tool by alias name.
-
-        Args:
-            name: default tool alias name
-
-        Returns:
-            Tool
-        """
-
-        tools = {
-            "bash": BashTool,
-            "edit": EditTool,
-            "glob": GlobTool,
-            "grep": GrepTool,
-            "python": PythonInterpreterTool,
-            "question": UserInputTool,
-            "read": ReadTool,
-            "webview": ReadTool,
-            "todowrite": TodoWriteTool,
-            "websearch": WebSearchTool,
-            "write": WriteTool,
-        }
-        if name not in tools:
-            raise KeyError(name)
-
-        return tools[name]()
+    # Backwards compatible mappings
+    DEFAULTS["webview"] = DEFAULTS["read"]
 
     @staticmethod
     def create(config):
@@ -149,6 +121,20 @@ class ToolFactory:
             return CreateTool(target)
         except (TypeHintParsingException, TypeError):
             return ToolFactory.fromdocs(target, config if config else {})
+
+    @staticmethod
+    def default(name):
+        """
+        Creates a default tool by alias name.
+
+        Args:
+            name: default tool alias name
+
+        Returns:
+            Tool
+        """
+
+        return ToolFactory.DEFAULTS[name]()
 
     @staticmethod
     def fromdocs(target, config):

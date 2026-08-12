@@ -113,15 +113,6 @@ class TestOpenAI(unittest.TestCase):
 
         self.assertEqual(response["choices"][0]["message"]["content"], "Hi")
 
-    def testChatLLM(self):
-        """
-        Test a chat completion with a LLM
-        """
-
-        response = self.client.post("/v1/chat/completions", json={"messages": [{"role": "user", "content": "Hello"}], "model": "llm"}).json()
-
-        self.assertIsNotNone(response["choices"][0]["message"]["content"])
-
     def testChatLatestMessage(self):
         """
         Test a chat completion with multiple messages
@@ -139,6 +130,15 @@ class TestOpenAI(unittest.TestCase):
         ).json()
 
         self.assertEqual(response["choices"][0]["message"]["content"], "Hello")
+
+    def testChatLLM(self):
+        """
+        Test a chat completion with a LLM
+        """
+
+        response = self.client.post("/v1/chat/completions", json={"messages": [{"role": "user", "content": "Hello"}], "model": "llm"}).json()
+
+        self.assertIsNotNone(response["choices"][0]["message"]["content"])
 
     def testChatPipeline(self):
         """
