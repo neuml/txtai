@@ -9,6 +9,7 @@ from .base import Pooling
 from .cls import ClsPooling
 from .last import LastPooling
 from .late import LatePooling
+from .max import MaxPooling
 from .mean import MeanPooling
 
 from ...util import Download, DownloadError
@@ -44,12 +45,16 @@ class PoolingFactory:
             return Pooling(path, device, tokenizer, maxlength, loadprompts, modelargs)
 
         # Derive pooling method if it's not specified and path is a string
-        if (not method or method not in ("clspooling", "meanpooling", "lastpooling", "latepooling")) and isinstance(path, str):
+        if (not method or method not in ("clspooling", "meanpooling", "maxpooling", "lastpooling", "latepooling")) and isinstance(path, str):
             method = PoolingFactory.method(path)
 
         # Check for cls pooling
         if method == "clspooling":
             return ClsPooling(path, device, tokenizer, maxlength, loadprompts, modelargs)
+
+        # Check for max pooling
+        if method == "maxpooling":
+            return MaxPooling(path, device, tokenizer, maxlength, loadprompts, modelargs)
 
         # Check for last pooling
         if method == "lastpooling":
@@ -83,6 +88,10 @@ class PoolingFactory:
         # Set to CLS pooling if it's enabled and mean pooling is disabled
         if config and config.get("pooling_mode_cls_token") and not config["pooling_mode_mean_tokens"]:
             method = "clspooling"
+
+        # Set to max pooling if it's enabled and mean pooling is disabled
+        if config and config.get("pooling_mode_max_tokens") and not config["pooling_mode_mean_tokens"]:
+            method = "maxpooling"
 
         # Set to last token pooling if it's enabled and mean pooling is disabled
         if config and config.get("pooling_mode_lasttoken") and not config["pooling_mode_mean_tokens"]:

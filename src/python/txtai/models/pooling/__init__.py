@@ -8,5 +8,6 @@ from .factory import PoolingFactory
 from .last import LastPooling
 from .late import LatePooling
 from .lemur import Lemur
+from .max import MaxPooling
 from .mean import MeanPooling
 from .muvera import Muvera
