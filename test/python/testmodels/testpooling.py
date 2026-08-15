@@ -5,6 +5,7 @@ Pooling module tests
 import os
 import tempfile
 import unittest
+import unittest.mock
 
 import numpy as np
 import torch
@@ -442,6 +443,25 @@ class TestPooling(unittest.TestCase):
 
         # Encoding must be deterministic for a fixed seed
         self.assertTrue(np.allclose(outputs, muvera(data, "data"), atol=1e-5))
+
+    def testPartialPoolingConfig(self):
+        """
+        Test pooling config files that omit pooling_mode_mean_tokens
+        """
+
+        # A missing mean flag reads as disabled, same as an explicit false, instead of raising KeyError
+        tests = [
+            ({"pooling_mode_cls_token": True}, "clspooling"),
+            ({"pooling_mode_cls_token": True, "pooling_mode_mean_tokens": False}, "clspooling"),
+            ({"pooling_mode_lasttoken": True}, "lastpooling"),
+            ({"pooling_mode_lasttoken": True, "pooling_mode_mean_tokens": False}, "lastpooling"),
+            ({"pooling_mode_cls_token": True, "pooling_mode_mean_tokens": True}, "meanpooling"),
+            ({}, "meanpooling"),
+        ]
+
+        for config, expected in tests:
+            with unittest.mock.patch.object(PoolingFactory, "load", return_value=config):
+                self.assertEqual(PoolingFactory.method("sentence-transformers/nli-mpnet-base-v2"), expected)
 
     def testPrompts(self):
         """
