@@ -86,7 +86,7 @@ class PoolingFactory:
         config = PoolingFactory.load(path, "1_Pooling/config.json")
 
         # Set to CLS pooling if it's enabled and mean pooling is disabled
-        if config and config.get("pooling_mode_cls_token") and not config["pooling_mode_mean_tokens"]:
+        if config and config.get("pooling_mode_cls_token") and not config.get("pooling_mode_mean_tokens"):
             method = "clspooling"
 
         # Set to max pooling if it's enabled and mean pooling is disabled
@@ -94,7 +94,7 @@ class PoolingFactory:
             method = "maxpooling"
 
         # Set to last token pooling if it's enabled and mean pooling is disabled
-        if config and config.get("pooling_mode_lasttoken") and not config["pooling_mode_mean_tokens"]:
+        if config and config.get("pooling_mode_lasttoken") and not config.get("pooling_mode_mean_tokens"):
             method = "lastpooling"
 
         # Check for late interaction pooling
