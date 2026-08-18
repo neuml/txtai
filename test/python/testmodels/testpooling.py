@@ -6,6 +6,8 @@ import os
 import tempfile
 import unittest
 
+from unittest.mock import patch
+
 import numpy as np
 import torch
 
@@ -45,6 +47,22 @@ class TestPooling(unittest.TestCase):
 
         # Test CLS pooling encoding
         self.assertEqual(pooling.encode(["test"])[0].shape, (768,))
+
+    def testMethodPartialConfig(self):
+        """
+        Test resolving a pooling method from a config that omits pooling_mode_mean_tokens
+        """
+
+        # Each flag on its own must resolve, rather than raising on the missing mean tokens key
+        with patch.object(PoolingFactory, "load", return_value={"pooling_mode_cls_token": True}):
+            self.assertEqual(PoolingFactory.method("any/model"), "clspooling")
+
+        with patch.object(PoolingFactory, "load", return_value={"pooling_mode_lasttoken": True}):
+            self.assertEqual(PoolingFactory.method("any/model"), "lastpooling")
+
+        # Mean pooling still wins when it is explicitly enabled
+        with patch.object(PoolingFactory, "load", return_value={"pooling_mode_cls_token": True, "pooling_mode_mean_tokens": True}):
+            self.assertEqual(PoolingFactory.method("any/model"), "meanpooling")
 
     def testLast(self):
         """
