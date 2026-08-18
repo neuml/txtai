@@ -48,22 +48,6 @@ class TestPooling(unittest.TestCase):
         # Test CLS pooling encoding
         self.assertEqual(pooling.encode(["test"])[0].shape, (768,))
 
-    def testMethodPartialConfig(self):
-        """
-        Test resolving a pooling method from a config that omits pooling_mode_mean_tokens
-        """
-
-        # Each flag on its own must resolve, rather than raising on the missing mean tokens key
-        with patch.object(PoolingFactory, "load", return_value={"pooling_mode_cls_token": True}):
-            self.assertEqual(PoolingFactory.method("any/model"), "clspooling")
-
-        with patch.object(PoolingFactory, "load", return_value={"pooling_mode_lasttoken": True}):
-            self.assertEqual(PoolingFactory.method("any/model"), "lastpooling")
-
-        # Mean pooling still wins when it is explicitly enabled
-        with patch.object(PoolingFactory, "load", return_value={"pooling_mode_cls_token": True, "pooling_mode_mean_tokens": True}):
-            self.assertEqual(PoolingFactory.method("any/model"), "meanpooling")
-
     def testLast(self):
         """
         Test last pooling
@@ -435,6 +419,25 @@ class TestPooling(unittest.TestCase):
             {"method": "meanpooling", "path": "flax-sentence-embeddings/multi-qa_v1-MiniLM-L6-cls_dot", "device": self.device}
         )
         self.assertEqual(type(pooling), MeanPooling)
+
+    def testMethodPartialConfig(self):
+        """
+        Test pooling config files that omit pooling_mode_mean_tokens
+        """
+
+        # A missing mean flag reads as disabled, same as an explicit false, instead of raising KeyError
+        tests = [
+            ({"pooling_mode_cls_token": True}, "clspooling"),
+            ({"pooling_mode_cls_token": True, "pooling_mode_mean_tokens": False}, "clspooling"),
+            ({"pooling_mode_lasttoken": True}, "lastpooling"),
+            ({"pooling_mode_lasttoken": True, "pooling_mode_mean_tokens": False}, "lastpooling"),
+            ({"pooling_mode_cls_token": True, "pooling_mode_mean_tokens": True}, "meanpooling"),
+            ({}, "meanpooling"),
+        ]
+
+        for config, expected in tests:
+            with patch.object(PoolingFactory, "load", return_value=config):
+                self.assertEqual(PoolingFactory.method("sentence-transformers/nli-mpnet-base-v2"), expected)
 
     def testMuvera(self):
         """

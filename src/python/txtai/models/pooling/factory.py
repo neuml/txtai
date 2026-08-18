@@ -45,16 +45,12 @@ class PoolingFactory:
             return Pooling(path, device, tokenizer, maxlength, loadprompts, modelargs)
 
         # Derive pooling method if it's not specified and path is a string
-        if (not method or method not in ("clspooling", "meanpooling", "maxpooling", "lastpooling", "latepooling")) and isinstance(path, str):
+        if (not method or method not in ("clspooling", "lastpooling", "latepooling", "maxpooling", "meanpooling")) and isinstance(path, str):
             method = PoolingFactory.method(path)
 
         # Check for cls pooling
         if method == "clspooling":
             return ClsPooling(path, device, tokenizer, maxlength, loadprompts, modelargs)
-
-        # Check for max pooling
-        if method == "maxpooling":
-            return MaxPooling(path, device, tokenizer, maxlength, loadprompts, modelargs)
 
         # Check for last pooling
         if method == "lastpooling":
@@ -63,6 +59,10 @@ class PoolingFactory:
         # Check for late pooling
         if method == "latepooling":
             return LatePooling(path, device, tokenizer, maxlength, loadprompts, modelargs)
+
+        # Check for max pooling
+        if method == "maxpooling":
+            return MaxPooling(path, device, tokenizer, maxlength, loadprompts, modelargs)
 
         # Default to mean pooling
         return MeanPooling(path, device, tokenizer, maxlength, loadprompts, modelargs)
@@ -89,13 +89,13 @@ class PoolingFactory:
         if config and config.get("pooling_mode_cls_token") and not config.get("pooling_mode_mean_tokens"):
             method = "clspooling"
 
-        # Set to max pooling if it's enabled and mean pooling is disabled
-        if config and config.get("pooling_mode_max_tokens") and not config["pooling_mode_mean_tokens"]:
-            method = "maxpooling"
-
         # Set to last token pooling if it's enabled and mean pooling is disabled
         if config and config.get("pooling_mode_lasttoken") and not config.get("pooling_mode_mean_tokens"):
             method = "lastpooling"
+
+        # Set to max pooling if it's enabled and mean pooling is disabled
+        if config and config.get("pooling_mode_max_tokens") and not config.get("pooling_mode_mean_tokens"):
+            method = "maxpooling"
 
         # Check for late interaction pooling
         if not config:
