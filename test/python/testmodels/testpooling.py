@@ -6,12 +6,14 @@ import os
 import tempfile
 import unittest
 
+from unittest.mock import patch
+
 import numpy as np
 import torch
 
 from safetensors.numpy import save_file
 
-from txtai.models import Models, ClsPooling, LastPooling, LatePooling, Lemur, MeanPooling, Muvera, PoolingFactory
+from txtai.models import Models, ClsPooling, LastPooling, LatePooling, Lemur, MaxPooling, MeanPooling, Muvera, PoolingFactory
 from txtai.models.pooling.lemur import Activation
 from txtai.pipeline import LemurTrainer
 
@@ -378,6 +380,31 @@ class TestPooling(unittest.TestCase):
         # Test maxlength when max_seq_length not present
         pooling = PoolingFactory.create({"path": "hf-internal-testing/tiny-random-gpt2", "device": self.device, "maxlength": True})
         self.assertEqual(pooling.maxlength, 1024)
+
+    def testMax(self):
+        """
+        Test max pooling
+        """
+
+        # Test max pooling
+        pooling = PoolingFactory.create({"method": "maxpooling", "path": "sentence-transformers/nli-mpnet-base-v2", "device": self.device})
+        self.assertEqual(type(pooling), MaxPooling)
+
+        # Test max pooling encoding
+        self.assertEqual(pooling.encode(["test"])[0].shape, (768,))
+
+        # Padding tokens must be excluded from the max, otherwise a short text changes when batched with a longer one
+        texts = ["Short text.", "A considerably longer text exercises padding behavior."]
+        self.assertTrue(np.allclose(pooling.encode([texts[0]])[0], pooling.encode(texts, batch=2)[0], atol=1e-4))
+
+    def testMaxMethod(self):
+        """
+        Test max pooling is derived from the sentence transformers pooling config
+        """
+
+        config = {"pooling_mode_max_tokens": True, "pooling_mode_mean_tokens": False}
+        with patch.object(PoolingFactory, "load", return_value=config):
+            self.assertEqual(PoolingFactory.method("sentence-transformers/nli-mpnet-base-v2"), "maxpooling")
 
     def testMean(self):
         """

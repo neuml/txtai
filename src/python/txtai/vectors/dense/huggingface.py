@@ -24,7 +24,7 @@ class HFVectors(Vectors):
             True if this is a local transformers-based model, False otherwise
         """
 
-        return method in ("transformers", "pooling", "clspooling", "meanpooling")
+        return method in ("transformers", "pooling", "clspooling", "meanpooling", "maxpooling")
 
     def loadmodel(self, path):
         # Build embeddings with transformers pooling
