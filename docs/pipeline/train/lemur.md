@@ -37,6 +37,10 @@ The learn distribution defaults to `learncategory="query"`. Target documents are
 default encodes selected corpus texts once as data and once as queries. Set `learncategory="data"` to reuse the data encodings, or
 pass a separate iterable of texts with `learn`.
 
+When `vectors.center` is omitted, the trainer encodes the corpus without centering, computes one mean over all corpus token rows and
+uses that mean to center both data and learn vectors before fitting. The collection mean is stored in the LEMUR artifact. An explicit
+`vectors.center` setting keeps its configured behavior and does not store an automatic collection mean.
+
 Set `corpussubsetsize` to a positive integer to sample that many raw corpus texts under `seed` before either encoding pass. The
 default is `None`, which uses every corpus text. `trainsubsetsize` and `learnsubsetsize` apply later, after token vectors have already
 been created. `corpussubsetsize` applies to `data`; a separate `learn` iterable remains caller-sized.
@@ -48,8 +52,9 @@ available as `selectedepoch`, `selectedloss` and `selectionmetric` on the fitted
 MLP training displays a `tqdm` progress bar on an interactive terminal, including percent complete and the current validation loss
 when `validationsplit` is enabled (or training loss otherwise). Progress output is disabled for non-interactive runs.
 
-The artifact contains `config.json` and `model.safetensors`. It stores the inference feature model, output-normalization statistics
-and token sample needed to encode documents added after training. The training-only output readout is not saved.
+The artifact contains `config.json` and `model.safetensors`. It stores the inference feature model, output-normalization statistics,
+token sample needed to encode documents added after training and, by default, the collection token mean. The training-only output
+readout is not saved.
 
 Load the artifact in an embeddings configuration.
 
@@ -62,6 +67,11 @@ embeddings:
 ```
 
 ## Search behavior
+
+Loading a LEMUR artifact with a stored collection mean automatically centers both query and document token vectors with that mean.
+This keeps training and search on the same representation and makes fixed vectors independent of indexing or query batch size. An
+explicit `vectors.center` setting takes precedence. Older artifacts without a stored mean use the standard late-pooling fallback:
+batch centering for models with multiple linear layers and no centering for models with zero or one linear layer.
 
 LEMUR approximates standardized MaxSim targets, so useful ranking scores can be negative. txtai's dense vector path L2-normalizes the
 fixed vectors and removes results with scores less than or equal to zero. This can change ordering and return fewer than the requested

@@ -162,7 +162,10 @@ class LatePooling(Pooling):
         """
 
         # Enable batch centering by default for multi-linear models
-        if not configured:
+        artifactcenter = getattr(self.encoder, "center", None)
+        if not configured and artifactcenter is not None:
+            center = {"scope": "collection", "mean": artifactcenter.detach().cpu().numpy()}
+        elif not configured:
             center = sum(isinstance(module, torch.nn.Linear) for module in linear.modules()) > 1
 
         if isinstance(center, bool):

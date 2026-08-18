@@ -316,6 +316,106 @@ class TestPooling(unittest.TestCase):
                 np.testing.assert_array_equal(pooling.encode(texts, batch=2, category="query"), queries)
                 np.testing.assert_array_equal(pooling.encode(texts, batch=2, category="data"), documents)
 
+    def testLemurCollectionCenter(self):
+        """
+        Test LEMUR artifact collection centering is batch-independent
+        """
+
+        corpus = [
+            "Machine learning models retrieve relevant passages.",
+            "Late interaction compares token embeddings.",
+            "Dense indexes search fixed dimensional vectors.",
+            "A query encoder produces contextual token vectors.",
+            "Document encoders represent passages for retrieval.",
+            "Maximum similarity aggregates token matches.",
+            "LEMUR learns a corpus specific reduction.",
+            "MUVERA uses randomized fixed dimensional encodings.",
+            "The trainer stores reusable pooling artifacts.",
+            "New documents can be encoded after training.",
+            "Short text.",
+            "A considerably longer synthetic document exercises padding behavior.",
+        ]
+        texts = corpus[-2:]
+
+        def loadlinear(*_):
+            layers = [torch.nn.Linear(128, 128, bias=False) for _ in range(2)]
+            with torch.no_grad():
+                for layer in layers:
+                    layer.weight.copy_(torch.eye(128))
+            return torch.nn.Sequential(*layers)
+
+        settings = {
+            "gpu": False,
+            "epochs": 0,
+            "finalhiddendim": 32,
+            "trainsubsetsize": 12,
+            "learnsubsetsize": 128,
+            "olssamplesize": 64,
+            "seed": 42,
+        }
+
+        with (
+            tempfile.TemporaryDirectory() as output,
+            tempfile.TemporaryDirectory() as legacy,
+            patch.object(LatePooling, "loadlinear", autospec=True, side_effect=loadlinear),
+        ):
+            raw = PoolingFactory.create(
+                {
+                    "path": "neuml/colbert-bert-tiny",
+                    "device": Models.deviceid(False),
+                    "modelargs": {"muvera": None, "lemur": None, "center": False},
+                }
+            )
+            documents = [raw.encode([text], batch=1, category="data")[0] for text in corpus]
+            center = np.concatenate(documents).mean(axis=0)
+
+            LemurTrainer()(
+                "neuml/colbert-bert-tiny",
+                corpus,
+                output,
+                **settings,
+            )
+            LemurTrainer()("neuml/colbert-bert-tiny", corpus, legacy, vectors={"center": False}, **settings)
+
+            pooling = PoolingFactory.create(
+                {
+                    "path": "neuml/colbert-bert-tiny",
+                    "device": Models.deviceid(False),
+                    "modelargs": {"lemur": {"path": output}},
+                }
+            )
+            self.assertEqual(pooling.center["scope"], "collection")
+            np.testing.assert_array_equal(pooling.center["mean"], center)
+            np.testing.assert_array_equal(pooling.encoder.center.cpu().numpy(), center)
+
+            separate = pooling.encode(texts, batch=1, category="data")
+            together = pooling.encode(texts, batch=32, category="data")
+            np.testing.assert_allclose(together, separate, rtol=1e-4, atol=1e-5)
+
+            separate = pooling.encode(texts, batch=1, category="query")
+            together = pooling.encode(texts, batch=32, category="query")
+            np.testing.assert_allclose(together, separate, rtol=1e-4, atol=1e-5)
+
+            disabled = PoolingFactory.create(
+                {
+                    "path": "neuml/colbert-bert-tiny",
+                    "device": Models.deviceid(False),
+                    "modelargs": {"lemur": {"path": output}, "center": False},
+                }
+            )
+            self.assertIsNone(disabled.center)
+            self.assertIsNotNone(disabled.encoder.center)
+
+            compatible = PoolingFactory.create(
+                {
+                    "path": "neuml/colbert-bert-tiny",
+                    "device": Models.deviceid(False),
+                    "modelargs": {"lemur": {"path": legacy}},
+                }
+            )
+            self.assertEqual(compatible.center, {"scope": "batch"})
+            self.assertIsNone(compatible.encoder.center)
+
     def testLemurDocuments(self):
         """
         Test LEMUR document input conversions and validation

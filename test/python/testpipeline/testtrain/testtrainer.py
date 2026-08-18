@@ -292,6 +292,14 @@ class TestTrainer(unittest.TestCase):
                 self.calls.append((texts[0], category, batch))
                 return [torch.ones((1, 2))]
 
+            @staticmethod
+            def centerdata(data):
+                """
+                Returns synthetic token vectors after the centering seam.
+                """
+
+                return data
+
         corpus = [f"document {index}" for index in range(12)]
         runs = []
         for _ in range(2):

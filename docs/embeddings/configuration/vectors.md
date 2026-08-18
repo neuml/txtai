@@ -150,9 +150,10 @@ center: boolean | dict
 ```
 
 Centers normalized late-interaction token vectors and normalizes them again before MUVERA or LEMUR encoding. Centering is applied to
-both query and document vectors. `true` uses batch scope and `false` disables centering. When omitted, centering defaults to batch
-scope only for late-interaction models that load more than one `torch.nn.Linear` layer; models with zero or one loaded linear layer keep
-their previous output.
+both query and document vectors. `true` uses batch scope and `false` disables centering. An explicit setting always takes precedence.
+When omitted, a LEMUR artifact with a stored collection mean uses collection scope. Other LEMUR artifacts and late-interaction models
+default to batch scope only when they load more than one `torch.nn.Linear` layer; models with zero or one loaded linear layer keep their
+previous output.
 
 Dictionary configuration supports the following scopes:
 
@@ -162,8 +163,9 @@ center:
 ```
 
 `document` subtracts the mean of each document or query independently. `batch` subtracts the mean of all real token rows in the current
-model batch. `collection` requires a caller-provided, one-dimensional mean vector through either `mean` (an array-like value) or `path`
-(a safetensors file containing a `center.mean` tensor), but not both. Zero-padding rows are never centered and remain zero.
+model batch. Explicit `collection` scope requires a caller-provided, one-dimensional mean vector through either `mean` (an array-like
+value) or `path` (a safetensors file containing a `center.mean` tensor), but not both. LEMUR artifacts can provide this mean
+automatically. Zero-padding rows are never centered and remain zero.
 
 ### muvera
 ```yaml
@@ -184,8 +186,9 @@ lemur:
 Loads a trained [LEMUR](../../../pipeline/train/lemur) fixed dimensional encoder. LEMUR artifacts are corpus-specific and must be
 created with `LemurTrainer` before configuring an embeddings index. Query vectors are summed learned features and document vectors
 are ordinary least squares weights over the artifact's stored token sample. Each artifact contains `config.json` and
-`model.safetensors`; the Safetensors file contains inference state only. See the trainer page for score filtering and Faiss exact/IVF
-search behavior.
+`model.safetensors`; newly trained artifacts also store the collection token mean as `lemur.center`. Loading that mean automatically
+selects collection centering unless `center` is explicitly configured. Artifacts without `lemur.center` retain the previous default.
+The Safetensors file contains inference state only. See the trainer page for score filtering and Faiss exact/IVF search behavior.
 
 ### trust_remote_code
 ```yaml
