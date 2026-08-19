@@ -12,6 +12,7 @@ from ..base import Pipeline
 
 
 library = Library()
+np = library.numpy()
 torch = library.torch()
 tqdm = library.tqdm()
 
@@ -80,6 +81,9 @@ class LemurTrainer(Pipeline):
 
         deviceid = Models.deviceid(gpu)
         modelargs = {**(vectors if vectors else {}), **{"muvera": None, "lemur": None}}
+        centerconfigured = vectors is not None and "center" in vectors
+        if not centerconfigured:
+            modelargs["center"] = False
         pooling = PoolingFactory.create(
             {
                 "method": method,
@@ -99,12 +103,21 @@ class LemurTrainer(Pipeline):
             learn = data if learn is None else learn
             learndocuments = [pooling.encode([text], batch=1, category=learncategory)[0] for text in learn]
 
+        centermean = None
+        if not centerconfigured:
+            centermean = np.concatenate(documents).mean(axis=0)
+            pooling.center = {"scope": "collection", "mean": centermean}
+            documents = pooling.centerdata(documents)
+            if learndocuments is not None:
+                learndocuments = pooling.centerdata(learndocuments)
+
         return self.fit(
             documents,
             output=output,
             device=Models.device(deviceid),
             validationsplit=validationsplit,
             learn=learndocuments,
+            centermean=centermean,
             **kwargs,
         )
 
@@ -129,6 +142,7 @@ class LemurTrainer(Pipeline):
         validationsplit=0.0,
         learn=None,
         device=None,
+        centermean=None,
     ):
         """
         Fits a LEMUR feature encoder and OLS sample.
@@ -152,6 +166,7 @@ class LemurTrainer(Pipeline):
             validationsplit: fraction of sampled learn tokens held out for validation
             learn: optional iterable of learn-token arrays, defaults to data
             device: tensor device
+            centermean: optional collection token mean stored with the artifact
 
         Returns:
             fitted LEMUR encoder
@@ -187,6 +202,12 @@ class LemurTrainer(Pipeline):
             validationsplit,
             generator,
         )
+
+        if centermean is not None:
+            centermean = torch.as_tensor(centermean, dtype=torch.float32, device=lemur.device)
+            if centermean.ndim != 1 or centermean.shape[0] != training["dimension"] or not torch.isfinite(centermean).all():
+                raise ValueError("centermean must be a finite one-dimensional array matching the token dimension")
+            lemur.center = centermean.detach()
 
         modeltype = "elm" if epochs == 0 else "mlp"
         config = {

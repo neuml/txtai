@@ -292,6 +292,14 @@ class TestTrainer(unittest.TestCase):
                 self.calls.append((texts[0], category, batch))
                 return [torch.ones((1, 2))]
 
+            @staticmethod
+            def centerdata(data):
+                """
+                Returns synthetic token vectors after the centering seam.
+                """
+
+                return data
+
         corpus = [f"document {index}" for index in range(12)]
         runs = []
         for _ in range(2):
@@ -340,6 +348,25 @@ class TestTrainer(unittest.TestCase):
                         LemurTrainer()("model", data, "output", gpu=False, **settings)
 
             create.assert_not_called()
+
+    def testLemurCenterMeanValidation(self):
+        """
+        Test LEMUR fit validates the centermean argument
+        """
+
+        random = np.random.default_rng(42)
+        documents = [random.normal(size=(5, 6)).astype(np.float32) for _ in range(8)]
+
+        tests = [
+            np.zeros((2, 6), dtype=np.float32),
+            np.zeros(4, dtype=np.float32),
+            np.full(6, np.nan, dtype=np.float32),
+        ]
+
+        for centermean in tests:
+            with self.subTest(shape=centermean.shape):
+                with self.assertRaisesRegex(ValueError, "centermean must be a finite one-dimensional array"):
+                    LemurTrainer().fit(documents, epochs=0, centermean=centermean)
 
     def testLemurRoundTrip(self):
         """

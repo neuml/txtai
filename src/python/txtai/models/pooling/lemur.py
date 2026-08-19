@@ -45,6 +45,7 @@ class Lemur:
         self.sample = None
         self.mean = None
         self.std = None
+        self.center = None
         self.config = None
         self.pinv = None
         self.selectedepoch = None
@@ -190,6 +191,8 @@ class Lemur:
                 "lemur.sample": self.sample.detach().cpu().contiguous(),
             }
         )
+        if self.center is not None:
+            tensors["lemur.center"] = self.center.detach().cpu().contiguous()
         safetensors.torch.save_file(tensors, os.path.join(path, "model.safetensors"))
 
     def load(self, path):
@@ -217,6 +220,7 @@ class Lemur:
         self.mean = tensors.pop("lemur.mean")[0]
         self.std = tensors.pop("lemur.std")[0]
         self.sample = tensors.pop("lemur.sample")
+        self.center = tensors.pop("lemur.center", None)
         self.model.load_state_dict(tensors)
         self.model.eval()
         self.pinv = None
