@@ -24,8 +24,8 @@ class LatePooling(Pooling):
     def __init__(self, path, device, tokenizer=None, maxlength=None, loadprompts=None, modelargs=None):
         # Check if fixed dimensional encoder is enabled
         modelargs = modelargs.copy() if modelargs else {}
-        muvera = modelargs.pop("muvera", {})
-        lemur = modelargs.pop("lemur", None)
+        muvera = self.encodersettings(modelargs.pop("muvera", {}), "muvera")
+        lemur = self.encodersettings(modelargs.pop("lemur", None), "lemur")
         centerconfigured = "center" in modelargs
         center = modelargs.pop("center", None)
 
@@ -147,6 +147,34 @@ class LatePooling(Pooling):
 
         # Build NumPy array
         return np.asarray(padded)
+
+    @staticmethod
+    def encodersettings(settings, name):
+        """
+        Validates and resolves fixed encoder settings.
+
+        Args:
+            settings: fixed encoder configuration
+            name: fixed encoder name
+
+        Returns:
+            resolved fixed encoder configuration
+        """
+
+        if settings is None or settings is False:
+            return None
+
+        if isinstance(settings, dict):
+            return settings
+
+        if name == "lemur" and isinstance(settings, str):
+            return {"path": settings}
+
+        if name == "muvera" and settings is True:
+            return {}
+
+        expected = "a path string or a dict of settings" if name == "lemur" else "a boolean or a dict of settings"
+        raise ValueError(f"{name} expects {expected}")
 
     def centersettings(self, center, linear, configured):
         """
