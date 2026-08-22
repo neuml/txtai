@@ -47,6 +47,37 @@ class TestSimilarity(unittest.TestCase):
         results = [r[0][0] for r in similarity(["Who won the lottery?", "Where did an iceberg collapse?"], self.data)]
         self.assertEqual(results, [4, 1])
 
+    def testCrossEncoderLabels(self):
+        """
+        Test cross-encoder ranking with a multi-class model, restricted to a single label via labels
+        """
+
+        similarity = Similarity("prajjwal1/bert-medium-mnli", crossencode=True)
+
+        premise = "A dog is running in the park."
+        entailment = "An animal is outside."
+        contradiction = "The park is empty and there are no animals."
+
+        # Without labels, each candidate is scored by whichever label it individually scored highest
+        # on - here the contradiction's own top score outscores the entailment's own top score, so
+        # the less relevant candidate wins
+        uid = similarity(premise, [entailment, contradiction])[0][0]
+        self.assertEqual(uid, 1)
+
+        # Restricting to a single label (LABEL_1 = entailment for this model) compares every
+        # candidate on that same label instead, fixing the ranking
+        uid = similarity(premise, [entailment, contradiction], labels=["1"])[0][0]
+        self.assertEqual(uid, 0)
+
+    def testCrossEncoderLabelsInvalid(self):
+        """
+        Test cross-encoder raises an error when no requested label matches the model
+        """
+
+        similarity = Similarity("prajjwal1/bert-medium-mnli", crossencode=True)
+        with self.assertRaises(ValueError):
+            similarity("A dog is running in the park.", ["An animal is outside."], labels=["not-a-real-label"])
+
     def testLateEncoder(self):
         """
         Test late-encoder similarity model
