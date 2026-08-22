@@ -2,8 +2,6 @@
 CrossEncoder module
 """
 
-from ..hfpipeline import HFPipeline
-
 # Core library imports
 from ...util import Library
 
@@ -12,14 +10,15 @@ from .labels import Labels
 np = Library().numpy()
 
 
-class CrossEncoder(HFPipeline):
+class CrossEncoder(Labels):
     """
     Computes similarity between query and list of text using a cross-encoder model
     """
 
     def __init__(self, path=None, quantize=False, gpu=True, model=None, **kwargs):
-        super().__init__("text-classification", path, quantize, gpu, model, **kwargs)
+        super().__init__(path, quantize, gpu, model, False, **kwargs)
 
+    # pylint: disable=W0222
     def __call__(self, query, texts, multilabel=True, workers=0, labels=None):
         """
         Computes the similarity between query and list of text. Returns a list of
@@ -68,7 +67,7 @@ class CrossEncoder(HFPipeline):
             score
         """
 
-        matches = Labels.limit(self.pipeline.model.config, result, labels)
+        matches = self.limit(result, labels)
         if labels and not matches:
             raise ValueError(f"None of the requested labels {labels} matched model labels {list(self.pipeline.model.config.label2id.keys())}")
 

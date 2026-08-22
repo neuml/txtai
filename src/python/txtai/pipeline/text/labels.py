@@ -99,21 +99,22 @@ class Labels(HFPipeline):
                     yield result[:1] if isinstance(flatten, bool) else result
                 else:
                     # Filter results using labels, if provided
-                    yield Labels.limit(self.pipeline.model.config, result, labels)
+                    yield self.limit(result, labels)
 
-    @staticmethod
-    def limit(config, result, labels):
+    def limit(self, result, labels):
         """
         Filter result using labels. If labels is None, original result is returned.
 
         Args:
-            config: model config, used to resolve label ids
             result: results array sorted by score descending
             labels: list of labels or None
 
         Returns:
             filtered results
         """
+
+        # Get config
+        config = self.pipeline.model.config
 
         # Resolve label ids for labels
         result = [(config.label2id.get(x["label"], 0), x["score"]) for x in result]
