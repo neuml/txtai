@@ -31,7 +31,7 @@ class Similarity(Labels):
             self.crossencoder = CrossEncoder(model=self.pipeline) if crossencode else None
 
     # pylint: disable=W0222
-    def __call__(self, query, texts, multilabel=True, **kwargs):
+    def __call__(self, query, texts, multilabel=True, labels=None, **kwargs):
         """
         Computes the similarity between query and list of text. Returns a list of
         (id, score) sorted by highest score, where id is the index in texts.
@@ -44,6 +44,8 @@ class Similarity(Labels):
             query: query text|list
             texts: list of text
             multilabel: labels are independent if True, scores are normalized to sum to 1 per text item if False, raw scores returned if None
+            labels: optional list of labels to score by, only used with a cross-encoder model (crossencode=True) -
+                    see CrossEncoder.__call__. Ignored otherwise.
             kwargs: additional keyword args
 
         Returns:
@@ -52,7 +54,7 @@ class Similarity(Labels):
 
         if self.crossencoder:
             # pylint: disable=E1102
-            return self.crossencoder(query, texts, multilabel)
+            return self.crossencoder(query, texts, multilabel, labels=labels)
 
         if self.lateencoder:
             return self.lateencoder(query, texts)
