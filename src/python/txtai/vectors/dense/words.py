@@ -5,7 +5,6 @@ Word Vectors module
 import json
 import logging
 import os
-import tempfile
 
 from multiprocessing import Pool
 
@@ -21,6 +20,7 @@ from ...pipeline import Tokenizer
 from ...util import Download, DownloadError, Library
 
 from ..base import Vectors
+from ..recovery import Recovery
 
 # Core library imports
 np = Library().numpy()
@@ -158,7 +158,7 @@ class WordVectors(Vectors):
 
         # Use default single process indexing logic
         if not parallel:
-            return super().index(documents, batchsize)
+            return super().index(documents, batchsize, checkpoint)
 
         # Customize indexing logic with multiprocessing pool to efficiently build vectors
         ids, dimensions, batches, stream = [], None, 0, None
@@ -166,31 +166,59 @@ class WordVectors(Vectors):
         # Shared objects with Pool
         args = (self.config, self.scoring)
 
+        # Generate recovery config if checkpoint is set
+        vectorsid = self.vectorsid() if checkpoint else None
+        recovery = Recovery(checkpoint, vectorsid, self.loadembeddings) if checkpoint else None
+
         # Convert all documents to embedding arrays, stream embeddings to disk to control memory usage
         with Pool(parallel, initializer=create, initargs=args) as pool:
-            with tempfile.NamedTemporaryFile(mode="wb", suffix=".npy", delete=False) as output:
+            with self.spool(checkpoint, vectorsid) as output:
                 stream = output.name
-                embeddings = []
-                for uid, embedding in pool.imap(transform, documents, self.encodebatch):
-                    if not dimensions:
-                        # Set number of dimensions for embeddings
-                        dimensions = embedding.shape[0]
+                batch = []
+                for document in documents:
+                    batch.append(document)
 
-                    ids.append(uid)
-                    embeddings.append(embedding)
-
-                    if len(embeddings) == batchsize:
-                        np.save(output, np.array(embeddings, dtype=np.float32), allow_pickle=False)
+                    if len(batch) == batchsize:
+                        uids, dimensions = self.parallelbatch(pool, batch, output, recovery)
+                        ids.extend(uids)
                         batches += 1
 
-                        embeddings = []
+                        batch = []
 
-                # Final embeddings batch
-                if embeddings:
-                    np.save(output, np.array(embeddings, dtype=np.float32), allow_pickle=False)
+                # Final batch
+                if batch:
+                    uids, dimensions = self.parallelbatch(pool, batch, output, recovery)
+                    ids.extend(uids)
                     batches += 1
 
         return (ids, dimensions, batches, stream)
+
+    def parallelbatch(self, pool, documents, output, recovery):
+        """
+        Builds a batch of embeddings using the multiprocessing pool, honoring a recovery
+        checkpoint if one is available for this batch.
+
+        Args:
+            documents: list of documents used to build embeddings
+            pool: multiprocessing pool used to transform documents not served from recovery
+            output: output stream to store embeddings
+            recovery: optional recovery instance
+
+        Returns:
+            (ids, dimensions) list of ids and number of dimensions in embeddings
+        """
+
+        ids = [uid for uid, _, _ in documents]
+
+        # Attempt to read embeddings from a recovery file
+        embeddings = recovery() if recovery else None
+        if embeddings is None:
+            embeddings = np.array([embedding for _, embedding in pool.imap(transform, documents, self.encodebatch)], dtype=np.float32)
+
+        dimensions = embeddings.shape[1]
+        self.saveembeddings(output, embeddings)
+
+        return (ids, dimensions)
 
     def lookup(self, tokens):
         """

@@ -3,6 +3,7 @@ WordVectors module tests
 """
 
 import os
+import shutil
 import tempfile
 import unittest
 
@@ -122,6 +123,45 @@ class TestWordVectors(unittest.TestCase):
         with open(stream, "rb") as queue:
             self.assertEqual(np.load(queue).shape, (512, 300))
             self.assertEqual(np.load(queue).shape, (488, 300))
+
+    def testIndexCheckpoint(self):
+        """
+        Test word vector indexing writes a checkpoint file and a second run over the same
+        documents is served entirely from it
+        """
+
+        checkpoint = os.path.join(tempfile.gettempdir(), "wordvectors-checkpoint")
+        shutil.rmtree(checkpoint, ignore_errors=True)
+
+        documents = [(x, "This is a test", None) for x in range(10)]
+        model = VectorsFactory.create({"path": self.path, "parallel": False}, None)
+
+        # First run builds the checkpoint
+        model.index(documents, 5, checkpoint)
+        self.assertTrue(os.path.exists(os.path.join(checkpoint, model.vectorsid())))
+
+        # Second run over the same documents must be fully served from the checkpoint
+        with patch.object(WordVectors, "encode", wraps=model.encode) as encode:
+            model.index(documents, 5, checkpoint)
+            encode.assert_not_called()
+
+    @patch("os.cpu_count")
+    def testIndexCheckpointParallel(self, cpucount):
+        """
+        Test word vector parallel indexing writes a checkpoint file
+        """
+
+        # Mock CPU count
+        cpucount.return_value = 1
+
+        checkpoint = os.path.join(tempfile.gettempdir(), "wordvectors-checkpoint-parallel")
+        shutil.rmtree(checkpoint, ignore_errors=True)
+
+        documents = [(x, "This is a test", None) for x in range(10)]
+        model = VectorsFactory.create({"path": self.path, "parallel": True}, None)
+
+        model.index(documents, 5, checkpoint)
+        self.assertTrue(os.path.exists(os.path.join(checkpoint, model.vectorsid())))
 
     def testLookup(self):
         """
