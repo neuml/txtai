@@ -176,6 +176,7 @@ muvera:
 ```
 
 Settings to control the size of MUVERA fixed dimensional outputs. Default is 20 * 2^5 * 16 = 10,240 dimensions.
+Set `muvera` to `false` to disable it or `true` to use the default settings.
 
 ### lemur
 ```yaml
@@ -184,9 +185,9 @@ lemur:
 ```
 
 Loads a trained [LEMUR](../../../pipeline/train/lemur) fixed dimensional encoder. LEMUR artifacts are corpus-specific and must be
-created with `LemurTrainer` before configuring an embeddings index. Query vectors are summed learned features and document vectors
-are ordinary least squares weights over the artifact's stored token sample. Each artifact contains `config.json` and
-`model.safetensors`; newly trained artifacts also store the collection token mean as `lemur.center`. Loading that mean automatically
+created with `LemurTrainer` before configuring an embeddings index. A bare string is treated as the artifact path. Query vectors are
+summed learned features and document vectors are ordinary least squares weights over the artifact's stored token sample. Each artifact
+contains `config.json` and `model.safetensors`; newly trained artifacts also store the collection token mean as `lemur.center`. Loading that mean automatically
 selects collection centering unless `center` is explicitly configured. Artifacts without `lemur.center` retain the previous default.
 The Safetensors file contains inference state only. See the trainer page for score filtering and Faiss exact/IVF search behavior.
 

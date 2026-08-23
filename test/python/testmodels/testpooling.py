@@ -83,6 +83,35 @@ class TestPooling(unittest.TestCase):
         self.assertEqual(pool.centersettings({"scope": "batch"}, empty, True), {"scope": "batch"})
         self.assertEqual(pool.centersettings({"scope": "document"}, empty, True), {"scope": "document"})
 
+    def testLateEncoderSettings(self):
+        """
+        Test late pooling fixed encoder settings
+        """
+
+        pool = PoolingFactory.create({"path": "neuml/colbert-bert-tiny", "device": self.device, "modelargs": {"muvera": None}})
+        lemur = {"path": "artifact"}
+        muvera = {"repetitions": 5}
+
+        self.assertIsNone(pool.encodersettings(None, "lemur"))
+        self.assertIsNone(pool.encodersettings(False, "lemur"))
+        self.assertEqual(pool.encodersettings("artifact", "lemur"), {"path": "artifact"})
+        self.assertIs(pool.encodersettings(lemur, "lemur"), lemur)
+
+        self.assertIsNone(pool.encodersettings(None, "muvera"))
+        self.assertIsNone(pool.encodersettings(False, "muvera"))
+        self.assertEqual(pool.encodersettings(True, "muvera"), {})
+        self.assertIs(pool.encodersettings(muvera, "muvera"), muvera)
+
+        for value in (True, 1):
+            with self.subTest(lemur=value):
+                with self.assertRaisesRegex(ValueError, "^lemur expects a path string or a dict of settings$"):
+                    pool.encodersettings(value, "lemur")
+
+        for value in ("settings", 1):
+            with self.subTest(muvera=value):
+                with self.assertRaisesRegex(ValueError, "^muvera expects a boolean or a dict of settings$"):
+                    pool.encodersettings(value, "muvera")
+
     def testLateCenterDisabled(self):
         """
         Test omitted and explicitly disabled centering are byte-identical
@@ -237,6 +266,10 @@ class TestPooling(unittest.TestCase):
                 self.assertTrue(np.isfinite(queries).all())
                 self.assertTrue(np.isfinite(documents).all())
 
+                pathpooling = PoolingFactory.create({"path": model, "device": self.device, "modelargs": {"lemur": output, "center": False}})
+                self.assertIsInstance(pathpooling.encoder, Lemur)
+                np.testing.assert_allclose(pathpooling.encode(texts, category="data"), documents, rtol=1e-4, atol=1e-5)
+
                 # LEMUR must use true token counts, independent of batch padding
                 singles = np.vstack([pooling.encode([text], category="data") for text in texts])
                 np.testing.assert_allclose(documents, singles, rtol=1e-4, atol=1e-5)
@@ -244,6 +277,9 @@ class TestPooling(unittest.TestCase):
             # MUVERA remains the default when LEMUR is absent
             pooling = PoolingFactory.create({"path": model, "device": self.device})
             self.assertEqual(pooling.encode(["test"], category="query").shape, (1, 10240))
+
+            pooling = PoolingFactory.create({"path": model, "device": self.device, "modelargs": {"muvera": False}})
+            self.assertIsNone(pooling.encoder)
 
     def testLemurActivations(self):
         """
