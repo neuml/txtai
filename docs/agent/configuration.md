@@ -99,7 +99,6 @@ The following shortcut strings load tools directly. Passing a Tool instance is a
 | write       | Writes content to file                                    |
 | *.md        | Loads a [`skill.md`](https://agentskills.io/specification) file |
 
-
 ## instructions
 
 ```yaml
