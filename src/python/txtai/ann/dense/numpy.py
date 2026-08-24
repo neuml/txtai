@@ -70,6 +70,10 @@ class NumPy(ANN):
         if self.qbits:
             # Calculate hamming score for integer vectors
             scores = self.hammingscore(queries)
+
+            # Zero out deleted (all-zero) rows. Unlike dot product, hamming scores them nonzero,
+            # so they'd otherwise pass the caller's score > 0 filter and resurface in results.
+            scores[:, self.all(self.backend == 0, axis=1)] = 0
         else:
             # Dot product on normalized vectors is equal to cosine similarity
             scores = self.dot(self.tensor(queries), self.backend.T)
