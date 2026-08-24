@@ -284,6 +284,25 @@ class TestDense(unittest.TestCase):
         # Validate count
         self.assertEqual(ann.count(), 100)
 
+    def testNumPyQuantizeDelete(self):
+        """
+        Test that deleted rows don't resurface in search results for quantized (hamming) NumPy indexes
+        """
+
+        ann = ANNFactory.create({"backend": "numpy", "quantize": 1, "dimensions": 4})
+
+        # Index uint8 vectors
+        data = np.array([[1, 0, 0, 0], [0, 255, 0, 0], [0, 0, 255, 0], [0, 0, 0, 255]], dtype=np.uint8)
+        ann.index(data)
+
+        # Delete the first row and search with its (former) vector
+        ann.delete([0])
+        results = ann.search(np.array([data[0]]), 4)[0]
+
+        # Deleted row must score 0 so the caller's score > 0 filter drops it, same as the dot-product path
+        self.assertEqual(dict(results).get(0), 0)
+        self.assertEqual(ann.count(), 3)
+
     @patch("sqlalchemy.orm.Query.limit")
     def testPGVector(self, query):
         """
