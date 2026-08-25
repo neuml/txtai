@@ -166,6 +166,26 @@ class TestKeyword(unittest.TestCase):
         scoring.delete([0, len(self.data) + 100])
         self.assertNotIn(0, scoring.documents)
 
+    def testDeleteIdempotent(self):
+        """
+        Test that deleting the same id more than once does not corrupt count()
+        """
+
+        # Terms index (bm25): Terms.delete extended self.deletes without dedup, so a
+        # repeated delete appended the same index again and count() undercounted.
+        scoring = ScoringFactory.create({"method": "bm25", "terms": True, "content": True})
+        scoring.index(self.data)
+
+        total = scoring.count()
+        self.assertEqual(total, len(self.data))
+
+        scoring.delete([0])
+        self.assertEqual(scoring.count(), total - 1)
+
+        # Deleting the same id again is a no-op for the count
+        scoring.delete([0])
+        self.assertEqual(scoring.count(), total - 1)
+
     def testTFIDF(self):
         """
         Test tfidf
