@@ -212,6 +212,10 @@ class Library:
         try:
             import safetensors
 
+            # Import submodules - they are not auto-imported with safetensors
+            import safetensors.numpy
+            import safetensors.torch
+
         except ImportError:
 
             class Safetensors:
