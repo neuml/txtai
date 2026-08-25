@@ -129,8 +129,14 @@ class Terms:
             ids: ids to delete
         """
 
-        # Set index ids as deleted, ignore ids that were never indexed
-        self.deletes.extend([self.ids.index(i) for i in ids if i in self.ids])
+        # Set index ids as deleted, ignoring ids that were never indexed and ids
+        # already marked deleted. Skipping duplicates keeps count() accurate when
+        # the same id is deleted more than once (e.g. repeated upsert/delete flows).
+        for i in ids:
+            if i in self.ids:
+                indexid = self.ids.index(i)
+                if indexid not in self.deletes:
+                    self.deletes.append(indexid)
 
     def index(self):
         """
