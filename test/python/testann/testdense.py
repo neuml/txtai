@@ -125,6 +125,59 @@ class TestDense(unittest.TestCase):
         # Test to with mmap enabled
         self.runTests("faiss", {"faiss": {"mmap": True}}, False)
 
+    def testFaissNprobeClamp(self):
+        """
+        Test Faiss default nprobe clamp
+        """
+
+        ann, _ = self.faissmodel(5001, {"sample": 0.01})
+        self.assertGreater(round(ann.cells(ann.count()) / 16), ann.backend.nlist)
+        self.assertEqual(ann.nprobe(), ann.backend.nlist)
+
+    def testFaissNprobeConfigured(self):
+        """
+        Test configured Faiss nprobe values
+        """
+
+        for nprobe in [1, 3]:
+            with self.subTest(nprobe=nprobe):
+                ann, _ = self.faissmodel(100, {"components": "IVF2,Flat", "nprobe": nprobe})
+                self.assertEqual(ann.nprobe(), nprobe)
+
+    def testFaissNprobeResults(self):
+        """
+        Test Faiss default nprobe clamp results
+        """
+
+        ann, rng = self.faissmodel(5001, {"sample": 0.01})
+        queries = rng.random((10, 8), dtype=np.float32)
+        self.normalize(queries)
+
+        default = ann.search(queries, 5)
+        ann.config["faiss"]["nprobe"] = ann.backend.nlist
+        full = ann.search(queries, 5)
+
+        self.assertEqual(default, full)
+
+    def testFaissNprobeSmall(self):
+        """
+        Test Faiss default nprobe clamp on a small index
+        """
+
+        ann, _ = self.faissmodel(100, {"components": "IVF2,Flat"})
+        self.assertEqual(ann.backend.nlist, 2)
+        self.assertEqual(ann.nprobe(), ann.backend.nlist)
+
+    def testFaissNprobeUnchanged(self):
+        """
+        Test Faiss default nprobe without a clamp
+        """
+
+        ann, _ = self.faissmodel(5001, {"components": "IVF16,Flat"})
+        expected = round(ann.cells(ann.count()) / 16)
+        self.assertLessEqual(expected, ann.backend.nlist)
+        self.assertEqual(ann.nprobe(), expected)
+
     def testGGML(self):
         """
         Test GGML backend
@@ -504,6 +557,27 @@ class TestDense(unittest.TestCase):
         model.index(data)
 
         return model
+
+    def faissmodel(self, length, settings):
+        """
+        Builds a seeded Faiss model.
+
+        Args:
+            length: number of rows to generate
+            settings: Faiss settings
+
+        Returns:
+            Faiss model and random number generator
+        """
+
+        rng = np.random.default_rng(0)
+        data = rng.random((length, 8), dtype=np.float32)
+        self.normalize(data)
+
+        model = ANNFactory.create({"backend": "faiss", "dimensions": data.shape[1], "faiss": settings})
+        model.index(data)
+
+        return model, rng
 
     def append(self, name, params=None, length=500):
         """

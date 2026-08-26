@@ -229,6 +229,7 @@ class Faiss(ANN):
         count = self.count()
 
         default = 6 if count <= 5000 else round(self.cells(count) / 16)
+        default = min(default, getattr(self.backend, "nlist", default))
         return self.setting("nprobe", default)
 
     def scores(self, scores):
