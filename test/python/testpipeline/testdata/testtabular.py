@@ -23,6 +23,36 @@ class TestTabular(unittest.TestCase):
 
         cls.tabular = Tabular("id", ["text"])
 
+    def testFalsyValues(self):
+        """
+        Test that zero and False are indexed as content
+        """
+
+        tabular = Tabular("id", ["quantity", "text"])
+
+        # A quantity of 0 is real data. Before this was fixed, the truthy check in concat
+        # dropped it and the row indexed as "Widget", losing the quantity.
+        rows = tabular([{"id": 1, "quantity": 0, "text": "Widget"}])
+        self.assertEqual(rows[0][1], "0. Widget")
+
+        rows = tabular([{"id": 2, "quantity": False, "text": "Widget"}])
+        self.assertEqual(rows[0][1], "False. Widget")
+
+    def testNullValues(self):
+        """
+        Test that null and empty values are still skipped
+        """
+
+        tabular = Tabular("id", ["quantity", "text"])
+
+        # NaN is the null marker column() normalizes to None, and an empty string adds
+        # nothing but a separator. Both stay excluded.
+        rows = tabular([{"id": 1, "quantity": float("nan"), "text": "Widget"}])
+        self.assertEqual(rows[0][1], "Widget")
+
+        rows = tabular([{"id": 2, "quantity": "", "text": "Widget"}])
+        self.assertEqual(rows[0][1], "Widget")
+
     def testContent(self):
         """
         Test parsing additional content

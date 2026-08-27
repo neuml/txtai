@@ -135,7 +135,7 @@ class Tabular(Pipeline):
         parts = []
         for column in columns:
             column = self.column(row[column])
-            if column:
+            if column is not None and column != "":
                 parts.append(str(column))
 
         return ". ".join(parts) if parts else None
