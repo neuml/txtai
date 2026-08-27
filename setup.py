@@ -179,7 +179,7 @@ extras["all"] = (
 
 setup(
     name=package,
-    version="9.13.0",
+    version="9.14.0",
     author="NeuML",
     description="All-in-one open-source AI framework for semantic search, LLM orchestration and language model workflows",
     long_description=DESCRIPTION,
