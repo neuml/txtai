@@ -6,6 +6,7 @@ import os
 import tempfile
 import unittest
 
+from threading import Thread
 from unittest.mock import patch
 
 from datetime import datetime
@@ -13,7 +14,7 @@ from datetime import datetime
 from smolagents import CodeAgent, PythonInterpreterTool
 
 from txtai.agent import Agent
-from txtai.agent.tool import ToolFactory
+from txtai.agent.tool import BashTool, ToolFactory
 from txtai.embeddings import Embeddings
 
 # agents.md content
@@ -188,6 +189,45 @@ class TestAgent(unittest.TestCase):
         tool = ToolFactory.default("bash")
         self.assertEqual(tool.name, "bash")
         self.assertIsNot(tool, ToolFactory.default("bash"))
+
+    def testToolsBashStdin(self):
+        """
+        Test default bash tool doesn't block reading stdin
+        """
+
+        tool = ToolFactory.default("bash")
+
+        # Replace stdin with a pipe that never reaches EOF, simulating a long-lived
+        # parent process (i.e. an API service) that keeps stdin open
+        read, write = os.pipe()
+        stdin = os.dup(0)
+
+        result = {}
+
+        try:
+            os.dup2(read, 0)
+
+            # `cat` with no file arguments reads stdin - run in a thread to avoid blocking the test suite
+            thread = Thread(target=lambda: result.update(output=tool(["cat"])), daemon=True)
+            thread.start()
+            thread.join(timeout=30)
+        finally:
+            os.dup2(stdin, 0)
+            for descriptor in (stdin, read, write):
+                os.close(descriptor)
+
+        # Command must return and not block forever reading stdin
+        self.assertFalse(thread.is_alive())
+        self.assertEqual(result["output"], "")
+
+    def testToolsBashTimeout(self):
+        """
+        Test bash tool commands are stopped once they exceed the timeout
+        """
+
+        tool = BashTool(allowed=["sleep"], timeout=1)
+
+        self.assertIn("timed out", tool(["sleep", "30"]))
 
     def testToolsEmbeddings(self):
         """
