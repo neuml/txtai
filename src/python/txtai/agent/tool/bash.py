@@ -6,9 +6,6 @@ import subprocess
 
 from smolagents import Tool
 
-# Default maximum time in seconds to wait for a command to complete
-TIMEOUT = 30
-
 
 class BashTool(Tool):
     """
@@ -17,13 +14,13 @@ class BashTool(Tool):
     """
 
     # pylint: disable=W0231
-    def __init__(self, allowed=None, timeout=None):
+    def __init__(self, allowed=None, timeout=30):
         """
         Creates a BashTool.
 
         Args:
             allowed: list of allowed commands to run, has limited set of defaults which are a best effort not a sandbox
-            timeout: maximum number of seconds to wait for a command to complete, defaults to 30
+            timeout: maximum number of seconds to wait for a command to complete, defaults to 30, None disables the timeout
         """
 
         # Tool parameters
@@ -37,8 +34,8 @@ class BashTool(Tool):
         # Default list of allowed commands
         self.allowed = allowed if allowed else ["cat", "cut", "diff", "grep", "head", "ls", "tail"]
 
-        # Maximum time to wait for a command
-        self.timeout = timeout if timeout else TIMEOUT
+        # Maximum time to wait for a command, None waits indefinitely
+        self.timeout = timeout
 
         # Validate parameters and initialize tool
         super().__init__()

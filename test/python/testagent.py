@@ -229,6 +229,9 @@ class TestAgent(unittest.TestCase):
 
         self.assertIn("timed out", tool(["sleep", "30"]))
 
+        # Timeout is disabled when set to None
+        self.assertIsNone(BashTool(timeout=None).timeout)
+
     def testToolsEmbeddings(self):
         """
         Test adding Embeddings as a tool
