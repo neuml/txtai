@@ -142,6 +142,7 @@ extras["vectors"] = [
     "litellm>=1.37.16",
     "llama-cpp-python>=0.2.75",
     "model2vec>=0.3.0",
+    "onnxruntime>=1.11.0",
     "scikit-learn>=0.23.1",
     "scipy>=1.4.1",
     "sentence-transformers>=5.0.0",
