@@ -380,6 +380,9 @@ class TestOptional(unittest.TestCase):
             VectorsFactory.create({"method": "model2vec", "path": "minishlab/M2V_base_output"}, None)
 
         with self.assertRaises(ImportError):
+            VectorsFactory.create({"method": "onnx", "path": "sentence-transformers/all-MiniLM-L6-v2/onnx/model.onnx"}, None)
+
+        with self.assertRaises(ImportError):
             VectorsFactory.create({"method": "sentence-transformers", "path": "sentence-transformers/nli-mpnet-base-v2"}, None)
 
         with self.assertRaises(ImportError):

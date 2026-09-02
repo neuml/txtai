@@ -251,12 +251,3 @@ class TestONNXModels(unittest.TestCase):
             providers.return_value = ["CPUExecutionProvider"]
             model.config["gpu"] = True
             self.assertEqual(model.providers(), ["CPUExecutionProvider"])
-
-    def testNotInstalled(self):
-        """
-        Test an error is raised when onnxruntime isn't installed
-        """
-
-        with patch("txtai.vectors.dense.onnx.ONNX_RUNTIME", False):
-            with self.assertRaises(ImportError):
-                ONNX({"path": self.build("missing.onnx")}, None, None)
