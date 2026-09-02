@@ -186,6 +186,31 @@ class TestKeyword(unittest.TestCase):
         scoring.delete([0])
         self.assertEqual(scoring.count(), total - 1)
 
+    def testDeleteReinsert(self):
+        """
+        Test that an id deleted, re-added and deleted again is removed from count() and search()
+        """
+
+        # Terms index: Terms.delete resolved each id with self.ids.index(), which only found the first
+        # (already deleted) position. The re-added copy survived, count() was one too high and search()
+        # raised a KeyError for the re-added text since the content had been removed.
+        for method in ["bm25", "tfidf", "sif"]:
+            scoring = ScoringFactory.create({"method": method, "terms": True, "content": True})
+            scoring.index(self.data)
+
+            total = scoring.count()
+
+            scoring.delete([0])
+            self.assertEqual(scoring.count(), total - 1)
+
+            # Re-add the same id with new text, then delete it again
+            scoring.upsert([(0, "Lunar eclipse visible across North America", None)])
+            self.assertEqual(scoring.count(), total)
+
+            scoring.delete([0])
+            self.assertFalse(scoring.search("lunar eclipse", 1))
+            self.assertEqual(scoring.count(), total - 1)
+
     def testTFIDF(self):
         """
         Test tfidf

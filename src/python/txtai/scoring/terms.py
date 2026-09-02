@@ -129,14 +129,13 @@ class Terms:
             ids: ids to delete
         """
 
-        # Set index ids as deleted, ignoring ids that were never indexed and ids
-        # already marked deleted. Skipping duplicates keeps count() accurate when
-        # the same id is deleted more than once (e.g. repeated upsert/delete flows).
-        for i in ids:
-            if i in self.ids:
-                indexid = self.ids.index(i)
-                if indexid not in self.deletes:
-                    self.deletes.append(indexid)
+        # An id has more than one index id when it's re-added after a delete. Mark every index id
+        # for the requested ids as deleted, ignoring ids that were never indexed and index ids already
+        # marked deleted. This keeps count() and search results accurate for repeated upsert/delete flows.
+        ids, deletes = set(ids), set(self.deletes)
+        for indexid, uid in enumerate(self.ids):
+            if uid in ids and indexid not in deletes:
+                self.deletes.append(indexid)
 
     def index(self):
         """
