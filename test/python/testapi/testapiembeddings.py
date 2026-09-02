@@ -109,6 +109,22 @@ embeddings:
     content: True
 """
 
+# Configuration for a graph index
+GRAPH = """
+# Index file path
+path: %s
+
+# Allow indexing of documents
+writable: True
+
+# Embeddings settings
+embeddings:
+    keyword: True
+    content: True
+    graph:
+        approximate: False
+"""
+
 # Configuration for reranker
 RERANK = """
 # Index file path
@@ -475,6 +491,27 @@ class TestEmbeddings(unittest.TestCase):
 
         uids = [result[0]["id"] for result in results]
         self.assertEqual(uids, ["3", "3"])
+
+    def testXSearchGraph(self):
+        """
+        Test the graph parameter via API
+        """
+
+        self.client = TestEmbeddings.start(GRAPH, "testapi-graph")
+
+        # Index data
+        self.client.post("add", json=[{"id": x, "text": row} for x, row in enumerate(self.data)])
+        self.client.get("index")
+
+        # Graph results are a serialized graph, standard results are a list
+        self.assertIsInstance(self.client.get("search?query=bear&limit=1&graph=true").json(), dict)
+
+        for value in ["false", "False", "0"]:
+            self.assertIsInstance(self.client.get(f"search?query=bear&limit=1&graph={value}").json(), list)
+
+        # Same query through batchsearch, which coerces the parameter with FastAPI
+        results = self.client.post("batchsearch", json={"queries": ["bear"], "limit": 1, "graph": False}).json()
+        self.assertIsInstance(results[0], list)
 
 
 class Elements:
