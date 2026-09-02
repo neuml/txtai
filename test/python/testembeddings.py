@@ -48,6 +48,45 @@ class TestEmbeddings(unittest.TestCase):
         if cls.embeddings:
             cls.embeddings.close()
 
+    def testArchive(self):
+        """
+        Test saving and loading a compressed index archive
+        """
+
+        # Index data with sparse keyword vectors and content
+        embeddings = Embeddings({"keyword": True, "content": True})
+        embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        # Generate temp file paths
+        archive = os.path.join(tempfile.gettempdir(), "embeddings.archive.tar.gz")
+        index = os.path.join(tempfile.gettempdir(), "embeddings.archive")
+
+        # Save to an archive, load it and save back to the same archive
+        embeddings.save(archive)
+        embeddings.close()
+
+        embeddings = Embeddings().load(archive)
+        self.assertTrue(embeddings.exists(archive))
+        embeddings.save(archive)
+
+        # Save to a directory, update data and save to the archive again
+        embeddings.save(index)
+        embeddings.upsert([(0, "Feel good story: baby panda born", None)])
+        embeddings.save(archive)
+        embeddings.close()
+
+        # Directory has the original data
+        embeddings = Embeddings().load(index)
+        self.assertEqual(embeddings.count(), len(self.data))
+        self.assertEqual(embeddings.search("lottery ticket", 1)[0]["id"], "4")
+        embeddings.close()
+
+        # Archive has the updated data
+        embeddings = Embeddings().load(archive)
+        self.assertEqual(embeddings.count(), len(self.data))
+        self.assertEqual(embeddings.search("feel good story", 1)[0]["id"], "0")
+        embeddings.close()
+
     def testAutoId(self):
         """
         Test auto id generation
