@@ -97,8 +97,36 @@ class TestSimilarity(unittest.TestCase):
         """
 
         similarity = Similarity("neuml/colbert-bert-tiny", lateencode=True)
-        results = [r[0][0] for r in similarity(["Who won the lottery?", "Where did an iceberg collapse?"], self.data)]
-        self.assertEqual(results, [4, 1])
+        queries = ["Who won the lottery?", "Where did an iceberg collapse?"]
+        results = similarity(queries, self.data)
+        self.assertEqual([r[0][0] for r in results], [4, 1])
+
+        # Test scores don't change with query batch padding
+        for query, scores in zip(queries, results):
+            alone = dict(similarity(query, self.data))
+            for uid, score in scores:
+                self.assertAlmostEqual(score, alone[uid], places=4)
+
+    def testLateEncoderPadding(self):
+        """
+        Test late-encoder scores don't change with data batch padding
+        """
+
+        texts = self.data + ["Short text."]
+        queries = ["Who won the lottery?", "Where did an iceberg collapse?"]
+
+        # Center token vectors on a fixed collection mean, this is batch independent and makes negative token similarities common
+        similarity = Similarity("neuml/colbert-bert-tiny", lateencode=True)
+        vectors = similarity.encode(texts, "data")
+        mean = vectors[vectors.abs().sum(dim=-1) > 0].mean(dim=0).cpu().numpy()
+        similarity = Similarity("neuml/colbert-bert-tiny", lateencode=True, vectors={"center": {"scope": "collection", "mean": mean}})
+
+        # Each text encoded alone has no padding, scores must match the exact MaxSim over true tokens
+        for query in queries:
+            scores, vectors = dict(similarity(query, texts)), similarity.encode([query], "query")[0]
+            for uid, text in enumerate(texts):
+                exact = (vectors @ similarity.encode([text], "data")[0].T).max(dim=1).values.mean().item()
+                self.assertAlmostEqual(scores[uid], exact, places=4)
 
     def testSimilarity(self):
         """

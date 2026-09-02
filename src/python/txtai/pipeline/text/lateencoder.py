@@ -95,8 +95,17 @@ class LateEncoder(Pipeline):
             list of (id, score)
         """
 
+        # Padding rows are all zeros, true token rows are unit normalized
+        qmask, dmask = queries.abs().sum(axis=-1) > 0, data.abs().sum(axis=-1) > 0
+
         # Compute bulk dot product using einstein notation
-        scores = torch.einsum("ash,bth->abst", queries, data).max(axis=-1).values.mean(axis=-1)
+        scores = torch.einsum("ash,bth->abst", queries, data)
+
+        # Max score per query token, ignoring padded data tokens
+        scores = scores.masked_fill(~dmask[None, :, None, :], torch.finfo(scores.dtype).min).max(axis=-1).values
+
+        # Mean score over true query tokens, ignoring padded query tokens
+        scores = scores.masked_fill(~qmask[:, None, :], 0).sum(axis=-1) / qmask.sum(axis=-1, keepdim=True).clamp(min=1)
         scores = scores.cpu().numpy()
 
         # Get top n matching indices and scores
