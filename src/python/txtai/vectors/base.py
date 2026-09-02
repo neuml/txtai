@@ -96,16 +96,22 @@ class Vectors:
             model
         """
 
+        # Cache key is the configuration that determines how a model is loaded, not the path alone
+        select = ["method", "gpu", "tokenizer", "maxlength", "instructions"]
+        config = {k: v for k, v in self.config.items() if k in select}
+        config["path"], config["vectors"] = path, self.config.get("vectors", {})
+        key = json.dumps(config, sort_keys=True, default=str)
+
         # Check if model is cached
-        if self.models and path in self.models:
-            return self.models[path]
+        if self.models and key in self.models:
+            return self.models[key]
 
         # Create new model
         model = self.loadmodel(path)
 
         # Store model in cache
         if self.models is not None and path:
-            self.models[path] = model
+            self.models[key] = model
 
         return model
 

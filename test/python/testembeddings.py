@@ -594,6 +594,36 @@ class TestEmbeddings(unittest.TestCase):
         # Close embeddings
         embeddings.close()
 
+    def testSubindexVectors(self):
+        """
+        Test subindexes with the same model path and different vectors settings
+        """
+
+        # Build data array
+        data = [(uid, text, None) for uid, text in enumerate(self.data)]
+
+        # Subindexes share a models cache. The same model path with different vectors settings must load separate models.
+        path = "neuml/colbert-bert-tiny"
+        embeddings = Embeddings(
+            {
+                "defaults": False,
+                "indexes": {
+                    "index1": {"path": path, "vectors": {"muvera": {"repetitions": 1}}},
+                    "index2": {"path": path, "vectors": {"muvera": {"repetitions": 2}}},
+                },
+            }
+        )
+        embeddings.index(data)
+
+        # MUVERA output dimensions = repetitions * 2^5 * 16
+        self.assertEqual(embeddings.transform("feel good story", index="index1").shape, (512,))
+        self.assertEqual(embeddings.transform("feel good story", index="index2").shape, (1024,))
+        self.assertEqual(embeddings.indexes["index1"].config["dimensions"], 512)
+        self.assertEqual(embeddings.indexes["index2"].config["dimensions"], 1024)
+
+        # Close embeddings
+        embeddings.close()
+
     def testTerms(self):
         """
         Test extracting keyword terms from queries
