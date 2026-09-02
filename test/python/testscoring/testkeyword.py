@@ -147,6 +147,23 @@ class TestKeyword(unittest.TestCase):
         self.assertEqual(scoring.count(), 0)
         self.assertEqual(scoring.search("bear", 1), [])
 
+    def testTermsEmptySave(self):
+        """
+        Test saving and loading a terms index with nothing indexed
+        """
+
+        for method in ["bm25", "tfidf"]:
+            config = {"method": method, "terms": True}
+
+            # No documents ever inserted - term database never initialized
+            scoring = ScoringFactory.create(config)
+            scoring.index([])
+
+            # Save/load and validate index is still empty
+            scoring = self.save(scoring, config, f"scoring.{method}.empty")
+            self.assertEqual(scoring.count(), 0)
+            self.assertEqual(scoring.search("bear", 1), [])
+
     def testDeleteUnknownId(self):
         """
         Test that deleting an id that was never indexed is a no-op, not a crash

@@ -31,6 +31,9 @@ class Embedded(RDBMS):
         self.path = path
 
     def save(self, path):
+        # Initialize connection if not open
+        self.initialize()
+
         # Temporary database
         if not self.path:
             # Save temporary database

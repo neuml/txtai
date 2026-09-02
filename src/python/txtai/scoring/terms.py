@@ -286,6 +286,9 @@ class Terms:
             path: path to write terms database
         """
 
+        # Initialize database, if necessary
+        self.initialize()
+
         # Clear documents table
         self.cursor.execute(Terms.DELETE_DOCUMENTS)
 

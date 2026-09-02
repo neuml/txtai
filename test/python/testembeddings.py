@@ -153,6 +153,27 @@ class TestEmbeddings(unittest.TestCase):
         embeddings.upsert([])
         self.assertIsNotNone(embeddings.ann)
 
+    def testEmptySave(self):
+        """
+        Test saving an empty index
+        """
+
+        for content in [False, True]:
+            # Keyword index, no data ever indexed
+            embeddings = Embeddings({"keyword": True, "content": content})
+            embeddings.index([])
+
+            # Generate temp file path
+            index = os.path.join(tempfile.gettempdir(), f"embeddings.emptysave.{content}")
+
+            # Test save/load
+            embeddings.save(index)
+            embeddings.load(index)
+
+            # Validate index is still empty
+            self.assertEqual(embeddings.count(), 0)
+            self.assertEqual(embeddings.search("test"), [])
+
     def testEmptyString(self):
         """
         Test empty string indexing
