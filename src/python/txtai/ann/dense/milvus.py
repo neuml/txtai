@@ -138,3 +138,6 @@ class Milvus(ANN):
 
         self.backend = milvus_lite.MilvusLite(self.path)
         self.collection = self.backend.get_collection("txtai")
+
+        # Reopened collections with an index start released, load to enable search
+        self.collection.load()
