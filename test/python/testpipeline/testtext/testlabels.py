@@ -83,3 +83,21 @@ class TestLabels(unittest.TestCase):
         # Verify results
         self.assertEqual(labels("This is the best sentence ever", flatten=True)[0], "POSITIVE")
         self.assertEqual(labels("This is the best sentence ever", multilabel=True, flatten=True)[0], "POSITIVE")
+
+    def testLabelFixedLimit(self):
+        """
+        Test labels with a fixed label text classification model, limited to requested labels by name and by id
+        """
+
+        labels = Labels(dynamic=False)
+
+        # Rotate the config label mappings so insertion order no longer matches label ids
+        config = labels.pipeline.model.config
+        ids = list(config.id2label)
+        config.id2label = {x: config.id2label[x] for x in ids[1:] + ids[:1]}
+        config.label2id = {label: x for x, label in config.id2label.items()}
+
+        # Verify requested labels resolve to label ids, not positions in the config label mappings
+        for label, uid in config.label2id.items():
+            self.assertEqual(labels("This is the best sentence ever", labels=[label.lower()])[0][0], uid)
+            self.assertEqual(labels("This is the best sentence ever", labels=[str(uid)])[0][0], uid)
