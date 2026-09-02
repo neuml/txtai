@@ -32,7 +32,7 @@ class API(Application):
         weights = self.weights(request.query_params.get("weights") if request and hasattr(request, "query_params") else weights)
         index = request.query_params.get("index") if request and hasattr(request, "query_params") else index
         parameters = request.query_params.get("parameters") if request and hasattr(request, "query_params") else parameters
-        graph = request.query_params.get("graph") if request and hasattr(request, "query_params") else graph
+        graph = self.graph(request.query_params.get("graph") if request and hasattr(request, "query_params") else graph)
 
         # Decode parameters
         parameters = json.loads(parameters) if parameters and isinstance(parameters, str) else parameters
@@ -157,3 +157,17 @@ class API(Application):
         """
 
         return float(weights) if weights else weights
+
+    def graph(self, graph):
+        """
+        Parses the graph parameter from the request.
+
+        Args:
+            graph: graph parameter
+
+        Returns:
+            graph as a bool
+        """
+
+        # Query parameters are strings - accept the same values the batchsearch endpoint coerces
+        return graph.strip().lower() in ("1", "true", "yes", "on") if isinstance(graph, str) else bool(graph)
