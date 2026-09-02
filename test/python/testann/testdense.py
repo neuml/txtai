@@ -639,12 +639,20 @@ class TestDense(unittest.TestCase):
         # Generate temp file path
         index = os.path.join(tempfile.gettempdir(), "ann")
 
-        # Save and close index
-        model.save(index)
-        model.close()
+        # Generate query vector
+        query = np.random.rand(240).astype(np.float32)
+        self.normalize(query)
 
-        # Reload index
+        # Save index and ensure it's still searchable
+        model.save(index)
+        self.assertGreater(model.search(np.array([query]), 1)[0][0][1], 0)
+
+        # Close and reload index
+        model.close()
         model.load(index)
+
+        # Ensure reloaded index is searchable
+        self.assertGreater(model.search(np.array([query]), 1)[0][0][1], 0)
 
         return model
 
