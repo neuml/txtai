@@ -115,8 +115,11 @@ class IVFSparse(ANN):
         self.metadata()
 
     def delete(self, ids):
-        # Set index ids as deleted
-        self.deletes.extend(ids)
+        # Set index ids as deleted, ignoring ids that were never indexed and ids already marked deleted
+        size = self.size()
+        for x in ids:
+            if x < size and x not in self.deletes:
+                self.deletes.append(x)
 
     def search(self, queries, limit):
         results = []

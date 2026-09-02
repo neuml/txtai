@@ -77,9 +77,19 @@ class TestSparse(unittest.TestCase):
         ann.delete([0])
         self.assertEqual(ann.count(), count - 1)
 
+        # Deleting the same id again or an id that was never indexed is a no-op for the count
+        ann.delete([0])
+        ann.delete([count + 100])
+        self.assertEqual(ann.count(), count - 1)
+
         # Re-validate search results
         results = [x[0] for x in ann.search(append[0], 10)[0]]
         self.assertIn(insert.shape[0], results)
+
+        # Save and reload index with deletes
+        ann.save(path)
+        ann.load(path)
+        self.assertEqual(ann.count(), count - 1)
 
         # Close ANN
         ann.close()

@@ -185,6 +185,34 @@ class TestDense(unittest.TestCase):
 
         self.runTests("ggml")
 
+    def testGGMLDelete(self):
+        """
+        Test GGML backend deletes
+        """
+
+        ann = ANNFactory.create({"backend": "ggml"})
+
+        # Generate and index dummy data
+        data = np.random.rand(100, 256).astype(np.float32)
+        ann.index(data)
+
+        # Validate count
+        self.assertEqual(ann.count(), 100)
+
+        # Test delete
+        ann.delete([0])
+        self.assertEqual(ann.count(), 99)
+
+        # Deleting the same id again is a no-op for the count
+        ann.delete([0])
+        self.assertEqual(ann.count(), 99)
+
+        # Save updated index with deletes and reload
+        index = os.path.join(tempfile.gettempdir(), "ggml.deletes")
+        ann.save(index)
+        ann.load(index)
+        self.assertEqual(ann.count(), 99)
+
     def testGGMLQuantization(self):
         """
         Test GGML backend with quantization enabled

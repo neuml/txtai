@@ -220,9 +220,10 @@ class GGMLTensors:
 
         shape = utils.get_shape(self.data)
 
-        # Filter any index greater than size of array
-        ids = [x for x in ids if x < shape[1]]
-        self.deletes.extend(ids)
+        # Set index ids as deleted, ignoring ids outside the array and ids already marked deleted
+        for x in ids:
+            if x < shape[1] and x not in self.deletes:
+                self.deletes.append(x)
 
     def search(self, queries):
         """
