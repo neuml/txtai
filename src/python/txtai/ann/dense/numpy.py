@@ -63,8 +63,8 @@ class NumPy(ANN):
         # Filter any index greater than size of array
         ids = [x for x in ids if x < self.backend.shape[0]]
 
-        # Clear specified ids
-        self.backend[ids] = self.tensor(self.zeros((len(ids), self.backend.shape[1])))
+        # Clear specified ids, zeros must match the array data type (e.g. uint8 for quantized data)
+        self.backend[ids] = self.tensor(self.zeros((len(ids), self.backend.shape[1]), dtype=self.backend.dtype))
 
     def search(self, queries, limit):
         if self.qbits:

@@ -155,7 +155,7 @@ class GGMLTensors:
         gguf = ggml.gguf_init_from_file(path.encode("utf-8"), params)
 
         # Load tensors from GGUF file
-        self.loadtensors(context)
+        self.loadtensors(gguf, context)
 
         # Create graph operation
         self.graph, self.output = self.creategraph()
@@ -218,11 +218,11 @@ class GGMLTensors:
             ids: ids to delete
         """
 
-        shape = utils.get_shape(self.data)
+        rows = self.rows()
 
         # Set index ids as deleted, ignoring ids outside the array and ids already marked deleted
         for x in ids:
-            if x < shape[1] and x not in self.deletes:
+            if x < rows and x not in self.deletes:
                 self.deletes.append(x)
 
     def search(self, queries):
@@ -251,8 +251,7 @@ class GGMLTensors:
             ggml.ggml_backend_graph_compute(self.backend, self.graph)
 
             # Get size of embeddings data
-            size = utils.get_shape(self.data)
-            size = size[1] if len(size) > 1 else 1
+            size = self.rows()
 
             # Get and return results
             results = np.zeros((batch.shape[0], size), dtype=np.float32)
@@ -273,7 +272,7 @@ class GGMLTensors:
             count
         """
 
-        return utils.get_shape(self.data)[1] - len(self.deletes) if self.data else 0
+        return self.rows() - len(self.deletes) if self.data else 0
 
     def save(self, path):
         """
@@ -289,9 +288,12 @@ class GGMLTensors:
         # Init and save data tensor
         gguf = ggml.gguf_init_empty()
 
-        # Add the data tensor
-        ggml.ggml_set_name(self.data, b"data")
-        ggml.gguf_add_tensor(gguf, self.data)
+        # Add the data tensor. GGUF can't store a tensor with zero rows, only save the dimensions for an empty index.
+        if self.rows():
+            ggml.ggml_set_name(self.data, b"data")
+            ggml.gguf_add_tensor(gguf, self.data)
+        else:
+            ggml.gguf_set_val_u32(gguf, b"dimensions", utils.get_shape(self.data)[0])
 
         # Optionally create and add the deletes tensor
         if self.deletes:
@@ -414,11 +416,12 @@ class GGMLTensors:
         # Copy embeddings data
         self.copy(data, self.data, tensortype, 0)
 
-    def loadtensors(self, context):
+    def loadtensors(self, gguf, context):
         """
         Loads existing tensors from context.
 
         Args:
+            gguf: gguf context
             context: ggml context
         """
 
@@ -437,6 +440,10 @@ class GGMLTensors:
 
             # Copy tensor data to backend
             ggml.ggml_backend_tensor_set(self.data, ggml.ggml_get_data(data), 0, ggml.ggml_nbytes(data))
+        else:
+            # Empty index, create tensors using the saved dimensions
+            dimensions = ggml.gguf_get_val_u32(gguf, ggml.gguf_find_key(gguf, b"dimensions"))
+            self.createtensors(np.zeros((0, dimensions), dtype=np.float32))
 
         # Load deletes tensor
         data = ggml.ggml_get_tensor(context, b"deletes")
@@ -466,8 +473,7 @@ class GGMLTensors:
         queries = ggml.ggml_new_tensor_2d(context, ggml.GGML_TYPE_F32, data.shape[1], self.querysize)
 
         # Embeddings data with space for both existing and new data
-        shape = utils.get_shape(self.data)
-        merge = ggml.ggml_new_tensor_2d(context, tensortype, data.shape[1], data.shape[0] + shape[1])
+        merge = ggml.ggml_new_tensor_2d(context, tensortype, data.shape[1], data.shape[0] + self.rows())
 
         # Create new buffer
         buffer = ggml.ggml_backend_alloc_ctx_tensors(context, backend)
@@ -573,3 +579,13 @@ class GGMLTensors:
         """
 
         return [queries[x : x + self.querysize] for x in range(0, len(queries), self.querysize)]
+
+    def rows(self):
+        """
+        Number of rows in the data tensor. Tensors with a single row or no rows report a 1-D shape, so the shape can't be used.
+
+        Returns:
+            row count
+        """
+
+        return ggml.ggml_nrows(self.data)
