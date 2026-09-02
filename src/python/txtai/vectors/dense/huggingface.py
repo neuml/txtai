@@ -42,4 +42,10 @@ class HFVectors(Vectors):
 
     def encode(self, data, category=None):
         # Encode data using vectors model
-        return self.model.encode(data, batch=self.encodebatch, category=category)
+        embeddings = self.model.encode(data, batch=self.encodebatch, category=category)
+
+        # Multi-vector outputs can't be indexed directly, a fixed dimensional encoder is required
+        if embeddings.ndim == 3:
+            raise ValueError("late interaction models require a fixed dimensional encoder (muvera or lemur) to produce embeddings vectors")
+
+        return embeddings
