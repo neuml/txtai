@@ -69,6 +69,29 @@ class TestSimilarity(unittest.TestCase):
         uid = similarity(premise, [entailment, contradiction], labels=["1"])[0][0]
         self.assertEqual(uid, 0)
 
+    def testCrossEncoderLabelsOrder(self):
+        """
+        Test cross-encoder labels resolve to label ids when the model config's label order differs from id order
+        """
+
+        similarity = Similarity("prajjwal1/bert-medium-mnli", crossencode=True)
+
+        premise = "A dog is running in the park."
+        texts = ["An animal is outside.", "The park is empty and there are no animals."]
+
+        # Scores restricted to LABEL_1 with the model config as loaded
+        expected = similarity(premise, texts, labels=["1"])
+
+        # Rotate the config label mappings so insertion order no longer matches label ids
+        config = similarity.pipeline.model.config
+        ids = list(config.id2label)
+        config.id2label = {x: config.id2label[x] for x in ids[1:] + ids[:1]}
+        config.label2id = {label: x for x, label in config.id2label.items()}
+
+        # Verify the same label is scored when requested by name and by id
+        self.assertEqual(similarity(premise, texts, labels=["LABEL_1"]), expected)
+        self.assertEqual(similarity(premise, texts, labels=["1"]), expected)
+
     def testCrossEncoderLabelsInvalid(self):
         """
         Test cross-encoder raises an error when no requested label matches the model

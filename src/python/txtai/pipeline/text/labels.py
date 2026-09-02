@@ -120,19 +120,17 @@ class Labels(HFPipeline):
         result = [(config.label2id.get(x["label"], 0), x["score"]) for x in result]
 
         if labels:
+            # Map lowercase label names to label ids
+            names = {x.lower(): uid for x, uid in config.label2id.items()}
+
             matches = []
             for label in labels:
-                # Lookup label keys from model config
-                if label.isdigit():
-                    label = int(label)
-                    keys = list(config.id2label.keys())
-                else:
-                    label = label.lower()
-                    keys = [x.lower() for x in config.label2id.keys()]
+                # Resolve label to a label id, by id or by name
+                uid = int(label) if label.isdigit() else names.get(label.lower())
 
-                # Find and add label match
-                if label in keys:
-                    matches.append(keys.index(label))
+                # Add label match, if found
+                if uid in config.id2label:
+                    matches.append(uid)
 
             return [(label, score) for label, score in result if label in matches]
 
