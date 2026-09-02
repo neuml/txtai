@@ -109,7 +109,7 @@ class LateEncoder(Pipeline):
         scores = scores.cpu().numpy()
 
         # Get top n matching indices and scores
-        indices = np.argpartition(-scores, limit if limit and limit < scores.shape[0] else scores.shape[0] - 1)[:, :limit]
+        indices = np.argpartition(-scores, limit if limit and limit < scores.shape[1] else scores.shape[1] - 1)[:, :limit]
         scores = np.take_along_axis(scores, indices, axis=1)
 
         # argpartition doesn't order within the top n - sort each row by score descending

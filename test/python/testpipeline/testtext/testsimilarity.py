@@ -4,7 +4,7 @@ Similarity module tests
 
 import unittest
 
-from txtai.pipeline import Similarity
+from txtai.pipeline import LateEncoder, Similarity
 
 
 class TestSimilarity(unittest.TestCase):
@@ -129,6 +129,22 @@ class TestSimilarity(unittest.TestCase):
             alone = dict(similarity(query, self.data))
             for uid, score in scores:
                 self.assertAlmostEqual(score, alone[uid], places=4)
+
+    def testLateEncoderLimit(self):
+        """
+        Test late-encoder similarity model with a limit returns the top scoring results
+        """
+
+        lateencoder = LateEncoder("neuml/colbert-bert-tiny")
+        queries = ["Who won the lottery?", "Where did an iceberg collapse?"]
+
+        for query in queries:
+            results = lateencoder(query, self.data, limit=3)
+            scores = [score for _, score in results]
+
+            # Limited results must match the top results of the unlimited call, sorted by score descending
+            self.assertEqual([uid for uid, _ in results], [uid for uid, _ in lateencoder(query, self.data)[:3]])
+            self.assertEqual(scores, sorted(scores, reverse=True))
 
     def testLateEncoderPadding(self):
         """
