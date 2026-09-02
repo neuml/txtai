@@ -11,6 +11,7 @@ from .litellm import LiteLLM
 from .litert import LiteRT
 from .llama import LlamaCpp
 from .m2v import Model2Vec
+from .onnx import ONNX
 from .sbert import STVectors
 from .words import WordVectors
 
@@ -57,6 +58,10 @@ class VectorsFactory:
         if method == "model2vec":
             return Model2Vec(config, scoring, models)
 
+        # ONNX vectors
+        if method == "onnx":
+            return ONNX(config, scoring, models)
+
         # Sentence Transformers vectors
         if method == "sentence-transformers":
             return STVectors(config, scoring, models) if config and config.get("path") else None
@@ -99,6 +104,8 @@ class VectorsFactory:
                     method = "llama.cpp"
                 elif Model2Vec.ismodel(path):
                     method = "model2vec"
+                elif ONNX.ismodel(path):
+                    method = "onnx"
                 elif WordVectors.ismodel(path):
                     method = "words"
                 else:
