@@ -2,6 +2,8 @@
 SparseVectors module
 """
 
+import os
+
 # Conditional import
 try:
     from scipy.sparse import csr_matrix, vstack
@@ -55,6 +57,10 @@ class SparseVectors(Vectors):
                 # Read in array batch
                 data = self.loadembeddings(queue)
                 embeddings = vstack((embeddings, data)) if embeddings is not None else data
+
+        # Remove temporary file (if checkpointing is disabled)
+        if not checkpoint:
+            os.remove(stream)
 
         # Return sparse array
         return (ids, dimensions, embeddings)
