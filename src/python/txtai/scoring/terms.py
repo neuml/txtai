@@ -129,13 +129,21 @@ class Terms:
             ids: ids to delete
         """
 
-        # An id has more than one index id when it's re-added after a delete. Mark every index id
-        # for the requested ids as deleted, ignoring ids that were never indexed and index ids already
-        # marked deleted. This keeps count() and search results accurate for repeated upsert/delete flows.
-        ids, deletes = set(ids), set(self.deletes)
-        for indexid, uid in enumerate(self.ids):
-            if uid in ids and indexid not in deletes:
-                self.deletes.append(indexid)
+        # Walk each requested id from its last match to mark every index id, including re-added ids
+        deletes = set(self.deletes)
+        for uid in ids:
+            start = 0
+            while True:
+                try:
+                    indexid = self.ids.index(uid, start)
+                except ValueError:
+                    break
+
+                if indexid not in deletes:
+                    self.deletes.append(indexid)
+                    deletes.add(indexid)
+
+                start = indexid + 1
 
     def index(self):
         """
