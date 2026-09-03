@@ -378,6 +378,9 @@ class Vectors:
         embeddings = self.encode(data, category)
 
         if embeddings is not None:
+            if embeddings.ndim != 2:
+                raise ValueError(f"Expected 2 dimensional vectors, produced {embeddings.ndim} dimensions")
+
             # Truncate embeddings, if necessary
             if self.dimensionality and self.dimensionality < embeddings.shape[1]:
                 embeddings = self.truncate(embeddings)

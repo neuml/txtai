@@ -291,7 +291,8 @@ class LatePooling(Pooling):
             config = self.load(path, "artifact.metadata")
             params = ["query_token_id", "query_maxlen", "doc_token_id", "doc_maxlen"]
 
-        return [config.get(p) for p in params]
+        # Use defaults when the settings file is missing
+        return [config.get(p) for p in params] if config else [None] * len(params)
 
     def loadlinear(self, path, models):
         """

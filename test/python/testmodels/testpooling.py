@@ -221,6 +221,18 @@ class TestPooling(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, message):
                     pool.centersettings(center, linear, True)
 
+    def testLateSettings(self):
+        """
+        Test late pooling defaults when the settings file is missing
+        """
+
+        pool = PoolingFactory.create({"path": "neuml/colbert-bert-tiny", "device": self.device, "modelargs": {"muvera": None}})
+
+        # A missing config_sentence_transformers.json (PyLate) or artifact.metadata (Stanford) reads as default settings
+        with patch.object(LatePooling, "load", return_value=None):
+            self.assertEqual(pool.settings("neuml/colbert-bert-tiny", [{"path": "1_Dense"}]), [None] * 4)
+            self.assertEqual(pool.settings("neuml/colbert-bert-tiny", None), [None] * 4)
+
     def testLemur(self):
         """
         Test late pooling with LEMUR fixed dimensional encoding
@@ -481,6 +493,17 @@ class TestPooling(unittest.TestCase):
             with self.subTest(shape=invalid[0].shape):
                 with self.assertRaisesRegex(ValueError, "each document must be a non-empty 2D token-vector array"):
                     lemur.documents(invalid)
+
+    def testLemurPathValidation(self):
+        """
+        Test LEMUR rejects a path that is not a LEMUR artifact
+        """
+
+        # An encoder repo also has config.json and model.safetensors
+        for model in ["neuml/colbert-bert-tiny", "neuml/pylate-bert-tiny"]:
+            with self.subTest(model=model):
+                with self.assertRaisesRegex(ValueError, "not a LEMUR artifact"):
+                    PoolingFactory.create({"path": model, "device": self.device, "modelargs": {"lemur": {"path": model}}})
 
     def testLemurStateValidation(self):
         """
