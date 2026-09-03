@@ -97,8 +97,8 @@ class WordVectors(Vectors):
                     config = json.load(f)
                     return config.get("model_type") == "staticvectors"
 
-        # Ignore this error - invalid repo or directory
-        except DownloadError:
+        # Ignore invalid repo/directory and when HF Hub is not available
+        except (DownloadError, ImportError):
             pass
 
         return False

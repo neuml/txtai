@@ -77,6 +77,7 @@ class ONNX(Vectors):
             Tokenizer
         """
 
+        # Derive tokenizer file path
         tokenizer = self.config.get("tokenizer")
         if not tokenizer:
             tokenizer = os.path.dirname(path) + "/" + "tokenizer.json"
