@@ -7,6 +7,7 @@ import unittest
 
 import numpy as np
 
+from txtai.embeddings import Embeddings
 from txtai.vectors import VectorsFactory
 
 
@@ -41,6 +42,15 @@ class TestHFVectors(unittest.TestCase):
         # Test shape of serialized embeddings
         with open(stream, "rb") as queue:
             self.assertEqual(np.load(queue).shape, (500, 768))
+
+    def testLateInteraction(self):
+        """
+        Test late interaction models produce 2 dimensional vectors
+        """
+
+        embeddings = Embeddings({"path": "neuml/colbert-bert-tiny", "backend": "numpy", "content": False, "gpu": False, "vectors": {"muvera": False}})
+        with self.assertRaisesRegex(ValueError, "Expected 2 dimensional vectors"):
+            embeddings.index(["Short text.", "A considerably longer text exercises padding behavior.", "Third text."])
 
     def testText(self):
         """
