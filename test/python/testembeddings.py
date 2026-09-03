@@ -620,6 +620,23 @@ class TestEmbeddings(unittest.TestCase):
         self.assertEqual(embeddings.transform("feel good story", index="index2").shape, (1024,))
         self.assertEqual(embeddings.indexes["index1"].config["dimensions"], 512)
         self.assertEqual(embeddings.indexes["index2"].config["dimensions"], 1024)
+        self.assertIsNot(embeddings.indexes["index1"].model.model, embeddings.indexes["index2"].model.model)
+
+        # Close embeddings
+        embeddings.close()
+
+        # Per-encode settings share the same loaded model
+        embeddings = Embeddings(
+            {
+                "defaults": False,
+                "indexes": {
+                    "index1": {"path": path, "maxlength": 32, "vectors": {"muvera": {"repetitions": 1}}},
+                    "index2": {"path": path, "maxlength": 64, "vectors": {"muvera": {"repetitions": 1}}},
+                },
+            }
+        )
+        embeddings.index(data)
+        self.assertIs(embeddings.indexes["index1"].model.model, embeddings.indexes["index2"].model.model)
 
         # Close embeddings
         embeddings.close()
