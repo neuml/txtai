@@ -96,16 +96,23 @@ class Vectors:
             model
         """
 
+        # Build a cache key from settings that change the loaded model when a configuration is present.
+        if self.config:
+            config = {"path": path, "method": self.config.get("method"), "vectors": self.config.get("vectors", {})}
+            key = json.dumps(config, sort_keys=True, default=str)
+        else:
+            key = path
+
         # Check if model is cached
-        if self.models and path in self.models:
-            return self.models[path]
+        if self.models and key in self.models:
+            return self.models[key]
 
         # Create new model
         model = self.loadmodel(path)
 
         # Store model in cache
         if self.models is not None and path:
-            self.models[path] = model
+            self.models[key] = model
 
         return model
 
