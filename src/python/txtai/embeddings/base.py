@@ -136,7 +136,7 @@ class Embeddings:
                 self.ann.index(embeddings)
 
             # Save indexids-ids mapping for indexes with no database, except when this is a reindex
-            if ids and not reindex and not self.database:
+            if ids is not None and not reindex and not self.database:
                 self.ids = self.createids(ids)
 
         # Index scoring, if necessary
