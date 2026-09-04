@@ -57,7 +57,7 @@ class Similarity(Labels):
             return self.crossencoder(query, texts, multilabel, labels=labels)
 
         if self.lateencoder:
-            return self.lateencoder(query, texts)
+            return self.lateencoder(query, texts, **kwargs)
 
         # Call Labels pipeline for texts using input query as the candidate label
         scores = super().__call__(texts, [query] if isinstance(query, str) else query, multilabel, **kwargs)
