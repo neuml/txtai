@@ -1,6 +1,6 @@
 # Configuration
 
-The following describes available embeddings configuration. These parameters are set in the [Embeddings constructor](../methods#txtai.embeddings.base.Embeddings.__init__) via either the `config` parameter or as keyword arguments.
+The following describes available embeddings configuration. These parameters are set in the [Embeddings constructor](../methods#txtai.embeddings.Embeddings.__init__) via either the `config` parameter or as keyword arguments.
 
 Configuration is designed to be optional and set only when needed. Out of the box, sensible defaults are picked to get up and running fast. For example:
 

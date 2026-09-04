@@ -2,7 +2,7 @@
 
 The following describes parameters used to sync indexes with cloud storage. Cloud object storage, the [Hugging Face Hub](https://huggingface.co/models) and custom providers are all supported.
 
-Parameters are set via the [embeddings.load](../../methods/#txtai.embeddings.base.Embeddings.load) and [embeddings.save](../../methods/#txtai.embeddings.base.Embeddings.save) methods.
+Parameters are set via the [embeddings.load](../../methods/#txtai.embeddings.Embeddings.load) and [embeddings.save](../../methods/#txtai.embeddings.Embeddings.save) methods.
 
 ## provider
 ```yaml

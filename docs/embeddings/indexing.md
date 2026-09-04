@@ -27,7 +27,7 @@ The columns used for text, object and JSON data storage are set via [column conf
 
 ## Index vs Upsert
 
-Data is loaded into an index with either an [index](../methods#txtai.embeddings.base.Embeddings.index) or [upsert](../methods#txtai.embeddings.base.Embeddings.upsert) call.
+Data is loaded into an index with either an [index](../methods#txtai.embeddings.Embeddings.index) or [upsert](../methods#txtai.embeddings.Embeddings.upsert) call.
 
 ```python
 embeddings.index([(uid, text, None) for uid, text in enumerate(data)])
@@ -38,7 +38,7 @@ The `index` call will build a brand new index replacing an existing one. `upsert
 
 ## Save
 
-Indexes can be stored in a directory using the [save](../methods/#txtai.embeddings.base.Embeddings.save) method.
+Indexes can be stored in a directory using the [save](../methods/#txtai.embeddings.Embeddings.save) method.
 
 ```python
 embeddings.save("/path/to/save")
@@ -58,7 +58,7 @@ embeddings.save("/path/to/save/index.tar.gz", cloud={...})
 
 This is especially useful when running in a serverless context or otherwise running on temporary compute. Cloud storage is only supported with compressed indexes.
 
-Embeddings indexes can be restored using the [load](../methods/#txtai.embeddings.base.Embeddings.load) method.
+Embeddings indexes can be restored using the [load](../methods/#txtai.embeddings.Embeddings.load) method.
 
 ```python
 embeddings.load("/path/to/load")
@@ -66,7 +66,7 @@ embeddings.load("/path/to/load")
 
 ## Delete
 
-Content can be removed from the index with the [delete](../methods#txtai.embeddings.base.Embeddings.delete) method. This method takes a list of ids to delete.
+Content can be removed from the index with the [delete](../methods#txtai.embeddings.Embeddings.delete) method. This method takes a list of ids to delete.
 
 ```python
 embeddings.delete(ids)
@@ -74,7 +74,7 @@ embeddings.delete(ids)
 
 ## Reindex
 
-When [content storage](../configuration/database#content) is enabled, [reindex](../methods#txtai.embeddings.base.Embeddings.reindex) can be called to rebuild the index with new settings. For example, the backend can be switched from faiss to hnsw or the vector model can be updated. This prevents having to go back to the original raw data. 
+When [content storage](../configuration/database#content) is enabled, [reindex](../methods#txtai.embeddings.Embeddings.reindex) can be called to rebuild the index with new settings. For example, the backend can be switched from faiss to hnsw or the vector model can be updated. This prevents having to go back to the original raw data. 
 
 ```python
 embeddings.reindex(path="sentence-transformers/all-MiniLM-L6-v2", backend="hnsw")

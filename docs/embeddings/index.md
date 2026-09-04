@@ -77,7 +77,7 @@ The index method takes an iterable and supports the following formats for each e
 
 - `data`
 
-Single element to index. In this case, unique id's will automatically be generated. Note that for generated id's, [upsert](methods/#txtai.embeddings.base.Embeddings.upsert) and [delete](methods/#txtai.embeddings.base.Embeddings.delete) calls require a separate search to get the target ids.
+Single element to index. In this case, unique id's will automatically be generated. Note that for generated id's, [upsert](methods/#txtai.embeddings.Embeddings.upsert) and [delete](methods/#txtai.embeddings.Embeddings.delete) calls require a separate search to get the target ids.
 
 When the data field is a dictionary, text is passed via the `text` key, binary objects via the `object` key. Note that [content](configuration/database#content) must be enabled to store metadata and [objects](configuration/database#objects) to store binary object data. The `id` and `tags` keys will be extracted, if provided.
 
@@ -102,7 +102,7 @@ Both natural language and SQL queries are supported. More information can be fou
 
 ## Resource management
 
-Embeddings databases are context managers. The following blocks automatically [close](methods/#txtai.embeddings.base.Embeddings.close) and free resources upon completion.
+Embeddings databases are context managers. The following blocks automatically [close](methods/#txtai.embeddings.Embeddings.close) and free resources upon completion.
 
 ```python
 # Create a new Embeddings database, index data and save
