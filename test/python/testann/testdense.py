@@ -213,6 +213,34 @@ class TestDense(unittest.TestCase):
         ann.load(index)
         self.assertEqual(ann.count(), 99)
 
+    def testGGMLEmpty(self):
+        """
+        Test GGML backend with an empty index
+        """
+
+        ann = ANNFactory.create({"backend": "ggml", "dimensions": 240})
+
+        # Index an empty array
+        ann.index(np.zeros((0, 240), dtype=np.float32))
+        self.assertEqual(ann.count(), 0)
+
+        # Test save and load
+        index = os.path.join(tempfile.gettempdir(), "ggml.empty")
+        ann.save(index)
+        ann.load(index)
+        self.assertEqual(ann.count(), 0)
+
+        # Append data to the loaded empty index
+        data = np.random.rand(10, 240).astype(np.float32)
+        self.normalize(data)
+        ann.append(data)
+        self.assertEqual(ann.count(), 10)
+
+        # Generate query vector and test search
+        query = np.random.rand(240).astype(np.float32)
+        self.normalize(query)
+        self.assertGreater(ann.search(np.array([query]), 1)[0][0][1], 0)
+
     def testGGMLQuantization(self):
         """
         Test GGML backend with quantization enabled
@@ -261,6 +289,34 @@ class TestDense(unittest.TestCase):
         with self.assertRaises(ValueError):
             ann = ANNFactory.create({"backend": "ggml", "ggml": {"quantize": "Q4_K"}})
             ann.index(data)
+
+    def testGGMLSingleRow(self):
+        """
+        Test GGML backend with a single row index
+        """
+
+        ann = ANNFactory.create({"backend": "ggml", "dimensions": 240})
+
+        # Generate and index a single row
+        data = np.random.rand(1, 240).astype(np.float32)
+        self.normalize(data)
+        ann.index(data)
+        self.assertEqual(ann.count(), 1)
+
+        # Test save and load
+        index = os.path.join(tempfile.gettempdir(), "ggml.single")
+        ann.save(index)
+        ann.load(index)
+        self.assertEqual(ann.count(), 1)
+        self.assertEqual(ann.search(data, 1)[0][0][0], 0)
+
+        # Append a row
+        ann.append(data)
+        self.assertEqual(ann.count(), 2)
+
+        # Test delete, including an out of range id
+        ann.delete([0, 5])
+        self.assertEqual(ann.count(), 1)
 
     def testHnsw(self):
         """
@@ -482,6 +538,28 @@ class TestDense(unittest.TestCase):
         """
 
         self.runTests("torch")
+
+    def testTorchDelete(self):
+        """
+        Test Torch backend delete keeps the stored data type for quantized (uint8) and float16 indexes
+        """
+
+        for dtype, config in [(np.uint8, {"quantize": 1}), (np.float16, {})]:
+            with self.subTest(dtype=dtype.__name__):
+                ann = ANNFactory.create({"backend": "torch", "dimensions": 4, **config})
+
+                # Index vectors with a single non-zero value per row
+                data = np.array([[1, 0, 0, 0], [0, 255, 0, 0], [0, 0, 255, 0], [0, 0, 0, 255]], dtype=dtype)
+                ann.index(data)
+
+                # Delete the first row and search with its (former) vector
+                ann.delete([0])
+                results = ann.search(np.array([data[0]]), 4)[0]
+
+                # Deleted row must score 0 so the caller's score > 0 filter drops it and the data type must be unchanged
+                self.assertEqual(dict(results).get(0), 0)
+                self.assertEqual(ann.count(), 3)
+                self.assertEqual(str(ann.backend.dtype), f"torch.{dtype.__name__}")
 
     @unittest.skipIf(platform.system() == "Darwin", "Torch quantization not supported on macOS")
     def testTorchQuantization(self):
