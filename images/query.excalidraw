@@ -1,0 +1,243 @@
+{
+  "type": "excalidraw",
+  "version": 2,
+  "source": "https://excalidraw.com",
+  "elements": [
+    {
+      "type": "rectangle",
+      "version": 3038,
+      "versionNonce": 1386987419,
+      "isDeleted": false,
+      "id": "pjs0X-Y0kuuXB-vpf_dvP",
+      "fillStyle": "hachure",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 1,
+      "opacity": 100,
+      "angle": 0,
+      "x": 934.5,
+      "y": -240.29250000000002,
+      "strokeColor": "#ffeb3b",
+      "backgroundColor": "#ffeb3b",
+      "width": 312,
+      "height": 146,
+      "seed": 1534167490,
+      "groupIds": [],
+      "strokeSharpness": "sharp",
+      "boundElements": [
+        {
+          "id": "of5l7HpIH0kPvZ95rOMwM",
+          "type": "text"
+        },
+        {
+          "id": "Qzp41i_jzQIBlAB_qFKFH",
+          "type": "arrow"
+        },
+        {
+          "id": "of5l7HpIH0kPvZ95rOMwM",
+          "type": "text"
+        },
+        {
+          "type": "text",
+          "id": "of5l7HpIH0kPvZ95rOMwM"
+        }
+      ],
+      "updated": 1669033845173,
+      "link": null,
+      "locked": false
+    },
+    {
+      "type": "text",
+      "version": 2554,
+      "versionNonce": 1319492501,
+      "isDeleted": false,
+      "id": "of5l7HpIH0kPvZ95rOMwM",
+      "fillStyle": "hachure",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 1,
+      "opacity": 100,
+      "angle": 0,
+      "x": 939.5,
+      "y": -235.29250000000002,
+      "strokeColor": "#000",
+      "backgroundColor": "#fa5252",
+      "width": 260,
+      "height": 130,
+      "seed": 1972792158,
+      "groupIds": [],
+      "strokeSharpness": "sharp",
+      "boundElements": [],
+      "updated": 1669033845173,
+      "link": null,
+      "locked": false,
+      "fontSize": 20,
+      "fontFamily": 1,
+      "text": "SELECT\n  count(*), flag\nFROM txtai\nGROUP BY flag\nORDER BY count(*) DESC",
+      "baseline": 122,
+      "textAlign": "left",
+      "verticalAlign": "top",
+      "containerId": "pjs0X-Y0kuuXB-vpf_dvP",
+      "originalText": "SELECT\n  count(*), flag\nFROM txtai\nGROUP BY flag\nORDER BY count(*) DESC"
+    },
+    {
+      "type": "rectangle",
+      "version": 3354,
+      "versionNonce": 1004999739,
+      "isDeleted": false,
+      "id": "xMKXZw8aL27lv21eVGy_C",
+      "fillStyle": "hachure",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 1,
+      "opacity": 100,
+      "angle": 0,
+      "x": 581,
+      "y": -238.29250000000002,
+      "strokeColor": "#03a9f4",
+      "backgroundColor": "#03a9f4",
+      "width": 302,
+      "height": 140,
+      "seed": 1704428866,
+      "groupIds": [],
+      "strokeSharpness": "sharp",
+      "boundElements": [
+        {
+          "id": "tlu8eCXVp5ApnEG74CF38",
+          "type": "text"
+        },
+        {
+          "id": "Qzp41i_jzQIBlAB_qFKFH",
+          "type": "arrow"
+        },
+        {
+          "type": "text",
+          "id": "tlu8eCXVp5ApnEG74CF38"
+        }
+      ],
+      "updated": 1669033845173,
+      "link": null,
+      "locked": false
+    },
+    {
+      "type": "text",
+      "version": 2750,
+      "versionNonce": 686792949,
+      "isDeleted": false,
+      "id": "tlu8eCXVp5ApnEG74CF38",
+      "fillStyle": "hachure",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 1,
+      "opacity": 100,
+      "angle": 0,
+      "x": 586,
+      "y": -233.29250000000002,
+      "strokeColor": "#000",
+      "backgroundColor": "#fa5252",
+      "width": 290,
+      "height": 130,
+      "seed": 92268510,
+      "groupIds": [],
+      "strokeSharpness": "sharp",
+      "boundElements": [],
+      "updated": 1669033845173,
+      "link": null,
+      "locked": false,
+      "fontSize": 20,
+      "fontFamily": 1,
+      "text": "SELECT\n  text, flag, entry\nFROM txtai\nWHERE\n  similar('text') AND flag = 1",
+      "baseline": 122,
+      "textAlign": "left",
+      "verticalAlign": "top",
+      "containerId": "xMKXZw8aL27lv21eVGy_C",
+      "originalText": "SELECT\n  text, flag, entry\nFROM txtai\nWHERE\n  similar('text') AND flag = 1"
+    },
+    {
+      "type": "rectangle",
+      "version": 3169,
+      "versionNonce": 1477367003,
+      "isDeleted": false,
+      "id": "Tsn_ukSxtC7CIwEMUMHxI",
+      "fillStyle": "hachure",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 1,
+      "opacity": 100,
+      "angle": 0,
+      "x": 1301.5,
+      "y": -236.79250000000002,
+      "strokeColor": "#00e676",
+      "backgroundColor": "#00e676",
+      "width": 304,
+      "height": 140,
+      "seed": 919682718,
+      "groupIds": [],
+      "strokeSharpness": "sharp",
+      "boundElements": [
+        {
+          "id": "t3OC1akz9Oe2w6N8OCavg",
+          "type": "text"
+        },
+        {
+          "id": "Qzp41i_jzQIBlAB_qFKFH",
+          "type": "arrow"
+        },
+        {
+          "id": "t3OC1akz9Oe2w6N8OCavg",
+          "type": "text"
+        },
+        {
+          "id": "t3OC1akz9Oe2w6N8OCavg",
+          "type": "text"
+        },
+        {
+          "type": "text",
+          "id": "t3OC1akz9Oe2w6N8OCavg"
+        }
+      ],
+      "updated": 1669033845173,
+      "link": null,
+      "locked": false
+    },
+    {
+      "type": "text",
+      "version": 2769,
+      "versionNonce": 345619029,
+      "isDeleted": false,
+      "id": "t3OC1akz9Oe2w6N8OCavg",
+      "fillStyle": "hachure",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 1,
+      "opacity": 100,
+      "angle": 0,
+      "x": 1306.5,
+      "y": -231.79250000000002,
+      "strokeColor": "#000",
+      "backgroundColor": "#fa5252",
+      "width": 259,
+      "height": 130,
+      "seed": 1222509122,
+      "groupIds": [],
+      "strokeSharpness": "sharp",
+      "boundElements": [],
+      "updated": 1669033845173,
+      "link": null,
+      "locked": false,
+      "fontSize": 20,
+      "fontFamily": 1,
+      "text": "SELECT\n  translation(text, 'fr')\nFROM txtai\nWHERE\n  similar('feel good story')",
+      "baseline": 122,
+      "textAlign": "left",
+      "verticalAlign": "top",
+      "containerId": "Tsn_ukSxtC7CIwEMUMHxI",
+      "originalText": "SELECT\n  translation(text, 'fr')\nFROM txtai\nWHERE\n  similar('feel good story')"
+    }
+  ],
+  "appState": {
+    "gridSize": null,
+    "viewBackgroundColor": "#ffffff"
+  },
+  "files": {}
+}
