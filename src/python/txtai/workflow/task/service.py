@@ -19,7 +19,7 @@ class ServiceTask(Task):
     Task to runs requests against remote service urls.
     """
 
-    def register(self, url=None, method=None, params=None, batch=True, extract=None):
+    def register(self, url=None, method=None, params=None, batch=True, extract=None, timeout=30):
         """
         Adds service parameters to task. Checks if required dependencies are installed.
 
@@ -29,6 +29,7 @@ class ServiceTask(Task):
             params: default query parameters
             batch: if True, all elements are passed in a single batch request, otherwise a service call is executed per element
             extract: list of sections to extract from response
+            timeout: request timeout in seconds, defaults to 30
         """
 
         if not XML_TO_DICT:
@@ -42,6 +43,9 @@ class ServiceTask(Task):
 
         # If True, all elements are passed in a single batch request, otherwise a service call is executed per element
         self.batch = batch
+
+        # Request timeout in seconds. Prevents a slow or unresponsive endpoint from blocking the workflow indefinitely.
+        self.timeout = timeout
 
         # Save sections to extract. Supports both a single string and a hierarchical list of sections.
         self.extract = extract
@@ -83,9 +87,9 @@ class ServiceTask(Task):
 
         # Run request
         if self.method and self.method.lower() == "get":
-            response = requests.get(self.url, params=params)
+            response = requests.get(self.url, params=params, timeout=self.timeout)
         else:
-            response = requests.post(self.url, json=params)
+            response = requests.post(self.url, json=params, timeout=self.timeout)
 
         # Parse data based on content-type
         mimetype = response.headers["Content-Type"].split(";")[0]
