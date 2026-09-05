@@ -116,10 +116,11 @@ class IVFSparse(ANN):
 
     def delete(self, ids):
         # Set index ids as deleted, ignoring ids that were never indexed and ids already marked deleted
+        # Ids are stored as int, the deletes list is serialized with msgpack
         size = self.size()
         for x in ids:
             if x < size and x not in self.deletes:
-                self.deletes.append(x)
+                self.deletes.append(int(x))
 
     def search(self, queries, limit):
         results = []
