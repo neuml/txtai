@@ -7,12 +7,38 @@ import os
 import tempfile
 import unittest
 
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import numpy as np
 
-from txtai.embeddings import Embeddings, Reducer
+from txtai.embeddings import Embeddings, Indexes, Reducer
 from txtai.serialize import SerializeFactory
+
+
+class TestIndexes(unittest.TestCase):
+    """
+    Subindex tests.
+    """
+
+    def testNoneTextIndexSync(self):
+        """
+        Test nullable documents don't shift subindex ids
+        """
+
+        embeddings = SimpleNamespace(config={}, model=True, scoring=None)
+        indexes = Indexes(embeddings, {})
+        documents = [
+            ("d0", {"text": "alpha content"}, None),
+            ("d1", {"text": None}, None),
+            ("d2", {"text": "gamma content"}, None),
+        ]
+
+        indexes.insert(documents, index=0)
+        queued = list(indexes.documents)
+        indexes.documents.close()
+
+        self.assertEqual([index for index, _, _ in queued], [0, 2])
 
 
 # pylint: disable=R0904

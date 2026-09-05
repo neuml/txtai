@@ -118,12 +118,17 @@ class Indexes:
         for _, document, _ in documents:
             # Add to documents collection if text or object field is set
             parent = document
+            hasfield = True
             if isinstance(parent, dict):
+                hasfield = self.text in parent or self.object in parent
                 parent = parent.get(self.text, document.get(self.object))
 
             # Add if field is available or top-level indexing is disabled
             if parent is not None or not self.indexing:
                 batch.append((index, document, None))
+
+            # Increment if document consumed a top-level index slot
+            if hasfield or not self.indexing:
                 index += 1
 
         # Add filtered documents batch
