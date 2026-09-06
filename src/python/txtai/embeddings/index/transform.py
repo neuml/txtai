@@ -147,10 +147,10 @@ class Transform:
                 if not self.indexing and not document[1].get(self.text):
                     document[1][self.text] = str(document[0])
 
-                if self.text in document[1]:
+                if document[1].get(self.text) is not None:
                     yield (document[0], document[1][self.text], document[2])
                     offset += 1
-                elif self.object in document[1]:
+                elif document[1].get(self.object) is not None:
                     yield (document[0], document[1][self.object], document[2])
                     offset += 1
             else:

@@ -226,6 +226,19 @@ class TestEmbeddings(unittest.TestCase):
         self.embeddings.index([(0, {"text": ""}, None)])
         self.assertTrue(self.embeddings.search("test"))
 
+    def testNoneText(self):
+        """
+        Test dict documents where the text field is present but set to None
+        """
+
+        # None text mixed with real text
+        self.embeddings.index([(0, {"text": "alpha content"}, None), (1, {"text": None}, None), (2, {"text": "gamma content"}, None)])
+
+        # Only the two documents with real text should be indexed
+        self.assertEqual(self.embeddings.count(), 2)
+        self.assertEqual(self.embeddings.search("alpha content", 1)[0][0], 0)
+        self.assertEqual(self.embeddings.search("gamma content", 1)[0][0], 2)
+
     def testExternal(self):
         """
         Test embeddings backed by external vectors
