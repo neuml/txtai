@@ -142,7 +142,7 @@ class Faiss(ANN):
 
         # Derive quantization. Prefer backend-specific setting. Fallback to root-level parameter.
         quantize = self.setting("quantize", self.config.get("quantize"))
-        quantize = 8 if isinstance(quantize, bool) else quantize
+        quantize = 8 if quantize is True else quantize
 
         # Get storage setting
         storage = f"SQ{quantize}" if quantize else "Flat"
