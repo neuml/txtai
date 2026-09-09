@@ -10,12 +10,14 @@ import unittest
 
 from unittest.mock import patch
 
+import ggml
 import numpy as np
 
 from sqlalchemy.dialects.postgresql import BIT
 from sqlalchemy.ext.compiler import compiles
 
 from txtai.ann import ANNFactory, ANN
+from txtai.ann.dense.ggml import GGMLTensors
 from txtai.serialize import SerializeFactory
 
 
@@ -212,6 +214,17 @@ class TestDense(unittest.TestCase):
         ann.save(index)
         ann.load(index)
         self.assertEqual(ann.count(), 99)
+
+    def testGGMLQuantizeDisabled(self):
+        """
+        Test that quantize: false disables GGML tensor quantization
+        """
+
+        data = np.random.rand(4, 256).astype(np.float32)
+        for quantize, expected in [(False, ggml.GGML_TYPE_F32), (True, ggml.GGML_TYPE_Q8_0), (4, ggml.GGML_TYPE_Q4_0)]:
+            with self.subTest(quantize=quantize):
+                tensors = GGMLTensors(False, 64, quantize)
+                self.assertEqual(tensors.tensortype(data), expected)
 
     def testGGMLEmpty(self):
         """

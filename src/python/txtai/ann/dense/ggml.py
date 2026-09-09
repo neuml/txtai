@@ -519,7 +519,11 @@ class GGMLTensors:
 
         # Read tensor type
         tensortype = self.quantize
-        tensortype = "Q8_0" if isinstance(tensortype, bool) else f"Q{int(tensortype)}_0" if isinstance(tensortype, int) else tensortype
+        tensortype = (
+            "Q8_0"
+            if tensortype is True
+            else f"Q{int(tensortype)}_0" if isinstance(tensortype, int) and not isinstance(tensortype, bool) else tensortype
+        )
         tensortype = tensortype.upper() if tensortype else "F32"
 
         # Validate tensor type
