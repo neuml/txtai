@@ -32,7 +32,7 @@ class SQLite(ANN):
 
         # Quantization setting
         self.quantize = self.setting("quantize")
-        self.quantize = 8 if self.quantize is True else int(self.quantize) if self.quantize else None
+        self.quantize = 8 if isinstance(self.quantize, bool) and self.quantize else int(self.quantize) if self.quantize else None
 
     def load(self, path):
         self.path = path
