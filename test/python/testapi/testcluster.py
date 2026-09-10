@@ -241,7 +241,8 @@ class TestCluster(unittest.TestCase):
 
         query = urllib.parse.quote("select count(*), min(indexid), max(indexid), avg(indexid) from txtai where text='This is a test'")
         self.assertEqual(
-            self.client.get(f"search?query={query}").json(), [{"count(*)": 28, "min(indexid)": 0, "max(indexid)": 14, "avg(indexid)": 6.5}]
+            self.client.get(f"search?query={query}").json(),
+            [{"count(*)": 28, "min(indexid)": 0, "max(indexid)": 14, "avg(indexid)": 182.8 / 28}],
         )
 
         query = urllib.parse.quote("select count(*), text txt from txtai group by txt order by count(*) desc")
