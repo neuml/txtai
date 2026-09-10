@@ -521,7 +521,7 @@ class GGMLTensors:
         tensortype = self.quantize
         tensortype = (
             "Q8_0"
-            if tensortype is True
+            if isinstance(tensortype, bool) and tensortype
             else f"Q{int(tensortype)}_0" if isinstance(tensortype, int) and not isinstance(tensortype, bool) else tensortype
         )
         tensortype = tensortype.upper() if tensortype else "F32"
