@@ -186,8 +186,9 @@ class RDBMS(Database):
         if indexids:
             select = f"{self.resolve('indexid')}, {self.resolve('score')}"
 
-        # Use JOIN when documents table is used to utilize indexes, default to LEFT JOIN
-        join = "JOIN" if any(x and self.jsonprefix() in x for x in [where, groupby, orderby]) else "LEFT JOIN"
+        # Use JOIN when a JSON field is filtered, since that filter already excludes rows without a
+        # documents row. GROUP BY/ORDER BY don't filter, so they keep the LEFT JOIN.
+        join = "JOIN" if where and self.jsonprefix() in where else "LEFT JOIN"
 
         # Build query text
         query = Statement.TABLE_CLAUSE % (select, join)
