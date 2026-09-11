@@ -6,6 +6,7 @@ import itertools
 import operator
 
 from .base import SQL
+from .error import SQLError
 
 
 class Aggregate(SQL):
@@ -70,9 +71,31 @@ class Aggregate(SQL):
             elif column.startswith("min("):
                 aggregates[column] = min
             elif column.startswith("avg("):
-                aggregates[column] = lambda x: sum(x) / len(x)
+                aggregates[column] = self.avg
 
         return aggregates
+
+    def avg(self, values, counts):
+        """
+        Combines per-shard/per-group average values into a single average, weighted by a
+        matching count(*) column when one was selected. Without it, there is no way to
+        recombine the averages correctly, so this raises instead of returning a wrong number.
+
+        Args:
+            values: list of per-shard/per-group average values
+            counts: list of matching count(*) values, or None
+
+        Returns:
+            combined average
+        """
+
+        if len(values) == 1:
+            return values[0]
+
+        if not counts or sum(counts) == 0:
+            raise SQLError("avg() requires a count(*) column to combine results from multiple shards")
+
+        return sum(value * count for value, count in zip(values, counts)) / sum(counts)
 
     def aggregate(self, query, results, columns, aggcolumns):
         """
@@ -94,16 +117,22 @@ class Aggregate(SQL):
         else:
             results = [results]
 
+        # Column providing the row count each group's values were computed over, used to weight avg() columns
+        countcolumn = next((column for column in columns if column.lower() == "count(*)"), None)
+
         # Compute column values
         rows = []
         for result in results:
+            # Row counts for this group, if a count(*) column was selected
+            counts = [r[countcolumn] for r in result] if countcolumn else None
+
             # Calculate/copy column values
             row = {}
             for column in columns:
                 if column in aggcolumns:
                     # Calculate aggregate value
-                    function = aggcolumns[column]
-                    row[column] = function([r[column] for r in result])
+                    values = [r[column] for r in result]
+                    row[column] = self.avg(values, counts) if column.lower().startswith("avg(") else aggcolumns[column](values)
                 else:
                     # Non aggregate column value repeat, use first value
                     row[column] = result[0][column]
