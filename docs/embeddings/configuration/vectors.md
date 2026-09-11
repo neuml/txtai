@@ -176,7 +176,8 @@ muvera:
 ```
 
 Settings to control the size of MUVERA fixed dimensional outputs. Default is 20 * 2^5 * 16 = 10,240 dimensions.
-Set `muvera` to `false` to disable it or `true` to use the default settings.
+Set `muvera` to `false` to disable it or `true` to use the default settings. `false` only makes sense when the multi-vector output
+is consumed directly, for example through `PoolingFactory`. Embeddings vectors require `muvera` or `lemur`.
 
 ### lemur
 ```yaml

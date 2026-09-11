@@ -5,12 +5,15 @@ Workflow API module tests
 import json
 import os
 import tempfile
+import time
 import unittest
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from multiprocessing.pool import ThreadPool
 from threading import Thread
 from unittest.mock import patch
+
+import requests
 
 from fastapi.testclient import TestClient
 
@@ -91,6 +94,15 @@ workflow:
               extract: row
               params:
                 text:
+
+    slow:
+        tasks:
+            - task: service
+              url: http://127.0.0.1:8001/slow
+              method: get
+              timeout: 1
+              params:
+                text:
 """
 
 
@@ -103,6 +115,10 @@ class RequestHandler(BaseHTTPRequestHandler):
         """
         GET request handler.
         """
+
+        if self.path.startswith("/slow"):
+            # Sleep longer than the client timeout to force a read timeout
+            time.sleep(2)
 
         self.send_response(200)
 
@@ -229,6 +245,15 @@ class TestWorkflow(unittest.TestCase):
 
         self.assertEqual(len(results), 1)
         self.assertEqual(len(results[0]), 1)
+
+    def testServiceTimeout(self):
+        """
+        Test workflow with ServiceTask GET that bounds a slow endpoint via a timeout
+        """
+
+        text = "This is a test sentence. And another sentence to split."
+        with self.assertRaises(requests.exceptions.Timeout):
+            self.client.post("workflow", json={"name": "slow", "elements": [text]})
 
     def testWorkflowLabels(self):
         """

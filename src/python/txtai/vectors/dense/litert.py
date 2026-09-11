@@ -51,12 +51,14 @@ class LiteRT(Vectors):
         # Check if this is a local path, otherwise download from the HF Hub
         model = path if os.path.exists(path) else Download()(path)
 
-        # Also local tokenizer file
-        tokenizer = os.path.dirname(path) + "/" + "tokenizer.json"
-        tokenizer = tokenizer if os.path.exists(tokenizer) else Download()(tokenizer)
+        # Derive tokenizer file path
+        tokenizer = self.config.get("tokenizer")
+        if not tokenizer:
+            tokenizer = os.path.dirname(path) + "/" + "tokenizer.json"
+            tokenizer = tokenizer if os.path.exists(tokenizer) else Download()(tokenizer)
 
         # Load tokenizer and model
-        tokenizer = Tokenizer.from_file(tokenizer)
+        tokenizer = Tokenizer.from_file(tokenizer) if os.path.exists(tokenizer) else Tokenizer.from_pretrained(tokenizer)
         model = CompiledModel.from_file(
             model,
             HardwareAccelerator.GPU | HardwareAccelerator.NPU | HardwareAccelerator.CPU if self.config.get("gpu", True) else HardwareAccelerator.CPU,

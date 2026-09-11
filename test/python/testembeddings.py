@@ -48,6 +48,45 @@ class TestEmbeddings(unittest.TestCase):
         if cls.embeddings:
             cls.embeddings.close()
 
+    def testArchive(self):
+        """
+        Test saving and loading a compressed index archive
+        """
+
+        # Index data with sparse keyword vectors and content
+        embeddings = Embeddings({"keyword": True, "content": True})
+        embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        # Generate temp file paths
+        archive = os.path.join(tempfile.gettempdir(), "embeddings.archive.tar.gz")
+        index = os.path.join(tempfile.gettempdir(), "embeddings.archive")
+
+        # Save to an archive, load it and save back to the same archive
+        embeddings.save(archive)
+        embeddings.close()
+
+        embeddings = Embeddings().load(archive)
+        self.assertTrue(embeddings.exists(archive))
+        embeddings.save(archive)
+
+        # Save to a directory, update data and save to the archive again
+        embeddings.save(index)
+        embeddings.upsert([(0, "Feel good story: baby panda born", None)])
+        embeddings.save(archive)
+        embeddings.close()
+
+        # Directory has the original data
+        embeddings = Embeddings().load(index)
+        self.assertEqual(embeddings.count(), len(self.data))
+        self.assertEqual(embeddings.search("lottery ticket", 1)[0]["id"], "4")
+        embeddings.close()
+
+        # Archive has the updated data
+        embeddings = Embeddings().load(archive)
+        self.assertEqual(embeddings.count(), len(self.data))
+        self.assertEqual(embeddings.search("feel good story", 1)[0]["id"], "0")
+        embeddings.close()
+
     def testAutoId(self):
         """
         Test auto id generation
@@ -153,6 +192,27 @@ class TestEmbeddings(unittest.TestCase):
         embeddings.upsert([])
         self.assertIsNotNone(embeddings.ann)
 
+    def testEmptySave(self):
+        """
+        Test saving an empty index
+        """
+
+        for content in [False, True]:
+            # Keyword index, no data ever indexed
+            embeddings = Embeddings({"keyword": True, "content": content})
+            embeddings.index([])
+
+            # Generate temp file path
+            index = os.path.join(tempfile.gettempdir(), f"embeddings.emptysave.{content}")
+
+            # Test save/load
+            embeddings.save(index)
+            embeddings.load(index)
+
+            # Validate index is still empty
+            self.assertEqual(embeddings.count(), 0)
+            self.assertEqual(embeddings.search("test"), [])
+
     def testEmptyString(self):
         """
         Test empty string indexing
@@ -165,6 +225,19 @@ class TestEmbeddings(unittest.TestCase):
         # Test empty string with dict
         self.embeddings.index([(0, {"text": ""}, None)])
         self.assertTrue(self.embeddings.search("test"))
+
+    def testNoneText(self):
+        """
+        Test dict documents where the text field is present but set to None
+        """
+
+        # None text mixed with real text
+        self.embeddings.index([(0, {"text": "alpha content"}, None), (1, {"text": None}, None), (2, {"text": "gamma content"}, None)])
+
+        # Only the two documents with real text should be indexed
+        self.assertEqual(self.embeddings.count(), 2)
+        self.assertEqual(self.embeddings.search("alpha content", 1)[0][0], 0)
+        self.assertEqual(self.embeddings.search("gamma content", 1)[0][0], 2)
 
     def testExternal(self):
         """
@@ -590,6 +663,53 @@ class TestEmbeddings(unittest.TestCase):
         embeddings.upsert([(embeddings.count(), {"content": "empty text"}, None)])
         uid = embeddings.search(f"{embeddings.count() - 1}", 1)[0][0]
         self.assertEqual(uid, embeddings.count() - 1)
+
+        # Close embeddings
+        embeddings.close()
+
+    def testSubindexVectors(self):
+        """
+        Test subindexes with the same model path and different vectors settings
+        """
+
+        # Build data array
+        data = [(uid, text, None) for uid, text in enumerate(self.data)]
+
+        # Subindexes share a models cache. The same model path with different vectors settings must load separate models.
+        path = "neuml/colbert-bert-tiny"
+        embeddings = Embeddings(
+            {
+                "defaults": False,
+                "indexes": {
+                    "index1": {"path": path, "vectors": {"muvera": {"repetitions": 1}}},
+                    "index2": {"path": path, "vectors": {"muvera": {"repetitions": 2}}},
+                },
+            }
+        )
+        embeddings.index(data)
+
+        # MUVERA output dimensions = repetitions * 2^5 * 16
+        self.assertEqual(embeddings.transform("feel good story", index="index1").shape, (512,))
+        self.assertEqual(embeddings.transform("feel good story", index="index2").shape, (1024,))
+        self.assertEqual(embeddings.indexes["index1"].config["dimensions"], 512)
+        self.assertEqual(embeddings.indexes["index2"].config["dimensions"], 1024)
+        self.assertIsNot(embeddings.indexes["index1"].model.model, embeddings.indexes["index2"].model.model)
+
+        # Close embeddings
+        embeddings.close()
+
+        # Per-encode settings share the same loaded model
+        embeddings = Embeddings(
+            {
+                "defaults": False,
+                "indexes": {
+                    "index1": {"path": path, "maxlength": 32, "vectors": {"muvera": {"repetitions": 1}}},
+                    "index2": {"path": path, "maxlength": 64, "vectors": {"muvera": {"repetitions": 1}}},
+                },
+            }
+        )
+        embeddings.index(data)
+        self.assertIs(embeddings.indexes["index1"].model.model, embeddings.indexes["index2"].model.model)
 
         # Close embeddings
         embeddings.close()

@@ -130,6 +130,22 @@ class TestSimilarity(unittest.TestCase):
             for uid, score in scores:
                 self.assertAlmostEqual(score, alone[uid], places=4)
 
+    def testLateEncoderLimit(self):
+        """
+        Test late-encoder similarity model with a limit returns the top scoring results
+        """
+
+        similarity = Similarity("neuml/colbert-bert-tiny", lateencode=True)
+        queries = ["Who won the lottery?", "Where did an iceberg collapse?"]
+
+        for query in queries:
+            results = similarity(query, self.data, limit=3)
+            scores = [score for _, score in results]
+
+            # Limited results must match the top results of the unlimited call, sorted by score descending
+            self.assertEqual([uid for uid, _ in results], [uid for uid, _ in similarity(query, self.data)[:3]])
+            self.assertEqual(scores, sorted(scores, reverse=True))
+
     def testLateEncoderPadding(self):
         """
         Test late-encoder scores don't change with data batch padding

@@ -136,7 +136,7 @@ class Embeddings:
                 self.ann.index(embeddings)
 
             # Save indexids-ids mapping for indexes with no database, except when this is a reindex
-            if ids and not reindex and not self.database:
+            if ids is not None and not reindex and not self.database:
                 self.ids = self.createids(ids)
 
         # Index scoring, if necessary
@@ -549,6 +549,9 @@ class Embeddings:
         if cloud:
             path = cloud.load(path)
 
+        # Reset archive since this replaces the current index
+        self.archive = None
+
         # Check if this is an archive file and extract
         path, apath = self.checkarchive(path)
         if apath:
@@ -931,7 +934,8 @@ class Embeddings:
         """
 
         # Create archive instance, if necessary
-        self.archive = ArchiveFactory.create()
+        if not self.archive:
+            self.archive = ArchiveFactory.create()
 
         # Check if path is an archive file
         if self.archive.isarchive(path):

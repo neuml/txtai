@@ -129,14 +129,21 @@ class Terms:
             ids: ids to delete
         """
 
-        # Set index ids as deleted, ignoring ids that were never indexed and ids
-        # already marked deleted. Skipping duplicates keeps count() accurate when
-        # the same id is deleted more than once (e.g. repeated upsert/delete flows).
-        for i in ids:
-            if i in self.ids:
-                indexid = self.ids.index(i)
-                if indexid not in self.deletes:
+        # Walk each requested id from its last match to mark every index id, including re-added ids
+        deletes = set(self.deletes)
+        for uid in ids:
+            start = 0
+            while True:
+                try:
+                    indexid = self.ids.index(uid, start)
+                except ValueError:
+                    break
+
+                if indexid not in deletes:
                     self.deletes.append(indexid)
+                    deletes.add(indexid)
+
+                start = indexid + 1
 
     def index(self):
         """
@@ -285,6 +292,9 @@ class Terms:
         Args:
             path: path to write terms database
         """
+
+        # Initialize database, if necessary
+        self.initialize()
 
         # Clear documents table
         self.cursor.execute(Terms.DELETE_DOCUMENTS)

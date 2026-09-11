@@ -209,6 +209,10 @@ class Lemur:
         with open(config, encoding="utf-8") as source:
             self.config = json.load(source)
 
+        # Encoder repos also have config.json and model.safetensors, check this is a LEMUR artifact
+        if "modeltype" not in self.config:
+            raise ValueError(f"{path} is not a LEMUR artifact, create one with LemurTrainer")
+
         self.model = LemurModel(**self.config).to(self.device)
         training = self.config.get("training", {})
         self.selectedepoch = training.get("selectedepoch")

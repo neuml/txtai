@@ -147,6 +147,23 @@ class TestKeyword(unittest.TestCase):
         self.assertEqual(scoring.count(), 0)
         self.assertEqual(scoring.search("bear", 1), [])
 
+    def testTermsEmptySave(self):
+        """
+        Test saving and loading a terms index with nothing indexed
+        """
+
+        for method in ["bm25", "tfidf"]:
+            config = {"method": method, "terms": True}
+
+            # No documents ever inserted - term database never initialized
+            scoring = ScoringFactory.create(config)
+            scoring.index([])
+
+            # Save/load and validate index is still empty
+            scoring = self.save(scoring, config, f"scoring.{method}.empty")
+            self.assertEqual(scoring.count(), 0)
+            self.assertEqual(scoring.search("bear", 1), [])
+
     def testDeleteUnknownId(self):
         """
         Test that deleting an id that was never indexed is a no-op, not a crash
@@ -185,6 +202,31 @@ class TestKeyword(unittest.TestCase):
         # Deleting the same id again is a no-op for the count
         scoring.delete([0])
         self.assertEqual(scoring.count(), total - 1)
+
+    def testDeleteReinsert(self):
+        """
+        Test that an id deleted, re-added and deleted again is removed from count() and search()
+        """
+
+        # Terms index: Terms.delete resolved each id with self.ids.index(), which only found the first
+        # (already deleted) position. The re-added copy survived, count() was one too high and search()
+        # raised a KeyError for the re-added text since the content had been removed.
+        for method in ["bm25", "tfidf", "sif"]:
+            scoring = ScoringFactory.create({"method": method, "terms": True, "content": True})
+            scoring.index(self.data)
+
+            total = scoring.count()
+
+            scoring.delete([0])
+            self.assertEqual(scoring.count(), total - 1)
+
+            # Re-add the same id with new text, then delete it again
+            scoring.upsert([(0, "Lunar eclipse visible across North America", None)])
+            self.assertEqual(scoring.count(), total)
+
+            scoring.delete([0])
+            self.assertFalse(scoring.search("lunar eclipse", 1))
+            self.assertEqual(scoring.count(), total - 1)
 
     def testTFIDF(self):
         """
