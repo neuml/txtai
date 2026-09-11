@@ -178,6 +178,16 @@ class TestDense(unittest.TestCase):
         self.assertLessEqual(expected, ann.backend.nlist)
         self.assertEqual(ann.nprobe(), expected)
 
+    def testFaissQuantizeDisabled(self):
+        """
+        Test that quantize: false disables Faiss storage quantization
+        """
+
+        for quantize, expected in [(False, "IDMap,Flat"), (True, "IDMap,SQ8")]:
+            with self.subTest(quantize=quantize):
+                ann = ANNFactory.create({"backend": "faiss", "dimensions": 4, "quantize": quantize})
+                self.assertEqual(ann.configure(100, 100), expected)
+
     def testGGML(self):
         """
         Test GGML backend
@@ -531,6 +541,16 @@ class TestDense(unittest.TestCase):
         model.save(new)
 
         self.assertEqual(model.count(), expected)
+
+    def testSQLiteQuantizeDisabled(self):
+        """
+        Test that quantize: false disables SQLite storage quantization
+        """
+
+        for quantize, expected in [(False, None), (True, 8), (1, 1)]:
+            with self.subTest(quantize=quantize):
+                ann = ANNFactory.create({"backend": "sqlite", "dimensions": 4, "sqlite": {"quantize": quantize}})
+                self.assertEqual(ann.quantize, expected)
 
     def testTorch(self):
         """
