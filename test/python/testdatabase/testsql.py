@@ -8,6 +8,7 @@ from txtai.database import DatabaseFactory, SQL, SQLError
 from txtai.database.sql import Aggregate
 
 
+# pylint: disable=R0904
 class TestSQL(unittest.TestCase):
     """
     Test SQL parsing and generation.
@@ -40,6 +41,27 @@ class TestSQL(unittest.TestCase):
 
         # SQL query with results still aggregates as before
         self.assertEqual(aggregate("select count(*) from txtai", [{"count(*)": 1}, {"count(*)": 2}]), [{"count(*)": 3}])
+
+    def testAggregateAvg(self):
+        """
+        Test Aggregate combines avg() results as a count(*)-weighted mean, not an unweighted
+        average of averages
+        """
+
+        aggregate = Aggregate()
+
+        # 2 rows averaging 100 and 8 rows averaging 10 must combine to the true weighted mean, 28
+        query = "select count(*), avg(price) from txtai"
+        results = [{"count(*)": 2, "avg(price)": 100.0}, {"count(*)": 8, "avg(price)": 10.0}]
+        self.assertEqual(aggregate(query, results), [{"count(*)": 10, "avg(price)": 28.0}])
+
+        # A single shard's average passes through unchanged
+        self.assertEqual(aggregate("select avg(price) from txtai", [{"avg(price)": 42.0}]), [{"avg(price)": 42.0}])
+
+        # Combining averages from multiple shards with no count(*) to weight by cannot be done
+        # correctly, so it must raise rather than return an unweighted, silently wrong result
+        with self.assertRaises(SQLError):
+            aggregate("select avg(price) from txtai", [{"avg(price)": 100.0}, {"avg(price)": 10.0}])
 
     def testAlias(self):
         """
