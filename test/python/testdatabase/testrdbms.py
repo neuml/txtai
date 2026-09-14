@@ -654,6 +654,24 @@ class Common:
 
             self.assertEqual(result["text"], self.data[4])
 
+        def testSortMixed(self):
+            """
+            Test sorting and grouping by a JSON field with mixed text and document data
+            """
+
+            # Mix plain text, which has no documents table row, with a document that has a JSON field
+            embeddings = Embeddings({"keyword": True, "content": self.backend})
+            embeddings.index([(0, self.data[0], None), (1, {"text": self.data[1], "length": 5}, None)])
+
+            # Sorting must not change which rows come back
+            self.assertEqual(sorted(x["id"] for x in embeddings.search("select id from txtai order by length")), ["0", "1"])
+
+            # Grouping keeps a null group for rows missing the field
+            self.assertIn({"length": None, "total": 1}, embeddings.search("select length, count(*) as total from txtai group by length"))
+
+            # Filtering on the field still drops those rows
+            self.assertEqual([x["id"] for x in embeddings.search("select id from txtai where length is not null")], ["1"])
+
         def testSQL(self):
             """
             Test running a SQL query
