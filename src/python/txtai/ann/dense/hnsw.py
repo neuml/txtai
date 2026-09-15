@@ -35,6 +35,9 @@ class HNSW(ANN):
         self.backend = Index(dim=self.config["dimensions"], space=self.config["metric"])
         self.backend.load_index(path)
 
+        # Default the delete counter for configurations that don't have it
+        self.config["deletes"] = self.config.get("deletes", 0)
+
     def index(self, embeddings):
         # Inner product is equal to cosine similarity on normalized vectors
         self.config["metric"] = "ip"
