@@ -8,6 +8,8 @@ import unittest
 
 from unittest.mock import patch
 
+import numpy as np
+
 from scipy.sparse import random
 from sklearn.preprocessing import normalize
 
@@ -98,6 +100,31 @@ class TestSparse(unittest.TestCase):
         ann = SparseANNFactory.create({"backend": "ivfsparse", "ivfsparse": {"nlist": 15, "nprobe": 1, "sample": 1.0}})
         ann.index(insert)
         self.assertLessEqual(len(ann.blocks), 15)
+        ann.close()
+
+    def testIVFSparseDeleteArray(self):
+        """
+        Test IVFSparse with ids deleted using a NumPy array
+        """
+
+        # Generate test record
+        data = self.generate(50, 30522)
+
+        # Create ANN
+        path = os.path.join(tempfile.gettempdir(), "ivfsparse.deletes")
+        ann = SparseANNFactory.create({"backend": "ivfsparse"})
+        ann.index(data)
+
+        # Test delete with ids passed in as a NumPy array
+        ann.delete(np.array([0, 1]))
+        self.assertEqual(ann.count(), 48)
+
+        # Validate save/load
+        ann.save(path)
+        ann.load(path)
+        self.assertEqual(ann.count(), 48)
+
+        # Close ANN
         ann.close()
 
     def testIVFSparseSortOrder(self):
