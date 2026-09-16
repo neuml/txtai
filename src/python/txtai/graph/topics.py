@@ -82,8 +82,13 @@ class Topics:
             # Get topn terms
             terms = self.topn(idf, topn)
 
-            # Sort community by score descending
-            community = [uid for uid, _ in scoring.search(terms, len(community))]
+            # Sort community by score descending. Term search only returns nodes with a
+            # positive score, so nodes matching none of the topic terms come back empty.
+            # Keep them, ranked last by centrality, otherwise they are dropped from the
+            # topic and lose their topic/topicrank attributes entirely.
+            ranked = [uid for uid, _ in scoring.search(terms, len(community))]
+            unranked = sorted(set(community) - set(ranked), key=lambda x: centrality[x], reverse=True)
+            community = ranked + unranked
         else:
             # No text found for topic, generate topic name
             terms = ["topic", str(index)]

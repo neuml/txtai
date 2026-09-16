@@ -12,6 +12,7 @@ from unittest.mock import patch
 from txtai.archive import ArchiveFactory
 from txtai.embeddings import Embeddings
 from txtai.graph import Graph, GraphFactory
+from txtai.graph.topics import Topics
 from txtai.serialize import SerializeFactory
 
 
@@ -83,14 +84,45 @@ class TestGraph(unittest.TestCase):
         # Get graph reference
         graph = self.embeddings.graph
 
-        # Rebuild topics with updated graph settings
+        # Rebuild topics with updated graph settings. Every node must land in a topic,
+        # including nodes matching none of their community's topic terms.
         graph.config = {"topics": {"algorithm": "greedy"}}
         graph.addtopics()
         self.assertEqual(sum((len(graph.topics[x]) for x in graph.topics)), 6)
 
         graph.config = {"topics": {"algorithm": "lpa"}}
         graph.addtopics()
-        self.assertEqual(sum((len(graph.topics[x]) for x in graph.topics)), 4)
+        self.assertEqual(sum((len(graph.topics[x]) for x in graph.topics)), 6)
+
+    def testCommunityUnmatchedNodes(self):
+        """
+        Test that nodes matching none of their community's topic terms are still kept
+        """
+
+        graph = GraphFactory.create({})
+        graph.initialize()
+
+        # Three nodes share vocabulary, one shares none of it
+        texts = {
+            "n1": "machine learning models train on data",
+            "n2": "machine learning training data pipelines",
+            "n3": "learning models and training data",
+            "unmatched": "zzz",
+        }
+        for uid, text in texts.items():
+            graph.addnode(uid, text=text)
+
+        community = list(texts)
+        centrality = {"n1": 0.9, "n2": 0.8, "n3": 0.7, "unmatched": 0.1}
+
+        topics = Topics({"labels": "bm25", "terms": 4})
+        _, members = topics.score(graph, 0, community, centrality)
+
+        # No node may be dropped - term search only scores nodes matching a topic term
+        self.assertEqual(sorted(members), sorted(community))
+
+        # Scored nodes still rank ahead of unmatched ones
+        self.assertEqual(members[-1], "unmatched")
 
     def testCustomBackend(self):
         """
