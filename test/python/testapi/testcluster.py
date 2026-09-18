@@ -36,6 +36,8 @@ class RequestHandler(BaseHTTPRequestHandler):
         GET request handler.
         """
 
+        self.server.requests.append(self.path)
+
         if self.path == "/count":
             response = 26
         elif self.path.startswith("/search?query=select"):
@@ -70,6 +72,9 @@ class RequestHandler(BaseHTTPRequestHandler):
         """
         POST request handler.
         """
+
+        length = int(self.headers.get("content-length", 0))
+        self.server.requests.append((self.path, json.loads(self.rfile.read(length)) if length else None))
 
         if self.path.startswith("/batchsearch"):
             response = [[{"id": 4, "score": 0.40}], [{"id": 1, "score": 0.40}]]
@@ -126,11 +131,13 @@ class TestCluster(unittest.TestCase):
         cls.client = TestCluster.start()
 
         cls.httpd1 = HTTPServer(("127.0.0.1", 8002), RequestHandler)
+        cls.httpd1.requests = []
 
         server1 = Thread(target=cls.httpd1.serve_forever, daemon=True)
         server1.start()
 
         cls.httpd2 = HTTPServer(("127.0.0.1", 8003), RequestHandler)
+        cls.httpd2.requests = []
 
         server2 = Thread(target=cls.httpd2.serve_forever, daemon=True)
         server2.start()
@@ -200,6 +207,44 @@ class TestCluster(unittest.TestCase):
         query = urllib.parse.quote("feel good story")
         uid = self.client.get(f"search?query={query}&limit=1&weights=0.5&index=default&parameters={params}&graph=False").json()[0]["id"]
         self.assertEqual(uid, 4)
+
+    def testSearchParameters(self):
+        """
+        Test cluster search forwards bind parameters with characters that are special in a query string
+        """
+
+        parameters = {"x": "a&b+c#d 100%"}
+        query = urllib.parse.quote("select id from txtai where text = :x")
+
+        self.client.get(f"search?query={query}&limit=1&parameters={urllib.parse.quote(json.dumps(parameters))}")
+
+        for httpd in [self.httpd1, self.httpd2]:
+            path = httpd.requests[-1]
+            self.assertTrue(path.startswith("/search?query=select+id"))
+
+            # Shard should receive the same parameters and the graph flag that follows them
+            args = urllib.parse.parse_qs(urllib.parse.urlsplit(path).query)
+            self.assertEqual(json.loads(args["parameters"][0]), parameters)
+            self.assertEqual(args["graph"], ["False"])
+
+    def testSearchWeights(self):
+        """
+        Test cluster search forwards zero hybrid weights
+        """
+
+        query = urllib.parse.quote("feel good story")
+        self.client.get(f"search?query={query}&limit=1&weights=0")
+
+        for httpd in [self.httpd1, self.httpd2]:
+            args = urllib.parse.parse_qs(urllib.parse.urlsplit(httpd.requests[-1]).query)
+            self.assertEqual(args["weights"], ["0.0"])
+
+        self.client.post("batchsearch", json={"queries": ["feel good story", "climate change"], "limit": 1, "weights": 0})
+
+        for httpd in [self.httpd1, self.httpd2]:
+            path, data = httpd.requests[-1]
+            self.assertEqual(path, "/batchsearch")
+            self.assertEqual(data["weights"], 0.0)
 
     def testSearchBatch(self):
         """
