@@ -203,6 +203,43 @@ class TestKeyword(unittest.TestCase):
         scoring.delete([0])
         self.assertEqual(scoring.count(), total - 1)
 
+    def testDeleteMixedTerms(self):
+        """
+        Test that common term scoring cannot restore deleted keyword results
+        """
+
+        for method in ["bm25", "tfidf", "sif"]:
+            for content in [False, True]:
+                with self.subTest(method=method, content=content), tempfile.TemporaryDirectory() as directory:
+                    config = {"method": method, "terms": True, "content": content}
+                    scoring = ScoringFactory.create(config)
+                    try:
+                        # rare occurs in one document; common occurs in every document.
+                        scoring.index([(uid, "rare common" if uid == 0 else "common", None) for uid in range(20)])
+                        scoring.search("rare common", 20)
+                        scoring.delete([1])
+
+                        for persisted in [False, True]:
+                            if persisted:
+                                path = os.path.join(directory, "scoring")
+                                scoring.save(path)
+                                scoring.close()
+                                scoring = ScoringFactory.create(config)
+                                scoring.load(path)
+
+                            for query in ["rare", "common", "rare common"]:
+                                for limit in [3, 20]:
+                                    results = scoring.search(query, limit)
+                                    ids = [result["id"] if content else result[0] for result in results]
+                                    self.assertNotIn(1, ids)
+                                    self.assertEqual(len(ids), 1 if query == "rare" else min(limit, 19))
+                                    if query == "rare common":
+                                        self.assertEqual(ids[0], 0)
+
+                        self.assertEqual(scoring.count(), 19)
+                    finally:
+                        scoring.close()
+
     def testDeleteReinsert(self):
         """
         Test that an id deleted, re-added and deleted again is removed from count() and search()
