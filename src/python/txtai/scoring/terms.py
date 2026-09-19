@@ -523,6 +523,9 @@ class Terms:
         if not hasscores:
             matches = self.candidates(scores, topn)
 
+        # Common term scores can restore deleted candidates; clear them before ranking.
+        scores[self.deletes] = 0
+
         # Reorder matches using updated scores
         matches = matches[np.argsort(-scores[matches])]
 
