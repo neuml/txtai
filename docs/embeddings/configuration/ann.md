@@ -4,7 +4,7 @@ Approximate Nearest Neighbor (ANN) index configuration for storing vector embedd
 
 ## backend
 ```yaml
-backend: faiss|hnsw|annoy|ggml|milvus|numpy|torch|turbovec|zvec|pgvector|sqlite|custom
+backend: faiss|hnsw|annoy|ggml|milvus|numpy|torch|turbovec|zvec|rabitq|pgvector|sqlite|custom
 ```
 
 Sets the ANN backend. Defaults to `faiss`. Additional backends are available via the [ann](../../../install/#ann) extras package. Set custom backends via setting this parameter to the fully resolvable class string.
@@ -123,6 +123,25 @@ zvec:
 ```
 
 The [zvec](https://github.com/alibaba/zvec) backend is an embedded, path-based vector index.
+
+### rabitq
+
+```yaml
+rabitq:
+    mode: index mode (ivf or hnsw) - defaults to "ivf"
+    clusters: number of IVF clusters (int) - defaults to
+              max(1, min(round(4 * sqrt(embeddings count)), embeddings count))
+    nprobe: search probe setting for ivf mode (int) - defaults to
+            max(1, round(num_clusters/16))
+    m: M param for hnsw mode (int) - defaults to 16
+    efconstruction: ef_construction param for hnsw mode (int) - defaults to 200
+    efsearch: ef search param for hnsw mode (int) - defaults to None and not set
+    randomseed: random-seed param for hnsw mode (int) - defaults to 100
+```
+
+The rabitq backend is a 1-bit quantized index powered by the [RaBitQ algorithm](https://doi.org/10.1145/3725413). Vectors are always stored with 1-bit precision (nbits is fixed and not configurable) and the backend supports ivf and hnsw search modes.
+
+Note: this backend requires Python 3.11+ (`rabitqlib` sets `requires-python >=3.11`). Linux/x86-64 wheels are verified (cp311-cp314). Windows and macOS are unsupported as of 2026-09-21: PyPI ships no sdist for `rabitqlib>=0.2.0` and no Windows/macOS wheels (0.3.7 is manylinux_x86_64 only), so neither a wheel install nor a pip source build is possible there - observed in `plans/txtai-rabitq-backend/evidence/windows-build.log` (native Win11/AMD64/CPython 3.13) and `plans/txtai-rabitq-backend/evidence/macos-ci.log` (fork-CI run 35642961985, macos-14 ARM + macos-15 Intel, both `No matching distribution found`). Upstream must publish an sdist or Windows/macOS wheels before these platforms can work.
 
 ### pgvector
 ```yaml

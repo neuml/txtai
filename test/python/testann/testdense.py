@@ -534,6 +534,51 @@ class TestDense(unittest.TestCase):
             # Close ANN
             ann.close()
 
+    def testRabitQ(self):
+        """
+        Test RabitQ backend
+        """
+
+        self.runTests("rabitq")
+
+    def testRabitQCustom(self):
+        """
+        Test RabitQ backend with custom settings
+        """
+
+        # Test with custom settings
+        self.runTests("rabitq", {"rabitq": {"mode": "hnsw"}}, False)
+        self.runTests("rabitq", {"rabitq": {"clusters": 8, "nprobe": 2}}, False)
+
+        ann = ANNFactory.create({"backend": "rabitq", "dimensions": 240})
+
+        # Generate and index dummy data
+        data = np.random.rand(100, 240).astype(np.float32)
+        self.normalize(data)
+        ann.index(data)
+
+        # Validate count
+        self.assertEqual(ann.count(), 100)
+
+        # Test delete
+        ann.delete([0])
+        self.assertEqual(ann.count(), 99)
+
+        # Save updated index with deletes and reload
+        index = os.path.join(tempfile.gettempdir(), "rabitq.deletes")
+        ann.save(index)
+        ann.load(index)
+        self.assertEqual(ann.count(), 99)
+
+        # Append data to the loaded index
+        ann.append(data[:10])
+        self.assertEqual(ann.count(), 109)
+
+        # Generate query vector and test search
+        query = np.random.rand(240).astype(np.float32)
+        self.normalize(query)
+        self.assertGreater(ann.search(np.array([query]), 1)[0][0][1], 0)
+
     @unittest.skipIf(platform.system() == "Darwin", "SQLite extensions not supported on macOS")
     def testSQLite(self):
         """
