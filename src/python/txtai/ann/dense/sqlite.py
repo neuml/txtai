@@ -193,10 +193,13 @@ class SQLite(ANN):
             connection.execute(self.tablesql())
 
             # The backup call will hang if there are uncommitted changes, need to copy over
-            # with iterdump (which is much slower)
-            for sql in self.connection.iterdump():
-                if self.tosql('insert into "{table}"') in sql.lower():
-                    connection.execute(sql)
+            # the rows (which is much slower). Quantized vectors must be inserted with their type.
+            embedding = "vec_bit(?)" if self.quantize == 1 else "vec_int8(?)" if self.quantize == 8 else "?"
+            rows = self.connection.execute(self.tosql("SELECT indexid, embedding FROM {table}"))
+            connection.executemany(self.tosql(f"INSERT INTO {{table}}(indexid, embedding) VALUES (?, {embedding})"), rows)
+
+            # Commit copied rows, otherwise they are rolled back when the connection is closed
+            connection.commit()
         else:
             # Database is up to date, can do a more efficient copy with SQLite C API
             self.connection.backup(connection)

@@ -575,6 +575,38 @@ class TestDense(unittest.TestCase):
 
         self.assertEqual(model.count(), expected)
 
+    @unittest.skipIf(platform.system() == "Darwin", "SQLite extensions not supported on macOS")
+    def testSQLiteSaveNewPath(self):
+        """
+        Test saving a loaded and modified SQLite index to a new path, then loading the new copy
+        """
+
+        for quantize in [None, 1, 8]:
+            params = {"sqlite": {"quantize": quantize}} if quantize else None
+
+            index = os.path.join(tempfile.gettempdir(), f"ann.sqlite.load.{quantize}")
+            new = os.path.join(tempfile.gettempdir(), f"ann.sqlite.load.{quantize}.new")
+
+            # Build and save index
+            model = self.backend("sqlite", params, 500)
+            model.save(index)
+            model.close()
+
+            # Load index, modify and save to a new path
+            model = ANNFactory.create(model.config)
+            model.load(index)
+            model.delete([0])
+            model.append(np.random.rand(10, 240).astype(np.float32))
+            model.save(new)
+            model.close()
+
+            # Load new copy and check that it has all the changes
+            model = ANNFactory.create(model.config)
+            model.load(new)
+            self.assertEqual(model.count(), 509)
+            self.assertEqual(len(model.search(np.random.rand(1, 240).astype(np.float32), 10)[0]), 10)
+            model.close()
+
     def testSQLiteQuantizeDisabled(self):
         """
         Test that quantize: false disables SQLite storage quantization
