@@ -145,10 +145,11 @@ class DuckDB(Embedded):
             params = []
             for key, value in parameters.items():
                 pattern = rf"\:{key}(?=\s|$)"
-                match = re.search(pattern, query)
-                if match:
-                    query = re.sub(pattern, "?", query, count=1)
-                    params.append((match.start(), value))
+                matches = list(re.finditer(pattern, query))
+                if matches:
+                    for match in matches:
+                        params.append((match.start(), value))
+                    query = re.sub(pattern, "?", query)
 
             # Repack query and parameter list
             args = (query, [value for _, value in sorted(params, key=lambda x: x[0])])

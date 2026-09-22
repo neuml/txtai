@@ -5,6 +5,7 @@ DuckDB module tests
 import os
 import unittest
 
+from txtai.database.factory import DatabaseFactory
 from txtai.embeddings import Embeddings
 
 from .testrdbms import Common
@@ -74,6 +75,19 @@ class TestDuckDB(Common.TestRDBMS):
         result = embeddings.search("select textlength(text) length from txtai where id = 0", 1)[0]
 
         self.assertEqual(int(result["length"]), 39)
+
+    def testRepeatedBindParameter(self):
+        """
+        Test a query that references the same named bind parameter more than once
+        """
+
+        database = DatabaseFactory.create({"content": self.backend})
+        database.insert([(0, "a fully intact ice shelf collapsed, forming an iceberg", None)])
+
+        result = database.search("select * from txtai where text like :x or text like :x", parameters={"x": "%iceberg%"})
+        self.assertEqual(len(result), 1)
+
+        database.close()
 
 
 def length(text):
