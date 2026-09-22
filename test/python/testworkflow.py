@@ -10,6 +10,8 @@ import tempfile
 import sys
 import unittest
 
+from itertools import product
+
 import numpy as np
 import torch
 
@@ -351,6 +353,29 @@ class TestWorkflow(unittest.TestCase):
         workflow = Workflow([RetrieveTask(flatten=False)])
         results = list(workflow(["file://" + Utils.PATH + "/books.jpg"]))
         self.assertTrue(results[0].endswith("books.jpg") and "txtai" in results[0])
+
+    def testRetrieveLocalFilenames(self):
+        """
+        Test that local filenames are preserved instead of parsed as URLs
+        """
+
+        with tempfile.TemporaryDirectory(dir=".") as directory:
+            directory = os.path.relpath(directory)
+            names = ["report#1.txt", "report#2.txt", "report;1.txt", "plain.txt"]
+            paths = [os.path.join(directory, name) for name in names]
+            for path, name in zip(paths, names):
+                with open(path, "w", encoding="utf-8") as output:
+                    output.write(name)
+
+            for flatten, prefix, safeopen in product((True, False), ("", "file://"), (False, directory)):
+                with self.subTest(flatten=flatten, prefix=prefix, safeopen=safeopen):
+                    task = RetrieveTask(directory=os.path.join(directory, "output"), flatten=flatten, safeopen=safeopen)
+                    results = list(Workflow([task])([prefix + path for path in paths]))
+
+                    self.assertEqual([os.path.basename(path) for path in results], names)
+                    for path, name in zip(results, names):
+                        with open(path, encoding="utf-8") as result:
+                            self.assertEqual(result.read(), name)
 
     def testScheduleWorkflow(self):
         """
