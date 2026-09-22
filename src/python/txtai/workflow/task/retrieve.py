@@ -44,11 +44,11 @@ class RetrieveTask(Task):
         self.safeoutput = SafeOpen(safeopen=directory if safeopen else safeopen, allowurl=False)
 
     def prepare(self, element):
-        # Extract file path from URL
-        path = urlparse(element).path
-
         # Validate input element
-        url, _ = self.safeinput.valid(element)
+        url, exists = self.safeinput.valid(element)
+
+        # Preserve local filenames; only parse remote inputs as URLs
+        path = url if exists else urlparse(element).path
         if url:
             if self.flatten:
                 # Flatten directory structure (default)
