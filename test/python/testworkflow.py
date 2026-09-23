@@ -485,6 +485,26 @@ class TestWorkflow(unittest.TestCase):
         results = list(workflow([{"text": "prompt"}]))
         self.assertEqual(results[0], "This is a prompt")
 
+    def testTemplateRulesFalsy(self):
+        """
+        Test that falsy rule matches bypass template formatting
+        """
+
+        for value in ("", 0, False):
+            with self.subTest(value=value):
+                workflow = Workflow([TemplateTask(template="This is a {text}", rules={"text": value})])
+                results = list(workflow([{"text": value}, {"text": "prompt"}]))
+                self.assertEqual(results, [value, "This is a prompt"])
+                self.assertIs(type(results[0]), type(value))
+
+    def testTemplateRulesMissingField(self):
+        """
+        Test that a falsy rule match does not require template fields
+        """
+
+        workflow = Workflow([TemplateTask(template="This is a {text}", rules={"status": ""})])
+        self.assertEqual(list(workflow([{"status": ""}])), [""])
+
     def testTemplateRag(self):
         """
         Test rag template task
