@@ -164,6 +164,38 @@ class TestKeyword(unittest.TestCase):
             self.assertEqual(scoring.count(), 0)
             self.assertEqual(scoring.search("bear", 1), [])
 
+    def testWildcardLiteralCharacters(self):
+        """
+        Test that only asterisks act as wildcards in keyword queries
+        """
+
+        data = ["report_2026", "reportX2026", "rate%2026", "rateX2026", r"path\_2026", r"path\X2026", "path_2026", "plain2026", "plain2027"]
+        queries = [
+            ("report_*", {0}),
+            ("rate%*", {2}),
+            ("*%2026", {2}),
+            ("*_2026", {0, 4, 6}),
+            (r"path\_*", {4}),
+            (r"path\*", {4, 5}),
+            ("plain*", {7, 8}),
+            ("pl**2026", {7}),
+            ("*2027", {8}),
+            ("rate%2026", {2}),
+            ("report_2026", {0}),
+            ("*", set()),
+        ]
+        for method in ["bm25", "tfidf", "sif"]:
+            scoring = ScoringFactory.create({"method": method, "terms": True, "tokenizer": {"whitespace": True}})
+            try:
+                scoring.index([(uid, text, None) for uid, text in enumerate(data)])
+                for query, expected in queries:
+                    with self.subTest(method=method, query=query):
+                        results = scoring.search(query, len(data))
+                        self.assertEqual({uid for uid, _ in results}, expected)
+                        self.assertEqual(len(results), len(expected))
+            finally:
+                scoring.close()
+
     def testDeleteUnknownId(self):
         """
         Test that deleting an id that was never indexed is a no-op, not a crash

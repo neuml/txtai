@@ -37,7 +37,7 @@ class Terms:
 
     INSERT_TERM = "INSERT OR REPLACE INTO terms VALUES (?, ?, ?)"
     SELECT_TERMS = "SELECT ids, freqs FROM terms WHERE term = ?"
-    WILDCARD_TERMS = "SELECT term FROM terms WHERE term LIKE ?"
+    WILDCARD_TERMS = "SELECT term FROM terms WHERE term LIKE ? ESCAPE '\\'"
 
     # Documents table
     CREATE_DOCUMENTS = """
@@ -462,7 +462,8 @@ class Terms:
             if Terms.ASTERISK in term:
                 # Require a prefix or suffix
                 if term.replace(Terms.ASTERISK, "").strip():
-                    term = term.replace(Terms.ASTERISK, "%")
+                    # Escape literal LIKE metacharacters before joining the wildcard segments.
+                    term = "%".join(part.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") for part in term.split(Terms.ASTERISK))
                     result = self.cursor.execute(Terms.WILDCARD_TERMS, [term])
                     results.extend([t for t, in result])
             else:
