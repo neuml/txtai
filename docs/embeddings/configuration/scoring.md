@@ -54,7 +54,7 @@ Score normalization scales the output between 0 and 1. This setting supports:
 ```yaml
 ivfsparse:
   sample: percent of data to use for model training (0.0 - 1.0)
-  nfeatures: top n features to use for model training (int)
+  nfeatures: top n features to use for model training (int), trains on all features when not set
   nlist: desired number of clusters (int)
   nprobe: search probe setting (int)
   minpoints: minimum number of points for a cluster (int)

@@ -11,6 +11,7 @@ from unittest.mock import patch
 import numpy as np
 
 from scipy.sparse import random
+from sklearn.cluster import MiniBatchKMeans
 from sklearn.preprocessing import normalize
 
 from txtai.ann import SparseANNFactory
@@ -167,6 +168,68 @@ class TestSparse(unittest.TestCase):
             self.assertGreater(len(result), 0)
 
         ann.close()
+
+    def testIVFSparseNFeatures(self):
+        """
+        Test IVFSparse trains k-means on nfeatures columns when nfeatures is set
+        """
+
+        # Train on the top 4 of 8 features
+        self.assertEqual(self.buildwidths({"nfeatures": 4}, self.generate(300, 8)), [4])
+
+    def testIVFSparseNFeaturesUnset(self):
+        """
+        Test IVFSparse trains k-means on all features when nfeatures isn't set
+        """
+
+        # Default is the full feature set, i.e. all 8 columns
+        self.assertEqual(self.buildwidths({}, self.generate(300, 8)), [8])
+
+    def testIVFSparseNFeaturesSearch(self):
+        """
+        Test IVFSparse still returns the source record when nfeatures is set
+        """
+
+        # Generate test record
+        insert = self.generate(500, 30522)
+
+        ann = SparseANNFactory.create({"backend": "ivfsparse", "ivfsparse": {"nfeatures": 25, "nlist": 2, "nprobe": 2, "sample": 1.0}})
+        ann.index(insert)
+
+        # Validate search results
+        results = [x[0] for x in ann.search(insert[5], 10)[0]]
+        self.assertIn(5, results)
+
+        ann.close()
+
+    def buildwidths(self, ivfsparse, data):
+        """
+        Builds cluster centroids with the passed ivfsparse settings, recording the width of the
+        matrix k-means is trained on.
+
+        Args:
+            ivfsparse: ivfsparse settings
+            data: training data
+
+        Returns:
+            list of column counts passed to k-means
+        """
+
+        ann = SparseANNFactory.create({"backend": "ivfsparse", "ivfsparse": ivfsparse})
+
+        # Record each k-means training width, delegating to the real fit
+        widths = []
+        fit = MiniBatchKMeans.fit
+
+        def spy(self, x, *args, **kwargs):
+            widths.append(x.shape[1])
+            return fit(self, x, *args, **kwargs)
+
+        with patch.object(MiniBatchKMeans, "fit", spy):
+            ann.build(data, 4)
+
+        ann.close()
+        return widths
 
     @patch("sqlalchemy.orm.Query.limit")
     def testPGSparse(self, query):
