@@ -558,6 +558,9 @@ class Terms:
             # Update scores
             scores[uids] += freq * weights
 
+        # Common term scores can restore deleted candidates; clear them after merging.
+        scores[self.deletes] = 0
+
     def candidates(self, scores, topn):
         """
         Gets the topn scored candidates. This method ignores deleted documents.
