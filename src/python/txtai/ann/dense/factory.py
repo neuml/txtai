@@ -18,21 +18,6 @@ from .torch import Torch
 from .turbovec import TurboVec
 from .zvec import Zvec
 
-BACKENDS = {
-    "annoy": Annoy,
-    "faiss": Faiss,
-    "hnsw": HNSW,
-    "milvus": Milvus,
-    "ggml": GGML,
-    "numpy": NumPy,
-    "pgvector": PGVector,
-    "sqlite": SQLite,
-    "torch": Torch,
-    "turbovec": TurboVec,
-    "zvec": Zvec,
-    "rabitq": RabitQ,
-}
-
 
 class ANNFactory:
     """
@@ -52,11 +37,34 @@ class ANNFactory:
         """
 
         # ANN instance
+        ann = None
         backend = config.get("backend", "faiss" if FAISS else "numpy")
 
         # Create ANN instance
-        if backend in BACKENDS:
-            ann = BACKENDS[backend](config)
+        if backend == "annoy":
+            ann = Annoy(config)
+        elif backend == "faiss":
+            ann = Faiss(config)
+        elif backend == "hnsw":
+            ann = HNSW(config)
+        elif backend == "milvus":
+            ann = Milvus(config)
+        elif backend == "ggml":
+            ann = GGML(config)
+        elif backend == "numpy":
+            ann = NumPy(config)
+        elif backend == "pgvector":
+            ann = PGVector(config)
+        elif backend == "sqlite":
+            ann = SQLite(config)
+        elif backend == "torch":
+            ann = Torch(config)
+        elif backend == "turbovec":
+            ann = TurboVec(config)
+        elif backend == "zvec":
+            ann = Zvec(config)
+        elif backend == "rabitq":
+            ann = RabitQ(config)
         else:
             ann = ANNFactory.resolve(backend, config)
 
