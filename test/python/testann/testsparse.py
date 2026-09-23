@@ -181,19 +181,19 @@ class TestSparse(unittest.TestCase):
         features = []
         fit = MiniBatchKMeans.fit
 
-        def spy(self, x, *args, **kwargs):
+        def logfit(self, x, *args, **kwargs):
             features.append(x.shape[1])
             return fit(self, x, *args, **kwargs)
 
         # nfeatures unset trains on the full feature space
         ann = SparseANNFactory.create({"backend": "ivfsparse", "ivfsparse": {"nlist": 2}})
-        with patch("txtai.ann.sparse.ivfsparse.MiniBatchKMeans.fit", spy):
+        with patch("txtai.ann.sparse.ivfsparse.MiniBatchKMeans.fit", logfit):
             ann.index(data)
         ann.close()
 
         # nfeatures limits training to the top n features
         ann = SparseANNFactory.create({"backend": "ivfsparse", "ivfsparse": {"nlist": 2, "nfeatures": 10}})
-        with patch("txtai.ann.sparse.ivfsparse.MiniBatchKMeans.fit", spy):
+        with patch("txtai.ann.sparse.ivfsparse.MiniBatchKMeans.fit", logfit):
             ann.index(data)
         ann.close()
 
