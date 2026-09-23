@@ -36,6 +36,7 @@ class ANNFactory:
             ANN
         """
 
+        # pylint: disable=R0912
         # ANN instance
         ann = None
         backend = config.get("backend", "faiss" if FAISS else "numpy")
