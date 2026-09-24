@@ -16,13 +16,6 @@ import numpy as np
 from sqlalchemy.dialects.postgresql import BIT
 from sqlalchemy.ext.compiler import compiles
 
-try:
-    import rabitqlib  # pylint: disable=W0611
-
-    RABITQ = True
-except ImportError:
-    RABITQ = False
-
 from txtai.ann import ANNFactory, ANN
 from txtai.ann.dense.ggml import GGMLTensors
 from txtai.serialize import SerializeFactory
@@ -541,7 +534,6 @@ class TestDense(unittest.TestCase):
             # Close ANN
             ann.close()
 
-    @unittest.skipUnless(RABITQ, "rabitqlib not installed")
     def testRabitQ(self):
         """
         Test RabitQ backend
@@ -549,7 +541,6 @@ class TestDense(unittest.TestCase):
 
         self.runTests("rabitq")
 
-    @unittest.skipUnless(RABITQ, "rabitqlib not installed")
     def testRabitQCustom(self):
         """
         Test RabitQ backend with custom settings
