@@ -11,6 +11,7 @@ import unittest
 from unittest.mock import patch
 
 import numpy as np
+import pandas as pd
 import torch
 
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
@@ -687,6 +688,28 @@ class TestTrainer(unittest.TestCase):
 
         trainer = HFTrainer()
         model, tokenizer = trainer("google/bert_uncased_L-2_H-128_A-2", data)
+
+        labels = Labels((model, tokenizer), dynamic=False)
+        self.assertEqual(labels("cat")[0][0], 1)
+
+    def testPandas(self):
+        """
+        Test training a model with a pandas DataFrame
+        """
+
+        df = pd.DataFrame(self.data)
+
+        # Split into train and validation sets, the train index doesn't start at 0
+        train, validation = df.iloc[4:], df.iloc[:4]
+
+        trainer = HFTrainer()
+        model, tokenizer = trainer(
+            "google/bert_uncased_L-2_H-128_A-2",
+            train,
+            validation=validation,
+            do_eval=True,
+            output_dir=os.path.join(tempfile.gettempdir(), "trainer"),
+        )
 
         labels = Labels((model, tokenizer), dynamic=False)
         self.assertEqual(labels("cat")[0][0], 1)
