@@ -258,7 +258,7 @@ class RabitQ(ANN):
         clusters = self.setting("clusters", None)
         self.numclusters = max(1, min(clusters if clusters else round(4 * math.sqrt(rows)), rows))
 
-        cluster = KMeans(n_clusters=self.numclusters, random_state=0, n_init=10).fit(self.vectors)
+        cluster = KMeans(n_clusters=self.numclusters, random_state=0, n_init=1).fit(self.vectors)
         centroids = np.ascontiguousarray(cluster.cluster_centers_, dtype=np.float32)
         clusterids = np.ascontiguousarray(cluster.labels_, dtype=np.uint32)
 
