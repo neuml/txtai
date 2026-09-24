@@ -525,6 +525,47 @@ class TestWorkflow(unittest.TestCase):
         results = list(workflow([{"query": "query", "question": "prompt", "param": "value"}]))
         self.assertEqual(results[0], {"query": "query", "question": "This is a prompt with another value", "param": "value"})
 
+    def testTemplateRagReusableInput(self):
+        """
+        Test that rag template inputs can be reused without changing earlier results
+        """
+
+        workflow = Workflow([RagTask(template="This is a {text} with another {param}")])
+        for packed in (False, True):
+            with self.subTest(packed=packed):
+                request = {"query": "query", "question": "prompt", "param": "value"}
+                original = dict(request)
+                expected = {"query": "query", "question": "This is a prompt with another value", "param": "value"}
+                inputs = [("id", request, "tag")] if packed else [request]
+                expected = [("id", expected, "tag")] if packed else [expected]
+
+                first = list(workflow(inputs))
+                self.assertEqual(first, expected)
+                self.assertEqual(request, original)
+
+                second = list(workflow(inputs))
+                self.assertEqual(second, expected)
+                self.assertEqual(first, expected)
+                self.assertEqual(request, original)
+                self.assertIsNot(first[0][1] if packed else first[0], request)
+
+    def testTemplateRagRepeatedInput(self):
+        """
+        Test that repeated input references are formatted independently across batches
+        """
+
+        for batch in (1, 2):
+            with self.subTest(batch=batch):
+                workflow = Workflow([RagTask(template="This is a {text}")], batch=batch)
+                request = {"query": "query", "question": "prompt"}
+                original = dict(request)
+                expected = {"query": "query", "question": "This is a prompt"}
+
+                results = list(workflow([request, request]))
+                self.assertEqual(results, [expected, expected])
+                self.assertEqual(request, original)
+                self.assertIsNot(results[0], results[1])
+
     def testTensorTransformWorkflow(self):
         """
         Test a tensor workflow with list transformations
