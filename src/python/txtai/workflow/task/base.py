@@ -6,6 +6,8 @@ import logging
 import re
 import types
 
+from collections.abc import Iterator
+
 # Core library imports
 from ...util import Library
 
@@ -273,6 +275,10 @@ class Task:
         """
 
         if self.action:
+            # Multiple actions must be able to read the same iterator inputs.
+            if len(self.action) > 1 and isinstance(elements, Iterator):
+                elements = list(elements)
+
             # Run actions
             outputs = []
             for x, action in enumerate(self.action):
