@@ -448,6 +448,7 @@ class Terms:
         Expands a list of terms using the following term expansion rules.
 
           - Asterisks (*) for wildcard expressions
+          - In wildcard expressions, SQL LIKE % and _ remain wildcards; backslash escapes literal characters
 
         Args:
             terms: list of terms
@@ -462,8 +463,7 @@ class Terms:
             if Terms.ASTERISK in term:
                 # Require a prefix or suffix
                 if term.replace(Terms.ASTERISK, "").strip():
-                    # Escape literal LIKE metacharacters before joining the wildcard segments.
-                    term = "%".join(part.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") for part in term.split(Terms.ASTERISK))
+                    term = term.replace(Terms.ASTERISK, "%")
                     result = self.cursor.execute(Terms.WILDCARD_TERMS, [term])
                     results.extend([t for t, in result])
             else:
