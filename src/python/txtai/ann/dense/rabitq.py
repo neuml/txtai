@@ -21,7 +21,9 @@ from ..base import ANN
 # Core library imports
 from ...util import Library
 
-np = Library().numpy()
+library = Library()
+np = library.numpy()
+safetensors = library.safetensors()
 
 # Sentinel for unfilled top-k slots in native search results
 SENTINEL = 0xFFFFFFFF
@@ -53,21 +55,23 @@ class RabitQ(ANN):
             archive = ArchiveFactory.create(self.directory)
             archive.load(path, "tar")
 
-            meta = np.load(os.path.join(self.directory, "meta.npz"), allow_pickle=False)
+            # Retained corpus tensors plus index metadata
+            with safetensors.safe_open(os.path.join(self.directory, "vectors.safetensors"), framework="np") as f:
+                metadata = f.metadata() if f.metadata() else {}
+                self.vectors = np.ascontiguousarray(f.get_tensor("vectors"), dtype=np.float32)
+                self.ids = np.ascontiguousarray(f.get_tensor("ids"), dtype=np.int64)
 
-            self.vectors = np.ascontiguousarray(meta["vectors"], dtype=np.float32)
-            self.ids = np.ascontiguousarray(meta["ids"], dtype=np.int64)
-            self.numclusters = int(meta["clusters"]) if "clusters" in meta else 0
+            self.numclusters = int(metadata.get("clusters", 0))
 
             # Mode comes from the current config, falling back to the saved snapshot. Invalid modes raise ValueError here, before native code runs.
-            mode = self.mode(str(meta["mode"]) if "mode" in meta else "ivf")
+            mode = self.mode(metadata.get("mode", "ivf"))
 
             native = os.path.join(self.directory, "index.bin")
             if os.path.exists(native):
                 self.backend = IvfIndex.load(native) if mode == "ivf" else HnswIndex.load(native)
 
             # Default the offset for snapshots that don't have it
-            self.config["offset"] = int(meta["offset"]) if "offset" in meta else len(self.ids)
+            self.config["offset"] = int(metadata.get("offset", len(self.ids)))
         except Exception:
             self.close()
             raise
@@ -154,19 +158,11 @@ class RabitQ(ANN):
             # Empty index: drop the stale native file so reloads don't resurrect deleted rows
             os.remove(native)
 
-        np.savez(
-            os.path.join(self.directory, "meta.npz"),
-            vectors=self.vectors,
-            ids=self.ids,
-            mode=self.mode(),
-            nbits=self.setting("nbits", 1),
-            clusters=self.numclusters,
-            nprobe=self.setting("nprobe", max(1, round(self.numclusters / 16))),
-            m=self.setting("m", 16),
-            efconstruction=self.setting("efconstruction", 200),
-            efsearch=self.setting("efsearch", None) or -1,
-            randomseed=self.setting("randomseed", 100),
-            offset=self.config.get("offset", len(self.ids)),
+        # Save retained corpus tensors, safetensors metadata values must be strings
+        safetensors.numpy.save_file(
+            {"vectors": self.vectors, "ids": self.ids},
+            os.path.join(self.directory, "vectors.safetensors"),
+            {"mode": self.mode(), "clusters": str(self.numclusters), "offset": str(self.config.get("offset", len(self.ids)))},
         )
 
         archive = ArchiveFactory.create(self.directory)
