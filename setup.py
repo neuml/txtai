@@ -195,7 +195,7 @@ setup(
     packages=find_packages(where="src/python"),
     package_dir={"": "src/python"},
     keywords="search embedding machine-learning nlp",
-    python_requires=">=3.10",
+    python_requires=">=3.11",
     install_requires=install,
     extras_require=extras,
     classifiers=[
