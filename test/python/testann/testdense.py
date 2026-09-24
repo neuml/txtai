@@ -558,6 +558,15 @@ class TestDense(unittest.TestCase):
         # Test with custom settings
         self.runTests("rabitq", {"rabitq": {"mode": "hnsw"}}, False)
         self.runTests("rabitq", {"rabitq": {"clusters": 8, "nprobe": 2}}, False)
+        self.runTests("rabitq", {"rabitq": {"nbits": 4}}, False)
+        self.runTests("rabitq", {"rabitq": {"mode": "hnsw", "nbits": 4}}, False)
+        self.runTests("rabitq", {"rabitq": {"nbits": 32}}, False)
+
+        # Test invalid quantization bits
+        for mode, nbits in [("ivf", 10), ("hnsw", 32)]:
+            with self.assertRaises(ValueError):
+                ann = ANNFactory.create({"backend": "rabitq", "dimensions": 240, "rabitq": {"mode": mode, "nbits": nbits}})
+                ann.index(np.random.rand(100, 240).astype(np.float32))
 
         ann = ANNFactory.create({"backend": "rabitq", "dimensions": 240})
 

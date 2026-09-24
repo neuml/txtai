@@ -96,6 +96,9 @@ The NumPy backend is a k-nearest neighbors backend. It's designed for simplicity
 ```yaml
 rabitq:
     mode: index mode (ivf or hnsw) - defaults to "ivf"
+    nbits: number of quantization bits per dimension (int) - defaults to 1,
+           supports 1 to 9 in both modes, ivf mode also supports 32 which
+           keeps raw vectors for reranking
     clusters: number of IVF clusters (int) - defaults to
               max(1, min(round(4 * sqrt(embeddings count)), embeddings count))
     nprobe: search probe setting for ivf mode (int) - defaults to
@@ -106,7 +109,7 @@ rabitq:
     randomseed: random-seed param for hnsw mode (int) - defaults to 100
 ```
 
-The rabitq backend is a 1-bit quantized index powered by the [RaBitQ algorithm](https://doi.org/10.1145/3725413). Vectors are always stored with 1-bit precision (nbits is fixed and not configurable) and the backend supports ivf and hnsw search modes.
+The [rabitq](https://github.com/VectorDB-NTU/RaBitQ-Library) backend is a quantized index powered by the [RaBitQ algorithm](https://doi.org/10.1145/3725413). It supports ivf and hnsw search modes. Vectors are stored with 1-bit quantization by default. More bits increase accuracy at the cost of memory.
 
 ### torch
 
