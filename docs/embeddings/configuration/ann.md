@@ -108,8 +108,6 @@ rabitq:
 
 The rabitq backend is a 1-bit quantized index powered by the [RaBitQ algorithm](https://doi.org/10.1145/3725413). Vectors are always stored with 1-bit precision (nbits is fixed and not configurable) and the backend supports ivf and hnsw search modes.
 
-Note: this backend requires Python 3.11+ (`rabitqlib` sets `requires-python >=3.11`). Linux/x86-64 wheels are verified (cp311-cp314). Windows and macOS are unsupported as of 2026-09-21: PyPI ships no sdist for `rabitqlib>=0.2.0` and no Windows/macOS wheels (0.3.7 is manylinux_x86_64 only), so neither a wheel install nor a pip source build is possible there - observed in `plans/txtai-rabitq-backend/evidence/windows-build.log` (native Win11/AMD64/CPython 3.13) and `plans/txtai-rabitq-backend/evidence/macos-ci.log` (fork-CI run 35642961985, macos-14 ARM + macos-15 Intel, both `No matching distribution found`). Upstream must publish an sdist or Windows/macOS wheels before these platforms can work.
-
 ### torch
 
 ```yaml
