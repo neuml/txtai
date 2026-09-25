@@ -232,6 +232,26 @@ class TestONNXModels(unittest.TestCase):
 
         self.assertEqual(model.encode(["dog"]).shape, (1, 4))
 
+    @patch("huggingface_hub.hf_hub_download")
+    def testTokenizerRepo(self, download):
+        """
+        Test that a tokenizer at the root of a HF Hub repo is found for a model stored in a subdirectory
+        """
+
+        files = {"org/repo/onnx/model.onnx": self.build("repo.onnx"), "org/repo/tokenizer.json": self.tokenizer}
+
+        def filedownload(**kwargs):
+            path = f"{kwargs['repo_id']}/{kwargs['filename']}"
+            if path not in files:
+                raise FileNotFoundError
+
+            return files[path]
+
+        download.side_effect = filedownload
+
+        model = ONNX({"path": "org/repo/onnx/model.onnx", "gpu": False}, None, None)
+        self.assertEqual(model.encode(["dog"]).shape, (1, 4))
+
     def testProviders(self):
         """
         Test provider selection
