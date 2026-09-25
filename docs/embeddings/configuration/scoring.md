@@ -54,7 +54,7 @@ Score normalization scales the output between 0 and 1. This setting supports:
 ```yaml
 ivfsparse:
   sample: percent of data to use for model training (0.0 - 1.0)
-  nfeatures: top n features to use for model training (int)
+  nfeatures: top n features to use for model training, defaults to all features (int)
   nlist: desired number of clusters (int)
   nprobe: search probe setting (int)
   minpoints: minimum number of points for a cluster (int)
@@ -80,6 +80,15 @@ Supports a `dict` with the parameters `cachelimit` and `cutoff`.
 `cutoff` is used during search to determine what constitutes a common term. This parameter is a `float`, i.e. 0.1 for a cutoff of 10%.
 
 When `terms` is set to `True`, default parameters are used for the `cachelimit` and `cutoff`. Normally, these defaults are sufficient.
+
+### Wildcard queries
+
+Keyword queries containing `*` expand matching terms using SQL `LIKE`. Within these
+expressions, `%` matches any sequence and `_` matches one character. To match a literal
+percent sign, underscore or backslash, use `\%`, `\_` or `\\`, respectively.
+For example, `report\_*` matches `report_2026`, while `report_*` also matches `reportX2026`.
+Use a tokenizer that preserves these characters, such as `tokenizer: {whitespace: true}`,
+or pass pre-tokenized query terms. Queries without `*` retain exact-term matching.
 
 ## normalize
 ```yaml

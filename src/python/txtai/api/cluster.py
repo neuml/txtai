@@ -56,17 +56,19 @@ class Cluster:
         """
 
         # Build URL
-        action = f"search?query={urllib.parse.quote_plus(query)}"
+        params = {"query": query}
         if limit:
-            action += f"&limit={limit}"
-        if weights:
-            action += f"&weights={weights}"
+            params["limit"] = limit
+        if weights is not None:
+            params["weights"] = weights
         if index:
-            action += f"&index={index}"
+            params["index"] = index
         if parameters:
-            action += f"&parameters={json.dumps(parameters) if isinstance(parameters, dict) else parameters}"
+            params["parameters"] = json.dumps(parameters) if isinstance(parameters, dict) else parameters
         if graph is not None:
-            action += f"&graph={graph}"
+            params["graph"] = graph
+
+        action = f"search?{urllib.parse.urlencode(params)}"
 
         # Run query and flatten results into single results list
         results = []
@@ -100,7 +102,7 @@ class Cluster:
         params = {"queries": queries}
         if limit:
             params["limit"] = limit
-        if weights:
+        if weights is not None:
             params["weights"] = weights
         if index:
             params["index"] = index

@@ -37,7 +37,7 @@ class Terms:
 
     INSERT_TERM = "INSERT OR REPLACE INTO terms VALUES (?, ?, ?)"
     SELECT_TERMS = "SELECT ids, freqs FROM terms WHERE term = ?"
-    WILDCARD_TERMS = "SELECT term FROM terms WHERE term LIKE ?"
+    WILDCARD_TERMS = "SELECT term FROM terms WHERE term LIKE ? ESCAPE '\\'"
 
     # Documents table
     CREATE_DOCUMENTS = """
@@ -448,6 +448,7 @@ class Terms:
         Expands a list of terms using the following term expansion rules.
 
           - Asterisks (*) for wildcard expressions
+          - In wildcard expressions, SQL LIKE % and _ remain wildcards; backslash escapes literal characters
 
         Args:
             terms: list of terms
@@ -557,6 +558,9 @@ class Terms:
 
             # Update scores
             scores[uids] += freq * weights
+
+        # Common term scores can restore deleted candidates; clear them after merging.
+        scores[self.deletes] = 0
 
     def candidates(self, scores, topn):
         """

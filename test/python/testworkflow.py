@@ -10,6 +10,8 @@ import tempfile
 import sys
 import unittest
 
+from itertools import product
+
 import numpy as np
 import torch
 
@@ -352,6 +354,29 @@ class TestWorkflow(unittest.TestCase):
         results = list(workflow(["file://" + Utils.PATH + "/books.jpg"]))
         self.assertTrue(results[0].endswith("books.jpg") and "txtai" in results[0])
 
+    def testRetrieveLocalFilenames(self):
+        """
+        Test that local filenames are preserved instead of parsed as URLs
+        """
+
+        with tempfile.TemporaryDirectory(dir=".") as directory:
+            directory = os.path.relpath(directory)
+            names = ["report#1.txt", "report#2.txt", "report;1.txt", "plain.txt"]
+            paths = [os.path.join(directory, name) for name in names]
+            for path, name in zip(paths, names):
+                with open(path, "w", encoding="utf-8") as output:
+                    output.write(name)
+
+            for flatten, prefix, safeopen in product((True, False), ("", "file://"), (False, directory)):
+                with self.subTest(flatten=flatten, prefix=prefix, safeopen=safeopen):
+                    task = RetrieveTask(directory=os.path.join(directory, "output"), flatten=flatten, safeopen=safeopen)
+                    results = list(Workflow([task])([prefix + path for path in paths]))
+
+                    self.assertEqual([os.path.basename(path) for path in results], names)
+                    for path, name in zip(results, names):
+                        with open(path, encoding="utf-8") as result:
+                            self.assertEqual(result.read(), name)
+
     def testScheduleWorkflow(self):
         """
         Test workflow schedules
@@ -460,6 +485,26 @@ class TestWorkflow(unittest.TestCase):
         results = list(workflow([{"text": "prompt"}]))
         self.assertEqual(results[0], "This is a prompt")
 
+    def testTemplateRulesFalsy(self):
+        """
+        Test that falsy rule matches bypass template formatting
+        """
+
+        for value in ("", 0, False):
+            with self.subTest(value=value):
+                workflow = Workflow([TemplateTask(template="This is a {text}", rules={"text": value})])
+                results = list(workflow([{"text": value}, {"text": "prompt"}]))
+                self.assertEqual(results, [value, "This is a prompt"])
+                self.assertIs(type(results[0]), type(value))
+
+    def testTemplateRulesMissingField(self):
+        """
+        Test that a falsy rule match does not require template fields
+        """
+
+        workflow = Workflow([TemplateTask(template="This is a {text}", rules={"status": ""})])
+        self.assertEqual(list(workflow([{"status": ""}])), [""])
+
     def testTemplateRag(self):
         """
         Test rag template task
@@ -479,6 +524,47 @@ class TestWorkflow(unittest.TestCase):
         workflow = Workflow([RagTask(template="This is a {text} with another {param}")])
         results = list(workflow([{"query": "query", "question": "prompt", "param": "value"}]))
         self.assertEqual(results[0], {"query": "query", "question": "This is a prompt with another value", "param": "value"})
+
+    def testTemplateRagReusableInput(self):
+        """
+        Test that rag template inputs can be reused without changing earlier results
+        """
+
+        workflow = Workflow([RagTask(template="This is a {text} with another {param}")])
+        for packed in (False, True):
+            with self.subTest(packed=packed):
+                request = {"query": "query", "question": "prompt", "param": "value"}
+                original = dict(request)
+                expected = {"query": "query", "question": "This is a prompt with another value", "param": "value"}
+                inputs = [("id", request, "tag")] if packed else [request]
+                expected = [("id", expected, "tag")] if packed else [expected]
+
+                first = list(workflow(inputs))
+                self.assertEqual(first, expected)
+                self.assertEqual(request, original)
+
+                second = list(workflow(inputs))
+                self.assertEqual(second, expected)
+                self.assertEqual(first, expected)
+                self.assertEqual(request, original)
+                self.assertIsNot(first[0][1] if packed else first[0], request)
+
+    def testTemplateRagRepeatedInput(self):
+        """
+        Test that repeated input references are formatted independently across batches
+        """
+
+        for batch in (1, 2):
+            with self.subTest(batch=batch):
+                workflow = Workflow([RagTask(template="This is a {text}")], batch=batch)
+                request = {"query": "query", "question": "prompt"}
+                original = dict(request)
+                expected = {"query": "query", "question": "This is a prompt"}
+
+                results = list(workflow([request, request]))
+                self.assertEqual(results, [expected, expected])
+                self.assertEqual(request, original)
+                self.assertIsNot(results[0], results[1])
 
     def testTensorTransformWorkflow(self):
         """

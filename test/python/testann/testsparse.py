@@ -11,6 +11,7 @@ from unittest.mock import patch
 import numpy as np
 
 from scipy.sparse import random
+from sklearn.cluster import MiniBatchKMeans
 from sklearn.preprocessing import normalize
 
 from txtai.ann import SparseANNFactory
@@ -167,6 +168,36 @@ class TestSparse(unittest.TestCase):
             self.assertGreater(len(result), 0)
 
         ann.close()
+
+    def testIVFSparseNFeatures(self):
+        """
+        Test IVFSparse nfeatures setting limits model training to the top n features
+        """
+
+        # Generate test data
+        data = self.generate(500, 100)
+
+        # Capture the feature count passed to model training
+        features = []
+        fit = MiniBatchKMeans.fit
+
+        def logfit(self, x, *args, **kwargs):
+            features.append(x.shape[1])
+            return fit(self, x, *args, **kwargs)
+
+        # nfeatures unset trains on the full feature space
+        ann = SparseANNFactory.create({"backend": "ivfsparse", "ivfsparse": {"nlist": 2}})
+        with patch("txtai.ann.sparse.ivfsparse.MiniBatchKMeans.fit", logfit):
+            ann.index(data)
+        ann.close()
+
+        # nfeatures limits training to the top n features
+        ann = SparseANNFactory.create({"backend": "ivfsparse", "ivfsparse": {"nlist": 2, "nfeatures": 10}})
+        with patch("txtai.ann.sparse.ivfsparse.MiniBatchKMeans.fit", logfit):
+            ann.index(data)
+        ann.close()
+
+        self.assertEqual(features, [100, 10])
 
     @patch("sqlalchemy.orm.Query.limit")
     def testPGSparse(self, query):

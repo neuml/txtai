@@ -37,7 +37,7 @@ class TemplateTask(Task):
     def prepare(self, element):
         # Check if element matches any processing rules
         match = self.match(element)
-        if match:
+        if match is not None:
             return match
 
         # Apply template processing, if applicable
@@ -109,8 +109,7 @@ class RagTask(TemplateTask):
             params.pop("query", None)
             params["text"] = params.pop("question")
 
-            element["question"] = super().prepare(params)
-            return element
+            return {**element, "question": super().prepare(params)}
 
         # Default mode is to use element text for both query and question
         return {"query": element, "question": super().prepare(element)}

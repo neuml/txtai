@@ -208,10 +208,10 @@ class IVFSparse(ANN):
             cluster centroids
         """
 
-        # Select top n most important features that contribute to L2 vector norm
-        indices = np.argsort(-norm(train, axis=0))[: self.setting("nfeatures", 25)]
-        data = train[:, indices]
-        data = train
+        # Select top n most important features that contribute to L2 vector norm.
+        # nfeatures is opt-in: the full feature space is used when it isn't set.
+        nfeatures = self.setting("nfeatures")
+        data = train[:, np.argsort(-norm(train, axis=0))[:nfeatures]] if nfeatures else train
 
         # Cluster data using k-means
         kmeans = MiniBatchKMeans(n_clusters=clusters, random_state=0, n_init=5).fit(data)

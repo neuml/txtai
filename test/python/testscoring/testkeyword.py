@@ -164,6 +164,41 @@ class TestKeyword(unittest.TestCase):
             self.assertEqual(scoring.count(), 0)
             self.assertEqual(scoring.search("bear", 1), [])
 
+    def testWildcardEscapedCharacters(self):
+        """
+        Test explicit escaping while preserving SQL LIKE wildcard behavior
+        """
+
+        data = ["report_2026", "reportX2026", "rate%2026", "rateX2026", r"path\_2026", r"path\X2026", "path_2026", "plain2026", "plain2027"]
+        queries = [
+            ("report_*", {0, 1}),
+            (r"report\_*", {0}),
+            ("rate%*", {2, 3}),
+            (r"rate\%*", {2}),
+            (r"*\%2026", {2}),
+            ("*_2026", set(range(8))),
+            (r"*\_2026", {0, 4, 6}),
+            (r"path\\\_*", {4}),
+            (r"path\\*", {4, 5}),
+            ("plain*", {7, 8}),
+            ("pl**2026", {7}),
+            ("*2027", {8}),
+            ("rate%2026", {2}),
+            ("report_2026", {0}),
+            ("*", set()),
+        ]
+        for method in ["bm25", "tfidf", "sif"]:
+            scoring = ScoringFactory.create({"method": method, "terms": True, "tokenizer": {"whitespace": True}})
+            try:
+                scoring.index([(uid, text, None) for uid, text in enumerate(data)])
+                for query, expected in queries:
+                    with self.subTest(method=method, query=query):
+                        results = scoring.search(query, len(data))
+                        self.assertEqual({uid for uid, _ in results}, expected)
+                        self.assertEqual(len(results), len(expected))
+            finally:
+                scoring.close()
+
     def testDeleteUnknownId(self):
         """
         Test that deleting an id that was never indexed is a no-op, not a crash
@@ -202,6 +237,43 @@ class TestKeyword(unittest.TestCase):
         # Deleting the same id again is a no-op for the count
         scoring.delete([0])
         self.assertEqual(scoring.count(), total - 1)
+
+    def testDeleteMixedTerms(self):
+        """
+        Test that common term scoring cannot restore deleted keyword results
+        """
+
+        for method in ["bm25", "tfidf", "sif"]:
+            for content in [False, True]:
+                with self.subTest(method=method, content=content), tempfile.TemporaryDirectory() as directory:
+                    config = {"method": method, "terms": True, "content": content}
+                    scoring = ScoringFactory.create(config)
+                    try:
+                        # rare occurs in one document; common occurs in every document.
+                        scoring.index([(uid, "rare common" if uid == 0 else "common", None) for uid in range(20)])
+                        scoring.search("rare common", 20)
+                        scoring.delete([1])
+
+                        for persisted in [False, True]:
+                            if persisted:
+                                path = os.path.join(directory, "scoring")
+                                scoring.save(path)
+                                scoring.close()
+                                scoring = ScoringFactory.create(config)
+                                scoring.load(path)
+
+                            for query in ["rare", "common", "rare common"]:
+                                for limit in [3, 20]:
+                                    results = scoring.search(query, limit)
+                                    ids = [result["id"] if content else result[0] for result in results]
+                                    self.assertNotIn(1, ids)
+                                    self.assertEqual(len(ids), 1 if query == "rare" else min(limit, 19))
+                                    if query == "rare common":
+                                        self.assertEqual(ids[0], 0)
+
+                        self.assertEqual(scoring.count(), 19)
+                    finally:
+                        scoring.close()
 
     def testDeleteReinsert(self):
         """
