@@ -57,3 +57,8 @@ Sparse/keyword indexing
 | ------------------------------------------------------------- | ----------------------------------------------------------------------------- |
 | [Local index](https://www.sqlite.org/)                        | Metadata serialized with MessagePack. Terms stored in SQLite.                 |
 | [Postgres](https://www.postgresql.org/docs/current/textsearch.html) | Text indexed with Postgres Full Text Search (FTS)                             |
+
+Local keyword indexes store document IDs as MessagePack blobs in SQLite to preserve
+string and integer types. Legacy indexes with plain text IDs can still be loaded,
+using their existing integer-inference behavior. Indexes saved with serialized IDs
+require a version of txtai that supports this format.
