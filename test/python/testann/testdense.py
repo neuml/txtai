@@ -535,6 +535,96 @@ class TestDense(unittest.TestCase):
             # Close ANN
             ann.close()
 
+    def testRabitQ(self):
+        """
+        Test RabitQ backend
+        """
+
+        self.runTests("rabitq")
+
+    def testRabitQCustom(self):
+        """
+        Test RabitQ backend with custom settings
+        """
+
+        # Test with custom settings
+        self.runTests("rabitq", {"rabitq": {"mode": "hnsw"}}, False)
+        self.runTests("rabitq", {"rabitq": {"clusters": 8, "nprobe": 2}}, False)
+        self.runTests("rabitq", {"rabitq": {"nbits": 4}}, False)
+        self.runTests("rabitq", {"rabitq": {"mode": "hnsw", "nbits": 4}}, False)
+        self.runTests("rabitq", {"rabitq": {"nbits": 32}}, False)
+
+        # Generate dummy data
+        data = np.random.rand(100, 240).astype(np.float32)
+        self.normalize(data)
+
+        # Test invalid modes and quantization bits
+        for mode, nbits in [("invalid", 1), ("ivf", 10), ("hnsw", 32)]:
+            with self.assertRaises(ValueError):
+                ann = ANNFactory.create({"backend": "rabitq", "dimensions": 240, "rabitq": {"mode": mode, "nbits": nbits}})
+                ann.index(data)
+
+        # Test a failed load leaves an empty index
+        ann = ANNFactory.create({"backend": "rabitq", "dimensions": 240})
+        ann.index(data)
+        index = os.path.join(tempfile.gettempdir(), f"rabitq.invalid.{round(time.time() * 1000)}")
+        ann.save(index)
+        ann.config["rabitq"] = {"mode": "invalid"}
+        with self.assertRaises(ValueError):
+            ann.load(index)
+        self.assertEqual(ann.count(), 0)
+
+    def testRabitQDelete(self):
+        """
+        Test RabitQ deletes mark rows without rebuilding the index
+        """
+
+        # Generate dummy data
+        data = np.random.rand(100, 240).astype(np.float32)
+        self.normalize(data)
+
+        for mode in ["ivf", "hnsw"]:
+            # Probe all clusters so ivf searches can fill the limit
+            ann = ANNFactory.create({"backend": "rabitq", "dimensions": 240, "rabitq": {"mode": mode, "nprobe": 100}})
+            ann.index(data)
+            backend = ann.backend
+
+            # Empty deletes are ignored
+            ann.delete([])
+            self.assertEqual(ann.count(), 100)
+
+            # Deleted rows are skipped by search and the limit is still filled
+            ann.delete([0, 1])
+            self.assertIs(ann.backend, backend)
+            self.assertEqual(ann.count(), 98)
+            for result in ann.search(data[:2], 10):
+                self.assertEqual(len(result), 10)
+                self.assertFalse({0, 1} & {uid for uid, _ in result})
+
+            # Deletes are kept after a save and reload
+            index = os.path.join(tempfile.gettempdir(), f"rabitq.{mode}.{round(time.time() * 1000)}")
+            ann.save(index)
+            ann.load(index)
+            self.assertEqual(ann.count(), 98)
+            ann.delete([2])
+            self.assertEqual(ann.count(), 97)
+
+            # Append rebuilds the index without the deleted rows
+            ann.append(data[:1])
+            self.assertEqual(ann.vectors.shape[0], 98)
+            self.assertEqual(ann.count(), 98)
+
+            # Rebuild once deleted rows outnumber live rows
+            ann.delete(list(range(3, 60)))
+            self.assertEqual(ann.vectors.shape[0], ann.count())
+            self.assertEqual(ann.count(), 41)
+
+            # Deleting all rows leaves an empty index, deletes on an empty index are ignored
+            ann.delete(list(range(200)))
+            ann.delete([0])
+            self.assertEqual(ann.count(), 0)
+            self.assertEqual(ann.search(data[:1], 10), [[]])
+
     @unittest.skipIf(platform.system() == "Darwin", "SQLite extensions not supported on macOS")
     def testSQLite(self):
         """

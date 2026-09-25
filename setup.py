@@ -62,6 +62,7 @@ extras["ann"] = [
     "hnswlib>=0.5.0",
     "milvus-lite>=3.1.1",
     "pgvector>=0.4.1",
+    "rabitqlib>=0.3.9",
     "scikit-learn>=0.23.1",
     "scipy>=1.4.1",
     "sqlalchemy>=2.0.20",

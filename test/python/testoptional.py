@@ -56,6 +56,7 @@ class TestOptional(unittest.TestCase):
             "peft",
             "pgvector",
             "PIL",
+            "rabitqlib",
             "rich",
             "scipy",
             "scipy.sparse",
@@ -138,6 +139,9 @@ class TestOptional(unittest.TestCase):
 
         with self.assertRaises(ImportError):
             ANNFactory.create({"backend": "pgvector"})
+
+        with self.assertRaises(ImportError):
+            ANNFactory.create({"backend": "rabitq"})
 
         with self.assertRaises(ImportError):
             ANNFactory.create({"backend": "sqlite"})

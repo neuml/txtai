@@ -4,7 +4,7 @@ Approximate Nearest Neighbor (ANN) index configuration for storing vector embedd
 
 ## backend
 ```yaml
-backend: faiss|hnsw|annoy|ggml|milvus|numpy|torch|turbovec|zvec|pgvector|sqlite|custom
+backend: faiss|hnsw|annoy|ggml|milvus|numpy|rabitq|torch|turbovec|zvec|pgvector|sqlite|custom
 ```
 
 Sets the ANN backend. Defaults to `faiss`. Additional backends are available via the [ann](../../../install/#ann) extras package. Set custom backends via setting this parameter to the fully resolvable class string.
@@ -90,6 +90,26 @@ numpy:
 ```
 
 The NumPy backend is a k-nearest neighbors backend. It's designed for simplicity and works well with smaller datasets that fit into memory.
+
+### rabitq
+
+```yaml
+rabitq:
+    mode: index mode (ivf or hnsw) - defaults to "ivf"
+    nbits: number of quantization bits per dimension (int) - defaults to 1,
+           supports 1 to 9 in both modes, ivf mode also supports 32 which
+           keeps raw vectors for reranking
+    clusters: number of IVF clusters (int) - defaults to
+              max(1, min(round(4 * sqrt(embeddings count)), embeddings count))
+    nprobe: search probe setting for ivf mode (int) - defaults to
+            max(1, round(num_clusters/16))
+    m: M param for hnsw mode (int) - defaults to 16
+    efconstruction: ef_construction param for hnsw mode (int) - defaults to 200
+    efsearch: ef search param for hnsw mode (int) - defaults to None and not set
+    randomseed: random-seed param for hnsw mode (int) - defaults to 100
+```
+
+The [rabitq](https://github.com/VectorDB-NTU/RaBitQ-Library) backend is a quantized index powered by the [RaBitQ algorithm](https://doi.org/10.1145/3725413). It supports ivf and hnsw search modes. Vectors are stored with 1-bit quantization by default. More bits increase accuracy at the cost of memory.
 
 ### torch
 
