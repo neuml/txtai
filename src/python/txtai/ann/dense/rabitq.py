@@ -4,7 +4,6 @@ RabitQ module
 
 import math
 import os
-import shutil
 import tempfile
 
 # Conditional import
@@ -41,8 +40,6 @@ class RabitQ(ANN):
         if not RABITQ:
             raise ImportError('rabitqlib is not available - install "ann" extra to enable')
 
-        self.directory = None
-
         # Retained corpus: native indexes have no append/delete so both operations rebuild from these rows
         self.vectors = None
         self.ids = None
@@ -50,26 +47,28 @@ class RabitQ(ANN):
 
     def load(self, path):
         self.close()
-        self.directory = tempfile.mkdtemp()
 
         try:
-            archive = ArchiveFactory.create(self.directory)
-            archive.load(path, "tar")
+            # rabitqlib reads the whole index into memory, so the extracted files are only needed while loading
+            with tempfile.TemporaryDirectory() as directory:
+                archive = ArchiveFactory.create(directory)
+                archive.load(path, "tar")
 
-            # Retained corpus tensors plus index metadata
-            with safetensors.safe_open(os.path.join(self.directory, "vectors.safetensors"), framework="np") as f:
-                metadata = f.metadata() if f.metadata() else {}
-                self.vectors = np.ascontiguousarray(f.get_tensor("vectors"), dtype=np.float32)
-                self.ids = np.ascontiguousarray(f.get_tensor("ids"), dtype=np.int64)
+                # Retained corpus tensors plus index metadata
+                with safetensors.safe_open(os.path.join(directory, "vectors.safetensors"), framework="np") as f:
+                    metadata = f.metadata() if f.metadata() else {}
+                    self.vectors = np.ascontiguousarray(f.get_tensor("vectors"), dtype=np.float32)
+                    self.ids = np.ascontiguousarray(f.get_tensor("ids"), dtype=np.int64)
 
-            self.numclusters = int(metadata.get("clusters", 0))
+                self.numclusters = int(metadata.get("clusters", 0))
 
-            # Mode comes from the current config, falling back to the saved snapshot. Invalid modes raise ValueError here, before native code runs.
-            mode = self.mode(metadata.get("mode", "ivf"))
+                # Mode comes from the current config, falling back to the saved snapshot. Invalid modes raise ValueError before native code runs.
+                mode = self.mode(metadata.get("mode", "ivf"))
 
-            native = os.path.join(self.directory, "index.bin")
-            if os.path.exists(native):
-                self.backend = IvfIndex.load(native) if mode == "ivf" else HnswIndex.load(native)
+                # Empty indexes are saved without a native index file
+                native = os.path.join(directory, "index.bin")
+                if os.path.exists(native):
+                    self.backend = IvfIndex.load(native) if mode == "ivf" else HnswIndex.load(native)
 
             # Default the offset for snapshots that don't have it
             self.config["offset"] = int(metadata.get("offset", len(self.ids)))
@@ -82,8 +81,6 @@ class RabitQ(ANN):
 
         # Mode is validated before any state is stored
         mode = self.mode()
-
-        self.directory = tempfile.mkdtemp()
 
         self.vectors = np.ascontiguousarray(embeddings, dtype=np.float32)
         self.ids = np.arange(self.vectors.shape[0], dtype=np.int64)
@@ -151,37 +148,26 @@ class RabitQ(ANN):
         return len(self.ids) if self.ids is not None else 0
 
     def save(self, path):
-        native = os.path.join(self.directory, "index.bin")
-        if self.backend is not None:
-            self.backend.save(native)
-            self.backend = None
-        elif os.path.exists(native):
-            # Empty index: drop the stale native file so reloads don't resurrect deleted rows
-            os.remove(native)
+        # Stage the native index and the retained corpus, then bundle both into a single tar file
+        with tempfile.TemporaryDirectory() as directory:
+            # Empty indexes have no native index to save
+            if self.backend is not None:
+                self.backend.save(os.path.join(directory, "index.bin"))
 
-        # Save retained corpus tensors, safetensors metadata values must be strings
-        safetensors.numpy.save_file(
-            {"vectors": self.vectors, "ids": self.ids},
-            os.path.join(self.directory, "vectors.safetensors"),
-            {"mode": self.mode(), "clusters": str(self.numclusters), "offset": str(self.config.get("offset", len(self.ids)))},
-        )
+            # Save retained corpus tensors, safetensors metadata values must be strings
+            safetensors.numpy.save_file(
+                {"vectors": self.vectors, "ids": self.ids},
+                os.path.join(directory, "vectors.safetensors"),
+                {"mode": self.mode(), "clusters": str(self.numclusters), "offset": str(self.config.get("offset", len(self.ids)))},
+            )
 
-        archive = ArchiveFactory.create(self.directory)
-        archive.save(path, "tar")
-
-        # Reopen the native index after archiving
-        if os.path.exists(native):
-            mode = self.mode()
-            self.backend = IvfIndex.load(native) if mode == "ivf" else HnswIndex.load(native)
+            archive = ArchiveFactory.create(directory)
+            archive.save(path, "tar")
 
     def close(self):
         # Parent logic releases the backend
         super().close()
 
-        if self.directory and os.path.exists(self.directory):
-            shutil.rmtree(self.directory)
-
-        self.directory = None
         self.vectors = None
         self.ids = None
         self.numclusters = 0
