@@ -554,11 +554,25 @@ class TestDense(unittest.TestCase):
         self.runTests("rabitq", {"rabitq": {"mode": "hnsw", "nbits": 4}}, False)
         self.runTests("rabitq", {"rabitq": {"nbits": 32}}, False)
 
-        # Test invalid quantization bits
-        for mode, nbits in [("ivf", 10), ("hnsw", 32)]:
+        # Generate dummy data
+        data = np.random.rand(100, 240).astype(np.float32)
+        self.normalize(data)
+
+        # Test invalid modes and quantization bits
+        for mode, nbits in [("invalid", 1), ("ivf", 10), ("hnsw", 32)]:
             with self.assertRaises(ValueError):
                 ann = ANNFactory.create({"backend": "rabitq", "dimensions": 240, "rabitq": {"mode": mode, "nbits": nbits}})
-                ann.index(np.random.rand(100, 240).astype(np.float32))
+                ann.index(data)
+
+        # Test a failed load leaves an empty index
+        ann = ANNFactory.create({"backend": "rabitq", "dimensions": 240})
+        ann.index(data)
+        index = os.path.join(tempfile.gettempdir(), f"rabitq.invalid.{round(time.time() * 1000)}")
+        ann.save(index)
+        ann.config["rabitq"] = {"mode": "invalid"}
+        with self.assertRaises(ValueError):
+            ann.load(index)
+        self.assertEqual(ann.count(), 0)
 
     def testRabitQDelete(self):
         """
@@ -574,6 +588,10 @@ class TestDense(unittest.TestCase):
             ann = ANNFactory.create({"backend": "rabitq", "dimensions": 240, "rabitq": {"mode": mode, "nprobe": 100}})
             ann.index(data)
             backend = ann.backend
+
+            # Empty deletes are ignored
+            ann.delete([])
+            self.assertEqual(ann.count(), 100)
 
             # Deleted rows are skipped by search and the limit is still filled
             ann.delete([0, 1])
@@ -601,8 +619,9 @@ class TestDense(unittest.TestCase):
             self.assertEqual(ann.vectors.shape[0], ann.count())
             self.assertEqual(ann.count(), 41)
 
-            # Deleting all rows leaves an empty index
+            # Deleting all rows leaves an empty index, deletes on an empty index are ignored
             ann.delete(list(range(200)))
+            ann.delete([0])
             self.assertEqual(ann.count(), 0)
             self.assertEqual(ann.search(data[:1], 10), [[]])
 
