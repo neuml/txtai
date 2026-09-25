@@ -828,7 +828,7 @@ class TestDense(unittest.TestCase):
         model = self.backend(name, params)
 
         # Generate temp file path
-        index = os.path.join(tempfile.gettempdir(), "ann")
+        index = os.path.join(tempfile.gettempdir(), f"ann.{name}")
 
         # Generate query vector
         query = np.random.rand(240).astype(np.float32)
