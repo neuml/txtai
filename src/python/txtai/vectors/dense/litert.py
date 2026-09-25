@@ -13,7 +13,7 @@ try:
 except ImportError:
     LITERT = False
 
-from ...util import Download, Library
+from ...util import Download, DownloadError, Library
 
 from ..base import Vectors
 
@@ -55,7 +55,16 @@ class LiteRT(Vectors):
         tokenizer = self.config.get("tokenizer")
         if not tokenizer:
             tokenizer = os.path.dirname(path) + "/" + "tokenizer.json"
-            tokenizer = tokenizer if os.path.exists(tokenizer) else Download()(tokenizer)
+            try:
+                tokenizer = tokenizer if os.path.exists(tokenizer) else Download()(tokenizer)
+
+            # Model is in a subdirectory of a HF Hub repo, read the tokenizer from the repo root
+            except DownloadError:
+                # Local models don't have a HF Hub repo root
+                if os.path.exists(path):
+                    raise
+
+                tokenizer = Download()("/".join(path.split("/")[:2]), "tokenizer.json")
 
         # Load tokenizer and model
         tokenizer = Tokenizer.from_file(tokenizer) if os.path.exists(tokenizer) else Tokenizer.from_pretrained(tokenizer)
