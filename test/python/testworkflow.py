@@ -164,43 +164,60 @@ class TestWorkflow(unittest.TestCase):
 
     def testIteratorActions(self):
         """
-        Test that every action receives all iterator inputs for each merge mode
+        Test multi-action tasks reject iterators without consuming inputs or running actions
         """
 
-        expected = {"hstack": [(2, 10), (3, 20)], "vstack": [2, 10, 3, 20], "concat": ["2. 10", "3. 20"], None: [[2, 3], [10, 20]]}
-        for merge, result in expected.items():
-            for generator in [False, True]:
-                with self.subTest(merge=merge, generator=generator):
-                    elements = (x for x in [1, 2]) if generator else iter([1, 2])
-                    task = Task([lambda values: [x + 1 for x in values], lambda values: [x * 10 for x in values]], merge=merge)
-                    self.assertEqual(task(elements), result)
+        for merge, generator in product(["hstack", "vstack", "concat", None], [False, True]):
+            with self.subTest(merge=merge, generator=generator):
+                elements = (x for x in [1, 2]) if generator else iter([1, 2])
+                calls = []
+                task = Task([lambda values, calls=calls: calls.append(True) or list(values)] * 2, merge=merge)
+                with self.assertRaisesRegex(ValueError, "Iterator inputs are not supported for multi-action tasks"):
+                    task(elements)
+                self.assertEqual(calls, [])
+                self.assertEqual(list(elements), [1, 2])
 
     def testIteratorColumns(self):
         """
-        Test per-action column selection reuses iterator inputs
+        Test iterators are rejected before extracting per-action columns
         """
 
+        elements = iter([(1, 10), (2, 20)])
         task = Task([list, list], column={0: 0, 1: 1}, unpack=False)
-        self.assertEqual(task(iter([(1, 10), (2, 20)])), [(1, 10), (2, 20)])
+        with self.assertRaisesRegex(ValueError, "Iterator inputs are not supported for multi-action tasks"):
+            task(elements)
+        self.assertEqual(list(elements), [(1, 10), (2, 20)])
 
     def testIteratorSingleAction(self):
         """
-        Test that single actions can still consume iterator inputs on demand
+        Test single-action and no-action tasks retain lazy iterator inputs
         """
 
         elements = iter([1, 2, 3])
+        self.assertIs(Task()(elements), elements)
         self.assertEqual(Task(lambda values: [next(values)])(elements), [1])
         self.assertEqual(list(elements), [2, 3])
 
     def testStreamMultiActionWorkflow(self):
         """
-        Test stream outputs feed all downstream actions across workflow batches
+        Test streamed inputs fail before downstream sequential or concurrent actions run
         """
 
         for concurrency in [None, "thread", "process"]:
             with self.subTest(concurrency=concurrency):
                 workflow = Workflow([StreamTask(lambda value: iter([value])), Task([Nop(), Nop()], concurrency=concurrency)], batch=2)
-                self.assertEqual(list(workflow([1, 2, 3])), [(1, 1), (2, 2), (3, 3)])
+                with self.assertRaisesRegex(ValueError, "Iterator inputs are not supported for multi-action tasks"):
+                    list(workflow([1, 2, 3]))
+
+    def testIteratorWorkflowBatches(self):
+        """
+        Test workflow-level iterators remain supported through bounded batches
+        """
+
+        for concurrency in [None, "thread", "process"]:
+            with self.subTest(concurrency=concurrency):
+                workflow = Workflow([Task([Nop(), Nop()], concurrency=concurrency)], batch=2)
+                self.assertEqual(list(workflow(iter([1, 2, 3]))), [(1, 1), (2, 2), (3, 3)])
 
     def testConsoleWorkflow(self):
         """

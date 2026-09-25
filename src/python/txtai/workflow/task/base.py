@@ -267,17 +267,20 @@ class Task:
         Executes action(s) on elements.
 
         Args:
-            elements: list of data elements
+            elements: iterable data elements
             executor: execute instance, enables concurrent task actions
 
         Returns:
             transformed data elements
+
+        Raises:
+            ValueError: if iterator inputs are passed to a multi-action task
         """
 
         if self.action:
-            # Multiple actions must be able to read the same iterator inputs.
+            # Reject single-pass inputs without consuming or buffering them.
             if len(self.action) > 1 and isinstance(elements, Iterator):
-                elements = list(elements)
+                raise ValueError("Iterator inputs are not supported for multi-action tasks")
 
             # Run actions
             outputs = []

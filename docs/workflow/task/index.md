@@ -42,6 +42,19 @@ workflow:
 
 ::: txtai.workflow.Task.__init__
 
+## Multi-action task inputs
+
+A multi-action `Task` requires reusable inputs. Passing a single-pass iterator, such as a generator or the output of a `StreamTask`, raises a `ValueError` before consuming inputs or running any actions. Automatically buffering an iterator could exhaust memory, so tasks do not convert these inputs to a list.
+
+Iterators passed to a `Workflow` remain supported: the workflow collects bounded batches before passing them to its tasks. For example:
+
+```python
+workflow = Workflow([Task([list, list])], batch=2)
+list(workflow(iter([1, 2, 3])))  # [(1, 1), (2, 2), (3, 3)]
+```
+
+This batching occurs at the workflow input; it does not batch iterator outputs produced by tasks inside that workflow. Single-action tasks continue to accept iterator inputs.
+
 ## Multi-action task concurrency
 
 The default processing mode is to run actions sequentially. Multiprocessing support is already built in at a number of levels. Any of the GPU models will maximize GPU utilization for example and even in CPU mode, concurrency is utilized. But there are still use cases for task action concurrency. For example, if the system has multiple GPUs, the task runs external sequential code, or the task has a large number of I/O tasks.
