@@ -28,6 +28,9 @@ safetensors = library.safetensors()
 # Sentinel for unfilled top-k slots in native search results
 SENTINEL = 0xFFFFFFFF
 
+# External id for rows marked as deleted
+DELETED = -1
+
 
 class RabitQ(ANN):
     """
@@ -40,7 +43,7 @@ class RabitQ(ANN):
         if not RABITQ:
             raise ImportError('rabitqlib is not available - install "ann" extra to enable')
 
-        # Retained corpus: native indexes have no append/delete so both operations rebuild from these rows
+        # Retained corpus: native indexes have no append/delete, appends rebuild from these rows and deletes mark rows until the next rebuild
         self.vectors = None
         self.ids = None
         self.numclusters = 0
@@ -58,7 +61,7 @@ class RabitQ(ANN):
                 with safetensors.safe_open(os.path.join(directory, "vectors.safetensors"), framework="np") as f:
                     metadata = f.metadata() if f.metadata() else {}
                     self.vectors = np.ascontiguousarray(f.get_tensor("vectors"), dtype=np.float32)
-                    self.ids = np.ascontiguousarray(f.get_tensor("ids"), dtype=np.int64)
+                    self.ids = np.array(f.get_tensor("ids"), dtype=np.int64)
 
                 self.numclusters = int(metadata.get("clusters", 0))
 
@@ -105,19 +108,15 @@ class RabitQ(ANN):
         self.metadata()
 
     def delete(self, ids):
-        if not ids:
+        if not ids or not self.count():
             return
 
-        # Keep rows whose external id is not deleted. Unknown ids match nothing and are silently ignored.
-        doomed = set(ids)
-        keep = np.array([x not in doomed for x in self.ids.tolist()], dtype=bool)
-        if keep.all():
-            return
+        # Mark rows as deleted, search skips them. Unknown ids match nothing and are silently ignored.
+        self.ids[np.isin(self.ids, np.array(ids, dtype=np.int64))] = DELETED
 
-        self.vectors = np.ascontiguousarray(self.vectors[keep], dtype=np.float32)
-        self.ids = self.ids[keep]
-
-        self.build()
+        # Rebuild once deleted rows outnumber live rows, this bounds search overfetch
+        if self.count() < len(self.ids) - self.count():
+            self.build()
 
     def search(self, queries, limit):
         count = self.count()
@@ -126,8 +125,8 @@ class RabitQ(ANN):
 
         queries = np.ascontiguousarray(queries, dtype=np.float32)
 
-        # Clamp k to the live row count as the native index errors when k exceeds it
-        k = min(limit, count)
+        # Overfetch by the number of deleted rows, clamped to the native row count as the native index errors when k exceeds it
+        k = min(limit + len(self.ids) - count, len(self.ids))
 
         mode = self.mode()
         if mode == "ivf":
@@ -137,15 +136,16 @@ class RabitQ(ANN):
             ef = self.setting("efsearch", None)
             ids, distances = self.backend.search(queries, k, ef or 0)
 
-        # Map results to [(id, score)], dropping unfilled sentinel slots
+        # Map results to [(id, score)], dropping unfilled sentinel slots and deleted rows
         results = []
         for pids, dists in zip(ids.tolist(), distances.tolist()):
-            results.append([(int(self.ids[pid]), float(1.0 - dist)) for pid, dist in zip(pids, dists) if pid != SENTINEL])
+            result = [(int(self.ids[pid]), float(1.0 - dist)) for pid, dist in zip(pids, dists) if pid != SENTINEL and self.ids[pid] != DELETED]
+            results.append(result[:limit])
 
         return results
 
     def count(self):
-        return len(self.ids) if self.ids is not None else 0
+        return int(np.count_nonzero(self.ids != DELETED)) if self.ids is not None else 0
 
     def save(self, path):
         # Stage the native index and the retained corpus, then bundle both into a single tar file
@@ -219,8 +219,13 @@ class RabitQ(ANN):
 
     def build(self):
         """
-        Builds the native index from the retained corpus.
+        Builds the native index from the retained corpus, dropping rows marked as deleted.
         """
+
+        live = self.ids != DELETED
+        if not live.all():
+            self.vectors = np.ascontiguousarray(self.vectors[live], dtype=np.float32)
+            self.ids = self.ids[live]
 
         rows = self.vectors.shape[0]
         if not rows:

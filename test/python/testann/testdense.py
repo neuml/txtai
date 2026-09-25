@@ -560,34 +560,51 @@ class TestDense(unittest.TestCase):
                 ann = ANNFactory.create({"backend": "rabitq", "dimensions": 240, "rabitq": {"mode": mode, "nbits": nbits}})
                 ann.index(np.random.rand(100, 240).astype(np.float32))
 
-        ann = ANNFactory.create({"backend": "rabitq", "dimensions": 240})
+    def testRabitQDelete(self):
+        """
+        Test RabitQ deletes mark rows without rebuilding the index
+        """
 
-        # Generate and index dummy data
+        # Generate dummy data
         data = np.random.rand(100, 240).astype(np.float32)
         self.normalize(data)
-        ann.index(data)
 
-        # Validate count
-        self.assertEqual(ann.count(), 100)
+        for mode in ["ivf", "hnsw"]:
+            # Probe all clusters so ivf searches can fill the limit
+            ann = ANNFactory.create({"backend": "rabitq", "dimensions": 240, "rabitq": {"mode": mode, "nprobe": 100}})
+            ann.index(data)
+            backend = ann.backend
 
-        # Test delete
-        ann.delete([0])
-        self.assertEqual(ann.count(), 99)
+            # Deleted rows are skipped by search and the limit is still filled
+            ann.delete([0, 1])
+            self.assertIs(ann.backend, backend)
+            self.assertEqual(ann.count(), 98)
+            for result in ann.search(data[:2], 10):
+                self.assertEqual(len(result), 10)
+                self.assertFalse({0, 1} & {uid for uid, _ in result})
 
-        # Save updated index with deletes and reload
-        index = os.path.join(tempfile.gettempdir(), "rabitq.deletes")
-        ann.save(index)
-        ann.load(index)
-        self.assertEqual(ann.count(), 99)
+            # Deletes are kept after a save and reload
+            index = os.path.join(tempfile.gettempdir(), f"rabitq.{mode}.{round(time.time() * 1000)}")
+            ann.save(index)
+            ann.load(index)
+            self.assertEqual(ann.count(), 98)
+            ann.delete([2])
+            self.assertEqual(ann.count(), 97)
 
-        # Append data to the loaded index
-        ann.append(data[:10])
-        self.assertEqual(ann.count(), 109)
+            # Append rebuilds the index without the deleted rows
+            ann.append(data[:1])
+            self.assertEqual(ann.vectors.shape[0], 98)
+            self.assertEqual(ann.count(), 98)
 
-        # Generate query vector and test search
-        query = np.random.rand(240).astype(np.float32)
-        self.normalize(query)
-        self.assertGreater(ann.search(np.array([query]), 1)[0][0][1], 0)
+            # Rebuild once deleted rows outnumber live rows
+            ann.delete(list(range(3, 60)))
+            self.assertEqual(ann.vectors.shape[0], ann.count())
+            self.assertEqual(ann.count(), 41)
+
+            # Deleting all rows leaves an empty index
+            ann.delete(list(range(200)))
+            self.assertEqual(ann.count(), 0)
+            self.assertEqual(ann.search(data[:1], 10), [[]])
 
     @unittest.skipIf(platform.system() == "Darwin", "SQLite extensions not supported on macOS")
     def testSQLite(self):
