@@ -577,6 +577,31 @@ class TestDense(unittest.TestCase):
         self.assertEqual(model.count(), expected)
 
     @unittest.skipIf(platform.system() == "Darwin", "SQLite extensions not supported on macOS")
+    @unittest.skipIf(os.name == "nt", "SQLite copy skipped on Windows due to file locking")
+    def testSQLiteSaveExistingPath(self):
+        """
+        Test saving a SQLite index to an existing path and overwriting the existing database
+        """
+
+        # Test saving to a new path
+        model = self.backend("sqlite")
+        expected = model.count() - 1
+
+        # Test save variations
+        index = os.path.join(tempfile.gettempdir(), "ann.sqlite.existing")
+
+        # Save new
+        model.save(index)
+
+        # Delete id
+        model.delete([0])
+
+        # Save to same path
+        model.save(index)
+
+        self.assertEqual(model.count(), expected)
+
+    @unittest.skipIf(platform.system() == "Darwin", "SQLite extensions not supported on macOS")
     def testSQLiteSaveNewPath(self):
         """
         Test saving a loaded and modified SQLite index to a new path, then loading the new copy
@@ -608,6 +633,7 @@ class TestDense(unittest.TestCase):
             self.assertEqual(len(model.search(np.random.rand(1, 240).astype(np.float32), 10)[0]), 10)
             model.close()
 
+    @unittest.skipIf(platform.system() == "Darwin", "SQLite extensions not supported on macOS")
     def testSQLiteQuantizeDisabled(self):
         """
         Test that quantize: false disables SQLite storage quantization
