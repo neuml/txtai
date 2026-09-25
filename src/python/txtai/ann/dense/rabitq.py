@@ -10,6 +10,7 @@ import tempfile
 # Conditional import
 try:
     from rabitqlib import HnswIndex, IvfIndex
+    from sklearn.cluster import KMeans
 
     RABITQ = True
 except ImportError:
@@ -240,9 +241,6 @@ class RabitQ(ANN):
             self.backend = None
             self.numclusters = 0
             return
-
-        # pylint: disable=C0415
-        from sklearn.cluster import KMeans
 
         mode = self.mode()
         dim = self.config["dimensions"]
