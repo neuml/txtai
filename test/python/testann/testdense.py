@@ -22,7 +22,7 @@ from txtai.ann.dense.ggml import GGMLTensors
 from txtai.serialize import SerializeFactory
 
 
-# pylint: disable=R0904
+# pylint: disable=C0302,R0904
 class TestDense(unittest.TestCase):
     """
     Dense ANN tests.
@@ -675,13 +675,16 @@ class TestDense(unittest.TestCase):
 
         # Test saving to a new path
         model = self.backend("sqlite")
-        expected = model.count() - 1
 
         # Test save variations
         index = os.path.join(tempfile.gettempdir(), "ann.sqlite.existing")
 
         # Save new
         model.save(index)
+
+        # Test saving to a new path
+        model = self.backend("sqlite")
+        expected = model.count() - 1
 
         # Delete id
         model.delete([0])
