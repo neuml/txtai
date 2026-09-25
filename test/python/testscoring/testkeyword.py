@@ -3,6 +3,7 @@ Keyword scoring tests
 """
 
 import os
+import sqlite3
 import tempfile
 import unittest
 
@@ -163,6 +164,82 @@ class TestKeyword(unittest.TestCase):
             scoring = self.save(scoring, config, f"scoring.{method}.empty")
             self.assertEqual(scoring.count(), 0)
             self.assertEqual(scoring.search("bear", 1), [])
+
+    def testTermsIdRoundTrip(self):
+        """
+        Test that saving and loading preserves keyword document IDs and their content
+        """
+
+        texts = ["orchard apple", "coastal ocean", "forest trail"]
+        cases = [["001", "1", "01"], [0, 1, -1], [1, "1", "notes"], ["²", "³", "¹"], [0, 1, 2], ["one", "two", "three"]]
+        for method in ["bm25", "tfidf", "sif"]:
+            for content in [False, True]:
+                for ids in cases:
+                    with self.subTest(method=method, content=content, ids=ids), tempfile.TemporaryDirectory() as directory:
+                        config = {"method": method, "terms": True, "content": content}
+                        scoring = ScoringFactory.create(config)
+                        try:
+                            scoring.index([(uid, text, None) for uid, text in zip(ids, texts)])
+                            expected = scoring.batchsearch(texts)
+                            path, copy = os.path.join(directory, "index"), os.path.join(directory, "copy")
+
+                            # Cover an initial save, an in-place save and a copy to a different path.
+                            for target in [path, path, copy]:
+                                scoring.save(target)
+                                scoring.close()
+                                scoring = ScoringFactory.create(config)
+                                scoring.load(target)
+                                self.assertEqual(scoring.batchsearch(texts), expected)
+
+                            # IDs must still identify the same document when deleting after a reload.
+                            scoring.delete([ids[0]])
+                            scoring.save(copy)
+                            scoring.close()
+                            scoring = ScoringFactory.create(config)
+                            scoring.load(copy)
+                            self.assertEqual(scoring.count(), 2)
+                            self.assertEqual(scoring.search(texts[0]), [])
+                            self.assertEqual(scoring.batchsearch(texts[1:]), expected[1:])
+                        finally:
+                            scoring.close()
+
+    def testTermsLegacyIds(self):
+        """
+        Test reading legacy text IDs and saving additional documents into those indexes
+        """
+
+        texts = ["orchard apple", "coastal ocean"]
+        for ids in [[0, 1], ["one", "two"]]:
+            for content in [False, True]:
+                with self.subTest(ids=ids, content=content), tempfile.TemporaryDirectory() as directory:
+                    config = {"method": "bm25", "terms": True, "content": content}
+                    scoring = ScoringFactory.create(config)
+                    try:
+                        scoring.index([(uid, text, None) for uid, text in zip(ids, texts)])
+                        expected = scoring.batchsearch(texts)
+                        path = os.path.join(directory, "index")
+                        scoring.save(path)
+                        scoring.close()
+
+                        # Older indexes stored IDs as plain SQLite TEXT, without type information.
+                        with sqlite3.connect(path + ".terms") as connection:
+                            connection.executemany("UPDATE documents SET id = ? WHERE indexid = ?", [(str(uid), i) for i, uid in enumerate(ids)])
+                        connection.close()
+
+                        scoring = ScoringFactory.create(config)
+                        scoring.load(path)
+                        self.assertEqual(scoring.batchsearch(texts), expected)
+
+                        scoring.upsert([("003", "forest trail", None)])
+                        expected = scoring.batchsearch([*texts, "forest trail"])
+                        scoring.save(path)
+                        scoring.close()
+                        scoring = ScoringFactory.create(config)
+                        scoring.load(path)
+                        self.assertEqual(scoring.count(), 3)
+                        self.assertEqual(scoring.batchsearch([*texts, "forest trail"]), expected)
+                    finally:
+                        scoring.close()
 
     def testWildcardEscapedCharacters(self):
         """
