@@ -9,6 +9,7 @@ from .hnsw import HNSW
 from .milvus import Milvus
 from .numpy import NumPy
 from .pgvector import PGVector
+from .rabitq import RabitQ
 from .torch import Torch
 from .turbovec import TurboVec
 from .zvec import Zvec

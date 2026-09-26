@@ -109,8 +109,7 @@ class RagTask(TemplateTask):
             params.pop("query", None)
             params["text"] = params.pop("question")
 
-            element["question"] = super().prepare(params)
-            return element
+            return {**element, "question": super().prepare(params)}
 
         # Default mode is to use element text for both query and question
         return {"query": element, "question": super().prepare(element)}

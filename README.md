@@ -49,7 +49,7 @@ Summary of txtai features:
 - 🔋 Batteries included with defaults to get up and running fast
 - ☁️ Run local or scale out with container orchestration
 
-txtai is built with Python 3.10+, [Hugging Face Transformers](https://github.com/huggingface/transformers), [Sentence Transformers](https://github.com/UKPLab/sentence-transformers) and [FastAPI](https://github.com/tiangolo/fastapi). txtai is open-source under an Apache 2.0 license.
+txtai is built with Python 3.11+, [Hugging Face Transformers](https://github.com/huggingface/transformers), [Sentence Transformers](https://github.com/UKPLab/sentence-transformers) and [FastAPI](https://github.com/tiangolo/fastapi). txtai is open-source under an Apache 2.0 license.
 
 > [!NOTE]
 >
@@ -190,7 +190,7 @@ The easiest way to install is via pip and PyPI
 pip install txtai
 ```
 
-Python 3.10+ is supported. Using a Python [virtual environment](https://docs.python.org/3/library/venv.html) is recommended.
+Python 3.11+ is supported. Using a Python [virtual environment](https://docs.python.org/3/library/venv.html) is recommended.
 
 See the detailed [install instructions](https://neuml.github.io/txtai/install) for more information covering [optional dependencies](https://neuml.github.io/txtai/install/#optional-dependencies), [environment specific prerequisites](https://neuml.github.io/txtai/install/#environment-specific-prerequisites), [installing from source](https://neuml.github.io/txtai/install/#install-from-source), [conda support](https://neuml.github.io/txtai/install/#conda), [lightweight minimal installation](https://neuml.github.io/txtai/install/#minimal-install) and how to [run with containers](https://neuml.github.io/txtai/cloud).
 
