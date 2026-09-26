@@ -60,8 +60,8 @@ class NumPy(ANN):
         self.metadata()
 
     def delete(self, ids):
-        # Filter any index greater than size of array
-        ids = [x for x in ids if x < self.backend.shape[0]]
+        # Ignore IDs outside the array; negative IDs must not wrap to live rows.
+        ids = [x for x in ids if 0 <= x < self.backend.shape[0]]
 
         # Clear specified ids, zeros must match the array data type (e.g. uint8 for quantized data)
         self.backend[ids] = self.tensor(self.zeros((len(ids), self.backend.shape[1]), dtype=self.backend.dtype))
