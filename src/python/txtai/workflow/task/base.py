@@ -6,6 +6,8 @@ import logging
 import re
 import types
 
+from collections.abc import Iterator
+
 # Core library imports
 from ...util import Library
 
@@ -265,14 +267,21 @@ class Task:
         Executes action(s) on elements.
 
         Args:
-            elements: list of data elements
+            elements: iterable data elements
             executor: execute instance, enables concurrent task actions
 
         Returns:
             transformed data elements
+
+        Raises:
+            ValueError: if iterator inputs are passed to a multi-action task
         """
 
         if self.action:
+            # Reject single-pass inputs without consuming or buffering them.
+            if len(self.action) > 1 and isinstance(elements, Iterator):
+                raise ValueError("Iterator inputs are not supported for multi-action tasks")
+
             # Run actions
             outputs = []
             for x, action in enumerate(self.action):
