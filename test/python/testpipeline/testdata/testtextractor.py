@@ -113,6 +113,12 @@ class TestTextractor(unittest.TestCase):
         self.assertMarkdown("<ul><li>Test1</li><li>Test2</li></ul>", "- Test1\n- Test2")
         self.assertMarkdown("<ol><li>Test1</li><li>Test2</li></ol>", "1. Test1\n2. Test2")
 
+        # Nested lists
+        self.assertMarkdown("<ul><li>Test1<ul><li>Test2</li></ul></li><li>Test3</li></ul>", "- Test1\n\t- Test2\n- Test3")
+        self.assertMarkdown(
+            "<ol><li>Test1<ol><li>Test2</li><li>Test3</li></ol></li><li>Test4</li></ol>", "1. Test1\n\t1. Test2\n\t2. Test3\n2. Test4"
+        )
+
         # Code
         self.assertMarkdown("<code>This is a test</code>", "```\nThis is a test\n```")
         self.assertMarkdown("<pre>This is a test</pre>", "```\nThis is a test\n```")

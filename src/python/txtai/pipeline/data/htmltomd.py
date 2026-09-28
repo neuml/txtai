@@ -4,6 +4,8 @@ HTMLToMarkdown module
 
 import re
 
+from textwrap import indent
+
 # Conditional import
 try:
     from bs4 import BeautifulSoup, NavigableString
@@ -254,9 +256,12 @@ class HTMLToMarkdown(Pipeline):
         """
 
         elements = []
-        for x, element in enumerate(node.find_all("li")):
+        for x, element in enumerate(node.find_all("li", recursive=False)):
             # Unordered lists use dashes. Ordered lists use numbers.
             prefix = "-" if node.name == "ul" else f"{x + 1}."
+
+            # Detach nested lists, these are formatted separately
+            nested = [child.extract() for child in element.find_all(("ul", "ol"), recursive=False)]
 
             # List item text
             text = self.process(element, article)
@@ -264,6 +269,12 @@ class HTMLToMarkdown(Pipeline):
             # Add list element
             if text:
                 elements.append(f"{prefix} {text}")
+
+            # Add nested lists indented with a tab, which is preserved by text cleaning
+            for child in nested:
+                text = self.items(child, article)
+                if text:
+                    elements.append(indent(text, "\t"))
 
         # Join elements together as string
         return "\n".join(elements)
