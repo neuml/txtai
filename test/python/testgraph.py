@@ -540,6 +540,28 @@ class TestGraph(unittest.TestCase):
         )
         self.assertEqual(len(results[0]), 3)
 
+    def testSearchSkip(self):
+        """
+        Test a SKIP clause with a similar clause
+        """
+
+        # Longer documents score lower, which sorts the results by id
+        embeddings = Embeddings({"keyword": True, "content": True, "graph": True})
+        embeddings.index([(uid, "apple " + "pie " * uid, None) for uid in range(40)])
+
+        # SKIP 30 is past the default of 10x the query limit as candidates
+        results = embeddings.search("MATCH (A) WHERE SIMILAR(A, 'apple') RETURN A.id ORDER BY A.score DESC SKIP 30 LIMIT 3")
+        self.assertEqual([x["A.id"] for x in results], [30, 31, 32])
+
+        # A tie-breaker after A.score DESC pages the same way
+        results = embeddings.search("MATCH (A) WHERE SIMILAR(A, 'apple') RETURN A.id ORDER BY A.score DESC, A.id SKIP 30 LIMIT 3")
+        self.assertEqual([x["A.id"] for x in results], [30, 31, 32])
+
+        # Any other ORDER BY sorts the same 30 candidates on every page
+        for orderby in ["A.id DESC", "A.id DESC, A.score DESC", "A.score"]:
+            results = embeddings.search(f"MATCH (A) WHERE SIMILAR(A, 'apple') RETURN A.id ORDER BY {orderby} SKIP 3 LIMIT 3")
+            self.assertEqual([x["A.id"] for x in results], [26, 25, 24])
+
     def testSimple(self):
         """
         Test creating a simple graph

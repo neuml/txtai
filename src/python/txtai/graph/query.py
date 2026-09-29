@@ -88,7 +88,7 @@ class Query:
         """
 
         # Parameters
-        where, limit, nodes, similar = None, None, [], []
+        where, limit, offset, nodes, similar = None, None, None, [], []
 
         # Parse where clause
         match = re.search(r"where(.+?)return", query, flags=re.DOTALL | re.IGNORECASE)
@@ -99,6 +99,11 @@ class Query:
         match = re.search(r"limit\s+(\d+)", query, flags=re.DOTALL | re.IGNORECASE)
         if match:
             limit = match.group(1)
+
+        # Parse skip clause when results are ordered first by score desc. Graph results with no ORDER BY do not follow score order.
+        match = re.search(r"order\s+by\s+\w+\.score\s+desc(?:\s*,[\w.\s,]*?)?\s+skip\s+(\d+)", query, flags=re.IGNORECASE)
+        if match:
+            offset = match.group(1)
 
         # Parse similar clauses
         for x, match in enumerate(re.finditer(r"similar\((.+?)\)", query, flags=re.DOTALL | re.IGNORECASE)):
@@ -115,6 +120,7 @@ class Query:
             "query": query,
             "where": where,
             "limit": limit,
+            "offset": offset,
             "nodes": nodes,
             "similar": similar,
         }

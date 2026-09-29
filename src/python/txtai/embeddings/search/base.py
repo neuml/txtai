@@ -3,6 +3,7 @@ Search module
 """
 
 import logging
+import re
 
 from .errors import IndexNotFoundError
 from .hybrid import Hybrid
@@ -228,8 +229,8 @@ class Search:
         # Override limit with query limit, if applicable
         limit = max(limit, self.limit(queries))
 
-        # Bulk index scan
-        scan = Scan(self.search, limit, weights, index)(queries, parameters)
+        # Bulk index scan. The database query skips OFFSET rows, so add them to the number of candidates.
+        scan = Scan(self.search, limit + self.offset(queries), weights, index)(queries, parameters)
 
         # Combine index search results with database search results
         results = []
@@ -296,6 +297,32 @@ class Search:
 
         return qlimit
 
+    def offset(self, queries):
+        """
+        Parses the largest OFFSET clause from queries ordered by score.
+
+        Args:
+            queries: list of queries
+
+        Returns:
+            largest offset number or 0 if not found
+        """
+
+        qoffset = 0
+        for query in queries:
+            # Only a query ordered first by score desc counts its offset. Any other order, or a select alias named score that replaces
+            # the similarity score in the order, must see the same candidates on every page.
+            # Skip non-numeric offsets (e.g. a ":n" bind parameter)
+            orderby = query.get("orderby")
+            scored = not orderby or orderby.split(",")[0].strip().lower() == "score desc"
+            aliased = re.search(r"[^,\s]\s+(as\s+)?score\s*(,|$)", query.get("select") or "", flags=re.IGNORECASE)
+            o = query.get("offset") if scored and not aliased else None
+            o = int(o) if o and o.isdigit() else 0
+
+            qoffset = o if o > qoffset else qoffset
+
+        return qoffset
+
     def graphsearch(self, queries, limit, weights, index):
         """
         Executes an index + graph search.
@@ -316,8 +343,8 @@ class Search:
         # Override limit with query limit, if applicable
         limit = max(limit, self.limit(queries))
 
-        # Bulk index scan
-        scan = Scan(self.search, limit, weights, index)(queries, None)
+        # Bulk index scan. The graph query drops SKIP rows, so add them to the number of candidates.
+        scan = Scan(self.search, limit + self.offset(queries), weights, index)(queries, None)
 
         # Combine index search results with database search results
         for x, query in enumerate(queries):

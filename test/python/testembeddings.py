@@ -451,6 +451,64 @@ class TestEmbeddings(unittest.TestCase):
         # A plain integer limit still works
         self.assertEqual(len(embeddings.search("select id from txtai order by id limit 3")), 3)
 
+    def testOffset(self):
+        """
+        Test an OFFSET clause with a similar clause
+        """
+
+        # Longer documents score lower, which sorts the results by id
+        embeddings = Embeddings({"keyword": True, "content": True})
+        embeddings.index([(uid, "apple " + "pie " * uid, None) for uid in range(10)])
+
+        # First page
+        results = embeddings.search("select id from txtai where similar('apple') limit 3")
+        self.assertEqual([x["id"] for x in results], ["0", "1", "2"])
+
+        # Second page must not be empty
+        results = embeddings.search("select id from txtai where similar('apple') limit 3 offset 3")
+        self.assertEqual([x["id"] for x in results], ["3", "4", "5"])
+
+        # An explicit ORDER BY score DESC pages the same way
+        results = embeddings.search("select id from txtai where similar('apple') ORDER BY score DESC limit 3 offset 3")
+        self.assertEqual([x["id"] for x in results], ["3", "4", "5"])
+
+        # Selecting the score column pages the same way
+        results = embeddings.search("select id, score from txtai where similar('apple') limit 3 offset 3")
+        self.assertEqual([x["id"] for x in results], ["3", "4", "5"])
+
+        # A tie-breaker after score DESC pages the same way
+        results = embeddings.search("select id from txtai where similar('apple') order by score desc, id limit 3 offset 3")
+        self.assertEqual([x["id"] for x in results], ["3", "4", "5"])
+
+        # A bind parameter offset is not a number, so it does not add candidates
+        results = embeddings.search("select id from txtai where similar('apple') limit 3 offset :n", parameters={"n": 0})
+        self.assertEqual([x["id"] for x in results], ["0", "1", "2"])
+
+        # Each query in a batch gets its own page
+        queries = [f"select id from txtai where similar('apple') limit 3{offset}" for offset in [" offset 3", " offset 6", ""]]
+        results = embeddings.batchsearch(queries)
+        self.assertEqual([[x["id"] for x in result] for result in results], [["3", "4", "5"], ["6", "7", "8"], ["0", "1", "2"]])
+
+    def testOffsetOrderBy(self):
+        """
+        Test an OFFSET clause with a similar clause and an ORDER BY other than score DESC
+        """
+
+        embeddings = Embeddings({"keyword": True, "content": True})
+        embeddings.index([(uid, {"text": "apple " + "pie " * uid, "n": uid}, None) for uid in range(40)])
+
+        # Every page sorts the same 30 candidates, the default of 10x the query limit
+        for orderby in ["n desc", "n desc, score desc", "score asc"]:
+            query = f"select n from txtai where similar('apple') and n >= 0 order by {orderby} limit 3"
+            self.assertEqual([x["n"] for x in embeddings.search(query)], [29, 28, 27])
+            self.assertEqual([x["n"] for x in embeddings.search(f"{query} offset 3")], [26, 25, 24])
+
+        # A select alias named score replaces the similarity score in the order
+        for select, orderby in [("n as score", " order by score desc"), ("n as score", ""), ("n score", "")]:
+            query = f"select {select} from txtai where similar('apple') and n >= 0{orderby} limit 3"
+            self.assertEqual([x["score"] for x in embeddings.search(query)], [29, 28, 27])
+            self.assertEqual([x["score"] for x in embeddings.search(f"{query} offset 3")], [26, 25, 24])
+
     def testQuantize(self):
         """
         Test scalar quantization
