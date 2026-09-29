@@ -557,6 +557,10 @@ class TestGraph(unittest.TestCase):
         results = embeddings.search("MATCH (A) WHERE SIMILAR(A, 'apple') RETURN A.id ORDER BY A.score DESC, A.id SKIP 30 LIMIT 3")
         self.assertEqual([x["A.id"] for x in results], [30, 31, 32])
 
+        # Keywords are not case sensitive
+        results = embeddings.search("MATCH (A) WHERE SIMILAR(A, 'apple') RETURN A.id Order By A.score Desc Skip 30 Limit 3")
+        self.assertEqual([x["A.id"] for x in results], [30, 31, 32])
+
         # Any other ORDER BY sorts the same 30 candidates on every page
         for orderby in ["A.id DESC", "A.id DESC, A.score DESC", "A.score"]:
             results = embeddings.search(f"MATCH (A) WHERE SIMILAR(A, 'apple') RETURN A.id ORDER BY {orderby} SKIP 3 LIMIT 3")
