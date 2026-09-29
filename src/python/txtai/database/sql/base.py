@@ -66,8 +66,8 @@ class SQL:
             if similar:
                 clauses["similar"] = similar
 
-            # Add select column aliases, if any
-            if aliases:
+            # Add select column aliases, if any. Only a query with an offset uses them.
+            if aliases and clauses["offset"]:
                 clauses["aliases"] = aliases
 
         # Return clauses, default to full query if this is not a SQL query
