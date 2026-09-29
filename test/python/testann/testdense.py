@@ -22,7 +22,6 @@ from txtai.ann.dense.ggml import GGMLTensors
 from txtai.serialize import SerializeFactory
 
 
-# pylint: disable=C0302,R0904
 class TestDense(unittest.TestCase):
     """
     Dense ANN tests.

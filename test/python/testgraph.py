@@ -16,7 +16,6 @@ from txtai.graph.topics import Topics
 from txtai.serialize import SerializeFactory
 
 
-# pylint: disable=R0904
 class TestGraph(unittest.TestCase):
     """
     Graph tests.

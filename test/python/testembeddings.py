@@ -15,7 +15,6 @@ from txtai.embeddings import Embeddings, Reducer
 from txtai.serialize import SerializeFactory
 
 
-# pylint: disable=R0904
 class TestEmbeddings(unittest.TestCase):
     """
     Embeddings tests.

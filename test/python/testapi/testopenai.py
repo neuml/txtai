@@ -54,7 +54,6 @@ workflow:
 """
 
 
-# pylint: disable=R0904
 class TestOpenAI(unittest.TestCase):
     """
     Tests for OpenAI-compatible API endpoint for txtai.

@@ -38,7 +38,6 @@ from txtai.workflow import (
 from utils import Utils
 
 
-# pylint: disable=R0904
 class TestWorkflow(unittest.TestCase):
     """
     Workflow tests.
