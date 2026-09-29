@@ -85,16 +85,20 @@ class PoolingFactory:
         # Load 1_Pooling/config.json file
         config = PoolingFactory.load(path, "1_Pooling/config.json")
 
+        # Models trained with Sentence Transformers v5.4+ use `pooling_mode` parameter
+        # Support both the new and legacy parameters
+        mode = config.get("pooling_mode")
+
         # Set to CLS pooling if it's enabled and mean pooling is disabled
-        if config and config.get("pooling_mode_cls_token") and not config.get("pooling_mode_mean_tokens"):
+        if config and config.get("pooling_mode_cls_token", mode == "cls") and not config.get("pooling_mode_mean_tokens", mode == "mean"):
             method = "clspooling"
 
         # Set to last token pooling if it's enabled and mean pooling is disabled
-        if config and config.get("pooling_mode_lasttoken") and not config.get("pooling_mode_mean_tokens"):
+        if config and config.get("pooling_mode_lasttoken", mode == "lasttoken") and not config.get("pooling_mode_mean_tokens", mode == "mean"):
             method = "lastpooling"
 
         # Set to max pooling if it's enabled and mean pooling is disabled
-        if config and config.get("pooling_mode_max_tokens") and not config.get("pooling_mode_mean_tokens"):
+        if config and config.get("pooling_mode_max_tokens", mode == "max") and not config.get("pooling_mode_mean_tokens", mode == "mean"):
             method = "maxpooling"
 
         # Check for late interaction pooling
