@@ -2,6 +2,7 @@
 Vectors module
 """
 
+import contextlib
 import json
 import os
 import tempfile
@@ -137,7 +138,7 @@ class Vectors:
         recovery = Recovery(checkpoint, vectorsid, self.loadembeddings) if checkpoint else None
 
         # Convert all documents to embedding arrays, stream embeddings to disk to control memory usage
-        with self.spool(checkpoint, vectorsid) as output:
+        with self.spool(checkpoint, vectorsid) as output, self.idspool(checkpoint, vectorsid) as idstream:
             stream = output.name
             batch = []
             for document in documents:
@@ -145,7 +146,7 @@ class Vectors:
 
                 if len(batch) == batchsize:
                     # Convert batch to embeddings
-                    uids, dimensions = self.batch(batch, output, recovery)
+                    uids, dimensions = self.batch(batch, output, idstream, recovery)
                     ids.extend(uids)
                     batches += 1
 
@@ -153,7 +154,7 @@ class Vectors:
 
             # Final batch
             if batch:
-                uids, dimensions = self.batch(batch, output, recovery)
+                uids, dimensions = self.batch(batch, output, idstream, recovery)
                 ids.extend(uids)
                 batches += 1
 
@@ -288,13 +289,33 @@ class Vectors:
         # Spool to temporary file
         return tempfile.NamedTemporaryFile(mode="wb", suffix=".npy", delete=False)
 
-    def batch(self, documents, output, recovery):
+    def idspool(self, checkpoint, vectorsid):
+        """
+        Opens a spool file for queuing the ids of each embeddings batch. A recovery file uses this to
+        confirm its recorded batches still line up with the current run's ids before trusting them.
+
+        Args:
+            checkpoint: optional checkpoint directory, enables indexing restart
+            vectorsid: vectors uid for current configuration
+
+        Returns:
+            ids spool file, as a context manager. When checkpoint is disabled, yields None.
+        """
+
+        if checkpoint:
+            os.makedirs(checkpoint, exist_ok=True)
+            return open(f"{checkpoint}/{vectorsid}.ids", "w", encoding="utf-8")
+
+        return contextlib.nullcontext(None)
+
+    def batch(self, documents, output, idstream, recovery):
         """
         Builds a batch of embeddings.
 
         Args:
             documents: list of documents used to build embeddings
             output: output temp file to store embeddings
+            idstream: optional ids spool file, records each batch's ids for future recovery verification
             recovery: optional recovery instance
 
         Returns:
@@ -306,12 +327,16 @@ class Vectors:
         documents = [self.prepare(data, "data") for _, data, _ in documents]
         dimensions = None
 
-        # Attempt to read embeddings from a recovery file
-        embeddings = recovery() if recovery else None
+        # Attempt to read embeddings from a recovery file, only trusting rows that match this batch's ids
+        embeddings = recovery(ids) if recovery else None
         embeddings = self.vectorize(documents, "data") if embeddings is None else embeddings
         if embeddings is not None:
             dimensions = embeddings.shape[1]
             self.saveembeddings(output, embeddings)
+
+            # Record this batch's ids so a future resume can confirm the checkpoint still matches
+            if idstream is not None:
+                idstream.write(json.dumps(ids) + "\n")
 
         return (ids, dimensions)
 
