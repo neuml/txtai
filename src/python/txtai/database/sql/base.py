@@ -66,6 +66,10 @@ class SQL:
             if similar:
                 clauses["similar"] = similar
 
+            # Add select column aliases, if any
+            if aliases:
+                clauses["aliases"] = aliases
+
         # Return clauses, default to full query if this is not a SQL query
         return clauses if clauses else {"similar": [[query]]}
 

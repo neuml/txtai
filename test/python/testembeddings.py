@@ -504,7 +504,7 @@ class TestEmbeddings(unittest.TestCase):
             self.assertEqual([x["n"] for x in embeddings.search(f"{query} offset 3")], [26, 25, 24])
 
         # A select alias named score replaces the similarity score in the order
-        for select, orderby in [("n as score", " order by score desc"), ("n as score", ""), ("n score", "")]:
+        for select, orderby in [("n as score", " order by score desc"), ("n as score", ""), ("n score", ""), ('n as "score"', "")]:
             query = f"select {select} from txtai where similar('apple') and n >= 0{orderby} limit 3"
             self.assertEqual([x["score"] for x in embeddings.search(query)], [29, 28, 27])
             self.assertEqual([x["score"] for x in embeddings.search(f"{query} offset 3")], [26, 25, 24])

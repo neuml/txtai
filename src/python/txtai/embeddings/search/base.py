@@ -3,7 +3,6 @@ Search module
 """
 
 import logging
-import re
 
 from .errors import IndexNotFoundError
 from .hybrid import Hybrid
@@ -310,16 +309,16 @@ class Search:
 
         qoffset = 0
         for query in queries:
-            # Only a query ordered first by score desc counts its offset. Any other order, or a select alias named score that replaces
-            # the similarity score in the order, must see the same candidates on every page.
             # Skip non-numeric offsets (e.g. a ":n" bind parameter)
-            orderby = query.get("orderby")
-            scored = not orderby or orderby.split(",")[0].strip().lower() == "score desc"
-            aliased = re.search(r"[^,\s]\s+(as\s+)?score\s*(,|$)", query.get("select") or "", flags=re.IGNORECASE)
-            o = query.get("offset") if scored and not aliased else None
+            o = query.get("offset")
             o = int(o) if o and o.isdigit() else 0
 
-            qoffset = o if o > qoffset else qoffset
+            # Only a query ordered first by score desc counts its offset. Any other order, or a select alias named score that replaces
+            # the similarity score in the order, must see the same candidates on every page.
+            if o > qoffset:
+                orderby = query.get("orderby")
+                if (not orderby or orderby.split(",")[0].strip().lower() == "score desc") and "score" not in query.get("aliases", {}):
+                    qoffset = o
 
         return qoffset
 
