@@ -54,7 +54,7 @@ The number of candidates should be larger than the desired number of results whe
 - For a single query filter clause, the default is the query limit
 - With multiple filtering clauses, the default is 10x the query limit
 
-When the first `ORDER BY` term is `score DESC`, a query `offset` adds to the query limit in both cases. A SQL query with no `ORDER BY` is ordered by score, so its `offset` also counts. A select alias named `score` replaces the similarity score in the order, so its `offset` does not count. In a graph query, `SKIP` counts when the first `ORDER BY` term is `<node>.score DESC`. For example, `limit 10 offset 20` defaults to 30 candidates with a single query filter clause.
+When a query orders results by score, its `offset` adds to the query limit.
 
 The index name is only applicable when [subindexes](../configuration/general/#indexes) are enabled. This specifies the index to use for the query.
 
