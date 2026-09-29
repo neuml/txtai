@@ -5,7 +5,6 @@ Dense ANN module tests
 import os
 import platform
 import sys
-import tarfile
 import tempfile
 import time
 import unittest
@@ -15,6 +14,7 @@ from unittest.mock import patch
 import ggml
 import numpy as np
 
+from rabitqlib import HnswIndex, IvfIndex
 from sqlalchemy.dialects.postgresql import BIT
 from sqlalchemy.ext.compiler import compiles
 
@@ -579,9 +579,6 @@ class TestDense(unittest.TestCase):
         Test RabitQ stores a single file and does not support append and delete
         """
 
-        # pylint: disable=C0415
-        from rabitqlib import HnswIndex, IvfIndex
-
         # Generate dummy data
         data = np.random.rand(100, 240).astype(np.float32)
         self.normalize(data)
@@ -607,7 +604,6 @@ class TestDense(unittest.TestCase):
             index = os.path.join(tempfile.gettempdir(), f"rabitq.{mode}.{round(time.time() * 1000)}")
             ann.save(index)
             self.assertTrue(os.path.isfile(index))
-            self.assertFalse(tarfile.is_tarfile(index))
 
             # File is the native index, readable without the wrapper
             native = IvfIndex.load(index) if mode == "ivf" else HnswIndex.load(index)
