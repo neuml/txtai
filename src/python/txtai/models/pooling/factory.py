@@ -87,7 +87,7 @@ class PoolingFactory:
 
         # Models trained with Sentence Transformers v5.4+ use `pooling_mode` parameter
         # Support both the new and legacy parameters
-        mode = config.get("pooling_mode")
+        mode = config.get("pooling_mode") if config else None
 
         # Set to CLS pooling if it's enabled and mean pooling is disabled
         if config and config.get("pooling_mode_cls_token", mode == "cls") and not config.get("pooling_mode_mean_tokens", mode == "mean"):
