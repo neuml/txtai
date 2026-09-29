@@ -3,6 +3,7 @@ LiteRT module tests
 """
 
 import os
+import tempfile
 import unittest
 
 from unittest.mock import patch
@@ -10,6 +11,7 @@ from unittest.mock import patch
 import numpy as np
 
 from huggingface_hub import hf_hub_download
+from txtai.util import DownloadError
 from txtai.vectors import VectorsFactory
 
 
@@ -43,6 +45,19 @@ class TestLiteRT(unittest.TestCase):
         # Test shape of serialized embeddings
         with open(stream, "rb") as queue:
             self.assertEqual(np.load(queue).shape, (1, 128))
+
+    def testTokenizerMissing(self):
+        """
+        Test that a local model without a tokenizer raises DownloadError
+        """
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = os.path.join(directory, "model.tflite")
+            with open(path, "wb"):
+                pass
+
+            with self.assertRaises(DownloadError):
+                VectorsFactory.create({"path": path, "gpu": False}, None)
 
     @patch("huggingface_hub.hf_hub_download")
     def testTokenizerRepo(self, download):

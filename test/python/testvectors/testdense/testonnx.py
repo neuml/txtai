@@ -16,6 +16,7 @@ from onnx import helper, TensorProto
 from tokenizers import Tokenizer, models, pre_tokenizers
 
 from txtai.pipeline import HFOnnx
+from txtai.util import DownloadError
 from txtai.vectors import VectorsFactory
 from txtai.vectors.dense.onnx import ONNX
 
@@ -231,6 +232,17 @@ class TestONNXModels(unittest.TestCase):
         model = ONNX({"path": path, "gpu": False}, None, None)
 
         self.assertEqual(model.encode(["dog"]).shape, (1, 4))
+
+    def testTokenizerMissing(self):
+        """
+        Test that a local model without a tokenizer raises DownloadError
+        """
+
+        os.makedirs(os.path.join(self.directory, "missing-tokenizer"), exist_ok=True)
+        path = self.build(os.path.join("missing-tokenizer", "model.onnx"))
+
+        with self.assertRaises(DownloadError):
+            ONNX({"path": path, "gpu": False}, None, None)
 
     @patch("huggingface_hub.hf_hub_download")
     def testTokenizerRepo(self, download):
