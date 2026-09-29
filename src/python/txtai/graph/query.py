@@ -103,8 +103,8 @@ class Query:
         # Parse skip clause when results are ordered first by score desc. Graph results with no ORDER BY do not follow score order.
         # Most queries have no SKIP, so check for the keyword before the regex.
         if "skip" in query.lower():
-            match = re.search(r"order\s+by\s+\w+\.score\s+desc(?:\s*,[\w.\s,]*?)?\s+skip\s+(\d+)", query, flags=re.IGNORECASE)
-            if match:
+            match = re.search(r"skip\s+(\d+)", query, flags=re.DOTALL | re.IGNORECASE)
+            if match and re.search(r"order\s+by\s+\w+\.score\s+desc", query, flags=re.DOTALL | re.IGNORECASE):
                 offset = match.group(1)
 
         # Parse similar clauses
