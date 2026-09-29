@@ -254,7 +254,9 @@ class HTMLToMarkdown(Pipeline):
         """
 
         elements = []
-        for x, element in enumerate(node.find_all("li")):
+        # Direct children only. find_all is recursive, so a nested item was
+        # numbered in the parent list and every later sibling shifted down.
+        for x, element in enumerate(node.find_all("li", recursive=False)):
             # Unordered lists use dashes. Ordered lists use numbers.
             prefix = "-" if node.name == "ul" else f"{x + 1}."
 
