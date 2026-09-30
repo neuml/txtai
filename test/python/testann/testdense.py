@@ -14,6 +14,7 @@ from unittest.mock import patch
 import ggml
 import numpy as np
 
+from rabitqlib import HnswIndex, IvfIndex
 from sqlalchemy.dialects.postgresql import BIT
 from sqlalchemy.ext.compiler import compiles
 
@@ -22,7 +23,6 @@ from txtai.ann.dense.ggml import GGMLTensors
 from txtai.serialize import SerializeFactory
 
 
-# pylint: disable=C0302,R0904
 class TestDense(unittest.TestCase):
     """
     Dense ANN tests.
@@ -418,6 +418,24 @@ class TestDense(unittest.TestCase):
 
         self.runTests("numpy")
 
+    def testArrayDeleteBounds(self):
+        """
+        Invalid array deletion IDs must not wrap to live rows or raise IndexError.
+        """
+
+        for backend in ("numpy", "torch"):
+            for quantize in (None, 1):
+                with self.subTest(backend=backend, quantize=quantize):
+                    data = np.array([[255, 0], [0, 255], [255, 255]], dtype=np.uint8) if quantize else np.eye(3, dtype=np.float32)
+                    ann = ANNFactory.create({"backend": backend, "dimensions": data.shape[1], "quantize": quantize})
+                    self.addCleanup(ann.close)
+                    ann.index(data.copy())
+                    ann.delete([-1, -4, 0, 0, 3, 99])
+                    expected = data.copy()
+                    expected[0] = 0
+                    np.testing.assert_array_equal(ann.numpy(ann.backend), expected)
+                    self.assertEqual(ann.count(), 2)
+
     @patch.dict(os.environ, {"ALLOW_PICKLE": "True"})
     def testNumPyLegacy(self):
         """
@@ -540,7 +558,7 @@ class TestDense(unittest.TestCase):
         Test RabitQ backend
         """
 
-        self.runTests("rabitq")
+        self.runTests("rabitq", None, False)
 
     def testRabitQCustom(self):
         """
@@ -574,9 +592,9 @@ class TestDense(unittest.TestCase):
             ann.load(index)
         self.assertEqual(ann.count(), 0)
 
-    def testRabitQDelete(self):
+    def testRabitQUpdate(self):
         """
-        Test RabitQ deletes mark rows without rebuilding the index
+        Test RabitQ stores a single file and does not support append and delete
         """
 
         # Generate dummy data
@@ -584,46 +602,35 @@ class TestDense(unittest.TestCase):
         self.normalize(data)
 
         for mode in ["ivf", "hnsw"]:
-            # Probe all clusters so ivf searches can fill the limit
             ann = ANNFactory.create({"backend": "rabitq", "dimensions": 240, "rabitq": {"mode": mode, "nprobe": 100}})
             ann.index(data)
-            backend = ann.backend
 
-            # Empty deletes are ignored
-            ann.delete([])
-            self.assertEqual(ann.count(), 100)
+            # Offset marks the index as existing, see Embeddings.exists
+            self.assertEqual(ann.config["offset"], 100)
 
-            # Deleted rows are skipped by search and the limit is still filled
-            ann.delete([0, 1])
-            self.assertIs(ann.backend, backend)
-            self.assertEqual(ann.count(), 98)
-            for result in ann.search(data[:2], 10):
-                self.assertEqual(len(result), 10)
-                self.assertFalse({0, 1} & {uid for uid, _ in result})
+            with self.assertRaises(NotImplementedError):
+                ann.append(data[:1])
 
-            # Deletes are kept after a save and reload
+            with self.assertRaises(NotImplementedError):
+                ann.delete([0])
+
+            # Limit above the row count returns every row
+            for result in ann.search(data[:2], 200):
+                self.assertEqual(len(result), 100)
+
+            # Index is a single file that reloads with the same count and results
             index = os.path.join(tempfile.gettempdir(), f"rabitq.{mode}.{round(time.time() * 1000)}")
             ann.save(index)
+            self.assertTrue(os.path.isfile(index))
+
+            # File is the native index, readable without the wrapper
+            native = IvfIndex.load(index) if mode == "ivf" else HnswIndex.load(index)
+            self.assertEqual(native.max_elements, 100)
+
+            expected = ann.search(data[:2], 10)
             ann.load(index)
-            self.assertEqual(ann.count(), 98)
-            ann.delete([2])
-            self.assertEqual(ann.count(), 97)
-
-            # Append rebuilds the index without the deleted rows
-            ann.append(data[:1])
-            self.assertEqual(ann.vectors.shape[0], 98)
-            self.assertEqual(ann.count(), 98)
-
-            # Rebuild once deleted rows outnumber live rows
-            ann.delete(list(range(3, 60)))
-            self.assertEqual(ann.vectors.shape[0], ann.count())
-            self.assertEqual(ann.count(), 41)
-
-            # Deleting all rows leaves an empty index, deletes on an empty index are ignored
-            ann.delete(list(range(200)))
-            ann.delete([0])
-            self.assertEqual(ann.count(), 0)
-            self.assertEqual(ann.search(data[:1], 10), [[]])
+            self.assertEqual(ann.count(), 100)
+            self.assertEqual(ann.search(data[:2], 10), expected)
 
     @unittest.skipIf(platform.system() == "Darwin", "SQLite extensions not supported on macOS")
     def testSQLite(self):
@@ -764,6 +771,17 @@ class TestDense(unittest.TestCase):
                         self.assertEqual(ann.search(data[:1], 2), expected)
                 finally:
                     ann.close()
+    def testSQLiteBinaryScores(self):
+        """
+        Binary similarity is the fraction of matching bits, not one minus their distance.
+        """
+
+        ann = ANNFactory.create({"backend": "sqlite", "dimensions": 8, "sqlite": {"quantize": 1}})
+        self.addCleanup(ann.close)
+        data = np.ones((4, 8), dtype=np.float32)
+        data[1, :1], data[2, :4], data[3, :] = -1, -1, -1
+        ann.index(data)
+        self.assertEqual(ann.search(data[:1], 4)[0], [(0, 1.0), (1, 0.875), (2, 0.5), (3, 0.0)])
 
     def testTorch(self):
         """

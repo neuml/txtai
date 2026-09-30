@@ -18,7 +18,6 @@ from txtai.models.pooling.lemur import Activation
 from txtai.pipeline import LemurTrainer
 
 
-# pylint: disable=R0904
 class TestPooling(unittest.TestCase):
     """
     Pooling tests.

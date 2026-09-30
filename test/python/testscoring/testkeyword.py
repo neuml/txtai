@@ -11,7 +11,6 @@ from unittest.mock import patch
 from txtai.scoring import Normalize, ScoringFactory, Scoring
 
 
-# pylint: disable=R0904
 class TestKeyword(unittest.TestCase):
     """
     Sparse keyword scoring tests.

@@ -53,6 +53,23 @@ class TestTabular(unittest.TestCase):
         rows = tabular([{"id": 2, "quantity": "", "text": "Widget"}])
         self.assertEqual(rows[0][1], "Widget")
 
+    def testNumericTypes(self):
+        """
+        Mixed numeric rows preserve integer IDs and content without float rounding.
+        """
+
+        data = [{"id": 2**53 + 1, "count": 2, "value": 1.5}, {"id": 2**53, "count": 3, "value": 2.5}]
+        for content in (False, True, ["id"]):
+            with self.subTest(content=content):
+                rows = Tabular("id", ["count", "value"], content)(data)
+                step = 2 if content else 1
+                self.assertTrue(all(isinstance(row[0], int) for row in rows))
+                self.assertEqual([row[0] for row in rows[::step]], [row["id"] for row in data])
+                self.assertEqual([row[1] for row in rows[::step]], ["2. 1.5", "3. 2.5"])
+                if content:
+                    expected = data if content is True else [{"id": row["id"]} for row in data]
+                    self.assertEqual([row[1] for row in rows[1::2]], expected)
+
     def testContent(self):
         """
         Test parsing additional content

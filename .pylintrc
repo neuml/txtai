@@ -12,6 +12,8 @@ max-locals=40
 max-returns=10
 max-attributes=20
 min-public-methods=0
+max-public-methods=80
 
 [FORMAT]
 max-line-length=150
+max-module-lines=1500
