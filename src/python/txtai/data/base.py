@@ -38,7 +38,10 @@ class Data:
             (train, validation)
         """
 
-        return (self.prepare(train, self.process, workers, batch), self.prepare(validation, self.process, workers, batch) if validation else None)
+        return (
+            self.prepare(train, self.process, workers, batch),
+            self.prepare(validation, self.process, workers, batch) if validation is not None else None,
+        )
 
     def prepare(self, data, fn, workers, batch):
         """
@@ -54,7 +57,8 @@ class Data:
             tokens
         """
 
-        if hasattr(data, "map"):
+        # Check for column_names, pandas DataFrames also have a map method
+        if hasattr(data, "column_names"):
             # Hugging Face dataset
             tokens = data.map(fn, batched=True, batch_size=batch, num_proc=workers, remove_columns=data.column_names)
         else:
@@ -93,11 +97,11 @@ class Data:
         column = self.columns[-1]
 
         # Return length of labels if it's an array
-        length = self.length(data[column][0] if hasattr(data, "columns") else data[0][column])
+        length = self.length(next(iter(data[column])) if hasattr(data, "columns") else data[0][column])
         if length:
             return length
 
-        if hasattr(data, "map"):
+        if hasattr(data, "column_names"):
             # Hugging Face dataset
             labels = sorted(data.unique(self.columns[-1]))
         elif hasattr(data, "columns"):
