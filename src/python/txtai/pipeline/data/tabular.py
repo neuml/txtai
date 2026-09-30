@@ -103,7 +103,9 @@ class Tabular(Pipeline):
                 columns.remove(self.idcolumn)
 
         # Transform into (id, text, tag) tuples
-        for index, row in df.iterrows():
+        # Tuple iteration preserves column types instead of coercing each row to one dtype.
+        for index, values in zip(df.index, df.itertuples(index=False, name=None)):
+            row = dict(zip(df.columns, values))
             uid = row[self.idcolumn] if self.idcolumn else index
             uid = uid if uid is not None else index
             text = self.concat(row, columns)
@@ -112,10 +114,10 @@ class Tabular(Pipeline):
 
             # Also add row for content
             if isinstance(self.content, list):
-                row = {column: self.column(value) for column, value in row.to_dict().items() if column in self.content}
+                row = {column: self.column(value) for column, value in row.items() if column in self.content}
                 rows.append((uid, row, None))
             elif self.content:
-                row = {column: self.column(value) for column, value in row.to_dict().items()}
+                row = {column: self.column(value) for column, value in row.items()}
                 rows.append((uid, row, None))
 
         return rows
