@@ -25,13 +25,13 @@ np = library.numpy()
 SENTINEL = 0xFFFFFFFF
 
 
-# pylint: disable=W0223
 class RabitQ(ANN):
     """
     Builds an ANN index using the rabitqlib library (RaBitQ quantization).
 
-    Only the quantized index is stored, as a single file. Native indexes can't be extended or have rows removed,
-    so this backend doesn't support append and delete.
+    Only the native index is stored, as a single file. No vectors are kept outside of it. ivf indexes support append
+    and delete natively. The native id of a row is its index id. hnsw indexes can't be extended or have rows removed,
+    so append and delete are not supported in that mode.
     """
 
     def __init__(self, config):
@@ -39,6 +39,9 @@ class RabitQ(ANN):
 
         if not RABITQ:
             raise ImportError('rabitqlib is not available - install "ann" extra to enable')
+
+        # Number of rows removed from the native index (ivf mode only)
+        self.config["deletes"] = self.config.get("deletes", 0)
 
     def load(self, path):
         self.close()
@@ -94,9 +97,34 @@ class RabitQ(ANN):
 
         # Add id offset and index build metadata
         self.config["offset"] = rows
+        self.config["deletes"] = 0
         self.metadata(settings)
 
+    def append(self, embeddings):
+        if self.mode() != "ivf":
+            super().append(embeddings)
+
+        # Native ids continue from the last row ever added
+        embeddings = np.ascontiguousarray(embeddings, dtype=np.float32)
+        self.backend.add(embeddings)
+
+        # Update id offset and index metadata
+        self.config["offset"] = self.backend.max_elements
+        self.metadata()
+
+    def delete(self, ids):
+        if self.mode() != "ivf":
+            super().delete(ids)
+
+        # Native remove hides rows from search. Unknown ids are silently ignored.
+        ids = [uid for uid in ids if 0 <= uid < self.backend.max_elements]
+        if ids:
+            self.config["deletes"] += self.backend.remove(np.array(ids, dtype=np.int64))
+
     def search(self, queries, limit):
+        if not self.count():
+            return [[] for _ in queries]
+
         queries = np.ascontiguousarray(queries, dtype=np.float32)
 
         # The native index errors when k exceeds its row count
@@ -115,7 +143,7 @@ class RabitQ(ANN):
         ]
 
     def count(self):
-        return self.backend.max_elements if self.backend is not None else 0
+        return self.backend.max_elements - self.config["deletes"] if self.backend is not None else 0
 
     def save(self, path):
         self.backend.save(path)
