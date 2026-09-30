@@ -109,7 +109,7 @@ rabitq:
     randomseed: random-seed param for hnsw mode (int) - defaults to 100
 ```
 
-The [rabitq](https://github.com/VectorDB-NTU/RaBitQ-Library) backend is a quantized index powered by the [RaBitQ algorithm](https://doi.org/10.1145/3725413). It supports ivf and hnsw search modes. Vectors are stored with 1-bit quantization by default. More bits increase accuracy at the cost of memory.
+The [rabitq](https://github.com/VectorDB-NTU/RaBitQ-Library) backend is a quantized index powered by the [RaBitQ algorithm](https://doi.org/10.1145/3725413). It supports ivf and hnsw search modes. Vectors are stored with 1-bit quantization by default. More bits increase accuracy at the cost of memory. The index is stored as a single file. Note that rabitq indexes can not be modified after creation, upserts/deletes and other modifications are not supported.
 
 ### torch
 
