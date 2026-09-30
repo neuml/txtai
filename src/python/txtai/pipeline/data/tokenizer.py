@@ -82,7 +82,7 @@ class Tokenizer(Pipeline):
             #  - Strings to be at least 2 characters long AND
             #  - At least 1 non-trailing alpha character in string
             # Note: The standard Python re module is much faster than regex for this expression
-            self.alphanum = re.compile(r"^\d*[a-z][\-.0-9:_a-z]{1,}$")
+            self.alphanum = re.compile(r"^\d*[a-zA-Z][\-.0-9:_a-zA-Z]{1,}$")
         elif regexp:
             # Regular expression for tokenization
             self.regexp = regex.compile(regexp)

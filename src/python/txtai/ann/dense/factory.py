@@ -12,6 +12,7 @@ from .hnsw import HNSW
 from .milvus import Milvus
 from .numpy import NumPy
 from .pgvector import PGVector
+from .rabitq import RabitQ
 from .sqlite import SQLite
 from .torch import Torch
 from .turbovec import TurboVec
@@ -35,6 +36,7 @@ class ANNFactory:
             ANN
         """
 
+        # pylint: disable=R0912
         # ANN instance
         ann = None
         backend = config.get("backend", "faiss" if FAISS else "numpy")
@@ -44,16 +46,18 @@ class ANNFactory:
             ann = Annoy(config)
         elif backend == "faiss":
             ann = Faiss(config)
+        elif backend == "ggml":
+            ann = GGML(config)
         elif backend == "hnsw":
             ann = HNSW(config)
         elif backend == "milvus":
             ann = Milvus(config)
-        elif backend == "ggml":
-            ann = GGML(config)
         elif backend == "numpy":
             ann = NumPy(config)
         elif backend == "pgvector":
             ann = PGVector(config)
+        elif backend == "rabitq":
+            ann = RabitQ(config)
         elif backend == "sqlite":
             ann = SQLite(config)
         elif backend == "torch":

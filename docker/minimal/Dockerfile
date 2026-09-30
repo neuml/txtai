@@ -1,11 +1,11 @@
 # Set base image
-ARG BASE_IMAGE=python:3.10-slim
+ARG BASE_IMAGE=python:3.11-slim
 FROM $BASE_IMAGE
 
 # Target CPU architecture
 ARG TARGETARCH
 
-# Set Python version (i.e. 3, 3.10)
+# Set Python version (i.e. 3, 3.11)
 ARG PYTHON_VERSION=3
 
 # Locale environment variables

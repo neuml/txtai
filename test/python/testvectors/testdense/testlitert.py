@@ -3,10 +3,15 @@ LiteRT module tests
 """
 
 import os
+import tempfile
 import unittest
+
+from unittest.mock import patch
 
 import numpy as np
 
+from huggingface_hub import hf_hub_download
+from txtai.util import DownloadError
 from txtai.vectors import VectorsFactory
 
 
@@ -40,3 +45,36 @@ class TestLiteRT(unittest.TestCase):
         # Test shape of serialized embeddings
         with open(stream, "rb") as queue:
             self.assertEqual(np.load(queue).shape, (1, 128))
+
+    def testTokenizerMissing(self):
+        """
+        Test that a local model without a tokenizer raises DownloadError
+        """
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = os.path.join(directory, "model.tflite")
+            with open(path, "wb"):
+                pass
+
+            with self.assertRaises(DownloadError):
+                VectorsFactory.create({"path": path, "gpu": False}, None)
+
+    @patch("huggingface_hub.hf_hub_download")
+    def testTokenizerRepo(self, download):
+        """
+        Test that a tokenizer at the root of a HF Hub repo is found for a model stored in a subdirectory
+        """
+
+        def filedownload(**kwargs):
+            # Serve the model from a subdirectory that doesn't have a tokenizer
+            if kwargs["filename"] == "litert/tokenizer.json":
+                raise FileNotFoundError
+
+            return hf_hub_download(repo_id=kwargs["repo_id"], filename=kwargs["filename"].replace("litert/", ""))
+
+        download.side_effect = filedownload
+
+        model = VectorsFactory.create(
+            {"path": "neuml/bert-hash-nano-embeddings-litert/litert/bert-hash-nano-embeddings-int4.tflite", "gpu": False}, None
+        )
+        self.assertEqual(model.encode(["test"]).shape, (1, 128))

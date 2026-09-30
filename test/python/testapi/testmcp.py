@@ -18,7 +18,6 @@ mcp: True
 """
 
 
-# pylint: disable=R0904
 class TestMCP(unittest.TestCase):
     """
     API tests for model context protocol (MCP)

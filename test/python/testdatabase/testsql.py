@@ -8,7 +8,6 @@ from txtai.database import DatabaseFactory, SQL, SQLError
 from txtai.database.sql import Aggregate
 
 
-# pylint: disable=R0904
 class TestSQL(unittest.TestCase):
     """
     Test SQL parsing and generation.

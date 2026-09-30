@@ -147,7 +147,6 @@ reranker:
 """
 
 
-# pylint: disable=R0904
 class TestEmbeddings(unittest.TestCase):
     """
     API tests for embeddings indices.

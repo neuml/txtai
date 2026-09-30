@@ -44,6 +44,24 @@ class TestSummary(unittest.TestCase):
         summaries = self.summary([self.text, self.text], maxlength=15)
         self.assertEqual(len(summaries), 2)
 
+    def testSummaryBatchLengths(self):
+        """
+        Test batch summarization of texts with different lengths
+        """
+
+        texts = [self.text, self.text + " " + self.text, self.text]
+        summaries = self.summary(texts, maxlength=15)
+        self.assertEqual(len(summaries), 3)
+        self.assertTrue(all(summary and summary not in texts for summary in summaries))
+
+        # Inputs that span multiple batches keep their order
+        batchsize = self.summary.batchsize
+        try:
+            self.summary.batchsize = 2
+            self.assertEqual(self.summary(texts, maxlength=15), summaries)
+        finally:
+            self.summary.batchsize = batchsize
+
     def testSummaryNoLength(self):
         """
         Test summary with no max length set

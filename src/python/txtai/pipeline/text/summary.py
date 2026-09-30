@@ -91,14 +91,20 @@ class Summary(HFModel):
         if prefix:
             inputs = [prefix + x for x in inputs]
 
-        # Tokenize inputs
-        tokens = self.tokenizer(inputs, truncation=kwargs.pop("truncation", False), return_tensors="pt").to(self.device)
+        truncation = kwargs.pop("truncation", False)
 
-        # Generate outputs
-        outputs = self.model.generate(**tokens, **kwargs)
+        results = []
+        for batch in self.batch(inputs, self.batchsize):
+            # Tokenize inputs, padding texts of different lengths within a batch
+            tokens = self.tokenizer(batch, padding=True, truncation=truncation, return_tensors="pt").to(self.device)
 
-        # Decode and return
-        return [self.tokenizer.decode(x, skip_special_tokens=True) for x in outputs]
+            # Generate outputs
+            outputs = self.model.generate(**tokens, **kwargs)
+
+            # Decode outputs
+            results.extend(self.tokenizer.decode(x, skip_special_tokens=True) for x in outputs)
+
+        return results
 
     def clean(self, text):
         """

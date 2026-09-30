@@ -28,6 +28,7 @@ from txtai.workflow import (
     RagTask,
     RetrieveTask,
     StorageTask,
+    StreamTask,
     TemplateTask,
     UrlTask,
     WorkflowTask,
@@ -37,7 +38,6 @@ from txtai.workflow import (
 from utils import Utils
 
 
-# pylint: disable=R0904
 class TestWorkflow(unittest.TestCase):
     """
     Workflow tests.
@@ -160,6 +160,63 @@ class TestWorkflow(unittest.TestCase):
         workflow = Workflow([Task([nop, nop], concurrency="unknown")])
         results = list(workflow([2, 4]))
         self.assertEqual(results, [(2, 2), (4, 4)])
+
+    def testIteratorActions(self):
+        """
+        Test multi-action tasks reject iterators without consuming inputs or running actions
+        """
+
+        for merge, generator in product(["hstack", "vstack", "concat", None], [False, True]):
+            with self.subTest(merge=merge, generator=generator):
+                elements = (x for x in [1, 2]) if generator else iter([1, 2])
+                calls = []
+                task = Task([lambda values, calls=calls: calls.append(True) or list(values)] * 2, merge=merge)
+                with self.assertRaisesRegex(ValueError, "Iterator inputs are not supported for multi-action tasks"):
+                    task(elements)
+                self.assertEqual(calls, [])
+                self.assertEqual(list(elements), [1, 2])
+
+    def testIteratorColumns(self):
+        """
+        Test iterators are rejected before extracting per-action columns
+        """
+
+        elements = iter([(1, 10), (2, 20)])
+        task = Task([list, list], column={0: 0, 1: 1}, unpack=False)
+        with self.assertRaisesRegex(ValueError, "Iterator inputs are not supported for multi-action tasks"):
+            task(elements)
+        self.assertEqual(list(elements), [(1, 10), (2, 20)])
+
+    def testIteratorSingleAction(self):
+        """
+        Test single-action and no-action tasks retain lazy iterator inputs
+        """
+
+        elements = iter([1, 2, 3])
+        self.assertIs(Task()(elements), elements)
+        self.assertEqual(Task(lambda values: [next(values)])(elements), [1])
+        self.assertEqual(list(elements), [2, 3])
+
+    def testStreamMultiActionWorkflow(self):
+        """
+        Test streamed inputs fail before downstream sequential or concurrent actions run
+        """
+
+        for concurrency in [None, "thread", "process"]:
+            with self.subTest(concurrency=concurrency):
+                workflow = Workflow([StreamTask(lambda value: iter([value])), Task([Nop(), Nop()], concurrency=concurrency)], batch=2)
+                with self.assertRaisesRegex(ValueError, "Iterator inputs are not supported for multi-action tasks"):
+                    list(workflow([1, 2, 3]))
+
+    def testIteratorWorkflowBatches(self):
+        """
+        Test workflow-level iterators remain supported through bounded batches
+        """
+
+        for concurrency in [None, "thread", "process"]:
+            with self.subTest(concurrency=concurrency):
+                workflow = Workflow([Task([Nop(), Nop()], concurrency=concurrency)], batch=2)
+                self.assertEqual(list(workflow(iter([1, 2, 3]))), [(1, 1), (2, 2), (3, 3)])
 
     def testConsoleWorkflow(self):
         """
@@ -524,6 +581,47 @@ class TestWorkflow(unittest.TestCase):
         workflow = Workflow([RagTask(template="This is a {text} with another {param}")])
         results = list(workflow([{"query": "query", "question": "prompt", "param": "value"}]))
         self.assertEqual(results[0], {"query": "query", "question": "This is a prompt with another value", "param": "value"})
+
+    def testTemplateRagReusableInput(self):
+        """
+        Test that rag template inputs can be reused without changing earlier results
+        """
+
+        workflow = Workflow([RagTask(template="This is a {text} with another {param}")])
+        for packed in (False, True):
+            with self.subTest(packed=packed):
+                request = {"query": "query", "question": "prompt", "param": "value"}
+                original = dict(request)
+                expected = {"query": "query", "question": "This is a prompt with another value", "param": "value"}
+                inputs = [("id", request, "tag")] if packed else [request]
+                expected = [("id", expected, "tag")] if packed else [expected]
+
+                first = list(workflow(inputs))
+                self.assertEqual(first, expected)
+                self.assertEqual(request, original)
+
+                second = list(workflow(inputs))
+                self.assertEqual(second, expected)
+                self.assertEqual(first, expected)
+                self.assertEqual(request, original)
+                self.assertIsNot(first[0][1] if packed else first[0], request)
+
+    def testTemplateRagRepeatedInput(self):
+        """
+        Test that repeated input references are formatted independently across batches
+        """
+
+        for batch in (1, 2):
+            with self.subTest(batch=batch):
+                workflow = Workflow([RagTask(template="This is a {text}")], batch=batch)
+                request = {"query": "query", "question": "prompt"}
+                original = dict(request)
+                expected = {"query": "query", "question": "This is a prompt"}
+
+                results = list(workflow([request, request]))
+                self.assertEqual(results, [expected, expected])
+                self.assertEqual(request, original)
+                self.assertIsNot(results[0], results[1])
 
     def testTensorTransformWorkflow(self):
         """

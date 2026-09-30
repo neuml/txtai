@@ -7,7 +7,6 @@ from collections import Counter
 from .topics import Topics
 
 
-# pylint: disable=R0904
 class Graph:
     """
     Base class for Graph instances. This class builds graph networks. Supports topic modeling

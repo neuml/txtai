@@ -54,6 +54,8 @@ The number of candidates should be larger than the desired number of results whe
 - For a single query filter clause, the default is the query limit
 - With multiple filtering clauses, the default is 10x the query limit
 
+When a query orders results by score, its `offset` adds to the query limit.
+
 The index name is only applicable when [subindexes](../configuration/general/#indexes) are enabled. This specifies the index to use for the query.
 
 Weights sets the hybrid score weights when an index has both a sparse and dense index.

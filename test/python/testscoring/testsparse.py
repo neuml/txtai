@@ -12,7 +12,6 @@ from unittest.mock import patch
 from txtai.scoring import ScoringFactory
 
 
-# pylint: disable=R0904
 class TestSparse(unittest.TestCase):
     """
     Sparse vector scoring tests.

@@ -27,7 +27,6 @@ llm:
 """
 
 
-# pylint: disable=R0904
 class TestAgent(unittest.TestCase):
     """
     API tests for agents.

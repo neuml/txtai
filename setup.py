@@ -62,6 +62,7 @@ extras["ann"] = [
     "hnswlib>=0.5.0",
     "milvus-lite>=3.1.1",
     "pgvector>=0.4.1",
+    "rabitqlib>=0.3.9",
     "scikit-learn>=0.23.1",
     "scipy>=1.4.1",
     "sqlalchemy>=2.0.20",
@@ -195,7 +196,7 @@ setup(
     packages=find_packages(where="src/python"),
     package_dir={"": "src/python"},
     keywords="search embedding machine-learning nlp",
-    python_requires=">=3.10",
+    python_requires=">=3.11",
     install_requires=install,
     extras_require=extras,
     classifiers=[

@@ -104,7 +104,7 @@ class Texts(Data):
             nextlength = len(rows[x + 1]) if x < len(rows) - 1 else 0
 
             # New row
-            if (length + nextlength) >= self.maxlength:
+            if (length + nextlength) > self.maxlength:
                 for column in columns:
                     results[column].append(list(chain(*inputs[column][index : x + 1])))
 

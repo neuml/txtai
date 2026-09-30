@@ -18,7 +18,6 @@ from ..util import Library
 yaml = Library().yaml()
 
 
-# pylint: disable=R0904
 class Application:
     """
     Builds YAML-configured txtai applications.

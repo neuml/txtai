@@ -24,7 +24,6 @@ from ...util import Library
 np = Library().numpy()
 
 
-# pylint: disable=R0904
 class PGVector(ANN):
     """
     Builds an ANN index backed by a Postgres database.

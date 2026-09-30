@@ -16,6 +16,7 @@ from onnx import helper, TensorProto
 from tokenizers import Tokenizer, models, pre_tokenizers
 
 from txtai.pipeline import HFOnnx
+from txtai.util import DownloadError
 from txtai.vectors import VectorsFactory
 from txtai.vectors.dense.onnx import ONNX
 
@@ -230,6 +231,37 @@ class TestONNXModels(unittest.TestCase):
         path = self.build(os.path.join("sibling", "model.onnx"))
         model = ONNX({"path": path, "gpu": False}, None, None)
 
+        self.assertEqual(model.encode(["dog"]).shape, (1, 4))
+
+    def testTokenizerMissing(self):
+        """
+        Test that a local model without a tokenizer raises DownloadError
+        """
+
+        os.makedirs(os.path.join(self.directory, "missing-tokenizer"), exist_ok=True)
+        path = self.build(os.path.join("missing-tokenizer", "model.onnx"))
+
+        with self.assertRaises(DownloadError):
+            ONNX({"path": path, "gpu": False}, None, None)
+
+    @patch("huggingface_hub.hf_hub_download")
+    def testTokenizerRepo(self, download):
+        """
+        Test that a tokenizer at the root of a HF Hub repo is found for a model stored in a subdirectory
+        """
+
+        files = {"org/repo/onnx/model.onnx": self.build("repo.onnx"), "org/repo/tokenizer.json": self.tokenizer}
+
+        def filedownload(**kwargs):
+            path = f"{kwargs['repo_id']}/{kwargs['filename']}"
+            if path not in files:
+                raise FileNotFoundError
+
+            return files[path]
+
+        download.side_effect = filedownload
+
+        model = ONNX({"path": "org/repo/onnx/model.onnx", "gpu": False}, None, None)
         self.assertEqual(model.encode(["dog"]).shape, (1, 4))
 
     def testProviders(self):

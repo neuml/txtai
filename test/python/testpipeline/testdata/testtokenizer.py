@@ -21,6 +21,9 @@ class TestTokenizer(unittest.TestCase):
         self.assertEqual(Tokenizer.tokenize("Y this is a test!"), ["test"])
         self.assertEqual(Tokenizer.tokenize("abc123 ABC 123"), ["abc123", "abc"])
 
+        # Alphanumeric tokenization keeps uppercase tokens when lowercasing is disabled
+        self.assertEqual(Tokenizer.tokenize("Abc123 ABC 123 Y", lowercase=False), ["Abc123", "ABC"])
+
     def testEmptyTokenize(self):
         """
         Test handling empty and None inputs

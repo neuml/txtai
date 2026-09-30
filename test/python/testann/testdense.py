@@ -6,6 +6,7 @@ import os
 import platform
 import sys
 import tempfile
+import time
 import unittest
 
 from unittest.mock import patch
@@ -13,6 +14,7 @@ from unittest.mock import patch
 import ggml
 import numpy as np
 
+from rabitqlib import HnswIndex, IvfIndex
 from sqlalchemy.dialects.postgresql import BIT
 from sqlalchemy.ext.compiler import compiles
 
@@ -21,7 +23,6 @@ from txtai.ann.dense.ggml import GGMLTensors
 from txtai.serialize import SerializeFactory
 
 
-# pylint: disable=R0904
 class TestDense(unittest.TestCase):
     """
     Dense ANN tests.
@@ -417,6 +418,24 @@ class TestDense(unittest.TestCase):
 
         self.runTests("numpy")
 
+    def testArrayDeleteBounds(self):
+        """
+        Invalid array deletion IDs must not wrap to live rows or raise IndexError.
+        """
+
+        for backend in ("numpy", "torch"):
+            for quantize in (None, 1):
+                with self.subTest(backend=backend, quantize=quantize):
+                    data = np.array([[255, 0], [0, 255], [255, 255]], dtype=np.uint8) if quantize else np.eye(3, dtype=np.float32)
+                    ann = ANNFactory.create({"backend": backend, "dimensions": data.shape[1], "quantize": quantize})
+                    self.addCleanup(ann.close)
+                    ann.index(data.copy())
+                    ann.delete([-1, -4, 0, 0, 3, 99])
+                    expected = data.copy()
+                    expected[0] = 0
+                    np.testing.assert_array_equal(ann.numpy(ann.backend), expected)
+                    self.assertEqual(ann.count(), 2)
+
     @patch.dict(os.environ, {"ALLOW_PICKLE": "True"})
     def testNumPyLegacy(self):
         """
@@ -534,6 +553,85 @@ class TestDense(unittest.TestCase):
             # Close ANN
             ann.close()
 
+    def testRabitQ(self):
+        """
+        Test RabitQ backend
+        """
+
+        self.runTests("rabitq", None, False)
+
+    def testRabitQCustom(self):
+        """
+        Test RabitQ backend with custom settings
+        """
+
+        # Test with custom settings
+        self.runTests("rabitq", {"rabitq": {"mode": "hnsw"}}, False)
+        self.runTests("rabitq", {"rabitq": {"clusters": 8, "nprobe": 2}}, False)
+        self.runTests("rabitq", {"rabitq": {"nbits": 4}}, False)
+        self.runTests("rabitq", {"rabitq": {"mode": "hnsw", "nbits": 4}}, False)
+        self.runTests("rabitq", {"rabitq": {"nbits": 32}}, False)
+
+        # Generate dummy data
+        data = np.random.rand(100, 240).astype(np.float32)
+        self.normalize(data)
+
+        # Test invalid modes and quantization bits
+        for mode, nbits in [("invalid", 1), ("ivf", 10), ("hnsw", 32)]:
+            with self.assertRaises(ValueError):
+                ann = ANNFactory.create({"backend": "rabitq", "dimensions": 240, "rabitq": {"mode": mode, "nbits": nbits}})
+                ann.index(data)
+
+        # Test a failed load leaves an empty index
+        ann = ANNFactory.create({"backend": "rabitq", "dimensions": 240})
+        ann.index(data)
+        index = os.path.join(tempfile.gettempdir(), f"rabitq.invalid.{round(time.time() * 1000)}")
+        ann.save(index)
+        ann.config["rabitq"] = {"mode": "invalid"}
+        with self.assertRaises(ValueError):
+            ann.load(index)
+        self.assertEqual(ann.count(), 0)
+
+    def testRabitQUpdate(self):
+        """
+        Test RabitQ stores a single file and does not support append and delete
+        """
+
+        # Generate dummy data
+        data = np.random.rand(100, 240).astype(np.float32)
+        self.normalize(data)
+
+        for mode in ["ivf", "hnsw"]:
+            ann = ANNFactory.create({"backend": "rabitq", "dimensions": 240, "rabitq": {"mode": mode, "nprobe": 100}})
+            ann.index(data)
+
+            # Offset marks the index as existing, see Embeddings.exists
+            self.assertEqual(ann.config["offset"], 100)
+
+            with self.assertRaises(NotImplementedError):
+                ann.append(data[:1])
+
+            with self.assertRaises(NotImplementedError):
+                ann.delete([0])
+
+            # Limit above the row count returns every row
+            for result in ann.search(data[:2], 200):
+                self.assertEqual(len(result), 100)
+
+            # Index is a single file that reloads with the same count and results
+            index = os.path.join(tempfile.gettempdir(), f"rabitq.{mode}.{round(time.time() * 1000)}")
+            ann.save(index)
+            self.assertTrue(os.path.isfile(index))
+
+            # File is the native index, readable without the wrapper
+            native = IvfIndex.load(index) if mode == "ivf" else HnswIndex.load(index)
+            self.assertEqual(native.max_elements, 100)
+
+            expected = ann.search(data[:2], 10)
+            ann.load(index)
+            self.assertEqual(ann.count(), 100)
+            self.assertEqual(ann.search(data[:2], 10), expected)
+
     @unittest.skipIf(platform.system() == "Darwin", "SQLite extensions not supported on macOS")
     def testSQLite(self):
         """
@@ -576,6 +674,34 @@ class TestDense(unittest.TestCase):
         self.assertEqual(model.count(), expected)
 
     @unittest.skipIf(platform.system() == "Darwin", "SQLite extensions not supported on macOS")
+    @unittest.skipIf(os.name == "nt", "SQLite copy skipped on Windows due to file locking")
+    def testSQLiteSaveExistingPath(self):
+        """
+        Test saving a SQLite index to an existing path and overwriting the existing database
+        """
+
+        # Test saving to a new path
+        model = self.backend("sqlite")
+
+        # Test save variations
+        index = os.path.join(tempfile.gettempdir(), "ann.sqlite.existing")
+
+        # Save new
+        model.save(index)
+
+        # Test saving to a new path
+        model = self.backend("sqlite")
+        expected = model.count() - 1
+
+        # Delete id
+        model.delete([0])
+
+        # Save to same path
+        model.save(index)
+
+        self.assertEqual(model.count(), expected)
+
+    @unittest.skipIf(platform.system() == "Darwin", "SQLite extensions not supported on macOS")
     def testSQLiteSaveNewPath(self):
         """
         Test saving a loaded and modified SQLite index to a new path, then loading the new copy
@@ -607,6 +733,7 @@ class TestDense(unittest.TestCase):
             self.assertEqual(len(model.search(np.random.rand(1, 240).astype(np.float32), 10)[0]), 10)
             model.close()
 
+    @unittest.skipIf(platform.system() == "Darwin", "SQLite extensions not supported on macOS")
     def testSQLiteQuantizeDisabled(self):
         """
         Test that quantize: false disables SQLite storage quantization
@@ -616,6 +743,19 @@ class TestDense(unittest.TestCase):
             with self.subTest(quantize=quantize):
                 ann = ANNFactory.create({"backend": "sqlite", "dimensions": 4, "sqlite": {"quantize": quantize}})
                 self.assertEqual(ann.quantize, expected)
+
+    @unittest.skipIf(platform.system() == "Darwin", "SQLite extensions not supported on macOS")
+    def testSQLiteBinaryScores(self):
+        """
+        Binary similarity is the fraction of matching bits, not one minus their distance.
+        """
+
+        ann = ANNFactory.create({"backend": "sqlite", "dimensions": 8, "sqlite": {"quantize": 1}})
+        self.addCleanup(ann.close)
+        data = np.ones((4, 8), dtype=np.float32)
+        data[1, :1], data[2, :4], data[3, :] = -1, -1, -1
+        ann.index(data)
+        self.assertEqual(ann.search(data[:1], 4)[0], [(0, 1.0), (1, 0.875), (2, 0.5), (3, 0.0)])
 
     def testTorch(self):
         """
@@ -828,7 +968,7 @@ class TestDense(unittest.TestCase):
         model = self.backend(name, params)
 
         # Generate temp file path
-        index = os.path.join(tempfile.gettempdir(), "ann")
+        index = os.path.join(tempfile.gettempdir(), f"ann.{name}.{round(time.time() * 1000)}")
 
         # Generate query vector
         query = np.random.rand(240).astype(np.float32)

@@ -81,6 +81,15 @@ Supports a `dict` with the parameters `cachelimit` and `cutoff`.
 
 When `terms` is set to `True`, default parameters are used for the `cachelimit` and `cutoff`. Normally, these defaults are sufficient.
 
+### Wildcard queries
+
+Keyword queries containing `*` expand matching terms using SQL `LIKE`. Within these
+expressions, `%` matches any sequence and `_` matches one character. To match a literal
+percent sign, underscore or backslash, use `\%`, `\_` or `\\`, respectively.
+For example, `report\_*` matches `report_2026`, while `report_*` also matches `reportX2026`.
+Use a tokenizer that preserves these characters, such as `tokenizer: {whitespace: true}`,
+or pass pre-tokenized query terms. Queries without `*` retain exact-term matching.
+
 ## normalize
 ```yaml
 normalize: boolean|str|dict

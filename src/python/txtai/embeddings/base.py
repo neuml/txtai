@@ -18,7 +18,6 @@ from .index import Action, Configuration, Functions, Indexes, IndexIds, Reducer,
 from .search import Explain, Ids, Query, Search, Terms
 
 
-# pylint: disable=C0302,R0904
 class Embeddings:
     """
     Embeddings databases are the engine that delivers semantic search. Data is transformed into embeddings vectors where similar concepts

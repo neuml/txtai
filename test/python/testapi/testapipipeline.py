@@ -74,7 +74,6 @@ upload:
 """
 
 
-# pylint: disable=R0904
 class TestPipeline(unittest.TestCase):
     """
     API tests for pipelines.

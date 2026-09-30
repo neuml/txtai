@@ -19,7 +19,6 @@ class Common:
     Wraps common file database tests to prevent unit test discovery for this class.
     """
 
-    # pylint: disable=R0904
     class TestRDBMS(unittest.TestCase):
         """
         Embeddings with content stored in a file database tests.
