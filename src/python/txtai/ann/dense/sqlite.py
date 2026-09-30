@@ -257,7 +257,12 @@ class SQLite(ANN):
             SELECT
         """
 
-        return self.tosql(("SELECT indexid, 1 - distance FROM {table} " f"WHERE embedding MATCH {self.embeddingsql()} AND k = ? ORDER BY distance"))
+        # BIT distance counts differing bits; normalize it before converting to similarity.
+        # SQLite binary dimensions are the number of bits, not the packed byte count.
+        distance = f"distance / {float(self.config['dimensions'])}" if self.quantize == 1 else "distance"
+        return self.tosql(
+            f"SELECT indexid, 1 - ({distance}) FROM {{table}} " f"WHERE embedding MATCH {self.embeddingsql()} AND k = ? ORDER BY distance"
+        )
 
     def countsql(self):
         """
