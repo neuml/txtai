@@ -18,6 +18,7 @@ class TestZvec(DenseTest):
         """
 
         self.runTests("zvec")
+        self.deletenumpy("zvec")
 
     def testZvecCustom(self):
         """

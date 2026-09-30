@@ -18,6 +18,7 @@ class TestMilvus(DenseTest):
         """
 
         self.runTests("milvus")
+        self.deletenumpy("milvus")
 
     def testMilvusCustom(self):
         """

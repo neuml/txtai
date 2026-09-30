@@ -80,7 +80,8 @@ class Zvec(ANN):
         self.metadata()
 
     def delete(self, ids):
-        if ids:
+        # Check length, ids can be a NumPy array
+        if len(ids):
             self.backend.delete([str(uid) for uid in ids])
 
     def search(self, queries, limit):

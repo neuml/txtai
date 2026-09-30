@@ -83,8 +83,9 @@ class Milvus(ANN):
         self.metadata()
 
     def delete(self, ids):
-        if ids:
-            self.collection.delete(ids)
+        # Check length, ids can be a NumPy array
+        if len(ids):
+            self.collection.delete([int(x) for x in ids])
 
     def search(self, queries, limit):
         matches = self.collection.search(queries.tolist(), top_k=limit, metric_type="IP", anns_field="embedding")
