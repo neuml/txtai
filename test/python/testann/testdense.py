@@ -745,6 +745,32 @@ class TestDense(unittest.TestCase):
                 self.assertEqual(ann.quantize, expected)
 
     @unittest.skipIf(platform.system() == "Darwin", "SQLite extensions not supported on macOS")
+    def testSQLiteSaveWithoutQuery(self):
+        """
+        Saving after load must not require an earlier query to open the connection.
+        """
+
+        for quantize in (None, 1, 8):
+            with self.subTest(quantize=quantize), tempfile.TemporaryDirectory() as directory:
+                source, target = (os.path.join(directory, name) for name in ("source", "target"))
+                ann = ANNFactory.create({"backend": "sqlite", "dimensions": 8, "sqlite": {"quantize": quantize}})
+                data = np.ones((2, 8), dtype=np.float32)
+                data[1, :4] = -1
+                try:
+                    ann.index(data)
+                    expected = ann.search(data[:1], 2)
+                    ann.save(source)
+                    for path in (source, target):
+                        ann.close()
+                        ann.load(source)
+                        self.assertIsNone(ann.connection)
+                        ann.save(path)
+                        ann.close()
+                        ann.load(path)
+                        self.assertEqual(ann.count(), 2)
+                        self.assertEqual(ann.search(data[:1], 2), expected)
+                finally:
+                    ann.close()
     def testSQLiteBinaryScores(self):
         """
         Binary similarity is the fraction of matching bits, not one minus their distance.

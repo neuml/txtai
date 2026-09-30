@@ -73,6 +73,9 @@ class SQLite(ANN):
         return self.cursor.fetchone()[0]
 
     def save(self, path):
+        # Loading defers opening the connection until the first database operation.
+        self.database()
+
         # Temporary database
         if not self.path:
             # Save temporary database
