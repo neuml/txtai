@@ -558,19 +558,19 @@ class TestDense(unittest.TestCase):
         Test RabitQ backend
         """
 
-        self.runTests("rabitq", None, False)
+        self.runTests("rabitq")
 
     def testRabitQCustom(self):
         """
         Test RabitQ backend with custom settings
         """
 
-        # Test with custom settings
+        # Test with custom settings, hnsw indexes don't support append and delete
         self.runTests("rabitq", {"rabitq": {"mode": "hnsw"}}, False)
         self.runTests("rabitq", {"rabitq": {"clusters": 8, "nprobe": 2}}, False)
         self.runTests("rabitq", {"rabitq": {"nbits": 4}}, False)
         self.runTests("rabitq", {"rabitq": {"mode": "hnsw", "nbits": 4}}, False)
-        self.runTests("rabitq", {"rabitq": {"nbits": 32}}, False)
+        self.runTests("rabitq", {"rabitq": {"nbits": 32}})
 
         # Generate dummy data
         data = np.random.rand(100, 240).astype(np.float32)
@@ -592,9 +592,58 @@ class TestDense(unittest.TestCase):
             ann.load(index)
         self.assertEqual(ann.count(), 0)
 
+    def testRabitQAppendDelete(self):
+        """
+        Test RabitQ ivf appends and deletes rows without retaining vectors
+        """
+
+        # Generate dummy data
+        data = np.random.rand(100, 240).astype(np.float32)
+        self.normalize(data)
+
+        # Raw vectors rank exactly, ivf probes every cluster
+        config = {"backend": "rabitq", "dimensions": 240, "rabitq": {"nbits": 32, "nprobe": 100}}
+        ann = ANNFactory.create(config)
+        ann.index(data)
+
+        # Appended rows continue the ids
+        ann.append(data[:10])
+        self.assertEqual(ann.count(), 110)
+        self.assertEqual(ann.config["offset"], 110)
+        self.assertEqual({uid for uid, _ in ann.search(data[5:6], 2)[0]}, {5, 105})
+
+        # Unknown and repeated ids are ignored, deleted rows are skipped by search and the limit is still filled
+        ann.delete([5, 5, 1000, -1])
+        self.assertEqual(ann.count(), 109)
+        for result in ann.search(data[:20], 10):
+            self.assertEqual(len(result), 10)
+            self.assertNotIn(5, {uid for uid, _ in result})
+
+        # Deletes are kept in a new instance created from the saved config, like Embeddings.load
+        index = os.path.join(tempfile.gettempdir(), f"rabitq.delete.{round(time.time() * 1000)}")
+        ann.save(index)
+        loaded = ANNFactory.create(dict(ann.config))
+        loaded.load(index)
+        self.assertEqual(loaded.count(), 109)
+        self.assertEqual(loaded.search(data[:3], 5), ann.search(data[:3], 5))
+
+        # A deleted row stays hidden after a reload, even for a query equal to its vector
+        self.assertNotIn(5, {uid for uid, _ in loaded.search(data[5:6], 10)[0]})
+
+        # Appends and deletes continue after a reload
+        loaded.append(data[:5])
+        self.assertEqual(loaded.count(), 114)
+        loaded.delete([0])
+        self.assertEqual(loaded.count(), 113)
+
+        # Deleting every row leaves an empty index
+        loaded.delete(list(range(200)))
+        self.assertEqual(loaded.count(), 0)
+        self.assertEqual(loaded.search(data[:1], 10), [[]])
+
     def testRabitQUpdate(self):
         """
-        Test RabitQ stores a single file and does not support append and delete
+        Test RabitQ stores a single file and hnsw does not support append and delete
         """
 
         # Generate dummy data
@@ -608,11 +657,12 @@ class TestDense(unittest.TestCase):
             # Offset marks the index as existing, see Embeddings.exists
             self.assertEqual(ann.config["offset"], 100)
 
-            with self.assertRaises(NotImplementedError):
-                ann.append(data[:1])
+            if mode == "hnsw":
+                with self.assertRaises(NotImplementedError):
+                    ann.append(data[:1])
 
-            with self.assertRaises(NotImplementedError):
-                ann.delete([0])
+                with self.assertRaises(NotImplementedError):
+                    ann.delete([0])
 
             # Limit above the row count returns every row
             for result in ann.search(data[:2], 200):
