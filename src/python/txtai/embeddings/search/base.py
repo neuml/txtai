@@ -228,8 +228,8 @@ class Search:
         # Override limit with query limit, if applicable
         limit = max(limit, self.limit(queries))
 
-        # Bulk index scan
-        scan = Scan(self.search, limit, weights, index)(queries, parameters)
+        # Bulk index scan. The database query skips OFFSET rows, so add them to the number of candidates.
+        scan = Scan(self.search, limit + self.offset(queries), weights, index)(queries, parameters)
 
         # Combine index search results with database search results
         results = []
@@ -296,6 +296,32 @@ class Search:
 
         return qlimit
 
+    def offset(self, queries):
+        """
+        Parses the largest OFFSET clause from queries ordered by score.
+
+        Args:
+            queries: list of queries
+
+        Returns:
+            largest offset number or 0 if not found
+        """
+
+        qoffset = 0
+        for query in queries:
+            # Skip non-numeric offsets (e.g. a ":n" bind parameter)
+            o = query.get("offset")
+            o = int(o) if o and o.isdigit() else 0
+
+            # Only a query ordered first by score desc counts its offset. Any other order, or a select alias named score that replaces
+            # the similarity score in the order, must see the same candidates on every page.
+            if o > qoffset:
+                orderby = query.get("orderby")
+                if (not orderby or orderby.split(",")[0].strip().lower() == "score desc") and "score" not in query.get("aliases", {}):
+                    qoffset = o
+
+        return qoffset
+
     def graphsearch(self, queries, limit, weights, index):
         """
         Executes an index + graph search.
@@ -316,8 +342,8 @@ class Search:
         # Override limit with query limit, if applicable
         limit = max(limit, self.limit(queries))
 
-        # Bulk index scan
-        scan = Scan(self.search, limit, weights, index)(queries, None)
+        # Bulk index scan. The graph query drops SKIP rows, so add them to the number of candidates.
+        scan = Scan(self.search, limit + self.offset(queries), weights, index)(queries, None)
 
         # Combine index search results with database search results
         for x, query in enumerate(queries):

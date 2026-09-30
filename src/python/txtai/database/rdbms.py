@@ -9,7 +9,6 @@ from .base import Database
 from .schema import Statement
 
 
-# pylint: disable=R0904
 class RDBMS(Database):
     """
     Base relational database class. A relational database uses SQL to insert, update, delete and select from a

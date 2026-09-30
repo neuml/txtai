@@ -24,7 +24,6 @@ from ...util import Library
 np = Library().numpy()
 
 
-# pylint: disable=R0904
 class PGVector(ANN):
     """
     Builds an ANN index backed by a Postgres database.
@@ -72,7 +71,8 @@ class PGVector(ANN):
         self.metadata()
 
     def delete(self, ids):
-        self.database.execute(delete(self.table).where(self.table.c["indexid"].in_(ids)))
+        # Bind ids as int, NumPy integers don't match the indexid column
+        self.database.execute(delete(self.table).where(self.table.c["indexid"].in_([int(x) for x in ids])))
 
     def search(self, queries, limit):
         results = []

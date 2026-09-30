@@ -14,7 +14,7 @@ try:
 except ImportError:
     ONNX_RUNTIME = False
 
-from ...util import Download, Library
+from ...util import Download, DownloadError, Library
 
 from ..base import Vectors
 
@@ -68,7 +68,7 @@ class ONNX(Vectors):
     def loadtokenizer(self, path):
         """
         Loads the tokenizer for a model. Reads the `tokenizer` configuration option when set,
-        otherwise falls back to a tokenizer.json file stored alongside the model.
+        otherwise falls back to a tokenizer.json file stored alongside the model or at the root of its HF Hub repo.
 
         Args:
             path: model path
@@ -81,7 +81,16 @@ class ONNX(Vectors):
         tokenizer = self.config.get("tokenizer")
         if not tokenizer:
             tokenizer = os.path.dirname(path) + "/" + "tokenizer.json"
-            tokenizer = tokenizer if os.path.exists(tokenizer) else Download()(tokenizer)
+            try:
+                tokenizer = tokenizer if os.path.exists(tokenizer) else Download()(tokenizer)
+
+            # Model is in a subdirectory of a HF Hub repo, read the tokenizer from the repo root
+            except DownloadError:
+                # Local models don't have a HF Hub repo root
+                if os.path.exists(path):
+                    raise
+
+                tokenizer = Download()("/".join(path.split("/")[:2]), "tokenizer.json")
 
         # Local tokenizer file vs a model id resolved through the HF Hub
         return Tokenizer.from_file(tokenizer) if os.path.exists(tokenizer) else Tokenizer.from_pretrained(tokenizer)

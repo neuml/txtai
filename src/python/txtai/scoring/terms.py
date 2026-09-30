@@ -13,6 +13,7 @@ from collections import Counter
 from threading import RLock
 
 # Core library imports
+from ..serialize import SerializeFactory
 from ..util import Library
 
 np = Library().numpy()
@@ -278,9 +279,13 @@ class Terms:
             # Index id - length
             self.lengths.append(length)
 
-        # Cast ids to int if every id is an integer
-        if all(uid.isdigit() for uid in self.ids):
+        # Retain integer inference for legacy indexes with plain TEXT ids.
+        if all(isinstance(uid, str) and uid.isdigit() for uid in self.ids):
             self.ids = [int(uid) for uid in self.ids]
+        else:
+            # Serialized ids preserve types, including numeric strings and mixed string/integer ids.
+            serializer = SerializeFactory.create()
+            self.ids = [serializer.loadbytes(uid) if isinstance(uid, bytes) else uid for uid in self.ids]
 
         # Clear cache
         self.weights.cache_clear()
@@ -299,9 +304,10 @@ class Terms:
         # Clear documents table
         self.cursor.execute(Terms.DELETE_DOCUMENTS)
 
-        # Save document attributes
+        # Serialize ids as BLOBs so SQLite TEXT affinity does not discard their types.
+        serializer = SerializeFactory.create()
         for i, uid in enumerate(self.ids):
-            self.cursor.execute(Terms.INSERT_DOCUMENT, [i, uid, 1 if i in self.deletes else 0, self.lengths[i]])
+            self.cursor.execute(Terms.INSERT_DOCUMENT, [i, serializer.savebytes(uid), 1 if i in self.deletes else 0, self.lengths[i]])
 
         # Temporary database
         if not self.path:

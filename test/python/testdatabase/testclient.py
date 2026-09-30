@@ -11,7 +11,6 @@ from txtai.embeddings import Embeddings
 from .testrdbms import Common
 
 
-# pylint: disable=R0904
 class TestClient(Common.TestRDBMS):
     """
     Embeddings with content stored in a client RDBMS.

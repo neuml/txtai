@@ -165,9 +165,9 @@ class ChatResponse:
         return {
             "id": str(uuid.uuid4()),
             "object": "chat.completion",
-            "created": int(time.time() * 1000),
+            "created": int(time.time()),
             "model": model,
-            "choices": [{"id": 0, "message": {"role": "assistant", "content": result}, "finish_reason": "stop"}],
+            "choices": [{"index": 0, "message": {"role": "assistant", "content": result}, "finish_reason": "stop"}],
         }
 
 
@@ -177,15 +177,38 @@ class StreamingChatResponse:
     """
 
     def __call__(self, model, result):
+        # All chunks of a response share the same id and creation time
+        uid, created = str(uuid.uuid4()), int(time.time())
+
         for chunk in result:
-            yield "data: " + json.dumps(
-                {
-                    "id": str(uuid.uuid4()),
-                    "object": "chat.completion.chunk",
-                    "created": int(time.time() * 1000),
-                    "model": model,
-                    "choices": [{"id": 0, "delta": {"content": chunk}}],
-                }
-            ) + "\n\n"
+            yield self.chunk(uid, created, model, {"content": chunk}, None)
+
+        # Final chunk signals the end of the response
+        yield self.chunk(uid, created, model, {}, "stop")
 
         yield "data: [DONE]\n\n"
+
+    def chunk(self, uid, created, model, delta, reason):
+        """
+        Builds a server-sent event for a single chat completion chunk.
+
+        Args:
+            uid: response id
+            created: response creation time in seconds
+            model: model name
+            delta: chunk content
+            reason: finish reason, None until the final chunk
+
+        Returns:
+            server-sent event
+        """
+
+        data = {
+            "id": uid,
+            "object": "chat.completion.chunk",
+            "created": created,
+            "model": model,
+            "choices": [{"index": 0, "delta": delta, "finish_reason": reason}],
+        }
+
+        return "data: " + json.dumps(data) + "\n\n"

@@ -24,7 +24,6 @@ from .base import Graph
 from .query import Query
 
 
-# pylint: disable=R0904
 class NetworkX(Graph):
     """
     Graph instance backed by NetworkX.

@@ -11,11 +11,12 @@ import unittest
 from unittest.mock import patch
 
 import numpy as np
+import pandas as pd
 import torch
 
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
-from txtai.data import Data
+from txtai.data import Data, Questions as QuestionsData, Texts
 from txtai.models import Lemur, Models, PoolingFactory
 from txtai.pipeline import HFTrainer, Labels, LemurTrainer, Questions, Sequences
 
@@ -691,6 +692,46 @@ class TestTrainer(unittest.TestCase):
         labels = Labels((model, tokenizer), dynamic=False)
         self.assertEqual(labels("cat")[0][0], 1)
 
+    def testPack(self):
+        """
+        Test packing rows into chunks up to maxlength
+        """
+
+        tokenizer = AutoTokenizer.from_pretrained("hf-internal-testing/tiny-random-gpt2")
+
+        rows = ["a b c d", "e f g h", "i j k l"]
+        length = len(tokenizer(rows[0])["input_ids"])
+
+        # Two rows fill maxlength exactly and are packed into one chunk
+        packed = Texts(tokenizer, None, length * 2, "pack").process({"text": list(rows)})
+        self.assertEqual([len(chunk) for chunk in packed["input_ids"]], [length * 2, length])
+
+        # Rows are never split across chunks
+        packed = Texts(tokenizer, None, length * 2 - 1, "pack").process({"text": list(rows)})
+        self.assertEqual([len(chunk) for chunk in packed["input_ids"]], [length] * 3)
+
+    def testPandas(self):
+        """
+        Test training a model with a pandas DataFrame
+        """
+
+        df = pd.DataFrame(self.data)
+
+        # Split into train and validation sets, the train index doesn't start at 0
+        train, validation = df.iloc[4:], df.iloc[:4]
+
+        trainer = HFTrainer()
+        model, tokenizer = trainer(
+            "google/bert_uncased_L-2_H-128_A-2",
+            train,
+            validation=validation,
+            do_eval=True,
+            output_dir=os.path.join(tempfile.gettempdir(), "trainer"),
+        )
+
+        labels = Labels((model, tokenizer), dynamic=False)
+        self.assertEqual(labels("cat")[0][0], 1)
+
     def testPEFT(self):
         """
         Test training a model with causal language modeling and PEFT
@@ -737,6 +778,39 @@ class TestTrainer(unittest.TestCase):
 
         questions = Questions((model, tokenizer), gpu=True)
         self.assertTrue("onion" in questions(["What ingredient?"], ["Peel 1 onion"])[0])
+
+    def testQASpans(self):
+        """
+        Test QA training labels when a long context is split into multiple spans
+        """
+
+        tokenizer = AutoTokenizer.from_pretrained("google/bert_uncased_L-2_H-128_A-2")
+        process = QuestionsData(tokenizer, None, 32, 8)
+
+        # Context long enough to be split into overlapping spans, with the answer near the end
+        context = " ".join(f"filler{x}" for x in range(9)) + " paris filler10 filler11"
+        data = {"question": ["What is the capital?"], "context": [context], "answers": ["paris"]}
+
+        spans = process.tokenize(dict(data))
+        labels = process.process(dict(data))
+
+        start, end = context.index("paris"), context.index("paris") + len("paris")
+        inside = []
+        for x, offsets in enumerate(spans["offset_mapping"]):
+            # Character range of the context covered by this span
+            covered = [offset for offset, sequence in zip(offsets, spans.sequence_ids(x)) if sequence == 1]
+            inside.append(covered[0][0] <= start and covered[-1][1] >= end)
+
+            tokens = labels["input_ids"][x][labels["start_positions"][x] : labels["end_positions"][x] + 1]
+            if inside[-1]:
+                self.assertEqual(tokenizer.decode(tokens), "paris")
+            else:
+                # Spans without the answer are labeled with the CLS token
+                self.assertEqual((labels["start_positions"][x], labels["end_positions"][x]), (0, 0))
+
+        # Both kinds of span must be present for this test to be meaningful
+        self.assertIn(True, inside)
+        self.assertIn(False, inside)
 
     def testRegression(self):
         """
