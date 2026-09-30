@@ -2,8 +2,10 @@
 OpenAI API module tests
 """
 
+import json
 import os
 import tempfile
+import time
 import unittest
 
 from unittest.mock import patch
@@ -148,6 +150,20 @@ class TestOpenAI(unittest.TestCase):
 
         self.assertEqual(response["choices"][0]["message"]["content"], "Hello")
 
+    def testChatResponseFormat(self):
+        """
+        Test that a chat completion follows the OpenAI response format
+        """
+
+        response = self.client.post("/v1/chat/completions", json={"messages": [{"role": "user", "content": "Hello"}], "model": "segmentation"}).json()
+
+        self.assertEqual(response["object"], "chat.completion")
+        self.assertEqual(response["choices"][0]["index"], 0)
+        self.assertEqual(response["choices"][0]["finish_reason"], "stop")
+
+        # Creation time is a Unix timestamp in seconds
+        self.assertLessEqual(response["created"], time.time())
+
     def testChatSearch(self):
         """
         Test a chat completion with an embeddings search
@@ -167,6 +183,23 @@ class TestOpenAI(unittest.TestCase):
         response = self.client.post("/v1/chat/completions", json={"messages": [{"role": "user", "content": "Hello"}], "model": "llm", "stream": True})
 
         self.assertGreater(len(response.text.split("\n\n")), 0)
+
+    def testChatStreamFormat(self):
+        """
+        Test that a streaming chat completion follows the OpenAI chunk format
+        """
+
+        response = self.client.post("/v1/chat/completions", json={"messages": [{"role": "user", "content": "Hello"}], "model": "llm", "stream": True})
+
+        events = [event[len("data: ") :] for event in response.text.split("\n\n") if event]
+        self.assertEqual(events[-1], "[DONE]")
+
+        # All chunks share one id, and only the last one has a finish reason
+        chunks = [json.loads(event) for event in events[:-1]]
+        self.assertEqual(len({chunk["id"] for chunk in chunks}), 1)
+        self.assertEqual({chunk["choices"][0]["index"] for chunk in chunks}, {0})
+        self.assertEqual([chunk["choices"][0]["finish_reason"] for chunk in chunks], [None] * (len(chunks) - 1) + ["stop"])
+        self.assertLessEqual(chunks[0]["created"], time.time())
 
     def testChatWorkflow(self):
         """
