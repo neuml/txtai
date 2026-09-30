@@ -418,6 +418,24 @@ class TestDense(unittest.TestCase):
 
         self.runTests("numpy")
 
+    def testArrayDeleteBounds(self):
+        """
+        Invalid array deletion IDs must not wrap to live rows or raise IndexError.
+        """
+
+        for backend in ("numpy", "torch"):
+            for quantize in (None, 1):
+                with self.subTest(backend=backend, quantize=quantize):
+                    data = np.array([[255, 0], [0, 255], [255, 255]], dtype=np.uint8) if quantize else np.eye(3, dtype=np.float32)
+                    ann = ANNFactory.create({"backend": backend, "dimensions": data.shape[1], "quantize": quantize})
+                    self.addCleanup(ann.close)
+                    ann.index(data.copy())
+                    ann.delete([-1, -4, 0, 0, 3, 99])
+                    expected = data.copy()
+                    expected[0] = 0
+                    np.testing.assert_array_equal(ann.numpy(ann.backend), expected)
+                    self.assertEqual(ann.count(), 2)
+
     @patch.dict(os.environ, {"ALLOW_PICKLE": "True"})
     def testNumPyLegacy(self):
         """
