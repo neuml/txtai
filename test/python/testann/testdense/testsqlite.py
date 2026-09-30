@@ -26,6 +26,7 @@ class TestSQLite(DenseTest):
         """
 
         self.runTests("sqlite")
+        self.deletenumpy("sqlite")
 
     @unittest.skipIf(platform.system() == "Darwin", "SQLite extensions not supported on macOS")
     def testSQLiteBinaryScores(self):

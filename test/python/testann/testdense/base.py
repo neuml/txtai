@@ -128,6 +128,25 @@ class DenseTest(unittest.TestCase):
 
         return model
 
+    def deletenumpy(self, name, params=None):
+        """
+        Test deleting ids passed as a NumPy array. Only the requested rows should be deleted.
+
+        Args:
+            name: backend name
+            params: additional config parameters
+        """
+
+        model = self.backend(name, params, 10)
+        model.delete(np.array([3, 4]))
+
+        # Generate query vector
+        query = np.random.rand(240).astype(np.float32)
+        self.normalize(query)
+
+        self.assertEqual(model.count(), 8)
+        self.assertEqual(sorted(uid for uid, _ in model.search(np.array([query]), 10)[0]), [0, 1, 2, 5, 6, 7, 8, 9])
+
     def save(self, name, params=None):
         """
         Test save/load.

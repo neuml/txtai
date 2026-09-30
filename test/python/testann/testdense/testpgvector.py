@@ -70,5 +70,9 @@ class TestPGVector(DenseTest):
             ann.delete([0])
             self.assertEqual(ann.count(), 1)
 
+            # Test delete with NumPy ids
+            ann.delete(np.array([1]))
+            self.assertEqual(ann.count(), 0)
+
             # Close ANN
             ann.close()

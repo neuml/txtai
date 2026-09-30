@@ -55,7 +55,8 @@ class SQLite(ANN):
         self.metadata()
 
     def delete(self, ids):
-        self.database().executemany(self.deletesql(), [(x,) for x in ids])
+        # Bind ids as int, sqlite3 binds NumPy integers as blobs that match the wrong rows
+        self.database().executemany(self.deletesql(), [(int(x),) for x in ids])
 
     def search(self, queries, limit):
         results = []
