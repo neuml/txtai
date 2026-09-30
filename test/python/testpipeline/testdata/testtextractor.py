@@ -123,6 +123,9 @@ class TestTextractor(unittest.TestCase):
             "- Test1\n\t1. Test2\n\t\t- Test3\n\t\t- Test4\n\t2. Test5\n- Test6",
         )
 
+        # Nested list that is a direct child of the parent list
+        self.assertMarkdown("<ol><li>Test1</li><ol><li>Test2</li></ol><li>Test3</li></ol>", "1. Test1\n\t1. Test2\n2. Test3")
+
         # Code
         self.assertMarkdown("<code>This is a test</code>", "```\nThis is a test\n```")
         self.assertMarkdown("<pre>This is a test</pre>", "```\nThis is a test\n```")
@@ -208,7 +211,7 @@ class TestTextractor(unittest.TestCase):
         text = textractor(Utils.PATH + "/article.pdf")
 
         # Check length of text is as expected
-        self.assertEqual(len(text), 2471)
+        self.assertEqual(len(text), 2472)
 
     def testTable(self):
         """
@@ -245,7 +248,7 @@ class TestTextractor(unittest.TestCase):
 
         path, text = textractor(Utils.PATH + "/article.pdf")
         self.assertEqual(path, Utils.PATH + "/article.pdf")
-        self.assertEqual(len(text), 2471)
+        self.assertEqual(len(text), 2472)
 
     def testURL(self):
         """

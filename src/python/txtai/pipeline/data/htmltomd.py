@@ -255,10 +255,16 @@ class HTMLToMarkdown(Pipeline):
             list as markdown
         """
 
-        elements = []
-        for x, element in enumerate(node.find_all("li", recursive=False)):
+        elements, count = [], 0
+        for element in node.find_all(("li", "ul", "ol"), recursive=False):
+            # Nested list that is a direct child of this list
+            if element.name != "li":
+                self.nested(element, article, elements)
+                continue
+
             # Unordered lists use dashes. Ordered lists use numbers.
-            prefix = "-" if node.name == "ul" else f"{x + 1}."
+            count += 1
+            prefix = "-" if node.name == "ul" else f"{count}."
 
             # Detach nested lists, these are formatted separately
             nested = [child.extract() for child in element.find_all(("ul", "ol"), recursive=False)]
@@ -270,14 +276,27 @@ class HTMLToMarkdown(Pipeline):
             if text:
                 elements.append(f"{prefix} {text}")
 
-            # Add nested lists indented with a tab, which is preserved by text cleaning
+            # Add nested lists
             for child in nested:
-                text = self.items(child, article)
-                if text:
-                    elements.append(indent(text, "\t"))
+                self.nested(child, article, elements)
 
         # Join elements together as string
         return "\n".join(elements)
+
+    def nested(self, node, article, elements):
+        """
+        Nested list handler. Formats a nested list and adds it to elements indented with a tab,
+        which is preserved by text cleaning.
+
+        Args:
+            node: nested list node
+            article: True if the main section node is an article
+            elements: list of formatted list elements
+        """
+
+        text = self.items(node, article)
+        if text:
+            elements.append(indent(text, "\t"))
 
     def code(self, node):
         """
