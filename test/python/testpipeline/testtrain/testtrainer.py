@@ -692,6 +692,24 @@ class TestTrainer(unittest.TestCase):
         labels = Labels((model, tokenizer), dynamic=False)
         self.assertEqual(labels("cat")[0][0], 1)
 
+    def testPack(self):
+        """
+        Test packing rows into chunks up to maxlength
+        """
+
+        tokenizer = AutoTokenizer.from_pretrained("hf-internal-testing/tiny-random-gpt2")
+
+        rows = ["a b c d", "e f g h", "i j k l"]
+        length = len(tokenizer(rows[0])["input_ids"])
+
+        # Two rows fill maxlength exactly and are packed into one chunk
+        packed = Texts(tokenizer, None, length * 2, "pack").process({"text": list(rows)})
+        self.assertEqual([len(chunk) for chunk in packed["input_ids"]], [length * 2, length])
+
+        # Rows are never split across chunks
+        packed = Texts(tokenizer, None, length * 2 - 1, "pack").process({"text": list(rows)})
+        self.assertEqual([len(chunk) for chunk in packed["input_ids"]], [length] * 3)
+
     def testPandas(self):
         """
         Test training a model with a pandas DataFrame
@@ -713,23 +731,6 @@ class TestTrainer(unittest.TestCase):
 
         labels = Labels((model, tokenizer), dynamic=False)
         self.assertEqual(labels("cat")[0][0], 1)
-    def testPack(self):
-        """
-        Test packing rows into chunks up to maxlength
-        """
-
-        tokenizer = AutoTokenizer.from_pretrained("hf-internal-testing/tiny-random-gpt2")
-
-        rows = ["a b c d", "e f g h", "i j k l"]
-        length = len(tokenizer(rows[0])["input_ids"])
-
-        # Two rows fill maxlength exactly and are packed into one chunk
-        packed = Texts(tokenizer, None, length * 2, "pack").process({"text": list(rows)})
-        self.assertEqual([len(chunk) for chunk in packed["input_ids"]], [length * 2, length])
-
-        # Rows are never split across chunks
-        packed = Texts(tokenizer, None, length * 2 - 1, "pack").process({"text": list(rows)})
-        self.assertEqual([len(chunk) for chunk in packed["input_ids"]], [length] * 3)
 
     def testPEFT(self):
         """
