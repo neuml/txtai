@@ -737,6 +737,19 @@ class TestDense(unittest.TestCase):
                 ann = ANNFactory.create({"backend": "sqlite", "dimensions": 4, "sqlite": {"quantize": quantize}})
                 self.assertEqual(ann.quantize, expected)
 
+    @unittest.skipIf(platform.system() == "Darwin", "SQLite extensions not supported on macOS")
+    def testSQLiteBinaryScores(self):
+        """
+        Binary similarity is the fraction of matching bits, not one minus their distance.
+        """
+
+        ann = ANNFactory.create({"backend": "sqlite", "dimensions": 8, "sqlite": {"quantize": 1}})
+        self.addCleanup(ann.close)
+        data = np.ones((4, 8), dtype=np.float32)
+        data[1, :1], data[2, :4], data[3, :] = -1, -1, -1
+        ann.index(data)
+        self.assertEqual(ann.search(data[:1], 4)[0], [(0, 1.0), (1, 0.875), (2, 0.5), (3, 0.0)])
+
     def testTorch(self):
         """
         Test Torch backend
