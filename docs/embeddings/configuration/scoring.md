@@ -69,7 +69,9 @@ Sparse ANN backed by Postgres. Supports same options as the [pgvector](../ann/#p
 #### zvecsparse
 ```yaml
 zvecsparse:
+  efconstruction: ef_construction param for HnswIndexParam (int) - defaults to 500
   m: number of HNSW links per element (int) - defaults to 50
+  efsearch: ef search param for HnswQueryParam (int) - defaults to 300
 ```
 
 Sparse ANN backed by [zvec](https://github.com/alibaba/zvec). Stores sparse vectors in an embedded, path-based vector index. Requires the [ann](../../../install/#ann) extras package.

@@ -49,6 +49,7 @@ class Zvec(ANN):
         self.close()
 
         # Lookup index settings
+        efconstruction = self.setting("efconstruction", 500)
         m = self.setting("m", 50)
 
         # Create collection
@@ -60,7 +61,7 @@ class Zvec(ANN):
                 "embedding",
                 self.datatype(),
                 self.config["dimensions"],
-                index_param=zvec.HnswIndexParam(metric_type=zvec.MetricType.IP, m=m),
+                index_param=zvec.HnswIndexParam(metric_type=zvec.MetricType.IP, m=m, ef_construction=efconstruction),
             ),
         )
         self.backend = zvec.create_and_open(path=self.path, schema=schema)
@@ -68,12 +69,18 @@ class Zvec(ANN):
         # Add items - position in embeddings is used as the id
         self.insert(embeddings, 0)
 
+        # Build HNSW index
+        self.backend.optimize()
+
         # Add id offset and index build metadata
         self.config["offset"] = embeddings.shape[0]
-        self.metadata({"m": m, "zvec": zvec.__version__})
+        self.metadata({"efconstruction": efconstruction, "m": m, "zvec": zvec.__version__})
 
     def append(self, embeddings):
         self.insert(embeddings, self.config["offset"])
+
+        # Add new items to HNSW index
+        self.backend.optimize()
 
         # Update id offset and index metadata
         self.config["offset"] += embeddings.shape[0]
@@ -85,10 +92,13 @@ class Zvec(ANN):
             self.backend.delete([str(uid) for uid in ids])
 
     def search(self, queries, limit):
+        # Lookup search settings
+        param = zvec.HnswQueryParam(ef=self.setting("efsearch", 300))
+
         results = []
         for query in queries:
             matches = self.backend.query(
-                zvec.Query(field_name="embedding", vector=self.prepare(query)),
+                zvec.Query(field_name="embedding", vector=self.prepare(query), param=param),
                 topk=limit,
             )
             results.append([(int(match.id), float(match.score)) for match in matches])

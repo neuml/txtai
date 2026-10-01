@@ -25,7 +25,7 @@ class TestZvec(DenseTest):
         Test zvec backend with custom settings
         """
 
-        self.runTests("zvec", {"zvec": {"m": 16}})
+        self.runTests("zvec", {"zvec": {"efconstruction": 100, "m": 16, "efsearch": 50}})
 
         # Test invalid file path handled
         with self.assertRaises(FileNotFoundError):
