@@ -58,7 +58,7 @@ class Zvec(ANN):
             name="txtai",
             vectors=zvec.VectorSchema(
                 "embedding",
-                zvec.DataType.VECTOR_FP32,
+                self.datatype(),
                 self.config["dimensions"],
                 index_param=zvec.HnswIndexParam(metric_type=zvec.MetricType.IP, m=m),
             ),
@@ -88,7 +88,7 @@ class Zvec(ANN):
         results = []
         for query in queries:
             matches = self.backend.query(
-                zvec.Query(field_name="embedding", vector=query.tolist()),
+                zvec.Query(field_name="embedding", vector=self.prepare(query)),
                 topk=limit,
             )
             results.append([(int(match.id), float(match.score)) for match in matches])
@@ -129,5 +129,28 @@ class Zvec(ANN):
             for start in range(0, embeddings.shape[0], 1024):
                 batch = embeddings[start : start + 1024]
                 self.backend.insert(
-                    [zvec.Doc(id=str(offset + start + uid), vectors={"embedding": embedding.tolist()}) for uid, embedding in enumerate(batch)]
+                    [zvec.Doc(id=str(offset + start + uid), vectors={"embedding": self.prepare(embedding)}) for uid, embedding in enumerate(batch)]
                 )
+
+    def datatype(self):
+        """
+        Gets the vector data type.
+
+        Returns:
+            zvec vector data type
+        """
+
+        return zvec.DataType.VECTOR_FP32
+
+    def prepare(self, data):
+        """
+        Prepares data for the vector field.
+
+        Args:
+            data: input data
+
+        Returns:
+            data formatted for zvec
+        """
+
+        return data.tolist()

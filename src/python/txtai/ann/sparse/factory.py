@@ -7,6 +7,7 @@ from ...util import Resolver
 from ..base import ANN
 from .ivfsparse import IVFSparse
 from .pgsparse import PGSparse
+from .zvecsparse import ZvecSparse
 
 
 class SparseANNFactory:
@@ -35,6 +36,8 @@ class SparseANNFactory:
             ann = IVFSparse(config)
         elif backend == "pgsparse":
             ann = PGSparse(config)
+        elif backend == "zvecsparse":
+            ann = ZvecSparse(config)
         else:
             ann = SparseANNFactory.resolve(backend, config)
 

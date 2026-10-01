@@ -205,3 +205,46 @@ class TestSparse(unittest.TestCase):
         results = scoring.search("lottery ticket", 1)
         self.assertGreater(len(results), 0)
         scoring.close()
+
+    def testZvecSparse(self):
+        """
+        Test sparse vectors with a zvec backend
+        """
+
+        # Sparse vectors stored in a zvec index
+        config = {"method": "sparse", "path": "sparse-encoder-testing/splade-bert-tiny-nq", "backend": "zvecsparse"}
+        scoring = ScoringFactory.create(config)
+        scoring.index((uid, {"text": text}, tags) for uid, text, tags in self.data)
+
+        # Run search and validate correct result returned
+        index, _ = scoring.search("lottery ticket", 1)[0]
+        self.assertEqual(index, 4)
+
+        # Validate count
+        self.assertEqual(scoring.count(), len(self.data))
+
+        # Generate temp file path
+        index = os.path.join(tempfile.gettempdir(), "scoring")
+        os.makedirs(index, exist_ok=True)
+
+        # Save scoring instance
+        scoring.save(f"{index}/scoring.zvecsparse.index")
+
+        # Reload scoring instance
+        scoring = ScoringFactory.create(config)
+        scoring.load(f"{index}/scoring.zvecsparse.index")
+
+        # Run search and validate correct result returned
+        index, _ = scoring.search("lottery ticket", 1)[0]
+        self.assertEqual(index, 4)
+
+        # Test delete
+        scoring.delete([4])
+        self.assertEqual(scoring.count(), len(self.data) - 1)
+
+        # Run search after delete
+        index, _ = scoring.search("lottery ticket", 1)[0]
+        self.assertEqual(index, 5)
+
+        # Close scoring
+        scoring.close()
