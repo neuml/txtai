@@ -113,6 +113,19 @@ class TestTextractor(unittest.TestCase):
         self.assertMarkdown("<ul><li>Test1</li><li>Test2</li></ul>", "- Test1\n- Test2")
         self.assertMarkdown("<ol><li>Test1</li><li>Test2</li></ol>", "1. Test1\n2. Test2")
 
+        # Nested lists
+        self.assertMarkdown("<ul><li>Test1<ul><li>Test2</li></ul></li><li>Test3</li></ul>", "- Test1\n\t- Test2\n- Test3")
+        self.assertMarkdown(
+            "<ol><li>Test1<ol><li>Test2</li><li>Test3</li></ol></li><li>Test4</li></ol>", "1. Test1\n\t1. Test2\n\t2. Test3\n2. Test4"
+        )
+        self.assertMarkdown(
+            "<ul><li>Test1<ol><li>Test2<ul><li>Test3</li><li>Test4</li></ul></li><li>Test5</li></ol></li><li>Test6</li></ul>",
+            "- Test1\n\t1. Test2\n\t\t- Test3\n\t\t- Test4\n\t2. Test5\n- Test6",
+        )
+
+        # Nested list that is a direct child of the parent list
+        self.assertMarkdown("<ol><li>Test1</li><ol><li>Test2</li></ol><li>Test3</li></ol>", "1. Test1\n\t1. Test2\n2. Test3")
+
         # Code
         self.assertMarkdown("<code>This is a test</code>", "```\nThis is a test\n```")
         self.assertMarkdown("<pre>This is a test</pre>", "```\nThis is a test\n```")
@@ -198,7 +211,7 @@ class TestTextractor(unittest.TestCase):
         text = textractor(Utils.PATH + "/article.pdf")
 
         # Check length of text is as expected
-        self.assertEqual(len(text), 2471)
+        self.assertEqual(len(text), 2472)
 
     def testTable(self):
         """
@@ -235,7 +248,7 @@ class TestTextractor(unittest.TestCase):
 
         path, text = textractor(Utils.PATH + "/article.pdf")
         self.assertEqual(path, Utils.PATH + "/article.pdf")
-        self.assertEqual(len(text), 2471)
+        self.assertEqual(len(text), 2472)
 
     def testURL(self):
         """

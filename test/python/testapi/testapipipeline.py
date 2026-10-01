@@ -316,7 +316,7 @@ class TestPipeline(unittest.TestCase):
         text = self.client.get(f"textract?file={Utils.PATH}/article.pdf").json()
 
         # Check length of text is as expected
-        self.assertEqual(len(text), 2471)
+        self.assertEqual(len(text), 2472)
 
         # Check invalid URLs
         for url in ["http://192.168.1.1/path", "http://127.0.0.1/path", "http://invalid", "/etc/config", "/tmp/txtai-1/test"]:
@@ -331,7 +331,7 @@ class TestPipeline(unittest.TestCase):
         path = Utils.PATH + "/article.pdf"
 
         texts = self.client.post("batchtextract", json=[path, path]).json()
-        self.assertEqual((len(texts[0]), len(texts[1])), (2471, 2471))
+        self.assertEqual((len(texts[0]), len(texts[1])), (2472, 2472))
 
     def testTextToSpeech(self):
         """
