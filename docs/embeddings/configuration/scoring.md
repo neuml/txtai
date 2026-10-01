@@ -36,7 +36,7 @@ batch: Sets the transform batch size
 encodebatch: Sets the encode batch size
 vectors: additional model init args
 encodeargs: additional encode() args
-backend: ivfsparse|pgsparse
+backend: ivfsparse|pgsparse|zvecsparse
 ```
 
 Sparse vector scoring options. The sparse scoring instance combines a sparse vector model with a sparse approximate nearest neighbor index (ANN). This method supports both vector normalization and score normalization.
@@ -65,6 +65,16 @@ Inverted file (IVF) index with flat vector file storage and sparse array support
 #### pgsparse
 
 Sparse ANN backed by Postgres. Supports same options as the [pgvector](../ann/#pgvector) ANN.
+
+#### zvecsparse
+```yaml
+zvecsparse:
+  efconstruction: ef_construction param for HnswIndexParam (int) - defaults to 200
+  m: number of HNSW links per element (int) - defaults to 50
+  efsearch: ef search param for HnswQueryParam (int) - defaults to 300
+```
+
+Sparse ANN backed by [zvec](https://github.com/alibaba/zvec). Stores sparse vectors in an embedded, path-based vector index. Requires the [ann](../../../install/#ann) extras package.
 
 ## terms
 ```yaml

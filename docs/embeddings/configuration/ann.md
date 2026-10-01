@@ -139,7 +139,9 @@ The [turbovec](https://github.com/RyanCodrai/turbovec) backend is a k-nearest ne
 
 ```yaml
 zvec:
+    efconstruction: ef_construction param for HnswIndexParam (int) - defaults to 200
     m: number of HNSW links per element (int) - defaults to 50
+    efsearch: ef search param for HnswQueryParam (int) - defaults to 300
 ```
 
 The [zvec](https://github.com/alibaba/zvec) backend is an embedded, path-based vector index.

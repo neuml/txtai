@@ -162,6 +162,9 @@ class TestOptional(unittest.TestCase):
         with self.assertRaises(ImportError):
             SparseANNFactory.create({"backend": "pgsparse"})
 
+        with self.assertRaises(ImportError):
+            SparseANNFactory.create({"backend": "zvecsparse"})
+
     def testApi(self):
         """
         Test missing api dependencies
