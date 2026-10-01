@@ -128,6 +128,7 @@ class TestSQL(unittest.TestCase):
 
         self.assertSql("where", "select * from txtai where [a b] < 1 or a > 1", "json_extract(data, '$.a b') < 1 or json_extract(data, '$.a') > 1")
         self.assertSql("where", "select [a[0].c[0]] a from txtai where a < 1", "a < 1")
+        self.assertSql("where", "select * from txtai where [true] = 1", "json_extract(data, '$.true') = 1")
         self.assertSql("groupby", "select * from txtai group by [a]", "json_extract(data, '$.a')")
         self.assertSql("orderby", "select * from txtai where order by [a]", "json_extract(data, '$.a')")
 
@@ -338,6 +339,8 @@ class TestSQL(unittest.TestCase):
         self.assertSql("where", prefix + "WHERE a NOT LIKE 'abc'", "json_extract(data, '$.a') NOT LIKE 'abc'")
         self.assertSql("where", prefix + "WHERE a IN (1, 2, 3, b)", "json_extract(data, '$.a') IN (1, 2, 3, json_extract(data, '$.b'))")
         self.assertSql("where", prefix + "WHERE a is not null", "json_extract(data, '$.a') is not null")
+        self.assertSql("where", prefix + "where a = true", "json_extract(data, '$.a') = true")
+        self.assertSql("where", prefix + "WHERE a is not FALSE", "json_extract(data, '$.a') is not FALSE")
         self.assertSql("where", prefix + "WHERE score >= 0.15", "score >= 0.15")
 
     def testWhereCompound(self):
