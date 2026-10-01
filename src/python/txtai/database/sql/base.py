@@ -5,6 +5,7 @@ SQL module
 from io import StringIO
 from shlex import shlex
 
+from .error import SQLError
 from .expression import Expression
 
 
@@ -43,10 +44,10 @@ class SQL:
         clauses = None
         if self.issql(query):
             # Ignore multiple statements
-            query = query.split(";")[0]
+            statement = query.split(";")[0]
 
             # Tokenize query
-            tokens, positions = self.tokenize(query)
+            tokens, positions = self.tokenize(statement, statement != query)
 
             # Alias clauses and similar queries
             aliases, similar = {}, []
@@ -122,12 +123,13 @@ class SQL:
         tokens, _ = self.tokenize(text)
         return self.expression(tokens)
 
-    def tokenize(self, query):
+    def tokenize(self, query, truncated=False):
         """
         Tokenizes SQL query into tokens.
 
         Args:
             query: input query
+            truncated: True if statements after the first semicolon were removed from query
 
         Returns:
             (tokenized query, token positions)
@@ -140,7 +142,16 @@ class SQL:
         tokens = shlex(StringIO(query), punctuation_chars="=!<>+-*/%|")
         tokens.wordchars += ":@#"
         tokens.commenters = ""
-        tokens = list(tokens)
+
+        try:
+            tokens = list(tokens)
+        except ValueError as e:
+            message = "Unterminated quoted string in SQL query"
+            if truncated:
+                # Semicolons always end the statement, including semicolons within quoted strings
+                message += ". Only the first statement is run, pass values with semicolons as bind parameters"
+
+            raise SQLError(message) from e
 
         # Identify sql clause token positions
         positions = {}

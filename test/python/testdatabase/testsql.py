@@ -291,6 +291,23 @@ class TestSQL(unittest.TestCase):
         self.assertSql("where", prefix + "where coalesce(similar('abc'), similar('abc'))", "coalesce(__SIMILAR__0, __SIMILAR__1)")
         self.assertSql("similar", prefix + "where coalesce(similar('abc'), similar('abc'))", [["abc"], ["abc"]])
 
+    def testStatement(self):
+        """
+        Test only the first statement is run
+        """
+
+        self.assertSql("where", "select * from txtai where id = 1; select * from txtai", "s.id = 1")
+
+        # Semicolons end the statement, even within quoted strings
+        with self.assertRaisesRegex(SQLError, "bind parameters"):
+            self.db.search("select * from txtai where text = 'a; b'")
+
+        with self.assertRaisesRegex(SQLError, "bind parameters"):
+            self.db.search("select * from txtai where text = 'a' -- ';' ; delete from txtai")
+
+        # Bind parameters can contain semicolons
+        self.assertSql("where", "select * from txtai where text = :text", "text = :text")
+
     def testUnterminated(self):
         """
         Test unterminated clauses
@@ -316,6 +333,10 @@ class TestSQL(unittest.TestCase):
         # Unterminated similar clause
         with self.assertRaises(SQLError):
             self.db.search("select * from txtai where similar('abc'")
+
+        # Unterminated quoted string
+        with self.assertRaisesRegex(SQLError, "^Unterminated quoted string in SQL query$"):
+            self.db.search("select * from txtai where text = 'abc")
 
         # Empty select components (stray commas) raised IndexError
         with self.assertRaises(SQLError):
