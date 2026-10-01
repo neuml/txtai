@@ -49,7 +49,7 @@ class Zvec(ANN):
         self.close()
 
         # Lookup index settings
-        efconstruction = self.setting("efconstruction", 500)
+        efconstruction = self.setting("efconstruction", 200)
         m = self.setting("m", 50)
 
         # Create collection

@@ -139,7 +139,7 @@ The [turbovec](https://github.com/RyanCodrai/turbovec) backend is a k-nearest ne
 
 ```yaml
 zvec:
-    efconstruction: ef_construction param for HnswIndexParam (int) - defaults to 500
+    efconstruction: ef_construction param for HnswIndexParam (int) - defaults to 200
     m: number of HNSW links per element (int) - defaults to 50
     efsearch: ef search param for HnswQueryParam (int) - defaults to 300
 ```
