@@ -212,7 +212,25 @@ class TestGraph(unittest.TestCase):
         self.assertEqual(graph.count(), 5)
         self.assertEqual(graph.edgecount(), 1)
         self.assertEqual(sum((len(graph.topics[x]) for x in graph.topics)), 5)
-        self.assertEqual(len(graph.categories), 6)
+        self.assertEqual(len(graph.categories), 5)
+
+    def testDeleteCategories(self):
+        """
+        Test categories stay aligned with topics after a delete removes a topic
+        """
+
+        def transform(texts):
+            return [[float(word in text) for word in ["fruit", "apple", "vehicle", "car", "animal", "dog"]] for text in texts]
+
+        embeddings = Embeddings(
+            {"method": "external", "transform": transform, "content": True, "graph": {"topics": {"categories": ["fruit", "vehicle", "animal"]}}}
+        )
+        embeddings.index(["fruit apple", "vehicle car", "animal dog"])
+
+        # Delete the only node in the first topic
+        embeddings.delete([0])
+        self.assertEqual(embeddings.graph.categories, ["vehicle", "animal"])
+        self.assertEqual(embeddings.search("animal dog", 1, graph=True).categories, ["animal"])
 
     def testEdges(self):
         """
@@ -660,4 +678,4 @@ class TestGraph(unittest.TestCase):
         self.assertEqual(graph.count(), 6)
         self.assertEqual(graph.edgecount(), 2)
         self.assertEqual(sum((len(graph.topics[x]) for x in graph.topics)), 6)
-        self.assertEqual(len(graph.categories), 6)
+        self.assertEqual(len(graph.categories), 5)

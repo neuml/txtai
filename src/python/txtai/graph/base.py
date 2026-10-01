@@ -459,6 +459,10 @@ class Graph:
 
                     # Also delete topic, if it's empty
                     if not self.topics[topic]:
+                        # Categories are stored by topic position
+                        if self.categories:
+                            self.categories.pop(list(self.topics).index(topic))
+
                         self.topics.pop(topic)
 
                 # Delete node
