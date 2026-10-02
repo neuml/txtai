@@ -1,4 +1,4 @@
-"""验证去除思考标签时仍按需推进公开 LLM 流。"""
+"""Test incremental output through the public LLM stream with thinking cleanup."""
 
 import unittest
 
@@ -7,26 +7,26 @@ from txtai.pipeline.llm.generation import Generation
 
 
 class StreamingGeneration(Generation):
-    """记录上游消费进度的合法自定义生成后端."""
+    """Custom generation backend that records upstream chunk consumption."""
 
     def stream(self, texts, maxlength, stream, stop, **kwargs):
-        """按需产生片段，暴露是否过早消费后续输出."""
+        """Yield chunks on demand and record when each chunk is consumed."""
         for chunk in self.kwargs["chunks"]:
             self.kwargs["consumed"].append(chunk)
             yield chunk
 
 
 class TestStreaming(unittest.TestCase):
-    """验证公开流式入口与既有思考清理行为."""
+    """Test public streaming output and existing thinking cleanup behavior."""
 
     def model(self, chunks):
-        """验证生成流的推进或清理边界."""
+        """Create a public LLM pipeline and its upstream consumption record."""
         consumed = []
         model = LLM("test", method=f"{__name__}.StreamingGeneration", chunks=chunks, consumed=consumed)
         return model, consumed
 
     def testPlainAnswerIsIncremental(self):
-        """验证生成流的推进或清理边界."""
+        """Yield ordinary text before consuming subsequent chunks."""
         model, consumed = self.model(["  blue", " sky"])
         result = model("question", stream=True, stripthink=True)
         self.assertEqual(next(result), "b")
@@ -34,12 +34,12 @@ class TestStreaming(unittest.TestCase):
         self.assertEqual("".join(result), "lue sky")
 
     def testEmptyStream(self):
-        """验证生成流的推进或清理边界."""
+        """Return no output when the upstream stream is empty."""
         model, _ = self.model([])
         self.assertEqual(list(model("question", stream=True, stripthink=True)), [])
 
     def testPartialThinkingPrefixes(self):
-        """验证生成流的推进或清理边界."""
+        """Handle split thinking prefixes, ordinary tags, and whitespace."""
         for chunks, expected in [
             (["<", "th", "ink>", "reason", "</think>", "answer"], "answer"),
             (["<", "table>", "answer"], "<table>answer"),
@@ -53,7 +53,7 @@ class TestStreaming(unittest.TestCase):
                 self.assertEqual("".join(model("question", stream=True, stripthink=True)), expected)
 
     def testStripthinkDisabled(self):
-        """验证生成流的推进或清理边界."""
+        """Preserve chunks and consume them on demand when stripping is disabled."""
         model, consumed = self.model(["<think>reason</think>", "answer"])
         result = model("question", stream=True, stripthink=False)
         self.assertEqual(next(result), "<think>reason</think>")
