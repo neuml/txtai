@@ -26,6 +26,9 @@ class Token:
     # Default list of sort order operators
     SORT_ORDER = ["asc", "desc"]
 
+    # Default list of boolean literals
+    BOOLEANS = ["true", "false"]
+
     @staticmethod
     def get(tokens, x):
         """
@@ -197,8 +200,8 @@ class Token:
             True if this token is a literal, False otherwise
         """
 
-        # Literals are wrapped in quotes, parens, wildcards or numeric.
-        return token and (token.startswith(("'", '"', ",", "(", ")", "*")) or token.replace(".", "", 1).isdigit())
+        # Literals are wrapped in quotes, parens, wildcards, numeric or boolean.
+        return token and (token.startswith(("'", '"', ",", "(", ")", "*")) or token.replace(".", "", 1).isdigit() or token.lower() in Token.BOOLEANS)
 
     @staticmethod
     def islogicseparator(token):
