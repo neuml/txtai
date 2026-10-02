@@ -121,13 +121,6 @@ class Task:
         # Prepare elements and execute task action(s)
         results = self.execute([self.prepare(element) for _, element in data], executor)
 
-        # Native vstack merges return a flattened array with one row per action for each input
-        # Group these rows back by input as one to many transformations
-        # pylint: disable=E1101
-        if self.merge == "vstack" and len(self.action) > 1 and (isinstance(results, np.ndarray) or torch.is_tensor(results)):
-            size = len(self.action)
-            results = [OneToMany(list(results[x : x + size])) for x in range(0, len(results), size)]
-
         # Pack results back into elements
         # Single-action tasks are always flattened by postprocess (regardless of merge),
         # so results is already a single per-element list - same condition as postprocess.
@@ -375,7 +368,14 @@ class Task:
             return outputs
 
         if self.merge == "vstack":
-            return self.vstack(outputs)
+            results = self.vstack(outputs)
+
+            if isinstance(results, np.ndarray) or torch.is_tensor(results):
+                size = len(self.action)
+                results = [OneToMany(list(results[x : x + size])) for x in range(0, len(results), size)]
+
+            return results
+
         if self.merge == "concat":
             return self.concat(outputs)
 
