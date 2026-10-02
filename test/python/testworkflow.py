@@ -391,6 +391,17 @@ class TestWorkflow(unittest.TestCase):
         results = list(workflow(np.array([2, 4, 6])))
         self.assertTrue(np.array_equal(np.array(results), np.array([[4, 16, 36], [8, 64, 216]])))
 
+    def testNumpyListWorkflow(self):
+        """
+        Test a vstack merge of numpy and torch action outputs with list inputs
+        """
+
+        # pylint: disable=E1101
+        for function in [lambda x, y: np.power(np.array(x), y), lambda x, y: torch.pow(torch.tensor(x), y)]:
+            task = Task([lambda x, f=function: f(x, 2), lambda x, f=function: f(x, 3)], merge="vstack")
+            results = list(Workflow([task])([2, 4]))
+            self.assertEqual([int(x) for x in results], [4, 8, 16, 64])
+
     def testRetrieveWorkflow(self):
         """
         Test a retrieve task

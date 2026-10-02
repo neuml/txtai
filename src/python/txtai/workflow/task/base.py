@@ -368,7 +368,14 @@ class Task:
             return outputs
 
         if self.merge == "vstack":
-            return self.vstack(outputs)
+            results = self.vstack(outputs)
+
+            if isinstance(results, np.ndarray) or torch.is_tensor(results):
+                size = len(self.action)
+                results = [OneToMany(list(results[x : x + size])) for x in range(0, len(results), size)]
+
+            return results
+
         if self.merge == "concat":
             return self.concat(outputs)
 
