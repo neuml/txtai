@@ -232,6 +232,20 @@ class TestAgent(unittest.TestCase):
         # Timeout is disabled when set to None
         self.assertIsNone(BashTool(timeout=None).timeout)
 
+    @patch("subprocess.run")
+    def testToolsBashEncoding(self, run):
+        """
+        Test bash tool decodes subprocess output as UTF-8 instead of the locale encoding
+        """
+
+        run.return_value.stdout = "output"
+
+        tool = BashTool(allowed=["cat"])
+        tool(["cat", "file.txt"])
+
+        # Subprocess output must be decoded as UTF-8, not left to the locale's default encoding
+        self.assertEqual(run.call_args.kwargs.get("encoding"), "utf-8")
+
     def testToolsEmbeddings(self):
         """
         Test adding Embeddings as a tool
