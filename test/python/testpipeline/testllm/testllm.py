@@ -180,6 +180,54 @@ class TestLLM(unittest.TestCase):
             self.assertEqual("".join(model("Hello, how are", stripthink=True, stream=True)), "you")
             self.assertEqual("".join(model("Hello, how are", stripthink=False, stream=True)), "".join(list(method())))
 
+    def streammodel(self, chunks):
+        """Create an LLM pipeline with a controlled upstream stream."""
+        consumed = []
+
+        def execute(*_args, **_kwargs):
+            for chunk in chunks:
+                consumed.append(chunk)
+                yield chunk
+
+        model = LLM("test", method="txtai.pipeline.Generation")
+        model.generator.execute = execute
+        return model, consumed
+
+    def testPlainAnswerIsIncremental(self):
+        """Yield ordinary text before consuming subsequent chunks."""
+        model, consumed = self.streammodel(["  blue", " sky"])
+        result = model("question", stream=True, stripthink=True)
+        self.assertEqual(next(result), "b")
+        self.assertEqual(consumed, ["  blue"])
+        self.assertEqual("".join(result), "lue sky")
+
+    def testEmptyStream(self):
+        """Return no output when the upstream stream is empty."""
+        model, _ = self.streammodel([])
+        self.assertEqual(list(model("question", stream=True, stripthink=True)), [])
+
+    def testPartialThinkingPrefixes(self):
+        """Handle split thinking prefixes, ordinary tags, and whitespace."""
+        for chunks, expected in [
+            (["<", "th", "ink>", "reason", "</think>", "answer"], "answer"),
+            (["<", "table>", "answer"], "<table>answer"),
+            (["  ", "plain", " answer"], "plain answer"),
+            (["  ", "\n"], ""),
+            (["<", "t"], "<t"),
+            (["<|start|>assistant<|channel|>analysis<|message|>", "reason", "<|channel|>final<|message|>answer"], "answer"),
+        ]:
+            with self.subTest(chunks=chunks):
+                model, _ = self.streammodel(chunks)
+                self.assertEqual("".join(model("question", stream=True, stripthink=True)), expected)
+
+    def testStripthinkDisabled(self):
+        """Preserve chunks and consume them on demand when stripping is disabled."""
+        model, consumed = self.streammodel(["<think>reason</think>", "answer"])
+        result = model("question", stream=True, stripthink=False)
+        self.assertEqual(next(result), "<think>reason</think>")
+        self.assertEqual(consumed, ["<think>reason</think>"])
+        self.assertEqual(list(result), ["answer"])
+
     def testVision(self):
         """
         Test vision LLM
