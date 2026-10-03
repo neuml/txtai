@@ -344,6 +344,26 @@ class TestWorkflow(unittest.TestCase):
         results = list(workflow([2, 4, 6]))
         self.assertEqual(results, [4, 16, 36])
 
+    def testMergeWorkflowFalsyValues(self):
+        """
+        Test concat merge with falsy values
+        """
+
+        # A 0 is real data, the Tabular pipeline keeps it (see #1207), concat merge should too
+        task = Task([lambda x: [0, 5], lambda x: ["Widget", "Gadget"]], merge="concat")
+        results = list(task([1, 2]))
+        self.assertEqual(results, ["0. Widget", "5. Gadget"])
+
+        # False is likewise real data
+        task = Task([lambda x: [False, True], lambda x: ["Widget", "Gadget"]], merge="concat")
+        results = list(task([1, 2]))
+        self.assertEqual(results, ["False. Widget", "True. Gadget"])
+
+        # None and empty values stay excluded, they add nothing but a separator
+        task = Task([lambda x: [None, ""], lambda x: ["Widget", "Gadget"]], merge="concat")
+        results = list(task([1, 2]))
+        self.assertEqual(results, ["Widget", "Gadget"])
+
     def testMergeUnbalancedWorkflow(self):
         """
         Test merge tasks with unbalanced outputs (i.e. one action produce more output than another for same input).
