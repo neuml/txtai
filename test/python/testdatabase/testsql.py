@@ -62,6 +62,27 @@ class TestSQL(unittest.TestCase):
         with self.assertRaises(SQLError):
             aggregate("select avg(price) from txtai", [{"avg(price)": 100.0}, {"avg(price)": 10.0}])
 
+    def testAggregateNull(self):
+        """
+        Test Aggregate skips NULL values returned by shards with no matching rows
+        """
+
+        aggregate = Aggregate()
+
+        # A shard with no matching rows returns NULL for max, min, sum and avg
+        query = "select count(*), max(price), min(price), sum(price), avg(price) from txtai where price > 50"
+        empty = {"count(*)": 0, "max(price)": None, "min(price)": None, "sum(price)": None, "avg(price)": None}
+        results = [empty, {"count(*)": 2, "max(price)": 100.0, "min(price)": 60.0, "sum(price)": 160.0, "avg(price)": 80.0}]
+        self.assertEqual(
+            aggregate(query, results), [{"count(*)": 2, "max(price)": 100.0, "min(price)": 60.0, "sum(price)": 160.0, "avg(price)": 80.0}]
+        )
+
+        # Aggregates are NULL when no shard has a matching row
+        self.assertEqual(aggregate(query, [empty, empty]), [empty])
+
+        # avg() without count(*) uses the only shard that has matching rows
+        self.assertEqual(aggregate("select avg(price) from txtai", [{"avg(price)": None}, {"avg(price)": 42.0}]), [{"avg(price)": 42.0}])
+
     def testAlias(self):
         """
         Test alias clauses

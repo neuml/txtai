@@ -123,16 +123,23 @@ class Aggregate(SQL):
         # Compute column values
         rows = []
         for result in results:
-            # Row counts for this group, if a count(*) column was selected
-            counts = [r[countcolumn] for r in result] if countcolumn else None
-
             # Calculate/copy column values
             row = {}
             for column in columns:
                 if column in aggcolumns:
-                    # Calculate aggregate value
-                    values = [r[column] for r in result]
-                    row[column] = self.avg(values, counts) if column.lower().startswith("avg(") else aggcolumns[column](values)
+                    # Skip NULL values like SQL aggregates do. Shards with no matching rows return NULL for max, min, sum and avg.
+                    matches = [r for r in result if r[column] is not None]
+
+                    # Calculate aggregate value, NULL when no shard has a value
+                    values = [r[column] for r in matches]
+                    if not values:
+                        row[column] = None
+                    elif column.lower().startswith("avg("):
+                        # Row counts for these values, if a count(*) column was selected
+                        counts = [r[countcolumn] for r in matches] if countcolumn else None
+                        row[column] = self.avg(values, counts)
+                    else:
+                        row[column] = aggcolumns[column](values)
                 else:
                     # Non aggregate column value repeat, use first value
                     row[column] = result[0][column]
