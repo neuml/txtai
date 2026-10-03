@@ -58,7 +58,9 @@ class BashTool(Tool):
         output = None
         if command and command[0] in self.allowed:
             try:
-                output = subprocess.run(command, capture_output=True, text=True, check=False, stdin=subprocess.DEVNULL, timeout=self.timeout).stdout
+                output = subprocess.run(
+                    command, capture_output=True, text=True, encoding="utf-8", check=False, stdin=subprocess.DEVNULL, timeout=self.timeout
+                ).stdout
             except subprocess.TimeoutExpired:
                 output = f"Command timed out after {self.timeout} seconds"
 
