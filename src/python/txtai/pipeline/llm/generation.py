@@ -173,11 +173,14 @@ class Generation:
         """
 
         # Consume "thinking" tokens
-        text, buffer = None, ""
+        text, buffer = "", ""
         for chunk in results:
             buffer += chunk
             text = self.cleanthink(buffer)
             if text != buffer:
+                break
+            prefix = buffer.lstrip()
+            if not any(marker.startswith(prefix) or prefix.startswith(marker) for marker in ("<think>", "<|")):
                 break
 
         # Yield remaining tokens
