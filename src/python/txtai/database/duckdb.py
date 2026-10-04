@@ -144,7 +144,8 @@ class DuckDB(Embedded):
             #   - Build list of value with position indexes
             params = []
             for key, value in parameters.items():
-                pattern = rf"\:{key}(?=\s|$)"
+                # Match on a word boundary, bind parameters can be followed by any non-word character, i.e. `in (:x)`
+                pattern = rf"\:{key}\b"
                 for match in re.finditer(pattern, query):
                     params.append((match.start(), value))
 
