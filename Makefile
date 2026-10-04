@@ -56,3 +56,4 @@ coverage:
 	coverage run -m unittest discover -v -k testvectors -s ${TEST_DIR}
 	coverage run -m unittest discover -v -k testworkflow -s ${TEST_DIR}
 	coverage combine
+	coverage report --fail-under=100
