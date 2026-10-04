@@ -127,19 +127,10 @@ class Aggregate(SQL):
             row = {}
             for column in columns:
                 if column in aggcolumns:
-                    # Skip NULL values like SQL aggregates do. Shards with no matching rows return NULL for max, min, sum and avg.
+                    # Calculate aggregate value, skip NULLs from shards with no matching rows
                     matches = [r for r in result if r[column] is not None]
-
-                    # Calculate aggregate value, NULL when no shard has a value
-                    values = [r[column] for r in matches]
-                    if not values:
-                        row[column] = None
-                    elif column.lower().startswith("avg("):
-                        # Row counts for these values, if a count(*) column was selected
-                        counts = [r[countcolumn] for r in matches] if countcolumn else None
-                        row[column] = self.avg(values, counts)
-                    else:
-                        row[column] = aggcolumns[column](values)
+                    values, counts = [r[column] for r in matches], [r[countcolumn] for r in matches] if countcolumn else None
+                    row[column] = (self.avg(values, counts) if column.lower().startswith("avg(") else aggcolumns[column](values)) if values else None
                 else:
                     # Non aggregate column value repeat, use first value
                     row[column] = result[0][column]
