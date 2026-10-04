@@ -490,7 +490,8 @@ class Task:
             list of concat outputs
         """
 
-        return [". ".join([str(y) for y in x if y]) for x in self.hstack(outputs)]
+        # Only skip empty values: 0 and False are data, as the tabular pipeline's concat already treats them
+        return [". ".join([str(y) for y in x if y is not None and y != ""]) for x in self.hstack(outputs)]
 
 
 class OneToMany:
