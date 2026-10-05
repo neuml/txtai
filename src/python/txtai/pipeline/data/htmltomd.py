@@ -186,12 +186,17 @@ class HTMLToMarkdown(Pipeline):
             target, text = x if x.name else node, x.text
 
             if text.strip():
+                # Leading whitespace separates this text from the previous word, keep it outside of the formatting
+                space = " " if text[0].isspace() and texts and not texts[-1][-1:].isspace() else ""
+
                 if target.name in ("b", "strong"):
-                    text = f"**{text.strip()}** "
+                    text = f"{space}**{text.strip()}** "
                 elif target.name in ("i", "em"):
-                    text = f"*{text.strip()}* "
+                    text = f"{space}*{text.strip()}* "
                 elif target.name == "a":
-                    text = f"[{text.strip()}]({target.get('href')}) "
+                    # Links without a target are added as plain text
+                    href = target.get("href")
+                    text = f"{space}[{text.strip()}]({href}) " if href else f"{space}{text.strip()} "
 
             texts.append(text)
 
