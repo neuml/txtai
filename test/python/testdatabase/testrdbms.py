@@ -745,6 +745,13 @@ class Common:
             result = self.embeddings.search("select * from txtai where text in (:x, :y)", parameters={"x": self.data[1], "y": self.data[4]})
             self.assertEqual({row["text"] for row in result}, {self.data[1], self.data[4]})
 
+            # Test a repeated bind parameter followed by another bind parameter
+            result = self.embeddings.search(
+                "select * from txtai where text like :document or text like :document or text like :document or id = :id",
+                parameters={"document": "%iceberg%", "id": 4},
+            )
+            self.assertEqual({row["text"] for row in result}, {self.data[1], self.data[4]})
+
         def testSparse(self):
             """
             Test sparse vector search
