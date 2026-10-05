@@ -139,20 +139,16 @@ class DuckDB(Embedded):
             # Unpack query args
             query, parameters = args
 
-            # Iterate over parameters
-            #   - Replace named parameters with ?'s
-            #   - Build list of value with position indexes
+            # Match all named parameters in a single pass, so values are listed in the order they appear in the query
+            #   - Match on a word boundary, bind parameters can be followed by any non-word character, i.e. `in (:x)`
             params = []
-            for key, value in parameters.items():
-                # Match on a word boundary, bind parameters can be followed by any non-word character, i.e. `in (:x)`
-                pattern = rf"\:{key}\b"
-                for match in re.finditer(pattern, query):
-                    params.append((match.start(), value))
-
+            if parameters:
+                pattern = r"\:(" + "|".join(re.escape(key) for key in parameters) + r")\b"
+                params = [parameters[match.group(1)] for match in re.finditer(pattern, query)]
                 query = re.sub(pattern, "?", query)
 
             # Repack query and parameter list
-            args = (query, [value for _, value in sorted(params, key=lambda x: x[0])])
+            args = (query, params)
 
         return args
 
