@@ -557,6 +557,34 @@ class TestGraph(unittest.TestCase):
         )
         self.assertEqual(len(results[0]), 3)
 
+    def testSearchGraphPath(self):
+        """
+        Test path search returning a graph keeps node id 0
+        """
+
+        graph = GraphFactory.create({})
+        graph.initialize()
+
+        # Build a path 0 -> 1 -> 2
+        for uid in range(3):
+            graph.addnode(uid, id=str(uid))
+
+        graph.addedge(0, 1, weight=0.9)
+        graph.addedge(1, 2, weight=0.8)
+
+        # Run path search
+        results = graph.search(
+            """
+            MATCH P=()-[]->()
+            RETURN P
+        """,
+            10,
+            graph=True,
+        )
+
+        self.assertEqual(sorted(results.scan()), [0, 1, 2])
+        self.assertEqual(results.edgecount(), 2)
+
     def testSearchSkip(self):
         """
         Test a SKIP clause with a similar clause
