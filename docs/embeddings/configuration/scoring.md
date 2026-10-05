@@ -1,0 +1,128 @@
+# Scoring
+
+Enable scoring support via the `scoring` parameter.
+
+This scoring instance can serve two purposes, depending on the settings.
+
+One use case is building sparse/keyword indexes. This occurs when the `terms` parameter is set to `True`.
+
+The other use case is with word vector term weighting. This feature has been available since the initial version but isn't quite as common anymore.
+
+The following covers the available options.
+
+## method
+```yaml
+method: bm25|tfidf|sif|pgtext|sparse|custom
+```
+
+Sets the scoring method. Add custom scoring via setting this parameter to the fully resolvable class string.
+
+### pgtext
+```yaml
+schema: database schema to store keyword index - defaults to being
+        determined by the database
+```
+
+Additional settings for Postgres full-text keyword indexes.
+
+### sparse
+```yaml
+path: sparse vector model path
+vectormethod: vector embeddings method
+vectornormalize: enable vector embeddings normalization (boolean)
+gpu: boolean|int|string|device
+normalize: enable score normalization (boolean|float|string|dict)
+batch: Sets the transform batch size
+encodebatch: Sets the encode batch size
+vectors: additional model init args
+encodeargs: additional encode() args
+backend: ivfsparse|pgsparse|zvecsparse
+```
+
+Sparse vector scoring options. The sparse scoring instance combines a sparse vector model with a sparse approximate nearest neighbor index (ANN). This method supports both vector normalization and score normalization.
+
+Vector normalization normalizes all vectors to have a magnitude of 1. By extension, all generated scores will be 0 to 1.
+
+Score normalization scales the output between 0 and 1. This setting supports:
+
+- `True` for default scale normalization
+- `float` normalize using this as the scale factor
+- `"bayes"` for Bayesian normalization using dynamic candidate score statistics
+- `{method: "bayes", alpha: 1.0, beta: null}` for Bayesian normalization with optional custom parameters
+
+#### ivfsparse
+```yaml
+ivfsparse:
+  sample: percent of data to use for model training (0.0 - 1.0)
+  nfeatures: top n features to use for model training, defaults to all features (int)
+  nlist: desired number of clusters (int)
+  nprobe: search probe setting (int)
+  minpoints: minimum number of points for a cluster (int)
+```
+
+Inverted file (IVF) index with flat vector file storage and sparse array support.
+
+#### pgsparse
+
+Sparse ANN backed by Postgres. Supports same options as the [pgvector](../ann/#pgvector) ANN.
+
+#### zvecsparse
+```yaml
+zvecsparse:
+  efconstruction: ef_construction param for HnswIndexParam (int) - defaults to 200
+  m: number of HNSW links per element (int) - defaults to 50
+  efsearch: ef search param for HnswQueryParam (int) - defaults to 300
+```
+
+Sparse ANN backed by [zvec](https://github.com/alibaba/zvec). Stores sparse vectors in an embedded, path-based vector index. Requires the [ann](../../../install/#ann) extras package.
+
+## terms
+```yaml
+terms: boolean|dict
+```
+
+Enables term frequency sparse arrays for a scoring instance. This is the backend for sparse keyword indexes.
+
+Supports a `dict` with the parameters `cachelimit` and `cutoff`.
+
+`cachelimit` is the maximum amount of resident memory in bytes to use during indexing before flushing to disk. This parameter is an `int`.
+
+`cutoff` is used during search to determine what constitutes a common term. This parameter is a `float`, i.e. 0.1 for a cutoff of 10%.
+
+When `terms` is set to `True`, default parameters are used for the `cachelimit` and `cutoff`. Normally, these defaults are sufficient.
+
+### Wildcard queries
+
+Keyword queries containing `*` expand matching terms using SQL `LIKE`. Within these
+expressions, `%` matches any sequence and `_` matches one character. To match a literal
+percent sign, underscore or backslash, use `\%`, `\_` or `\\`, respectively.
+For example, `report\_*` matches `report_2026`, while `report_*` also matches `reportX2026`.
+Use a tokenizer that preserves these characters, such as `tokenizer: {whitespace: true}`,
+or pass pre-tokenized query terms. Queries without `*` retain exact-term matching.
+
+## normalize
+```yaml
+normalize: boolean|str|dict
+```
+
+Enables normalized scoring (ranging from 0 to 1). This setting supports:
+
+- `True` for standard score normalization
+- `"bayes"` | `"bb25"` for Bayesian normalization using dynamic candidate score statistics
+- `{method: "bayes", alpha: 1.0, beta: null}` for Bayesian normalization with optional custom parameters
+
+When standard normalization is enabled, statistics from the index are used to calculate normalized scores.
+When Bayesian/BB25 normalization is enabled, it uses positive-score candidates, dynamic `beta=median(scores)`, adaptive
+`alpha_eff=alpha/std(scores)` and a sigmoid transform (likelihood-only variant with flat prior) to map scores to `[0, 1]`.
+
+Bayesian normalization references:
+
+- [https://github.com/instructkr/bb25](https://github.com/instructkr/bb25)
+- [https://github.com/cognica-io/bayesian-bm25](https://github.com/cognica-io/bayesian-bm25)
+
+## tokenizer
+```yaml
+tokenizer: dict
+```
+
+Set tokenization rules. Passes these arguments to the underlying [Tokenization pipeline](../../../pipeline/data/tokenizer#txtai.pipeline.Tokenizer.__init__).

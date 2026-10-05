@@ -1,0 +1,143 @@
+"""
+Hugging Face Transformers model wrapper module
+"""
+
+from ..models import Models
+from ..util import Library
+
+from .tensors import Tensors
+
+# Core library imports
+transformers = Library().transformers()
+
+
+class HFModel(Tensors):
+    """
+    Pipeline backed by a Hugging Face Transformers model.
+    """
+
+    def __init__(self, path=None, quantize=False, gpu=False, batch=64):
+        """
+        Creates a new HFModel.
+
+        Args:
+            path: optional path to model, accepts Hugging Face model hub id or local path,
+                  uses default model for task if not provided
+            quantize: if model should be quantized, defaults to False
+            gpu: True/False if GPU should be enabled, also supports a GPU device id
+            batch: batch size used to incrementally process content
+        """
+
+        # Default model path
+        self.path = path
+
+        # Quantization flag
+        self.quantization = quantize
+
+        # Get tensor device reference
+        self.deviceid = Models.deviceid(gpu)
+        self.device = Models.device(self.deviceid)
+
+        # Process batch size
+        self.batchsize = batch
+
+    def load(self, path, task, **kwargs):
+        """
+        Loads a HuggingFace model and tokenizer.
+
+        Args:
+            path: model path
+            task: model task
+            kwargs: additional keyword args
+        """
+
+        # Unpack path
+        if isinstance(path, tuple):
+            model, tokenizer = path
+        else:
+            model, tokenizer = path, path
+
+        # Load model
+        model = Models.load(model, task=task, modelargs=kwargs).to(self.device)
+
+        # Apply model initialization routines
+        model = self.prepare(model)
+
+        # Load tokenizer
+        tokenizer = transformers.AutoTokenizer.from_pretrained(tokenizer) if isinstance(tokenizer, str) else tokenizer
+
+        return model, tokenizer
+
+    def prepare(self, model):
+        """
+        Prepares a model for processing. Applies dynamic quantization if necessary.
+
+        Args:
+            model: input model
+
+        Returns:
+            model
+        """
+
+        if self.deviceid == -1 and self.quantization:
+            model = self.quantize(model)
+
+        return model
+
+    def tokenize(self, tokenizer, texts):
+        """
+        Tokenizes text using tokenizer. This method handles overflowing tokens and automatically splits
+        them into separate elements. Indices of each element is returned to allow reconstructing the
+        transformed elements after running through the model.
+
+        Args:
+            tokenizer: Tokenizer
+            texts: list of text
+
+        Returns:
+            (tokenization result, indices)
+        """
+
+        # Pre-process and split on newlines
+        batch, positions = [], []
+        for x, text in enumerate(texts):
+            elements = [t + " " for t in text.split("\n") if t]
+            batch.extend(elements)
+            positions.extend([x] * len(elements))
+
+        # Run tokenizer
+        tokens = tokenizer(batch, padding=True)
+
+        inputids, attention, indices = [], [], []
+        for x, ids in enumerate(tokens["input_ids"]):
+            if len(ids) > tokenizer.model_max_length:
+                # Remove padding characters, if any
+                ids = [i for i in ids if i != tokenizer.pad_token_id]
+
+                # Split into model_max_length chunks
+                for chunk in self.batch(ids, tokenizer.model_max_length - 1):
+                    # Append EOS token if necessary
+                    if chunk[-1] != tokenizer.eos_token_id:
+                        chunk.append(tokenizer.eos_token_id)
+
+                    # Set attention mask
+                    mask = [1] * len(chunk)
+
+                    # Append padding if necessary
+                    if len(chunk) < tokenizer.model_max_length:
+                        pad = tokenizer.model_max_length - len(chunk)
+                        chunk.extend([tokenizer.pad_token_id] * pad)
+                        mask.extend([0] * pad)
+
+                    inputids.append(chunk)
+                    attention.append(mask)
+                    indices.append(positions[x])
+            else:
+                inputids.append(ids)
+                attention.append(tokens["attention_mask"][x])
+                indices.append(positions[x])
+
+        tokens = {"input_ids": inputids, "attention_mask": attention}
+
+        # pylint: disable=E1102
+        return ({name: self.tensor(tensor).to(self.device) for name, tensor in tokens.items()}, indices)

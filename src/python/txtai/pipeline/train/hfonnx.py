@@ -1,0 +1,198 @@
+"""
+Hugging Face Transformers ONNX export module
+"""
+
+from collections import OrderedDict
+from io import BytesIO
+from itertools import chain
+from tempfile import NamedTemporaryFile
+
+# Conditional import
+try:
+    from onnxruntime.quantization import quantize_dynamic
+
+    ONNX_RUNTIME = True
+except ImportError:
+    ONNX_RUNTIME = False
+
+from ...models import PoolingFactory
+from ..tensors import Tensors
+
+# Core library imports
+from ...util import Library
+
+library = Library()
+torch = library.torch()
+transformers = library.transformers()
+Module = library.module()
+
+
+class HFOnnx(Tensors):
+    """
+    Exports a Hugging Face Transformer model to ONNX.
+    """
+
+    def __call__(self, path, task="default", output=None, quantize=False, opset=14):
+        """
+        Exports a Hugging Face Transformer model to ONNX.
+
+        Args:
+            path: path to model, accepts Hugging Face model hub id, local path or (model, tokenizer) tuple
+            task: optional model task or category, determines the model type and outputs, defaults to export hidden state
+            output: optional output model path, defaults to return byte array if None
+            quantize: if model should be quantized (requires onnx to be installed), defaults to False
+            opset: onnx opset, defaults to 14
+
+        Returns:
+            path to model output or model as bytes depending on output parameter
+        """
+
+        inputs, outputs, model = self.parameters(task)
+
+        if isinstance(path, (list, tuple)):
+            model, tokenizer = path
+            model = model.cpu()
+        else:
+            model = model(path)
+            tokenizer = transformers.AutoTokenizer.from_pretrained(path)
+
+        # Generate dummy inputs
+        dummy = dict(tokenizer(["test inputs"], return_tensors="pt"))
+
+        # Default to BytesIO if no output file provided
+        output = output if output else BytesIO()
+
+        # Export model to ONNX
+        torch.onnx.export(
+            ModelWrapper(model),
+            (dummy,),
+            output,
+            opset_version=opset,
+            do_constant_folding=True,
+            input_names=list(inputs.keys()),
+            output_names=list(outputs.keys()),
+            dynamic_axes=dict(chain(inputs.items(), outputs.items())),
+            dynamo=False,
+        )
+
+        # Quantize model
+        if quantize:
+            if not ONNX_RUNTIME:
+                raise ImportError('onnxruntime is not available - install "pipeline" extra to enable')
+
+            output = self.quantization(output)
+
+        if isinstance(output, BytesIO):
+            # Reset stream and return bytes
+            output.seek(0)
+            output = output.read()
+
+        return output
+
+    def quantization(self, output):
+        """
+        Quantizes an ONNX model.
+
+        Args:
+            output: path to ONNX model or BytesIO with model data
+
+        Returns:
+            quantized model as file path or bytes
+        """
+
+        temp = None
+        if isinstance(output, BytesIO):
+            with NamedTemporaryFile(suffix=".quant", delete=False) as tmpfile:
+                temp = tmpfile.name
+
+            with open(temp, "wb") as f:
+                f.write(output.getbuffer())
+
+            output = temp
+
+        # Quantize model
+        quantize_dynamic(output, output, extra_options={"MatMulConstBOnly": False})
+
+        # Read file back to bytes if temp file was created
+        if temp:
+            with open(temp, "rb") as f:
+                output = f.read()
+
+        return output
+
+    def parameters(self, task):
+        """
+        Defines inputs and outputs for an ONNX model.
+
+        Args:
+            task: task name used to lookup model configuration
+
+        Returns:
+            (inputs, outputs, model function)
+        """
+
+        inputs = OrderedDict(
+            [
+                ("input_ids", {0: "batch", 1: "sequence"}),
+                ("attention_mask", {0: "batch", 1: "sequence"}),
+                ("token_type_ids", {0: "batch", 1: "sequence"}),
+            ]
+        )
+
+        config = {
+            "default": (OrderedDict({"last_hidden_state": {0: "batch", 1: "sequence"}}), transformers.AutoModel.from_pretrained),
+            "pooling": (OrderedDict({"embeddings": {0: "batch", 1: "sequence"}}), lambda x: PoolingFactory.create({"path": x, "device": -1})),
+            "question-answering": (
+                OrderedDict(
+                    {
+                        "start_logits": {0: "batch", 1: "sequence"},
+                        "end_logits": {0: "batch", 1: "sequence"},
+                    }
+                ),
+                transformers.AutoModelForQuestionAnswering.from_pretrained,
+            ),
+            "text-classification": (OrderedDict({"logits": {0: "batch"}}), transformers.AutoModelForSequenceClassification.from_pretrained),
+        }
+
+        # Aliases
+        config["zero-shot-classification"] = config["text-classification"]
+
+        return (inputs,) + config[task]
+
+
+class ModelWrapper(Module):
+    """
+    Wraps an model to control named inputs for export.
+    """
+
+    def __init__(self, model):
+        """
+        Creates a new ModelWrapper.
+
+        Args:
+            model: model to export
+        """
+
+        super().__init__()
+
+        self.model = model.eval()
+
+    # pylint: disable=W0221
+    def forward(self, input_ids=None, attention_mask=None, token_type_ids=None):
+        """
+        Runs inputs through model and returns outputs.
+
+        Args:
+            inputs: model inputs
+
+        Returns:
+            model outputs
+        """
+
+        # Build list of arguments dynamically since some models take token_type_ids
+        # and others don't
+        inputs = {"input_ids": input_ids, "attention_mask": attention_mask}
+        if token_type_ids is not None:
+            inputs["token_type_ids"] = token_type_ids
+
+        return self.model.forward(**inputs)

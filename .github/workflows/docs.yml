@@ -1,0 +1,25 @@
+name: docs
+on:
+  push:
+    branches:
+      - master
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Install Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install txtai
+        run: |
+          pip install -U pip wheel
+          pip install .[all,dev]
+
+      - name: Deploy documentation
+        run: mkdocs gh-deploy --force
+ 

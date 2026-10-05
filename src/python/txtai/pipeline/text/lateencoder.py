@@ -1,0 +1,123 @@
+"""
+Late encoder module
+"""
+
+from ...models import Models, PoolingFactory
+from ..base import Pipeline
+
+# Core library imports
+from ...util import Library
+
+library = Library()
+np = library.numpy()
+torch = library.torch()
+
+
+class LateEncoder(Pipeline):
+    """
+    Computes similarity between query and list of text using a late interaction model.
+    """
+
+    def __init__(self, path=None, **kwargs):
+        # Get device
+        self.device = Models.device(Models.deviceid(kwargs.get("gpu", True)))
+
+        # Disable fixed dimensional encoders to preserve raw multi-vectors
+        encoders = {"muvera": None, "lemur": None}
+
+        # Load model
+        self.model = PoolingFactory.create(
+            {
+                "method": kwargs.get("method"),
+                "path": path if path else "colbert-ir/colbertv2.0",
+                "device": self.device,
+                "tokenizer": kwargs.get("tokenizer"),
+                "maxlength": kwargs.get("maxlength"),
+                "modelargs": {**kwargs.get("vectors", {}), **encoders},
+            }
+        )
+
+    def __call__(self, query, texts, limit=None):
+        """
+        Computes the similarity between query and list of text. Returns a list of
+        (id, score) sorted by highest score, where id is the index in texts.
+
+        This method supports query as a string or a list. If the input is a string,
+        the return type is a 1D list of (id, score). If text is a list, a 2D list
+        of (id, score) is returned with a row per string.
+
+        Args:
+            query: query text|list
+            texts: list of text
+            limit: maximum comparisons to return, defaults to all
+
+        Returns:
+            list of (id, score)
+        """
+
+        queries = [query] if isinstance(query, str) else query
+
+        # Encode text to vectors
+        queries = self.encode(queries, "query")
+        data = self.encode(texts, "data") if isinstance(texts[0], str) else texts
+
+        # Compute maximum similarity score
+        scores = []
+        for q in queries:
+            scores.extend(self.score(q.unsqueeze(0), data, limit))
+
+        return scores[0] if isinstance(query, str) else scores
+
+    def encode(self, data, category):
+        """
+        Encodes a batch of data using the underlying model.
+
+        Args:
+            data: input data
+            category: encoding category
+
+        Returns:
+            encoded data
+        """
+
+        return torch.from_numpy(self.model.encode(data, category=category)).to(self.device)
+
+    def score(self, queries, data, limit):
+        """
+        Computes the maximum similarity score between query vectors and data vectors.
+
+        Args:
+            queries: query vectors
+            data: data vectors
+            limit: query limit
+
+        Returns:
+            list of (id, score)
+        """
+
+        # Padding rows are all zeros, true token rows are unit normalized
+        qmask, dmask = queries.abs().sum(axis=-1) > 0, data.abs().sum(axis=-1) > 0
+
+        # Compute bulk dot product using einstein notation
+        scores = torch.einsum("ash,bth->abst", queries, data)
+
+        # Max score per query token, ignoring padded data tokens
+        scores = scores.masked_fill(~dmask[None, :, None, :], torch.finfo(scores.dtype).min).max(axis=-1).values
+
+        # Mean score over true query tokens, ignoring padded query tokens
+        scores = scores.masked_fill(~qmask[:, None, :], 0).sum(axis=-1) / qmask.sum(axis=-1, keepdim=True).clamp(min=1)
+        scores = scores.cpu().numpy()
+
+        # Get top n matching indices and scores
+        indices = np.argpartition(-scores, limit if limit and limit < scores.shape[1] else scores.shape[1] - 1)[:, :limit]
+        scores = np.take_along_axis(scores, indices, axis=1)
+
+        # argpartition doesn't order within the top n - sort each row by score descending
+        order = np.argsort(-scores, axis=1)
+        indices, scores = np.take_along_axis(indices, order, axis=1), np.take_along_axis(scores, order, axis=1)
+
+        results = []
+        for x, index in enumerate(indices):
+            results.append(list(zip(index.tolist(), scores[x].tolist())))
+
+        return results

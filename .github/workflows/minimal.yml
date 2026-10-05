@@ -1,0 +1,22 @@
+# GitHub Actions minimal build
+name: minimal
+
+on: ["push", "pull_request"]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Install Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Minimal install
+        run: |
+          pip install -U pip wheel
+          MINIMAL=1 pip install .
+          python -c "import txtai"

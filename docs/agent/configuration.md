@@ -1,0 +1,141 @@
+# Configuration
+
+An agent takes two main arguments, an LLM and a list of tools.
+
+The txtai agent framework is built with [smolagents](https://github.com/huggingface/smolagents). Additional options can be passed in the `Agent` constructor.
+
+```python
+from datetime import datetime
+
+from txtai import Agent
+
+wikipedia = {
+    "name": "wikipedia",
+    "description": "Searches a Wikipedia database",
+    "provider": "huggingface-hub",
+    "container": "neuml/txtai-wikipedia"
+}
+
+arxiv = {
+    "name": "arxiv",
+    "description": "Searches a database of scientific papers",
+    "provider": "huggingface-hub",
+    "container": "neuml/txtai-arxiv"
+}
+
+def today() -> str:
+    """
+    Gets the current date and time
+
+    Returns:
+        current date and time
+    """
+
+    return datetime.today().isoformat()
+
+agent = Agent(
+    model="Qwen/Qwen3-4B-Instruct-2507",
+    tools=[today, wikipedia, arxiv, "websearch"],
+)
+```
+
+## model
+
+```yaml
+model: string|llm instance
+```
+
+LLM model path or LLM pipeline instance. The `llm` parameter is also supported for backwards compatibility.
+
+See the [LLM pipeline](../../pipeline/text/llm) for more information.
+
+## tools
+
+```yaml
+tools: list
+```
+
+List of tools to supply to the agent. Supports the following configurations.
+
+### function
+
+A function tool takes the following dictionary fields.
+
+| Field       | Description              |
+|:------------|:-------------------------|
+| name        | name of the tool         |
+| description | tool description         |
+| target      | target method / callable |
+
+A function or callable method can also be directly supplied in the `tools` list. In this case, the fields are inferred from the method documentation.
+
+### embeddings
+
+Embeddings indexes have built-in support. Provide the following dictionary configuration to add an embeddings index as a tool.
+
+| Field       | Description                                |
+|:------------|:-------------------------------------------|
+| name        | embeddings index name                      |
+| description | embeddings index description               | 
+| **kwargs    | Parameters to pass to [embeddings.load](../../embeddings/methods/#txtai.embeddings.Embeddings.load) |
+
+### tool
+
+The following shortcut strings load tools directly. Passing a Tool instance is also supported.
+
+| Tool        | Description                                               |
+|:------------|:----------------------------------------------------------|
+| bash        | Runs a shell command through subprocess                   |
+| defaults    | Loads all of these tools as the default toolkit           |
+| edit        | Edits a file in place and returns a diff                  |
+| glob        | Finds matching file patterns in a directory               |
+| grep        | Finds matching file content in a directory                |
+| http.*      | HTTP Path to a [Model Context Protocol (MCP)](https://modelcontextprotocol.io/docs/getting-started/intro) server |
+| python      | Runs a Python action                                      |
+| read        | Reads file or url content, supports text extraction       |
+| todowrite   | Generates a task list to organize complex tasks           |
+| websearch   | Runs a websearch using the built-in websearch tool        |
+| webview     | Extracts content from a web page. Alias for `read` tool   |
+| write       | Writes content to file                                    |
+| *.md        | Loads a [`skill.md`](https://agentskills.io/specification) file |
+
+## instructions
+
+```yaml
+instructions: string|path
+```
+
+Supports loading an `agents.md` file. Can be provided directly as a string or as a path to a file.
+
+[Read more about agents.md here](https://github.com/agentsmd/agents.md)
+
+## template
+
+```yaml
+template: string
+```
+
+Customize the prompt template used by this agent. Supports Jinja templates. Uses a default template when this parameter is not provided.
+Must include `{{ text }}` and `{{ memory }}` placeholders.
+
+## memory
+
+```yaml
+memory: int
+```
+
+Keeps a rolling window of `memory` inputs and outputs. These are added to future prompts and serve as "agent memory".
+
+Supports storing memory by `session` to enable multiple conversation threads. Defaults to shared memory when not set. See the [method documentation](../methods#txtai.agent.base.Agent.__call__) for more information.
+
+## method
+
+```yaml
+method: code|tool
+```
+
+Sets the agent method. Supports either a `code` or `tool` (default) calling agent. A code agent generates Python code and executes that. A tool calling agent generates JSON blocks and calls the agents within those blocks.
+
+Additional options can be directly passed. See [CodeAgent](https://huggingface.co/docs/smolagents/main/en/reference/agents#smolagents.CodeAgent) or [ToolCallingAgent](https://huggingface.co/docs/smolagents/main/en/reference/agents#smolagents.ToolCallingAgent) for a list of parameters.
+
+[Read more here](https://huggingface.co/docs/smolagents/main/en/guided_tour).

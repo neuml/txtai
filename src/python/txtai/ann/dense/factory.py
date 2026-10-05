@@ -1,0 +1,93 @@
+"""
+Factory module
+"""
+
+from ...util import Resolver
+
+from ..base import ANN
+from .annoy import Annoy
+from .faiss import Faiss, FAISS
+from .ggml import GGML
+from .hnsw import HNSW
+from .milvus import Milvus
+from .numpy import NumPy
+from .pgvector import PGVector
+from .rabitq import RabitQ
+from .sqlite import SQLite
+from .torch import Torch
+from .turbovec import TurboVec
+from .zvec import Zvec
+
+
+class ANNFactory:
+    """
+    Methods to create ANN indexes.
+    """
+
+    @staticmethod
+    def create(config):
+        """
+        Create an ANN.
+
+        Args:
+            config: index configuration parameters
+
+        Returns:
+            ANN
+        """
+
+        # pylint: disable=R0912
+        # ANN instance
+        ann = None
+        backend = config.get("backend", "faiss" if FAISS else "numpy")
+
+        # Create ANN instance
+        if backend == "annoy":
+            ann = Annoy(config)
+        elif backend == "faiss":
+            ann = Faiss(config)
+        elif backend == "ggml":
+            ann = GGML(config)
+        elif backend == "hnsw":
+            ann = HNSW(config)
+        elif backend == "milvus":
+            ann = Milvus(config)
+        elif backend == "numpy":
+            ann = NumPy(config)
+        elif backend == "pgvector":
+            ann = PGVector(config)
+        elif backend == "rabitq":
+            ann = RabitQ(config)
+        elif backend == "sqlite":
+            ann = SQLite(config)
+        elif backend == "torch":
+            ann = Torch(config)
+        elif backend == "turbovec":
+            ann = TurboVec(config)
+        elif backend == "zvec":
+            ann = Zvec(config)
+        else:
+            ann = ANNFactory.resolve(backend, config)
+
+        # Store config back
+        config["backend"] = backend
+
+        return ann
+
+    @staticmethod
+    def resolve(backend, config):
+        """
+        Attempt to resolve a custom backend.
+
+        Args:
+            backend: backend class
+            config: index configuration parameters
+
+        Returns:
+            ANN
+        """
+
+        try:
+            return Resolver()(backend, ANN)(config)
+        except Exception as e:
+            raise ImportError(f"Unable to resolve ann backend: '{backend}'") from e

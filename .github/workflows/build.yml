@@ -1,0 +1,76 @@
+# GitHub Actions build workflow
+name: build
+
+on: ["push", "pull_request"]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    timeout-minutes: 75
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Install Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: "zulu"
+          java-version: 21
+
+      - name: Install dependencies - Linux
+        run: |
+          sudo apt-get update
+          sudo apt-get install libportaudio2 libsndfile1 libegl1 libgles2
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+        if: matrix.os == 'ubuntu-latest'
+
+      - name: Install dependencies - macOS
+        run: |
+          echo "PYTORCH_MPS_DISABLE=1" >> $GITHUB_ENV
+          echo "LLAMA_NO_METAL=1" >> $GITHUB_ENV
+          echo "TIKA_STARTUP_SLEEP=30" >> $GITHUB_ENV
+          echo "TIKA_STARTUP_MAX_RETRY=10" >> $GITHUB_ENV
+          brew install portaudio
+          pip install torch==2.12.1 torchvision==0.27.1
+        if: matrix.os == 'macos-latest'
+
+      - name: Install dependencies - Windows
+        run: |
+          "PYTHONIOENCODING=utf-8" >> $env:GITHUB_ENV
+          choco install wget
+        if: matrix.os == 'windows-latest'
+
+      - name: Build
+        run: |
+          pip install -U wheel
+          pip install .[all,dev]
+          pip cache purge
+          python -c "import nltk; nltk.download(['punkt', 'punkt_tab', 'averaged_perceptron_tagger_eng'])"
+          python --version
+          make data coverage
+        env:
+          HF_HUB_ETAG_TIMEOUT: 100
+          HF_HUB_DOWNLOAD_TIMEOUT: 100
+          HF_XET_CHUNK_CACHE_SIZE_BYTES: 0
+          DOCLING_DEVICE: "cpu"
+          DOCLING_INFERENCE_COMPILE_TORCH_MODELS: false
+
+      - uses: pre-commit/action@v3.0.1
+        if: matrix.os == 'ubuntu-latest'
+
+      - name: Test Coverage
+        run: |
+          coverage report --fail-under=100
+          coveralls --service=github
+        if: matrix.os == 'ubuntu-latest'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

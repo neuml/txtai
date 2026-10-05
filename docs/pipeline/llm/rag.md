@@ -1,0 +1,180 @@
+# RAG
+
+![pipeline](../../images/pipeline.png#only-light)
+![pipeline](../../images/pipeline-dark.png#only-dark)
+
+The Retrieval Augmented Generation (RAG) pipeline joins a prompt, context data store and generative model together to extract knowledge.
+
+The data store can be an embeddings database or a similarity instance with associated input text. The generative model can be a prompt-driven large language model (LLM), an extractive question-answering model or a custom pipeline.
+
+## Example
+
+The following shows a simple example using this pipeline.
+
+```python
+from txtai import Embeddings, RAG
+
+# Input data
+data = [
+  "US tops 5 million confirmed virus cases",
+  "Canada's last fully intact ice shelf has suddenly collapsed, " +
+  "forming a Manhattan-sized iceberg",
+  "Beijing mobilises invasion craft along coast as Taiwan tensions escalate",
+  "The National Park Service warns against sacrificing slower friends " +
+  "in a bear attack",
+  "Maine man wins $1M from $25 lottery ticket",
+  "Make huge profits without work, earn up to $100,000 a day"
+]
+
+# Build embeddings index
+embeddings = Embeddings(content=True)
+embeddings.index(data)
+
+# Create the RAG pipeline
+rag = RAG(embeddings, "Qwen/Qwen3-0.6B", template="""
+  Answer the following question using the provided context.
+
+  Question:
+  {question}
+
+  Context:
+  {context}
+""")
+
+# Run RAG pipeline
+rag("What was won?")
+
+# Prompts with chat templating can be directly passed
+# The template format varies by model
+rag = RAG(embeddings, "Qwen/Qwen3-0.6B", template="""
+  <|im_start|>system
+  You are a friendly assistant.<|im_end|>
+  <|im_start|>user
+  Answer the following question using the provided context.
+
+  Question:
+  {question}
+
+  Context:
+  {context}
+  <|im_start|>assistant
+  """
+)
+rag("What was won?")
+
+# Inputs are automatically converted to chat messages when a
+# system prompt is provided
+rag = RAG(
+  embeddings,
+  "openai/gpt-oss-20b",
+  system="You are a friendly assistant",
+  template="""
+  Answer the following question using the provided context.
+
+  Question:
+  {question}
+
+  Context:
+  {context}
+""")
+rag("What was won?")
+
+# LLM options can be passed as additional arguments
+#  - Streaming RAG response with `stream=True`
+#  - String inputs are always converted to user messages with `defaultrole="user"`
+#  - Thinking text is removed with `stripthink=True`
+rag("What was won?", stream=True, defaultrole="user", stripThink=True)
+```
+
+See the [Embeddings](../../../embeddings) and [LLM](../llm) pages for additional configuration options.
+
+Check out this [RAG Quickstart Example](https://github.com/neuml/txtai/blob/master/examples/rag_quickstart.py). Additional examples are listed below.
+
+| Notebook  | Description  |       |
+|:----------|:-------------|------:|
+| [Prompt-driven search with LLMs](https://github.com/neuml/txtai/blob/master/examples/42_Prompt_driven_search_with_LLMs.ipynb) | Embeddings-guided and Prompt-driven search with Large Language Models (LLMs) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/42_Prompt_driven_search_with_LLMs.ipynb) |
+| [Build RAG pipelines with txtai](https://github.com/neuml/txtai/blob/master/examples/52_Build_RAG_pipelines_with_txtai.ipynb) [▶️](https://www.youtube.com/watch?v=t_OeAc8NVfQ) | Guide on retrieval augmented generation including how to create citations | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/52_Build_RAG_pipelines_with_txtai.ipynb) |
+| [Integrate LLM frameworks](https://github.com/neuml/txtai/blob/master/examples/53_Integrate_LLM_Frameworks.ipynb) | Integrate llama.cpp, LiteLLM and custom generation frameworks | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/53_Integrate_LLM_Frameworks.ipynb) |
+| [Generate knowledge with Semantic Graphs and RAG](https://github.com/neuml/txtai/blob/master/examples/55_Generate_knowledge_with_Semantic_Graphs_and_RAG.ipynb) | Knowledge exploration and discovery with Semantic Graphs and RAG | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/55_Generate_knowledge_with_Semantic_Graphs_and_RAG.ipynb) |
+| [Advanced RAG with graph path traversal](https://github.com/neuml/txtai/blob/master/examples/58_Advanced_RAG_with_graph_path_traversal.ipynb) | Graph path traversal to collect complex sets of data for advanced RAG | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/58_Advanced_RAG_with_graph_path_traversal.ipynb) |
+| [Advanced RAG with guided generation](https://github.com/neuml/txtai/blob/master/examples/60_Advanced_RAG_with_guided_generation.ipynb) | Retrieval Augmented and Guided Generation | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/60_Advanced_RAG_with_guided_generation.ipynb) |
+| [RAG with llama.cpp and external API services](https://github.com/neuml/txtai/blob/master/examples/62_RAG_with_llama_cpp_and_external_API_services.ipynb) | RAG with additional vector and LLM frameworks | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/62_RAG_with_llama_cpp_and_external_API_services.ipynb) |
+| [How RAG with txtai works](https://github.com/neuml/txtai/blob/master/examples/63_How_RAG_with_txtai_works.ipynb) | Create RAG processes, API services and Docker instances | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/63_How_RAG_with_txtai_works.ipynb) |
+| [Speech to Speech RAG](https://github.com/neuml/txtai/blob/master/examples/65_Speech_to_Speech_RAG.ipynb) [▶️](https://www.youtube.com/watch?v=tH8QWwkVMKA) | Full cycle speech to speech workflow with RAG | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/65_Speech_to_Speech_RAG.ipynb) |
+| [Parsing the stars with txtai](https://github.com/neuml/txtai/blob/master/examples/72_Parsing_the_stars_with_txtai.ipynb) | Explore an astronomical knowledge graph of known stars, planets, galaxies | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/72_Parsing_the_stars_with_txtai.ipynb) |
+| [Chunking your data for RAG](https://github.com/neuml/txtai/blob/master/examples/73_Chunking_your_data_for_RAG.ipynb) | Extract, chunk and index content for effective retrieval | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/73_Chunking_your_data_for_RAG.ipynb) |
+| [Medical RAG Research with txtai](https://github.com/neuml/txtai/blob/master/examples/75_Medical_RAG_Research_with_txtai.ipynb) | Analyze PubMed article metadata with RAG | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/75_Medical_RAG_Research_with_txtai.ipynb) |
+| [GraphRAG with Wikipedia and GPT OSS](https://github.com/neuml/txtai/blob/master/examples/77_GraphRAG_with_Wikipedia_and_GPT_OSS.ipynb) | Deep graph search powered RAG | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/77_GraphRAG_with_Wikipedia_and_GPT_OSS.ipynb) |
+| [RAG is more than Vector Search](https://github.com/neuml/txtai/blob/master/examples/79_RAG_is_more_than_Vector_Search.ipynb) | Context retrieval via Web, SQL and other sources | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neuml/txtai/blob/master/examples/79_RAG_is_more_than_Vector_Search.ipynb) |
+
+## Configuration-driven example
+
+Pipelines are run with Python or configuration. Pipelines can be instantiated in [configuration](../../../api/configuration/#pipeline) using the lower case name of the pipeline. Configuration-driven pipelines are run with [workflows](../../../workflow/#configuration-driven-example) or the [API](../../../api#local-instance).
+
+### config.yml
+```yaml
+# Allow documents to be indexed
+writable: True
+
+# Content is required for extractor pipeline
+embeddings:
+  content: True
+
+rag:
+  path: Qwen/Qwen3-0.6B
+  template: |
+    Answer the following question using the provided context.
+
+    Question:
+    {question}
+
+    Context:
+    {context}
+
+workflow:
+  search:
+    tasks:
+      - action: rag
+```
+
+### Run with Workflows
+
+Built in tasks make using the extractor pipeline easier.
+
+```python
+from txtai import Application
+
+# Create and run pipeline with workflow
+app = Application("config.yml")
+app.add([
+  "US tops 5 million confirmed virus cases",
+  "Canada's last fully intact ice shelf has suddenly collapsed, " +
+  "forming a Manhattan-sized iceberg",
+  "Beijing mobilises invasion craft along coast as Taiwan tensions escalate",
+  "The National Park Service warns against sacrificing slower friends " +
+  "in a bear attack",
+  "Maine man wins $1M from $25 lottery ticket",
+  "Make huge profits without work, earn up to $100,000 a day"
+])
+app.index()
+
+list(app.workflow("search", ["What was won?"]))
+```
+
+### Run with API
+
+```bash
+CONFIG=config.yml uvicorn "txtai.api:app" &
+
+curl \
+  -X POST "http://localhost:8000/workflow" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "search", "elements": ["What was won"]}'
+```
+
+## Methods
+
+Python documentation for the pipeline.
+
+### ::: txtai.pipeline.RAG.__init__
+### ::: txtai.pipeline.RAG.__call__
