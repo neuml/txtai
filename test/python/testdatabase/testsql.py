@@ -62,6 +62,19 @@ class TestSQL(unittest.TestCase):
         with self.assertRaises(SQLError):
             aggregate("select avg(price) from txtai", [{"avg(price)": 100.0}, {"avg(price)": 10.0}])
 
+    def testAggregateNull(self):
+        """
+        Test Aggregate skips NULL values returned by shards with no matching rows
+        """
+
+        aggregate = Aggregate()
+
+        query = "select count(*), max(price), avg(price) from txtai where price > 50"
+        empty, result = {"count(*)": 0, "max(price)": None, "avg(price)": None}, {"count(*)": 2, "max(price)": 100.0, "avg(price)": 80.0}
+
+        self.assertEqual(aggregate(query, [empty, result]), [result])
+        self.assertEqual(aggregate(query, [empty, empty]), [empty])
+
     def testAlias(self):
         """
         Test alias clauses
