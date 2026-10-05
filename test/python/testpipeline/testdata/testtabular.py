@@ -157,6 +157,16 @@ class TestTabular(unittest.TestCase):
 
         self.assertIsNone(data["metadata"])
 
+    def testFalsyIDColumn(self):
+        """
+        Explicit column labels are used for IDs and excluded from default text.
+        """
+
+        for column in ("", 0, "id"):
+            with self.subTest(column=column):
+                rows = Tabular(idcolumn=column)([{column: "doc-7", "text": "hello"}])
+                self.assertEqual(rows, [("doc-7", "hello", None)])
+
     def testNoColumns(self):
         """
         Test creating text without specifying columns

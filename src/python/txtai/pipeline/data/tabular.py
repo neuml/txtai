@@ -99,14 +99,14 @@ class Tabular(Pipeline):
         columns = self.textcolumns
         if not columns:
             columns = list(df.columns)
-            if self.idcolumn:
+            if self.idcolumn is not None:
                 columns.remove(self.idcolumn)
 
         # Transform into (id, text, tag) tuples
         # Tuple iteration preserves column types instead of coercing each row to one dtype.
         for index, values in zip(df.index, df.itertuples(index=False, name=None)):
             row = dict(zip(df.columns, values))
-            uid = row[self.idcolumn] if self.idcolumn else index
+            uid = row[self.idcolumn] if self.idcolumn is not None else index
             uid = uid if uid is not None else index
             text = self.concat(row, columns)
 
