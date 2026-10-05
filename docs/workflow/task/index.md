@@ -86,7 +86,7 @@ workflow = Workflow([Task(lambda x: [y * 3 for y in x], unpack=False, column=0)]
 list(workflow([(2, 8)]))
 ```
 
-For the example input tuple of (2, 2), the workflow will only select the first element (2) and run the task against that element. 
+For the example input tuple of (2, 8), the workflow will only select the first element (2) and run the task against that element.
 
 ```python
 workflow = Workflow([Task([lambda x: [y * 3 for y in x], 
