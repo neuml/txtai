@@ -54,8 +54,8 @@ class StorageTask(Task):
         outputs = []
         for element in elements:
             if self.matches(element):
-                # Get directory listing and run actions
-                outputs.extend(super().__call__(self.list(element), executor))
+                # Unpack tagged input, list container and re-tag each listing to match input format
+                outputs.extend(self.pack(element, result) for result in super().__call__(self.list(self.upack(element, True)), executor))
             else:
                 outputs.append(element)
 

@@ -524,6 +524,34 @@ class TestWorkflow(unittest.TestCase):
 
         self.assertEqual(len(results), 22)
 
+    def testStorageTaggedWorkflow(self):
+        """
+        Test a storage task with tagged (id, data, tag) inputs (#1328)
+        """
+
+        task = StorageTask()
+
+        # matches() accepts untagged and tagged storage urls
+        self.assertIsNotNone(task.matches("local://" + Utils.PATH))
+        self.assertIsNotNone(task.matches(("id", "local://" + Utils.PATH, "tag")))
+        self.assertIsNone(task.matches("test string"))
+
+        workflow = Workflow([StorageTask()])
+
+        # Tagged inputs list the container and re-tag each file with the input (id, tag)
+        url = "local://" + Utils.PATH
+        results = list(workflow([("id", url, "tag")]))
+        self.assertEqual(len(results), 21)
+        for result in results:
+            self.assertEqual(len(result), 3)
+            self.assertEqual(result[0], "id")
+            self.assertTrue(result[1].startswith(Utils.PATH))
+            self.assertEqual(result[2], "tag")
+
+        # Non-storage inputs pass through unmodified
+        results = list(workflow([("id2", "test string", "tag2")]))
+        self.assertEqual(results, [("id2", "test string", "tag2")])
+
     def testTemplateInput(self):
         """
         Test template task input
