@@ -9,6 +9,8 @@ content: boolean|sqlite|duckdb|client|url|custom
 
 Enables content storage. When true, the default storage engine, `sqlite` will be used to save metadata.
 
+With `duckdb`, a query that fails at runtime, such as a failed type cast, aborts the open transaction. Unsaved changes are lost and later operations fail until the index is loaded or built again.
+
 Client-server connections are supported with either `client` or a full connection URL. When set to `client`, the CLIENT_URL environment variable must be set to the full connection URL. See the [SQLAlchemy](https://docs.sqlalchemy.org/en/20/core/engines.html#database-urls) documentation for more information on how to construct connection strings for client-server databases.
 
 Add custom storage engines via setting this parameter to the fully resolvable class string.
