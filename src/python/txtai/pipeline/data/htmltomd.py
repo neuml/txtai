@@ -60,6 +60,14 @@ class HTMLToMarkdown(Pipeline):
         for script in soup.find_all(["script", "style"]):
             script.decompose()
 
+        # Replace line breaks with newlines. Table cells and headings must stay on a single line, use a space there.
+        for br in soup.find_all("br"):
+            parent = br.parent
+            br.replace_with(" " if br.find_parent(["th", "td", "h1", "h2", "h3", "h4", "h5", "h6"]) else "\n")
+
+            # Merge the line break with the text around it
+            parent.smooth()
+
         # Check for article sections
         article = next((x for x in ["article", "main"] if soup.find(x)), None)
 

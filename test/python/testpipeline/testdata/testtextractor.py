@@ -151,6 +151,18 @@ class TestTextractor(unittest.TestCase):
         self.assertMarkdown("<p>This is a <strong><em>test</em></strong></p>", "This is a **test**")
         self.assertMarkdown("<p>This is a <em><strong>test</strong></em></p>", "This is a *test*")
 
+        # Line breaks
+        self.assertMarkdown("<p>Test1<br>Test2</p>", "Test1\nTest2")
+        self.assertMarkdown("<p>This is a <b>test<br/>case</b></p>", "This is a **test\ncase**")
+        self.assertMarkdown("<pre>Test1<br>Test2</pre>", "```\nTest1\nTest2\n```")
+
+        # Line breaks in headings and table cells are replaced with a space
+        self.assertMarkdown("<h1>This is<br>a test</h1>", "# This is a test")
+        self.assertMarkdown(
+            "<table><tr><th>Header1</th><th>Header2</th></tr><tr><td>Test1<br>Test2</td><td>Test3</td></tr></table>",
+            "|Header1|Header2|\n|---|---|\n|Test1 Test2|Test3|",
+        )
+
     def testHTMLMetadataNoContent(self):
         """
         Test HTML with a meta description tag that has no content attribute
