@@ -38,8 +38,8 @@ class Caption(HFModel):
             self.model, self.tokenizer, self.processor = path
         else:
             self.model = transformers.AutoModelForImageTextToText.from_pretrained(path, **kwargs)
-            self.tokenizer = transformers.AutoTokenizer.from_pretrained(path)
-            self.processor = transformers.AutoImageProcessor.from_pretrained(path)
+            self.tokenizer = transformers.AutoTokenizer.from_pretrained(path, trust_remote_code=kwargs.get("trust_remote_code", False))
+            self.processor = transformers.AutoImageProcessor.from_pretrained(path, trust_remote_code=kwargs.get("trust_remote_code", False))
 
         # Move model to device
         self.model = self.model.to(self.device)

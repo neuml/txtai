@@ -36,7 +36,9 @@ class Pooling(Module):
         super().__init__()
 
         self.model = Models.load(path, modelargs=modelargs)
-        self.tokenizer = Models.tokenizer(tokenizer if tokenizer else path)
+        self.tokenizer = Models.tokenizer(
+            tokenizer if tokenizer else path, trust_remote_code=modelargs.get("trust_remote_code", False) if modelargs else False
+        )
         self.device = Models.device(device)
 
         # Detect unbounded tokenizer typically found in older models

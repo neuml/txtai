@@ -64,7 +64,11 @@ class HFModel(Tensors):
         model = self.prepare(model)
 
         # Load tokenizer
-        tokenizer = transformers.AutoTokenizer.from_pretrained(tokenizer) if isinstance(tokenizer, str) else tokenizer
+        tokenizer = (
+            transformers.AutoTokenizer.from_pretrained(tokenizer, trust_remote_code=kwargs.get("trust_remote_code", False))
+            if isinstance(tokenizer, str)
+            else tokenizer
+        )
 
         return model, tokenizer
 
