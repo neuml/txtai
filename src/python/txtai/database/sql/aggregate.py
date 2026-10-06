@@ -63,14 +63,15 @@ class Aggregate(SQL):
 
         aggregates = {}
         for column in columns:
-            column = column.lower()
-            if column.startswith(("count(", "sum(", "total(")):
+            # Match function names case-insensitively but keep the column name as returned
+            name = column.lower()
+            if name.startswith(("count(", "sum(", "total(")):
                 aggregates[column] = sum
-            elif column.startswith("max("):
+            elif name.startswith("max("):
                 aggregates[column] = max
-            elif column.startswith("min("):
+            elif name.startswith("min("):
                 aggregates[column] = min
-            elif column.startswith("avg("):
+            elif name.startswith("avg("):
                 aggregates[column] = self.avg
 
         return aggregates
