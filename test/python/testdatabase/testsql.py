@@ -172,6 +172,17 @@ class TestSQL(unittest.TestCase):
         self.assertSql("select", "select distinct a/1 from txtai", "distinct json_extract(data, '$.a') / 1 as \"a / 1\"")
         self.assertSql("select", "select distinct(a/1) from txtai", "distinct(json_extract(data, '$.a') / 1) as \"distinct(a / 1)\"")
 
+    def testEscapedQuotes(self):
+        """
+        Test string literals with escaped single quotes
+        """
+
+        prefix = "select * from txtai "
+
+        self.assertSql("where", prefix + "where a = 'it''s'", "json_extract(data, '$.a') = 'it''s'")
+        self.assertSql("where", prefix + "where a = '' and b = 'x'", "json_extract(data, '$.a') = '' and json_extract(data, '$.b') = 'x'")
+        self.assertSql("similar", prefix + "where similar('what''s new')", [["what's new"]])
+
     def testGroupby(self):
         """
         Test group by clauses

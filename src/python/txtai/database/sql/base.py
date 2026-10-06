@@ -16,6 +16,9 @@ class SQL:
     # List of clauses to parse
     CLAUSES = ["select", "from", "where", "group", "having", "order", "limit", "offset"]
 
+    # Stands in for an escaped single quote ('') inside a string literal while tokenizing
+    QUOTE = "\x00"
+
     def __init__(self, database=None, tolist=False):
         """
         Creates a new SQL query parser.
@@ -137,10 +140,11 @@ class SQL:
         #   - Punctuation chars are parsed as standalone tokens which helps identify operators
         #   - Add additional wordchars to prevent splitting on those values
         #   - Disable comments
-        tokens = shlex(StringIO(query), punctuation_chars="=!<>+-*/%|")
+        #   - Escaped quotes ('') in string literals are swapped for a placeholder so each literal stays one token
+        tokens = shlex(StringIO(self.escapequotes(query)), punctuation_chars="=!<>+-*/%|")
         tokens.wordchars += ":@#"
         tokens.commenters = ""
-        tokens = list(tokens)
+        tokens = [token.replace(SQL.QUOTE, "''") for token in tokens]
 
         # Identify sql clause token positions
         positions = {}
@@ -152,6 +156,32 @@ class SQL:
                 positions[t] = x
 
         return (tokens, positions)
+
+    def escapequotes(self, query):
+        """
+        Replaces escaped single quotes ('') inside string literals with a placeholder.
+
+        Args:
+            query: input query
+
+        Returns:
+            query with escaped quotes replaced
+        """
+
+        output, literal, x = [], False, 0
+        while x < len(query):
+            if query[x] == "'":
+                if literal and query[x + 1 : x + 2] == "'":
+                    output.append(SQL.QUOTE)
+                    x += 2
+                    continue
+
+                literal = not literal
+
+            output.append(query[x])
+            x += 1
+
+        return "".join(output)
 
     def parse(self, tokens, positions, name, offset=1, alias=False, aliases=None, similar=None):
         """
