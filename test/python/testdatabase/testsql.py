@@ -62,6 +62,17 @@ class TestSQL(unittest.TestCase):
         with self.assertRaises(SQLError):
             aggregate("select avg(price) from txtai", [{"avg(price)": 100.0}, {"avg(price)": 10.0}])
 
+    def testAggregateOrderByNull(self):
+        """
+        Test Aggregate orders NULL values the same way as SQLite
+        """
+
+        aggregate = Aggregate()
+
+        results = [{"id": "a", "price": 3.0}, {"id": "b", "price": None}, {"id": "c", "price": 1.0}]
+        self.assertEqual([x["id"] for x in aggregate("select id, price from txtai order by price", results)], ["b", "c", "a"])
+        self.assertEqual([x["id"] for x in aggregate("select id, price from txtai order by price desc", results)], ["a", "c", "b"])
+
     def testAggregateNull(self):
         """
         Test Aggregate skips NULL values returned by shards with no matching rows
