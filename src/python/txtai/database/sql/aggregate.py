@@ -63,14 +63,15 @@ class Aggregate(SQL):
 
         aggregates = {}
         for column in columns:
-            column = column.lower()
-            if column.startswith(("count(", "sum(", "total(")):
+            # Match function names case-insensitively but keep the column name as returned
+            name = column.lower()
+            if name.startswith(("count(", "sum(", "total(")):
                 aggregates[column] = sum
-            elif column.startswith("max("):
+            elif name.startswith("max("):
                 aggregates[column] = max
-            elif column.startswith("min("):
+            elif name.startswith("min("):
                 aggregates[column] = min
-            elif column.startswith("avg("):
+            elif name.startswith("avg("):
                 aggregates[column] = self.avg
 
         return aggregates
@@ -182,9 +183,9 @@ class Aggregate(SQL):
                 clause = clause.rsplit(" ")[0]
                 reverse = True
 
-            # Order by columns must be in select clause
+            # Order by columns must be in select clause. NULLs sort first like in SQLite (last when descending).
             if clause in query["select"]:
-                results = sorted(results, key=operator.itemgetter(clause), reverse=reverse)
+                results = sorted(results, key=lambda row, column=clause: (row[column] is not None, row[column]), reverse=reverse)
 
         return results
 

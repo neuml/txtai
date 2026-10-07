@@ -60,6 +60,14 @@ class HTMLToMarkdown(Pipeline):
         for script in soup.find_all(["script", "style"]):
             script.decompose()
 
+        # Replace line breaks with newlines. Table cells and headings must stay on a single line, use a space there.
+        for br in soup.find_all("br"):
+            parent = br.parent
+            br.replace_with(" " if br.find_parent(["th", "td", "h1", "h2", "h3", "h4", "h5", "h6"]) else "\n")
+
+            # Merge the line break with the text around it
+            parent.smooth()
+
         # Check for article sections
         article = next((x for x in ["article", "main"] if soup.find(x)), None)
 
@@ -186,12 +194,17 @@ class HTMLToMarkdown(Pipeline):
             target, text = x if x.name else node, x.text
 
             if text.strip():
+                # Leading whitespace separates this text from the previous word, keep it outside of the formatting
+                space = " " if text[0].isspace() and texts and not texts[-1][-1:].isspace() else ""
+
                 if target.name in ("b", "strong"):
-                    text = f"**{text.strip()}** "
+                    text = f"{space}**{text.strip()}** "
                 elif target.name in ("i", "em"):
-                    text = f"*{text.strip()}* "
+                    text = f"{space}*{text.strip()}* "
                 elif target.name == "a":
-                    text = f"[{text.strip()}]({target.get('href')}) "
+                    # Links without a target are added as plain text
+                    href = target.get("href")
+                    text = f"{space}[{text.strip()}]({href}) " if href else f"{space}{text.strip()} "
 
             texts.append(text)
 
