@@ -86,6 +86,17 @@ class TestSQL(unittest.TestCase):
         self.assertEqual(aggregate(query, [empty, result]), [result])
         self.assertEqual(aggregate(query, [empty, empty]), [empty])
 
+    def testAggregateOrderByNull(self):
+        """
+        Test Aggregate orders NULL values the same way as SQLite
+        """
+
+        aggregate = Aggregate()
+
+        results = [{"id": "a", "price": 3.0}, {"id": "b", "price": None}, {"id": "c", "price": 1.0}]
+        self.assertEqual([x["id"] for x in aggregate("select id, price from txtai order by price", results)], ["b", "c", "a"])
+        self.assertEqual([x["id"] for x in aggregate("select id, price from txtai order by price desc", results)], ["a", "c", "b"])
+
     def testAlias(self):
         """
         Test alias clauses

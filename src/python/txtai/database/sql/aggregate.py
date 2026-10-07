@@ -183,9 +183,9 @@ class Aggregate(SQL):
                 clause = clause.rsplit(" ")[0]
                 reverse = True
 
-            # Order by columns must be in select clause
+            # Order by columns must be in select clause. NULLs sort first like in SQLite (last when descending).
             if clause in query["select"]:
-                results = sorted(results, key=operator.itemgetter(clause), reverse=reverse)
+                results = sorted(results, key=lambda row, column=clause: (row[column] is not None, row[column]), reverse=reverse)
 
         return results
 
