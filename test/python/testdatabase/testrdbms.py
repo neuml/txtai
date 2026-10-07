@@ -329,6 +329,30 @@ class Common:
             result = embeddings.search("feel good story", 1)[0]
             self.assertEqual(result["text"], data[0][1])
 
+        def testHybridWeights(self):
+            """
+            Test hybrid search with different similar clause weights in the same batch
+            """
+
+            queries = [
+                "select id, score from txtai where similar('a day at work', 0.1)",
+                "select id, score from txtai where similar('feel good story', 0.9)",
+            ]
+
+            # Test with sparse + dense vectors in the top-level index and in a subindex
+            hybrid = {"path": "sentence-transformers/nli-mpnet-base-v2", "hybrid": True}
+            for config in [hybrid, {"defaults": False, "indexes": {"index1": hybrid}}]:
+                embeddings = Embeddings({**config, "content": self.backend})
+                embeddings.index(self.data)
+
+                # Each query in a batch must use its own weights
+                batch = embeddings.batchsearch(queries, 6)
+                for query, results in zip(queries, batch):
+                    expected = embeddings.search(query, 6)
+                    self.assertEqual([r["id"] for r in results], [r["id"] for r in expected])
+                    for result, value in zip(results, expected):
+                        self.assertAlmostEqual(result["score"], value["score"], places=5)
+
         def testIndex(self):
             """
             Test index

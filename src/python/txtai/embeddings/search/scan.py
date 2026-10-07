@@ -61,9 +61,9 @@ class Scan:
 
             candidates = max(candidates) if candidates else default
 
-            # Query weights to pass to batch search
-            weights = [query.weights for query in iqueries if query.weights is not None]
-            weights = max(weights) if weights else self.weights
+            # Query weights to pass to batch search. Each query keeps its own weights, queries without weights use the default.
+            weights = [query.weights if query.weights is not None else self.weights for query in iqueries]
+            weights = [[weight, 1 - weight] if isinstance(weight, (int, float)) else weight for weight in weights]
 
             # Index to run query against
             index = index if index else self.index
