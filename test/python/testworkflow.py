@@ -545,7 +545,9 @@ class TestWorkflow(unittest.TestCase):
         for result in results:
             self.assertEqual(len(result), 3)
             self.assertEqual(result[0], "id")
-            self.assertTrue(result[1].startswith(Utils.PATH))
+            # normpath: libcloud joins listing paths with os.path.join, which uses
+            # backslashes on Windows while Utils.PATH uses forward slashes
+            self.assertTrue(os.path.normpath(result[1]).startswith(os.path.normpath(Utils.PATH)))
             self.assertEqual(result[2], "tag")
 
         # Non-storage inputs pass through unmodified
