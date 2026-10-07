@@ -63,22 +63,19 @@ class Reranker(Pipeline):
         # Re-rank using similarity pipeline
         ranked = []
         for x, result in enumerate(results):
-            # Skip scoring when a search has no results
-            if not result:
-                ranked.append([])
-                continue
+            # Only score when a search has results
+            if result:
+                texts = [row["text"] for row in result]
 
-            texts = [row["text"] for row in result]
-
-            if self.cache is not None and (namespace := self.modelkey()) and all("id" in row for row in result):
-                with self.lock:
-                    texts = self.vectors(result, namespace)
+                if self.cache is not None and (namespace := self.modelkey()) and all("id" in row for row in result):
+                    with self.lock:
+                        texts = self.vectors(result, namespace)
+                        for uid, score in self.similarity(queries[x], texts):
+                            result[uid]["score"] = score
+                else:
+                    # Score results and merge
                     for uid, score in self.similarity(queries[x], texts):
                         result[uid]["score"] = score
-            else:
-                # Score results and merge
-                for uid, score in self.similarity(queries[x], texts):
-                    result[uid]["score"] = score
 
             # Sort and take top n sorted results
             ranked.append(sorted(result, key=lambda row: row["score"], reverse=True)[:limit])
