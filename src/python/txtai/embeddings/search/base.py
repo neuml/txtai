@@ -92,7 +92,7 @@ class Search:
         Args:
             queries: list of queries
             limit: maximum results
-            weights: hybrid score weights
+            weights: hybrid score weights, either one set of weights for all queries or a list of [dense, sparse] weights per query
             index: index name
 
         Returns:
@@ -114,9 +114,13 @@ class Search:
             if isinstance(weights, (int, float)):
                 weights = [weights, 1 - weights]
 
+            # Use the same weights for each query, unless a list of weights per query is passed
+            if not isinstance(weights[0], (list, tuple)):
+                weights = [weights] * len(queries)
+
             # Create weighted scores via hybrid fusion strategy
             fusion = Hybrid(self.scoring)
-            return [fusion(vectors, weights, limit) for vectors in zip(dense, sparse)]
+            return [fusion(vectors, weights[x], limit) for x, vectors in enumerate(zip(dense, sparse))]
 
         # Raise an error if when no indexes are available
         if not sparse and not dense:
