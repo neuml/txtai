@@ -210,6 +210,38 @@ class TestSQL(unittest.TestCase):
 
         self.assertSql("limit", prefix + "limit 100", "100")
 
+    def testMultipleStatements(self):
+        """
+        Test multiple statements are rejected instead of silently running only the first.
+        """
+
+        with self.assertRaises(SQLError):
+            self.db.search("select * from txtai ; DELETE FROM sections")
+
+        with self.assertRaises(SQLError):
+            self.db.search("select id from txtai ; select id from txtai")
+
+        # The separator is rejected wherever it sits, including inside a quoted literal.
+        # Embedded semicolons are not supported - pass the value as a bind parameter.
+        with self.assertRaises(SQLError):
+            self.db.search("select id from txtai where text = 'a; b'")
+
+        with self.assertRaises(SQLError):
+            self.db.search("select id from txtai where similar('a; b')")
+
+        # A redundant trailing semicolon is still a single statement, and the run of them
+        # must not reach the tokenizer - a stray ";" is resolved as a column name, which
+        # corrupts the last clause instead of raising. Assert the clause TEXT, not just
+        # that no exception was raised.
+        self.assertSql("select", "select id from txtai;", "s.id")
+        self.assertSql("select", "select id from txtai ;", "s.id")
+        self.assertSql("select", "select id from txtai;;", "s.id")
+        self.assertSql("select", "select id from txtai;;;", "s.id")
+        self.assertSql("select", "select id from txtai ; ; ", "s.id")
+        self.assertSql("limit", "select id from txtai limit 1;;", "1")
+        self.assertSql("where", "select id from txtai where tag = 'x';;", "s.tag = 'x'")
+        self.assertSql("orderby", "select id from txtai order by id;;", "s.id")
+
     def testOffset(self):
         """
         Test offset clauses
@@ -327,6 +359,13 @@ class TestSQL(unittest.TestCase):
         # A trailing AS with no alias name raised TypeError
         with self.assertRaises(SQLError):
             self.db.search("select a as from txtai")
+
+        # A quotation left open at the end of the query leaked a ValueError from the lexer
+        with self.assertRaises(SQLError):
+            self.db.search("select id from txtai where text = 'a")
+
+        with self.assertRaises(SQLError):
+            self.db.search("select * from txtai where similar('abc")
 
     def testUpper(self):
         """

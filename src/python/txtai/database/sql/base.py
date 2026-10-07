@@ -5,6 +5,7 @@ SQL module
 from io import StringIO
 from shlex import shlex
 
+from .error import SQLError
 from .expression import Expression
 
 
@@ -42,8 +43,19 @@ class SQL:
 
         clauses = None
         if self.issql(query):
-            # Ignore multiple statements
-            query = query.split(";")[0]
+            # Multiple statements are not supported. A run of trailing semicolons is still a
+            # single statement, so strip the whole run and reject a separator that survives it.
+            if ";" in query:
+                statement = query.rstrip()
+                while statement.endswith(";"):
+                    statement = statement[:-1].rstrip()
+
+                if ";" in statement:
+                    raise SQLError(
+                        "Invalid SQL statement with embedded semicolon (;). Pass parameters as bind parameters instead."
+                    )
+
+                query = statement
 
             # Tokenize query
             tokens, positions = self.tokenize(query)
@@ -140,7 +152,13 @@ class SQL:
         tokens = shlex(StringIO(query), punctuation_chars="=!<>+-*/%|")
         tokens.wordchars += ":@#"
         tokens.commenters = ""
-        tokens = list(tokens)
+        try:
+            tokens = list(tokens)
+        except ValueError:
+            # The lexer stops at end of input while a quotation is still open
+            raise SQLError(
+                "Invalid SQL statement: a quoted value was not closed. Pass parameters as bind parameters instead."
+            ) from None
 
         # Identify sql clause token positions
         positions = {}
