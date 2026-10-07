@@ -73,17 +73,6 @@ class TestSQL(unittest.TestCase):
         results = [{"COUNT(*)": 1, "Sum(price)": 1.0, "MAX(price)": 1.0}, {"COUNT(*)": 2, "Sum(price)": 5.0, "MAX(price)": 4.0}]
         self.assertEqual(aggregate(query, results), [{"COUNT(*)": 3, "Sum(price)": 6.0, "MAX(price)": 4.0}])
 
-    def testAggregateOrderByNull(self):
-        """
-        Test Aggregate orders NULL values the same way as SQLite
-        """
-
-        aggregate = Aggregate()
-
-        results = [{"id": "a", "price": 3.0}, {"id": "b", "price": None}, {"id": "c", "price": 1.0}]
-        self.assertEqual([x["id"] for x in aggregate("select id, price from txtai order by price", results)], ["b", "c", "a"])
-        self.assertEqual([x["id"] for x in aggregate("select id, price from txtai order by price desc", results)], ["a", "c", "b"])
-
     def testAggregateNull(self):
         """
         Test Aggregate skips NULL values returned by shards with no matching rows
@@ -96,6 +85,17 @@ class TestSQL(unittest.TestCase):
 
         self.assertEqual(aggregate(query, [empty, result]), [result])
         self.assertEqual(aggregate(query, [empty, empty]), [empty])
+
+    def testAggregateOrderByNull(self):
+        """
+        Test Aggregate orders NULL values the same way as SQLite
+        """
+
+        aggregate = Aggregate()
+
+        results = [{"id": "a", "price": 3.0}, {"id": "b", "price": None}, {"id": "c", "price": 1.0}]
+        self.assertEqual([x["id"] for x in aggregate("select id, price from txtai order by price", results)], ["b", "c", "a"])
+        self.assertEqual([x["id"] for x in aggregate("select id, price from txtai order by price desc", results)], ["a", "c", "b"])
 
     def testAlias(self):
         """
