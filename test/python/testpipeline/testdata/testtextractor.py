@@ -147,6 +147,18 @@ class TestTextractor(unittest.TestCase):
         self.assertMarkdown("<p>This is a <em>test</em></p>", "This is a *test*")
         self.assertMarkdown("<p>This is a <a href='link'>test</a>", "This is a [test](link)")
 
+        # Leading whitespace inside a formatting tag
+        self.assertMarkdown("<p>This is<b> a test</b></p>", "This is **a test**")
+        self.assertMarkdown("<p>This is<em> a test</em></p>", "This is *a test*")
+        self.assertMarkdown("<p>This is<a href='link'> a test</a></p>", "This is [a test](link)")
+        self.assertMarkdown("<p>This is a te<b>st</b></p>", "This is a te**st**")
+        self.assertMarkdown("<p>This is\n<b> a test</b></p>", "This is\n**a test**")
+
+        # Links without a target are plain text
+        self.assertMarkdown("<p>This is a <a name='anchor'>test</a></p>", "This is a test")
+        self.assertMarkdown("<p>This is<a name='anchor'> a test</a></p>", "This is a test")
+        self.assertMarkdown("<h2><a id='anchor'>This is a test</a></h2>", "## This is a test")
+
         # Collapse to outer tag
         self.assertMarkdown("<p>This is a <strong><em>test</em></strong></p>", "This is a **test**")
         self.assertMarkdown("<p>This is a <em><strong>test</strong></em></p>", "This is a *test*")
