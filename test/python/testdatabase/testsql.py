@@ -62,6 +62,17 @@ class TestSQL(unittest.TestCase):
         with self.assertRaises(SQLError):
             aggregate("select avg(price) from txtai", [{"avg(price)": 100.0}, {"avg(price)": 10.0}])
 
+    def testAggregateCase(self):
+        """
+        Test Aggregate combines aggregate columns written in any case
+        """
+
+        aggregate = Aggregate()
+
+        query = "select COUNT(*), Sum(price), MAX(price) from txtai"
+        results = [{"COUNT(*)": 1, "Sum(price)": 1.0, "MAX(price)": 1.0}, {"COUNT(*)": 2, "Sum(price)": 5.0, "MAX(price)": 4.0}]
+        self.assertEqual(aggregate(query, results), [{"COUNT(*)": 3, "Sum(price)": 6.0, "MAX(price)": 4.0}])
+
     def testAggregateOrderByNull(self):
         """
         Test Aggregate orders NULL values the same way as SQLite
