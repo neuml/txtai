@@ -237,7 +237,7 @@ class TestAgent(unittest.TestCase):
         Test an empty allowed commands list permits no commands
         """
 
-        # An empty allow list is an explicit choice and must be honoured, not replaced by the defaults
+        # An empty allow list is an explicit choice and must be honored, not replaced by the defaults
         self.assertEqual(BashTool(allowed=[]).allowed, [])
 
         # No command runs when nothing is allowed
