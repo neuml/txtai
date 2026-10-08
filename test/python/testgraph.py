@@ -173,10 +173,16 @@ class TestGraph(unittest.TestCase):
         self.assertEqual(list(graph.scan(attribute="field")), [str(x) for x in range(5)])
         self.assertEqual(list(graph.filter([0]).scan()), [0])
 
+        # Attribute changes must be written through to the database
+        graph.addattribute(0, "field", "updated")
+        graph.addattribute(0, "label", "new")
+
         # Test save/load
         graph.save(None)
         graph.load(None)
         self.assertEqual(list(graph.scan()), [str(x) for x in range(5)])
+        self.assertEqual(graph.node(0), {"field": "updated", "label": "new"})
+        self.assertEqual(graph.edgecount(), 10)
 
         # Test remove node
         graph.delete([0])
