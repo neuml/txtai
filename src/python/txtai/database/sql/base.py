@@ -43,19 +43,18 @@ class SQL:
 
         clauses = None
         if self.issql(query):
-            # Multiple statements are not supported. A run of trailing semicolons is still a
-            # single statement, so strip the whole run and reject a separator that survives it.
-            if ";" in query:
-                statement = query.rstrip()
-                while statement.endswith(";"):
-                    statement = statement[:-1].rstrip()
+            # Multiple statements are not supported. A redundant trailing semicolon is still a
+            # single statement, so keep only the components that carry text and reject a second
+            # one. Filtering rather than counting also stops a leading semicolon from emptying
+            # the statement: issql() strips ";" before its own check, so ";select ..." arrives
+            # here as SQL whose first component is empty.
+            components = [component for component in query.split(";") if component.strip()]
+            if len(components) > 1:
+                raise SQLError(
+                    "Invalid SQL statement with embedded semicolon (;). Pass parameters as bind parameters instead."
+                )
 
-                if ";" in statement:
-                    raise SQLError(
-                        "Invalid SQL statement with embedded semicolon (;). Pass parameters as bind parameters instead."
-                    )
-
-                query = statement
+            query = components[0]
 
             # Tokenize query
             tokens, positions = self.tokenize(query)

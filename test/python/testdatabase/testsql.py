@@ -229,6 +229,14 @@ class TestSQL(unittest.TestCase):
         with self.assertRaises(SQLError):
             self.db.search("select id from txtai where similar('a; b')")
 
+        # A LEADING separator is not a second statement either, and it must not swallow the
+        # first one. issql() strips ";" before its own check, so all three of these reach the
+        # parser as SQL. If the empty leading component is taken as the statement, every clause
+        # comes back None and the caller fails later with "no such column: None".
+        self.assertSql("select", ";select id from txtai", "s.id")
+        self.assertSql("select", "; select id from txtai", "s.id")
+        self.assertSql("select", ";;select id from txtai", "s.id")
+
         # A redundant trailing semicolon is still a single statement, and the run of them
         # must not reach the tokenizer - a stray ";" is resolved as a column name, which
         # corrupts the last clause instead of raising. Assert the clause TEXT, not just
@@ -239,7 +247,7 @@ class TestSQL(unittest.TestCase):
         self.assertSql("select", "select id from txtai;;;", "s.id")
         self.assertSql("select", "select id from txtai ; ; ", "s.id")
         self.assertSql("limit", "select id from txtai limit 1;;", "1")
-        self.assertSql("where", "select id from txtai where tag = 'x';;", "s.tag = 'x'")
+        self.assertSql("where", "select id from txtai where tag = 'x';;", "json_extract(data, '$.tag') = 'x'")
         self.assertSql("orderby", "select id from txtai order by id;;", "s.id")
 
     def testOffset(self):
