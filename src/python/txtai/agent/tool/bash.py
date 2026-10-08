@@ -32,7 +32,7 @@ class BashTool(Tool):
         self.output_type = "any"
 
         # Default list of allowed commands
-        self.allowed = allowed if allowed else ["cat", "cut", "diff", "grep", "head", "ls", "tail"]
+        self.allowed = allowed if allowed is not None else ["cat", "cut", "diff", "grep", "head", "ls", "tail"]
 
         # Maximum time to wait for a command, None waits indefinitely
         self.timeout = timeout
