@@ -232,6 +232,21 @@ class TestAgent(unittest.TestCase):
         # Timeout is disabled when set to None
         self.assertIsNone(BashTool(timeout=None).timeout)
 
+    def testToolsBashAllowedEmpty(self):
+        """
+        Test an empty allowed commands list permits no commands
+        """
+
+        # An empty allow list is an explicit choice and must be honoured, not replaced by the defaults
+        self.assertEqual(BashTool(allowed=[]).allowed, [])
+
+        # No command runs when nothing is allowed
+        self.assertIsNone(BashTool(allowed=[])(["cat", "file.txt"]))
+
+        # The defaults still apply when allowed isn't set, including an explicit None
+        self.assertEqual(BashTool().allowed, ["cat", "cut", "diff", "grep", "head", "ls", "tail"])
+        self.assertEqual(BashTool(allowed=None).allowed, ["cat", "cut", "diff", "grep", "head", "ls", "tail"])
+
     @patch("subprocess.run")
     def testToolsBashEncoding(self, run):
         """
