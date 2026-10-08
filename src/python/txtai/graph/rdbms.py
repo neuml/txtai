@@ -59,6 +59,10 @@ class RDBMS(NetworkX):
         else:
             yield from super().scan(attribute, data)
 
+    def addattribute(self, node, field, value):
+        if self.hasnode(node):
+            self.graph.backend.add_node(node, {field: value})
+
     def load(self, path):
         # Create graph instance
         self.graph, self.database = self.connect()
