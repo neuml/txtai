@@ -167,6 +167,16 @@ class TestTabular(unittest.TestCase):
                 rows = Tabular(idcolumn=column)([{column: "doc-7", "text": "hello"}])
                 self.assertEqual(rows, [("doc-7", "hello", None)])
 
+    def testMissingIDs(self):
+        """
+        Test that rows with a missing or null ID fall back to the row index
+        """
+
+        for missing in ({}, {"id": None}, {"id": float("nan")}):
+            with self.subTest(missing=missing):
+                rows = self.tabular([{"id": "a", "text": "first"}, {**missing, "text": "second"}, {"id": "c", "text": "third"}])
+                self.assertEqual([uid for uid, _, _ in rows], ["a", 1, "c"])
+
     def testNoColumns(self):
         """
         Test creating text without specifying columns
