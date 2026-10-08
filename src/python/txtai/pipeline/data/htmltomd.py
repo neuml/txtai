@@ -269,6 +269,12 @@ class HTMLToMarkdown(Pipeline):
         """
 
         elements, count = [], 0
+        if node.name == "ol":
+            try:
+                count = int(node.get("start", 1)) - 1
+            except ValueError:
+                pass
+
         for element in node.find_all(("li", "ul", "ol"), recursive=False):
             # Nested list that is a direct child of this list
             if element.name != "li":

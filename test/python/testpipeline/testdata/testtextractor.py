@@ -175,6 +175,26 @@ class TestTextractor(unittest.TestCase):
             "|Header1|Header2|\n|---|---|\n|Test1 Test2|Test3|",
         )
 
+    def testHTMLListStart(self):
+        """
+        Test ordered lists retain their starting number
+        """
+
+        for start, expected in [("5", "5. Test1\n6. Test2"), ("0", "0. Test1\n1. Test2"), ("1", "1. Test1\n2. Test2")]:
+            with self.subTest(start=start):
+                self.assertMarkdown(f"<ol start='{start}'><li>Test1</li><li>Test2</li></ol>", expected)
+
+        self.assertMarkdown(
+            "<ol start='5'><li>Test1<ol start='3'><li>Test2</li></ol></li><li>Test3</li></ol>",
+            "5. Test1\n\t3. Test2\n6. Test3",
+        )
+
+        for start in ["", "invalid", "1.5"]:
+            with self.subTest(start=start):
+                self.assertMarkdown(f"<ol start='{start}'><li>Test1</li><li>Test2</li></ol>", "1. Test1\n2. Test2")
+
+        self.assertMarkdown("<ul start='invalid'><li>Test1</li><li>Test2</li></ul>", "- Test1\n- Test2")
+
     def testHTMLMetadataNoContent(self):
         """
         Test HTML with a meta description tag that has no content attribute
