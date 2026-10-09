@@ -406,9 +406,10 @@ class TestGraph(unittest.TestCase):
         graph.initialize()
         graph.topics = {"t": [0]}
 
-        graph.addnode(0, topic="t", topicrank=0)
+        graph.addnode(0, topic="t", topicrank=0, category="c")
         for x in range(1, 4):
             graph.addnode(x, updated=True)
+        graph.addnode(4, updated=True)
 
         for x, y in [(1, 2), (2, 3), (1, 3), (1, 0)]:
             graph.addedge(x, y)
@@ -417,7 +418,8 @@ class TestGraph(unittest.TestCase):
 
         self.assertEqual([graph.attribute(x, "topic") for x in range(4)], ["t"] * 4)
         self.assertEqual(graph.topics["t"], [0, 1, 2, 3])
-        self.assertIsNone(graph.attribute(1, "category"))
+        self.assertEqual(graph.attribute(1, "category"), "c")
+        self.assertIsNone(graph.attribute(4, "topic"))
 
     def testRelationships(self):
         """

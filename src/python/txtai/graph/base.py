@@ -760,7 +760,7 @@ class Graph:
             ids = ids.keys() if ids else None
 
             # Infer topic
-            topic = self.vote(ids, "topic")
+            topic = self._vote(ids, "topic")
             if topic:
                 # Add id to topic list and set topic attribute
                 self.topics[topic].append(node)
@@ -770,11 +770,11 @@ class Graph:
                 self.addattribute(node, "topicrank", len(self.topics[topic]) - 1)
 
                 # Infer category
-                category = self.vote(ids, "category")
+                category = self._vote([x for x in ids if self.attribute(x, "topic") == topic], "category")
                 if category:
                     self.addattribute(node, "category", category)
 
-    def vote(self, ids, attribute):
+    def _vote(self, ids, attribute):
         """
         Gets the most common non-empty attribute value across a list of nodes.
 
