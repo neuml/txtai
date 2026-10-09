@@ -11,7 +11,7 @@ from unittest.mock import patch
 
 from txtai.archive import ArchiveFactory
 from txtai.embeddings import Embeddings
-from txtai.graph import Graph, GraphFactory
+from txtai.graph import Graph, GraphFactory, Query
 from txtai.graph.topics import Topics
 from txtai.serialize import SerializeFactory
 
@@ -611,6 +611,20 @@ class TestGraph(unittest.TestCase):
                 graph=True,
             )
             self.assertEqual(list(results.scan())[0], 4)
+
+    def testSearchQuotedParse(self):
+        """
+        Test parsing of similar clause parameters with quotes, whitespace and multiple clauses
+        """
+
+        query = Query()
+
+        parse = query.parse("MATCH (A) WHERE similar(A, 'x'\n) RETURN A")
+        self.assertEqual(parse["similar"], [["x"]])
+
+        parse = query.parse("MATCH (A), (B) WHERE SIMILAR(A, \"it's, ok\", 5) AND SIMILAR(B, 'a)b', 3) RETURN A")
+        self.assertEqual(parse["nodes"], ["A", "B"])
+        self.assertEqual(parse["similar"], [["it's, ok", "5"], ["a)b", "3"]])
 
     def testSearchSkip(self):
         """

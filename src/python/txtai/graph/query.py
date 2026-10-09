@@ -117,7 +117,9 @@ class Query:
             # Parse similar clause parameters
             # Commas and parentheses inside quoted text are part of the text
             # Single pass split, the last match is always an empty match at the end of the string
-            params = [param.strip() for param in re.findall(r"""\s*('[^']*'|"[^"]*"|[^,]*)(?:,|$)""", match.group(1) or match.group(2))[:-1]]
+            params = [
+                param.strip() for param in re.findall(r"""\s*('[^']*'|"[^"]*"|[^,]*)(?:,|\Z)""", (match.group(1) or match.group(2)).strip())[:-1]
+            ]
             params = [
                 param[1:-1] if len(param) > 1 and param[0] == param[-1] and param[0] in "'\"" else param.replace("'", "").replace('"', "")
                 for param in params
