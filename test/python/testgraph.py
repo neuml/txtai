@@ -12,6 +12,7 @@ from unittest.mock import patch
 from txtai.archive import ArchiveFactory
 from txtai.embeddings import Embeddings
 from txtai.graph import Graph, GraphFactory
+from txtai.graph.query import Query
 from txtai.graph.topics import Topics
 from txtai.serialize import SerializeFactory
 
@@ -590,6 +591,19 @@ class TestGraph(unittest.TestCase):
 
         self.assertEqual(sorted(results.scan()), [0, 1, 2])
         self.assertEqual(results.edgecount(), 2)
+
+    def testSearchQuoted(self):
+        """
+        Test similar clauses with quoted text containing commas, apostrophes and parentheses
+        """
+
+        query = Query()
+
+        for text in ["storms, floods", "don't stop", 'say "hi"', "a (b) c"]:
+            quote = '"' if "'" in text else "'"
+            parse = query.parse(f"MATCH (A) WHERE similar(A, {quote}{text}{quote}, 5) RETURN A")
+            self.assertEqual(parse["nodes"], ["A"])
+            self.assertEqual(parse["similar"], [[text, "5"]])
 
     def testSearchSkip(self):
         """
