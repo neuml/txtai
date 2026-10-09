@@ -239,6 +239,21 @@ class Common:
             self.assertEqual(result["text"], self.data[4])
             self.assertEqual(len(result.get("tokens")), 8)
 
+        def testExplainSimilarArgs(self):
+            """
+            Test query explain ignores extra similar clause arguments
+            """
+
+            self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+            expected = self.embeddings.explain("select id, text, score from txtai where similar('feel good story')", limit=1)[0]
+
+            # Candidates and weights are not part of the query text
+            for query in ["similar('feel good story', 10)", "similar('feel good story', 0.5)"]:
+                result = self.embeddings.explain(f"select id, text, score from txtai where {query}", limit=1)[0]
+                self.assertEqual(result["text"], self.data[4])
+                self.assertEqual(result["tokens"], expected["tokens"])
+
         def testExplainEmpty(self):
             """
             Test query explain with no filtering criteria
