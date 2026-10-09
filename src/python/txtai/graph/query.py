@@ -108,7 +108,9 @@ class Query:
                 offset = match.group(1)
 
         # Parse similar clauses
-        for x, match in enumerate(re.finditer(r"""similar\(((?:'[^']*'|"[^"]*"|[^)'"])+)\)|similar\((.+?)\)""", query, flags=re.DOTALL | re.IGNORECASE)):
+        for x, match in enumerate(
+            re.finditer(r"""similar\(((?:'[^']*'|"[^"]*"|[^)'"])+)\)|similar\((.+?)\)""", query, flags=re.DOTALL | re.IGNORECASE)
+        ):
             # Replace similar clause with placeholder
             query = query.replace(match.group(0), f"{Query.SIMILAR}{x}")
 
@@ -116,7 +118,10 @@ class Query:
             # Commas and parentheses inside quoted text are part of the text
             # Single pass split, the last match is always an empty match at the end of the string
             params = [param.strip() for param in re.findall(r"""\s*('[^']*'|"[^"]*"|[^,]*)(?:,|$)""", match.group(1) or match.group(2))[:-1]]
-            params = [param[1:-1] if len(param) > 1 and param[0] == param[-1] and param[0] in "'\"" else param.replace("'", "").replace('"', "") for param in params]
+            params = [
+                param[1:-1] if len(param) > 1 and param[0] == param[-1] and param[0] in "'\"" else param.replace("'", "").replace('"', "")
+                for param in params
+            ]
             nodes.append(params[0])
             similar.append(params[1:])
 
