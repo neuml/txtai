@@ -785,6 +785,10 @@ class TestEmbeddings(unittest.TestCase):
         # SQL query with a similar() clause extracts its terms
         self.assertEqual(embeddings.terms("select id, text from txtai where similar('feel good story')"), "feel good story")
 
+        # Candidates, index and weights arguments are not keyword terms
+        self.assertEqual(embeddings.terms("select id, text from txtai where similar('feel good story', 10)"), "feel good story")
+        self.assertEqual(embeddings.terms("select id, text from txtai where similar('feel good story', 'index1', 0.5)"), "feel good story")
+
         # SQL query without a similar() clause has no keyword terms (previously raised KeyError)
         self.assertEqual(embeddings.terms("select id, text from txtai where id = 1"), None)
 
