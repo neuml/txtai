@@ -169,11 +169,15 @@ class Signal:
             audio with silence removed
         """
 
-        # Process in 20ms chunks
+        # Empty audio has no chunks to concatenate.
+        if len(audio) == 0:
+            return audio
+
+        # Process in chunks, including the final partial chunk
         n, offset = int(rate * (20 / 1000.0) * 2), 0
 
         chunks = []
-        while offset + n <= len(audio):
+        while offset < len(audio):
             # Calculate energy for chunk and detection result
             chunk = audio[offset : offset + n]
             energyfreq = Signal.energy(chunk, rate)
