@@ -397,6 +397,28 @@ class TestGraph(unittest.TestCase):
         self.assertRaises(NotImplementedError, graph.loaddict, None)
         self.assertRaises(NotImplementedError, graph.savedict)
 
+    def testInferTopics(self):
+        """
+        Test inferring topics when most neighbors have no topic
+        """
+
+        graph = GraphFactory.create({"backend": "networkx"})
+        graph.initialize()
+        graph.topics = {"t": [0]}
+
+        graph.addnode(0, topic="t", topicrank=0)
+        for x in range(1, 4):
+            graph.addnode(x, updated=True)
+
+        for x, y in [(1, 2), (2, 3), (1, 3), (1, 0)]:
+            graph.addedge(x, y)
+
+        graph.infertopics()
+
+        self.assertEqual([graph.attribute(x, "topic") for x in range(4)], ["t"] * 4)
+        self.assertEqual(graph.topics["t"], [0, 1, 2, 3])
+        self.assertIsNone(graph.attribute(1, "category"))
+
     def testRelationships(self):
         """
         Test manually-provided relationships
