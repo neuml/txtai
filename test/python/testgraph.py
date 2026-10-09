@@ -605,6 +605,16 @@ class TestGraph(unittest.TestCase):
             self.assertEqual(parse["nodes"], ["A"])
             self.assertEqual(parse["similar"], [[text, "5"]])
 
+        # Unquoted and unbalanced quotes fall back to stripping quotes
+        parse = query.parse("MATCH (A) WHERE similar(A, don't stop, 5) RETURN A")
+        self.assertEqual(parse["similar"], [["dont stop", "5"]])
+
+        # Multiple clauses and many commas
+        parse = query.parse("MATCH (A) WHERE similar(A, 'a', 5) AND similar(A, 'b, c') RETURN A")
+        self.assertEqual(parse["similar"], [["a", "5"], ["b, c"]])
+        parse = query.parse("MATCH (A) WHERE similar(A, '" + "a, " * 20000 + "') RETURN A")
+        self.assertEqual(len(parse["nodes"]), 1)
+
     def testSearchSkip(self):
         """
         Test a SKIP clause with a similar clause
