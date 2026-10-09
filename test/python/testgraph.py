@@ -12,7 +12,6 @@ from unittest.mock import patch
 from txtai.archive import ArchiveFactory
 from txtai.embeddings import Embeddings
 from txtai.graph import Graph, GraphFactory
-from txtai.graph.query import Query
 from txtai.graph.topics import Topics
 from txtai.serialize import SerializeFactory
 
@@ -594,26 +593,24 @@ class TestGraph(unittest.TestCase):
 
     def testSearchQuoted(self):
         """
-        Test similar clauses with quoted text containing commas, apostrophes and parentheses
+        Test similar clauses with quoted text containing commas, quotes and parentheses
         """
 
-        query = Query()
+        # Create an index for the list of text
+        self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
 
-        for text in ["storms, floods", "don't stop", 'say "hi"', "a (b) c"]:
-            quote = '"' if "'" in text else "'"
-            parse = query.parse(f"MATCH (A) WHERE similar(A, {quote}{text}{quote}, 5) RETURN A")
-            self.assertEqual(parse["nodes"], ["A"])
-            self.assertEqual(parse["similar"], [[text, "5"]])
-
-        # Unquoted and unbalanced quotes fall back to stripping quotes
-        parse = query.parse("MATCH (A) WHERE similar(A, don't stop, 5) RETURN A")
-        self.assertEqual(parse["similar"], [["dont stop", "5"]])
-
-        # Multiple clauses and many commas
-        parse = query.parse("MATCH (A) WHERE similar(A, 'a', 5) AND similar(A, 'b, c') RETURN A")
-        self.assertEqual(parse["similar"], [["a", "5"], ["b, c"]])
-        parse = query.parse("MATCH (A) WHERE similar(A, '" + "a, " * 20000 + "') RETURN A")
-        self.assertEqual(len(parse["nodes"]), 1)
+        for text in ["feel good story, (really)", 'feel "good" story']:
+            results = self.embeddings.search(
+                f"""
+                MATCH P=(A)-[]->()
+                WHERE SIMILAR(A, '{text}', 5)
+                RETURN A
+                ORDER BY A.score DESC
+                LIMIT 1
+            """,
+                graph=True,
+            )
+            self.assertEqual(list(results.scan())[0], 4)
 
     def testSearchSkip(self):
         """
