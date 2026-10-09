@@ -53,6 +53,26 @@ class TestTabular(unittest.TestCase):
         rows = tabular([{"id": 2, "quantity": "", "text": "Widget"}])
         self.assertEqual(rows[0][1], "Widget")
 
+    def testMissingIDFallsBackToRowIndex(self):
+        """
+        Rows without an ID (missing key, None or NaN) fall back to the row index.
+        pandas coerces the missing value to NaN, which previously bypassed the
+        is-not-None fallback and indexed rows with a NaN uid.
+        """
+
+        tabular = Tabular("id", ["text"])
+
+        rows = tabular(
+            [
+                {"id": "a", "text": "first"},
+                {"text": "second"},
+                {"id": None, "text": "third"},
+                {"id": float("nan"), "text": "fourth"},
+                {"id": "c", "text": "fifth"},
+            ]
+        )
+        self.assertEqual([row[0] for row in rows], ["a", 1, 2, 3, "c"])
+
     def testNumericTypes(self):
         """
         Mixed numeric rows preserve integer IDs and content without float rounding.
