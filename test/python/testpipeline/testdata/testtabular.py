@@ -23,73 +23,6 @@ class TestTabular(unittest.TestCase):
 
         cls.tabular = Tabular("id", ["text"])
 
-    def testFalsyValues(self):
-        """
-        Test that zero and False are indexed as content
-        """
-
-        tabular = Tabular("id", ["quantity", "text"])
-
-        # A quantity of 0 is real data. Before this was fixed, the truthy check in concat
-        # dropped it and the row indexed as "Widget", losing the quantity.
-        rows = tabular([{"id": 1, "quantity": 0, "text": "Widget"}])
-        self.assertEqual(rows[0][1], "0. Widget")
-
-        rows = tabular([{"id": 2, "quantity": False, "text": "Widget"}])
-        self.assertEqual(rows[0][1], "False. Widget")
-
-    def testNullValues(self):
-        """
-        Test that null and empty values are still skipped
-        """
-
-        tabular = Tabular("id", ["quantity", "text"])
-
-        # NaN is the null marker column() normalizes to None, and an empty string adds
-        # nothing but a separator. Both stay excluded.
-        rows = tabular([{"id": 1, "quantity": float("nan"), "text": "Widget"}])
-        self.assertEqual(rows[0][1], "Widget")
-
-        rows = tabular([{"id": 2, "quantity": "", "text": "Widget"}])
-        self.assertEqual(rows[0][1], "Widget")
-
-    def testMissingIDFallsBackToRowIndex(self):
-        """
-        Rows without an ID (missing key, None or NaN) fall back to the row index.
-        pandas coerces the missing value to NaN, which previously bypassed the
-        is-not-None fallback and indexed rows with a NaN uid.
-        """
-
-        tabular = Tabular("id", ["text"])
-
-        rows = tabular(
-            [
-                {"id": "a", "text": "first"},
-                {"text": "second"},
-                {"id": None, "text": "third"},
-                {"id": float("nan"), "text": "fourth"},
-                {"id": "c", "text": "fifth"},
-            ]
-        )
-        self.assertEqual([row[0] for row in rows], ["a", 1, 2, 3, "c"])
-
-    def testNumericTypes(self):
-        """
-        Mixed numeric rows preserve integer IDs and content without float rounding.
-        """
-
-        data = [{"id": 2**53 + 1, "count": 2, "value": 1.5}, {"id": 2**53, "count": 3, "value": 2.5}]
-        for content in (False, True, ["id"]):
-            with self.subTest(content=content):
-                rows = Tabular("id", ["count", "value"], content)(data)
-                step = 2 if content else 1
-                self.assertTrue(all(isinstance(row[0], int) for row in rows))
-                self.assertEqual([row[0] for row in rows[::step]], [row["id"] for row in data])
-                self.assertEqual([row[1] for row in rows[::step]], ["2. 1.5", "3. 2.5"])
-                if content:
-                    expected = data if content is True else [{"id": row["id"]} for row in data]
-                    self.assertEqual([row[1] for row in rows[1::2]], expected)
-
     def testContent(self):
         """
         Test parsing additional content
@@ -140,6 +73,31 @@ class TestTabular(unittest.TestCase):
         self.assertEqual(uid, 0)
         self.assertEqual(text, "This is a test")
 
+    def testFalsyIDColumn(self):
+        """
+        Explicit column labels are used for IDs and excluded from default text.
+        """
+
+        for column in ("", 0, "id"):
+            with self.subTest(column=column):
+                rows = Tabular(idcolumn=column)([{column: "doc-7", "text": "hello"}])
+                self.assertEqual(rows, [("doc-7", "hello", None)])
+    
+    def testFalsyValues(self):
+        """
+        Test that zero and False are indexed as content
+        """
+
+        tabular = Tabular("id", ["quantity", "text"])
+
+        # A quantity of 0 is real data. Before this was fixed, the truthy check in concat
+        # dropped it and the row indexed as "Widget", losing the quantity.
+        rows = tabular([{"id": 1, "quantity": 0, "text": "Widget"}])
+        self.assertEqual(rows[0][1], "0. Widget")
+
+        rows = tabular([{"id": 2, "quantity": False, "text": "Widget"}])
+        self.assertEqual(rows[0][1], "False. Widget")
+    
     def testInvalid(self):
         """
         Test invalid file paths
@@ -161,7 +119,7 @@ class TestTabular(unittest.TestCase):
 
         self.assertEqual(uid, 0)
         self.assertEqual(text, "This is a test")
-
+    
     def testMissingColumns(self):
         """
         Test rows with uneven or missing columns
@@ -177,16 +135,26 @@ class TestTabular(unittest.TestCase):
 
         self.assertIsNone(data["metadata"])
 
-    def testFalsyIDColumn(self):
+    def testMissingIDFallsBackToRowIndex(self):
         """
-        Explicit column labels are used for IDs and excluded from default text.
+        Rows without an ID (missing key, None or NaN) fall back to the row index.
+        pandas coerces the missing value to NaN, which previously bypassed the
+        is-not-None fallback and indexed rows with a NaN uid.
         """
 
-        for column in ("", 0, "id"):
-            with self.subTest(column=column):
-                rows = Tabular(idcolumn=column)([{column: "doc-7", "text": "hello"}])
-                self.assertEqual(rows, [("doc-7", "hello", None)])
+        tabular = Tabular("id", ["text"])
 
+        rows = tabular(
+            [
+                {"id": "a", "text": "first"},
+                {"text": "second"},
+                {"id": None, "text": "third"},
+                {"id": float("nan"), "text": "fourth"},
+                {"id": "c", "text": "fifth"},
+            ]
+        )
+        self.assertEqual([row[0] for row in rows], ["a", 1, 2, 3, "c"])
+    
     def testNoColumns(self):
         """
         Test creating text without specifying columns
@@ -198,3 +166,35 @@ class TestTabular(unittest.TestCase):
 
         self.assertEqual(uid, 0)
         self.assertEqual(text, "This is a test. Describes text in more detail")
+
+    def testNullValues(self):
+        """
+        Test that null and empty values are still skipped
+        """
+
+        tabular = Tabular("id", ["quantity", "text"])
+
+        # NaN is the null marker column() normalizes to None, and an empty string adds
+        # nothing but a separator. Both stay excluded.
+        rows = tabular([{"id": 1, "quantity": float("nan"), "text": "Widget"}])
+        self.assertEqual(rows[0][1], "Widget")
+
+        rows = tabular([{"id": 2, "quantity": "", "text": "Widget"}])
+        self.assertEqual(rows[0][1], "Widget")
+    
+    def testNumericTypes(self):
+        """
+        Mixed numeric rows preserve integer IDs and content without float rounding.
+        """
+
+        data = [{"id": 2**53 + 1, "count": 2, "value": 1.5}, {"id": 2**53, "count": 3, "value": 2.5}]
+        for content in (False, True, ["id"]):
+            with self.subTest(content=content):
+                rows = Tabular("id", ["count", "value"], content)(data)
+                step = 2 if content else 1
+                self.assertTrue(all(isinstance(row[0], int) for row in rows))
+                self.assertEqual([row[0] for row in rows[::step]], [row["id"] for row in data])
+                self.assertEqual([row[1] for row in rows[::step]], ["2. 1.5", "3. 2.5"])
+                if content:
+                    expected = data if content is True else [{"id": row["id"]} for row in data]
+                    self.assertEqual([row[1] for row in rows[1::2]], expected)
