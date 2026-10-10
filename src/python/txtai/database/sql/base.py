@@ -6,6 +6,7 @@ from io import StringIO
 from shlex import shlex
 
 from .expression import Expression
+from .token import Token
 
 
 class SQL:
@@ -141,6 +142,13 @@ class SQL:
         tokens.wordchars += ":@#"
         tokens.commenters = ""
         tokens = list(tokens)
+
+        # Rejoin signed exponents split on punctuation (1e-3 is tokenized as 1e, -, 3)
+        x = 0
+        while x < len(tokens) - 2:
+            if tokens[x][-1] in "eE" and tokens[x + 1] in ("+", "-") and Token.NUMERIC.fullmatch("".join(tokens[x : x + 3])):
+                tokens[x : x + 3] = ["".join(tokens[x : x + 3])]
+            x += 1
 
         # Identify sql clause token positions
         positions = {}
