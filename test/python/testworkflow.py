@@ -3,6 +3,7 @@ Workflow module tests
 """
 
 import contextlib
+import copy
 import glob
 import io
 import os
@@ -16,10 +17,13 @@ import numpy as np
 import torch
 
 from txtai.api import API
+from txtai.app import Application
 from txtai.embeddings import Documents, Embeddings
 from txtai.pipeline import Nop, Segmentation, Summary, Translation, Textractor
 from txtai.workflow import (
     Workflow,
+    WorkflowFactory,
+    TaskFactory,
     Task,
     ConsoleTask,
     ExportTask,
@@ -75,6 +79,41 @@ class TestWorkflow(unittest.TestCase):
                 tasks:
                     - transform
         """
+
+    def testApplicationConfig(self):
+        """
+        Test that an application can reuse its workflow configuration
+        """
+
+        workflow = {
+            "tasks": [{"task": "template", "template": "Hi {text}"}, {"action": "nop", "args": []}],
+            "stream": {"task": "stream", "action": "nop", "batch": True},
+        }
+        config = {"workflow": {"test": workflow}}
+        expected = copy.deepcopy(config)
+        for _ in range(2):
+            app = Application(config)
+            self.assertEqual(list(app.workflow("test", ["x"])), ["Hi x"])
+            self.assertEqual(config, expected)
+
+    def testFactoryConfig(self):
+        """
+        Test that factories preserve task, argument and stream configuration
+        """
+
+        def action(values, suffix):
+            return [value + suffix for value in values]
+
+        args = ["!"]
+        task = {"action": action, "args": args}
+        config = {"tasks": [dict(task, task="")], "stream": {"task": "stream", "action": iter, "batch": True}}
+        expected = copy.deepcopy(config)
+        for _ in range(2):
+            self.assertEqual(TaskFactory.create(task, "")(["x"]), ["x!"])
+            self.assertIs(task["action"], action)
+            self.assertIs(task["args"], args)
+            self.assertEqual(list(WorkflowFactory.create(config, "test")(["x"])), ["x!"])
+            self.assertEqual(config, expected)
 
     def testBaseWorkflow(self):
         """
