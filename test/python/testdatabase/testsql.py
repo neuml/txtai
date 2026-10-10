@@ -73,6 +73,25 @@ class TestSQL(unittest.TestCase):
         results = [{"COUNT(*)": 1, "Sum(price)": 1.0, "MAX(price)": 1.0}, {"COUNT(*)": 2, "Sum(price)": 5.0, "MAX(price)": 4.0}]
         self.assertEqual(aggregate(query, results), [{"COUNT(*)": 3, "Sum(price)": 6.0, "MAX(price)": 4.0}])
 
+    def testAggregateGroupBy(self):
+        """
+        Test Aggregate groups results using mixed case and NULL group by columns
+        """
+
+        aggregate = Aggregate()
+
+        query = "select Category, count(*) from txtai group by Category"
+        results = [{"Category": "A", "count(*)": 2}, {"Category": "A", "count(*)": 1}, {"Category": "B", "count(*)": 4}]
+        self.assertEqual(aggregate(query, results), [{"Category": "A", "count(*)": 3}, {"Category": "B", "count(*)": 4}])
+
+        query = "select category, count(*) from txtai group by category"
+        results = [{"category": None, "count(*)": 2}, {"category": "A", "count(*)": 1}, {"category": None, "count(*)": 3}]
+        self.assertEqual(aggregate(query, results), [{"category": None, "count(*)": 5}, {"category": "A", "count(*)": 1}])
+
+        query = "select a, B, count(*) from txtai group by A, b"
+        results = [{"a": 1, "B": None, "count(*)": 1}, {"a": 1, "B": "x", "count(*)": 2}, {"a": 1, "B": None, "count(*)": 3}]
+        self.assertEqual(aggregate(query, results), [{"a": 1, "B": None, "count(*)": 4}, {"a": 1, "B": "x", "count(*)": 2}])
+
     def testAggregateNull(self):
         """
         Test Aggregate skips NULL values returned by shards with no matching rows
