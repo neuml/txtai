@@ -467,6 +467,10 @@ class Common:
             results = embeddings.search("select id from txtai where name is null")
             self.assertEqual(sorted(x["id"] for x in results), ["1", "2", "3"])
 
+            # NULL replaced with a value
+            results = embeddings.search("select id from txtai where coalesce(name, 'none') = 'none'")
+            self.assertEqual(sorted(x["id"] for x in results), ["1", "2", "3"])
+
             embeddings.close()
 
         def testKeyword(self):

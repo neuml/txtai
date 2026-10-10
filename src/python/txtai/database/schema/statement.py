@@ -91,7 +91,7 @@ class Statement:
     # Partial sql clauses
     TABLE_CLAUSE = (
         "SELECT %s FROM sections s "
-        + "LEFT JOIN documents d ON s.id = d.id "
+        + "%s documents d ON s.id = d.id "
         + "LEFT JOIN objects o ON s.id = o.id "
         + "LEFT JOIN scores sc ON s.indexid = sc.indexid"
     )
