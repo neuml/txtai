@@ -2,6 +2,8 @@
 Token module
 """
 
+import re
+
 
 class Token:
     """
@@ -28,6 +30,9 @@ class Token:
 
     # Default list of boolean literals
     BOOLEANS = ["true", "false"]
+
+    # Numeric literals, including exponent notation
+    NUMERIC = re.compile(r"(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?")
 
     @staticmethod
     def get(tokens, x):
@@ -201,7 +206,7 @@ class Token:
         """
 
         # Literals are wrapped in quotes, parens, wildcards, numeric or boolean.
-        return token and (token.startswith(("'", '"', ",", "(", ")", "*")) or token.replace(".", "", 1).isdigit() or token.lower() in Token.BOOLEANS)
+        return token and (token.startswith(("'", '"', ",", "(", ")", "*")) or Token.NUMERIC.fullmatch(token) or token.lower() in Token.BOOLEANS)
 
     @staticmethod
     def islogicseparator(token):

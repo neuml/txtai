@@ -377,6 +377,8 @@ class TestSQL(unittest.TestCase):
         self.assertSql("where", prefix + "where a = true", "json_extract(data, '$.a') = true")
         self.assertSql("where", prefix + "WHERE a is not FALSE", "json_extract(data, '$.a') is not FALSE")
         self.assertSql("where", prefix + "WHERE score >= 0.15", "score >= 0.15")
+        self.assertSql("where", prefix + "where a > 1e3", "json_extract(data, '$.a') > 1e3")
+        self.assertSql("where", prefix + "where a > 1.5E+3 and b < 2e-3", "json_extract(data, '$.a') > 1.5E+3 and json_extract(data, '$.b') < 2e-3")
 
     def testWhereCompound(self):
         """

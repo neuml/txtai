@@ -2,6 +2,8 @@
 SQL module
 """
 
+import re
+
 from io import StringIO
 from shlex import shlex
 
@@ -141,6 +143,13 @@ class SQL:
         tokens.wordchars += ":@#"
         tokens.commenters = ""
         tokens = list(tokens)
+
+        # Rejoin signed exponents split on punctuation (1e-3 is tokenized as 1e, -, 3)
+        x = 0
+        while x < len(tokens) - 2:
+            if re.fullmatch(r"(\d+\.?\d*|\.\d+)[eE]", tokens[x]) and tokens[x + 1] in ("+", "-") and tokens[x + 2].isdigit():
+                tokens[x : x + 3] = ["".join(tokens[x : x + 3])]
+            x += 1
 
         # Identify sql clause token positions
         positions = {}
