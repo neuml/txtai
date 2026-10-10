@@ -32,7 +32,7 @@ class Token:
     BOOLEANS = ["true", "false"]
 
     # Numeric literals, including exponent notation
-    NUMERIC = re.compile(r"(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?")
+    NUMERIC = re.compile(r"(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?")
 
     @staticmethod
     def get(tokens, x):

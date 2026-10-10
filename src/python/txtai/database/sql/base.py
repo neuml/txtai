@@ -2,12 +2,11 @@
 SQL module
 """
 
-import re
-
 from io import StringIO
 from shlex import shlex
 
 from .expression import Expression
+from .token import Token
 
 
 class SQL:
@@ -147,7 +146,7 @@ class SQL:
         # Rejoin signed exponents split on punctuation (1e-3 is tokenized as 1e, -, 3)
         x = 0
         while x < len(tokens) - 2:
-            if re.fullmatch(r"(\d+\.?\d*|\.\d+)[eE]", tokens[x]) and tokens[x + 1] in ("+", "-") and tokens[x + 2].isdigit():
+            if tokens[x][-1] in "eE" and tokens[x + 1] in ("+", "-") and Token.NUMERIC.fullmatch("".join(tokens[x : x + 3])):
                 tokens[x : x + 3] = ["".join(tokens[x : x + 3])]
             x += 1
 
