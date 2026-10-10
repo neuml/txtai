@@ -456,6 +456,13 @@ class Common:
             results = embeddings.search("select id from txtai where name = 'a' or text like '%plain%'")
             self.assertEqual(sorted(x["id"] for x in results), ["0", "1"])
 
+            # Plain JSON field filters
+            results = embeddings.search("select id from txtai where name = 'a'")
+            self.assertEqual([x["id"] for x in results], ["0"])
+
+            results = embeddings.search("select id from txtai where v = 5000")
+            self.assertEqual([x["id"] for x in results], ["3"])
+
             # Missing field is NULL
             results = embeddings.search("select id from txtai where name is null")
             self.assertEqual(sorted(x["id"] for x in results), ["1", "2", "3"])
