@@ -11,7 +11,7 @@ from unittest.mock import patch
 
 from txtai.archive import ArchiveFactory
 from txtai.embeddings import Embeddings
-from txtai.graph import Graph, GraphFactory
+from txtai.graph import Graph, GraphFactory, Query
 from txtai.graph.topics import Topics
 from txtai.serialize import SerializeFactory
 
@@ -614,6 +614,41 @@ class TestGraph(unittest.TestCase):
 
         self.assertEqual(sorted(results.scan()), [0, 1, 2])
         self.assertEqual(results.edgecount(), 2)
+
+    def testSearchQuoted(self):
+        """
+        Test similar clauses with quoted text containing commas, quotes and parentheses
+        """
+
+        # Create an index for the list of text
+        self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        for text in ["feel good story, (really)", 'feel "good" story']:
+            results = self.embeddings.search(
+                f"""
+                MATCH P=(A)-[]->()
+                WHERE SIMILAR(A, '{text}', 5)
+                RETURN A
+                ORDER BY A.score DESC
+                LIMIT 1
+            """,
+                graph=True,
+            )
+            self.assertEqual(list(results.scan())[0], 4)
+
+    def testSearchQuotedParse(self):
+        """
+        Test parsing of similar clause parameters with quotes, whitespace and multiple clauses
+        """
+
+        query = Query()
+
+        parse = query.parse("MATCH (A) WHERE similar(A, 'x'\n) RETURN A")
+        self.assertEqual(parse["similar"], [["x"]])
+
+        parse = query.parse("MATCH (A), (B) WHERE SIMILAR(A, \"it's, ok\", 5) AND SIMILAR(B, 'a)b', 3) RETURN A")
+        self.assertEqual(parse["nodes"], ["A", "B"])
+        self.assertEqual(parse["similar"], [["it's, ok", "5"], ["a)b", "3"]])
 
     def testSearchSkip(self):
         """
