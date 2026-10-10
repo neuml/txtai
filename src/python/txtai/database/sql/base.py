@@ -5,6 +5,7 @@ SQL module
 from io import StringIO
 from shlex import shlex
 
+from .error import SQLError
 from .expression import Expression
 
 
@@ -42,8 +43,9 @@ class SQL:
 
         clauses = None
         if self.issql(query):
-            # Ignore multiple statements
-            query = query.split(";")[0]
+            # Multiple statements are not supported
+            if ";" in query:
+                raise SQLError("SQL queries cannot contain a semicolon. Pass values that contain one as a bind parameter.")
 
             # Tokenize query
             tokens, positions = self.tokenize(query)
