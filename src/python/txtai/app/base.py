@@ -258,7 +258,7 @@ class Application:
         """
 
         # Check for task shorthand syntax
-        task = {"action": task} if isinstance(task, (str, list)) else task
+        task = {"action": task} if isinstance(task, (str, list)) else task.copy()
 
         if "action" in task:
             action = task["action"]
