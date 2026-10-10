@@ -136,6 +136,16 @@ class TestTextractor(unittest.TestCase):
             "|Header1|Header2|\n|---|---|\n|Test1|Test2|",
         )
 
+        # Table cells with a pipe or more than one block stay in their row and column
+        self.assertMarkdown(
+            "<table><tr><th>Header1</th><th>Header2</th></tr><tr><td>Test1 | Test2</td><td>Test3</td></tr></table>",
+            "|Header1|Header2|\n|---|---|\n|Test1 \\| Test2|Test3|",
+        )
+        self.assertMarkdown(
+            "<table><tr><th>Header1</th><th>Header2</th></tr><tr><td>Test1</td><td><p>Test2</p><p>Test3</p></td></tr></table>",
+            "|Header1|Header2|\n|---|---|\n|Test1|Test2 Test3|",
+        )
+
         # Ignore list
         self.assertMarkdown("<aside>This is a test</aside>", "")
 
