@@ -3,6 +3,7 @@ Aggregate module
 """
 
 import itertools
+import operator
 
 from .base import SQL
 from .error import SQLError
@@ -158,11 +159,8 @@ class Aggregate(SQL):
         groupby = [column for column in columns if column.lower() in names]
         if groupby:
             # NULLs sort first like in SQLite
-            def key(row):
-                return tuple((row[column] is not None, row[column]) for column in groupby)
-
-            results = sorted(results, key=key)
-            return [list(value) for _, value in itertools.groupby(results, key)]
+            results = sorted(results, key=lambda row: [(row[column] is not None, row[column]) for column in groupby])
+            return [list(value) for _, value in itertools.groupby(results, operator.itemgetter(*groupby))]
 
         return [results]
 

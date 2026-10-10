@@ -73,7 +73,7 @@ class TestSQL(unittest.TestCase):
         results = [{"COUNT(*)": 1, "Sum(price)": 1.0, "MAX(price)": 1.0}, {"COUNT(*)": 2, "Sum(price)": 5.0, "MAX(price)": 4.0}]
         self.assertEqual(aggregate(query, results), [{"COUNT(*)": 3, "Sum(price)": 6.0, "MAX(price)": 4.0}])
 
-    def testAggregateGroupBy(self):
+    def testAggregateGroupby(self):
         """
         Test Aggregate groups results using mixed case and NULL group by columns
         """
@@ -88,8 +88,15 @@ class TestSQL(unittest.TestCase):
         results = [{"category": None, "count(*)": 2}, {"category": "A", "count(*)": 1}, {"category": None, "count(*)": 3}]
         self.assertEqual(aggregate(query, results), [{"category": None, "count(*)": 5}, {"category": "A", "count(*)": 1}])
 
-        results = [{"category": "B", "count(*)": 1}, {"category": None, "count(*)": 2}, {"category": "A", "count(*)": 3}, {"category": "B", "count(*)": 4}]
-        self.assertEqual(aggregate(query, results), [{"category": None, "count(*)": 2}, {"category": "A", "count(*)": 3}, {"category": "B", "count(*)": 5}])
+        results = [
+            {"category": "B", "count(*)": 1},
+            {"category": None, "count(*)": 2},
+            {"category": "A", "count(*)": 3},
+            {"category": "B", "count(*)": 4},
+        ]
+        self.assertEqual(
+            aggregate(query, results), [{"category": None, "count(*)": 2}, {"category": "A", "count(*)": 3}, {"category": "B", "count(*)": 5}]
+        )
 
         query = "select a, B, count(*) from txtai group by A, b"
         results = [{"a": 1, "B": None, "count(*)": 1}, {"a": 1, "B": "x", "count(*)": 2}, {"a": 1, "B": None, "count(*)": 3}]
