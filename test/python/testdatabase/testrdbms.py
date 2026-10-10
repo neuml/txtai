@@ -437,6 +437,42 @@ class Common:
             with self.assertRaises(ValueError):
                 self.embeddings.index([(0, {"text": "This is a test", "flag": float("NaN")}, None)])
 
+        def testJsonFilter(self):
+            """
+            Test JSON field filters keep rows without a documents row
+            """
+
+            embeddings = Embeddings({"keyword": True, "content": self.backend})
+            embeddings.index(
+                [
+                    (0, {"text": "hello", "name": "a"}, None),
+                    (1, "plain text alpha", None),
+                    (2, {"text": "x", "name": None}, None),
+                    (3, {"text": "y", "v": 5000}, None),
+                ]
+            )
+
+            # OR with a text clause
+            results = embeddings.search("select id from txtai where name = 'a' or text like '%plain%'")
+            self.assertEqual(sorted(x["id"] for x in results), ["0", "1"])
+
+            # Plain JSON field filters
+            results = embeddings.search("select id from txtai where name = 'a'")
+            self.assertEqual([x["id"] for x in results], ["0"])
+
+            results = embeddings.search("select id from txtai where v = 5000")
+            self.assertEqual([x["id"] for x in results], ["3"])
+
+            # Missing field is NULL
+            results = embeddings.search("select id from txtai where name is null")
+            self.assertEqual(sorted(x["id"] for x in results), ["1", "2", "3"])
+
+            # NULL replaced with a value
+            results = embeddings.search("select id from txtai where coalesce(name, 'none') = 'none'")
+            self.assertEqual(sorted(x["id"] for x in results), ["1", "2", "3"])
+
+            embeddings.close()
+
         def testKeyword(self):
             """
             Test keyword only (sparse) search
