@@ -143,6 +143,17 @@ class TestSQL(unittest.TestCase):
         with self.assertRaises(SQLError):
             self.db.search("select a b c from txtai where id match id")
 
+    def testSemicolon(self):
+        """
+        Test semicolons are rejected
+        """
+
+        with self.assertRaises(SQLError):
+            self.db.search("select * from txtai ; delete from sections")
+
+        with self.assertRaises(SQLError):
+            self.db.search("select * from txtai where text = 'hello; world'")
+
     def testBracket(self):
         """
         Test bracket expressions
