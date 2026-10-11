@@ -143,6 +143,17 @@ class TestSQL(unittest.TestCase):
         with self.assertRaises(SQLError):
             self.db.search("select a b c from txtai where id match id")
 
+    def testMultipleStatements(self):
+        """
+        Test only the first statement is run
+        """
+
+        with self.assertRaises(SQLError):
+            self.db.search("select * from txtai ; delete from sections")
+
+        self.assertSql("select", ";select id from txtai", "s.id")
+        self.assertSql("select", "select id from txtai;", "s.id")
+
     def testBracket(self):
         """
         Test bracket expressions
