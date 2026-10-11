@@ -2,6 +2,7 @@
 RetrieveTask module
 """
 
+import hashlib
 import os
 import tempfile
 
@@ -42,6 +43,8 @@ class RetrieveTask(Task):
         self.flatten = flatten
         self.safeinput = SafeOpen(headers, safeopen)
         self.safeoutput = SafeOpen(safeopen=directory if safeopen else safeopen, allowurl=False)
+        # Tracks output names already used in this run
+        self.names = {}
 
     def prepare(self, element):
         # Validate input element
@@ -52,11 +55,12 @@ class RetrieveTask(Task):
         if url:
             if self.flatten:
                 # Flatten directory structure (default)
-                path = os.path.join(self.directory, os.path.basename(path))
+                path = self.uniquename(os.path.basename(path), element)
                 directory = None
             else:
                 # Derive output path
                 path = os.path.join(self.directory, os.path.normpath(path.lstrip("/")))
+                path = self.uniquename(os.path.relpath(path, self.directory), element)
                 directory = os.path.dirname(path)
 
             # Validate output path
@@ -76,3 +80,31 @@ class RetrieveTask(Task):
 
         # Return new file path
         return path
+
+    def uniquename(self, name, element):
+        """
+        Resolves a file name to a unique output path. The first input keeps the plain name.
+        A later input mapping to the same name gets a short hash of the input element
+        appended, which keeps the output deterministic and preserves all retrieved data.
+
+        Args:
+            name: file name relative to the output directory
+            element: input element the name is derived from
+
+        Returns:
+            unique output path
+        """
+
+        # Fallback for inputs with no file name, e.g. urls ending in /
+        if not name or name == ".":
+            name = "download"
+
+        # Deduplicate name across inputs
+        if name in self.names:
+            # Repeated input keeps its previously resolved name
+            if self.names[name] != element:
+                name = f"{name}-{hashlib.sha1(element.encode()).hexdigest()[:8]}"
+        else:
+            self.names[name] = element
+
+        return os.path.join(self.directory, name)

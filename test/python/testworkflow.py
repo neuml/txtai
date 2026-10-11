@@ -10,7 +10,10 @@ import tempfile
 import sys
 import unittest
 
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from itertools import product
+from threading import Thread
+from urllib.parse import urlparse
 
 import numpy as np
 import torch
@@ -49,6 +52,34 @@ class TestWorkflow(unittest.TestCase):
         Initialize test data.
         """
 
+        class RequestHandler(BaseHTTPRequestHandler):
+            """
+            Mock http request handler.
+            """
+
+            def do_GET(self):
+                """
+                Handles GET requests.
+                """
+
+                content = f"content of {self.path}".encode()
+
+                self.send_response(200)
+                self.send_header("Content-Length", str(len(content)))
+                self.end_headers()
+                self.wfile.write(content)
+
+            def log_message(self, *args):
+                """
+                Suppresses request logging.
+                """
+
+        cls.httpd = HTTPServer(("127.0.0.1", 0), RequestHandler)
+        cls.server_port = cls.httpd.server_address[1]
+
+        server = Thread(target=cls.httpd.serve_forever, daemon=True)
+        server.start()
+
         # Default YAML workflow configuration
         cls.config = """
         # Embeddings index
@@ -75,6 +106,14 @@ class TestWorkflow(unittest.TestCase):
                 tasks:
                     - transform
         """
+
+    @classmethod
+    def tearDownClass(cls):
+        """
+        Shuts down the local http server.
+        """
+
+        cls.httpd.shutdown()
 
     def testBaseWorkflow(self):
         """
@@ -464,6 +503,37 @@ class TestWorkflow(unittest.TestCase):
                     for path, name in zip(results, names):
                         with open(path, encoding="utf-8") as result:
                             self.assertEqual(result.read(), name)
+
+    def testRetrieveNoFilename(self):
+        """
+        Test that urls without a filename don't resolve to the output directory
+        """
+
+        with tempfile.TemporaryDirectory() as directory:
+            task = RetrieveTask(directory=directory)
+            results = list(Workflow([task])([f"http://127.0.0.1:{self.server_port}/"]))
+
+            self.assertEqual(len(results), 1)
+            self.assertFalse(os.path.isdir(results[0]))
+            self.assertTrue(results[0].endswith("download"))
+
+    def testRetrieveUniqueNames(self):
+        """
+        Test that inputs mapping to the same output name don't overwrite each other
+        """
+
+        with tempfile.TemporaryDirectory() as directory:
+            urls = [f"http://127.0.0.1:{self.server_port}/a/report.txt", f"http://127.0.0.1:{self.server_port}/b/report.txt"]
+            for flatten in (True, False):
+                with self.subTest(flatten=flatten):
+                    task = RetrieveTask(directory=directory, flatten=flatten)
+                    results = list(Workflow([task])(urls))
+
+                    # Both inputs have distinct output paths and keep their own content
+                    self.assertEqual(len(set(results)), 2)
+                    for url, path in zip(urls, results):
+                        with open(path, encoding="utf-8") as result:
+                            self.assertEqual(result.read(), f"content of {urlparse(url).path}")
 
     def testScheduleWorkflow(self):
         """
