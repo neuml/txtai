@@ -35,6 +35,8 @@ class SQLite(ANN):
         self.quantize = 8 if isinstance(self.quantize, bool) and self.quantize else int(self.quantize) if self.quantize else None
 
     def load(self, path):
+        if self.path != path:
+            self.close()
         self.path = path
 
     def index(self, embeddings):

@@ -140,6 +140,8 @@ class TestSQLite(DenseTest):
 
             # Load new copy and check that it has all the changes
             model = ANNFactory.create(model.config)
+            model.load(index)
+            self.assertEqual(model.count(), 500)
             model.load(new)
             self.assertEqual(model.count(), 509)
             self.assertEqual(len(model.search(np.random.rand(1, 240).astype(np.float32), 10)[0]), 10)
