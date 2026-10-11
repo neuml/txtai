@@ -32,9 +32,6 @@ class Indexes:
         self.text = columns.get("text", "text")
         self.object = columns.get("object", "object")
 
-        # Check if top-level indexing is enabled for this embeddings instance
-        self.indexing = embeddings.model or embeddings.scoring
-
     def __contains__(self, name):
         """
         Returns True if name is in this instance, False otherwise.
@@ -113,6 +110,10 @@ class Indexes:
             self.documents = Documents()
             self.checkpoint = checkpoint
 
+        # Check if top-level indexing is enabled for this embeddings instance. Checked here since load() creates
+        # subindexes before the vector model.
+        indexing = self.embeddings.model or self.embeddings.scoring
+
         # Create batch containing documents added to parent index
         batch = []
         for _, document, _ in documents:
@@ -122,7 +123,7 @@ class Indexes:
                 parent = parent.get(self.text, document.get(self.object))
 
             # Add if field is available or top-level indexing is disabled
-            if parent is not None or not self.indexing:
+            if parent is not None or not indexing:
                 batch.append((index, document, None))
                 index += 1
 
