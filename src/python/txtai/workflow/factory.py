@@ -24,16 +24,20 @@ class WorkflowFactory:
             Workflow
         """
 
+        # Copy configuration before resolving tasks
+        config = config.copy()
+
         # Resolve workflow tasks
         tasks = []
         for tconfig in config["tasks"]:
+            tconfig = tconfig.copy()
             task = tconfig.pop("task") if "task" in tconfig else ""
             tasks.append(TaskFactory.create(tconfig, task))
 
         config["tasks"] = tasks
 
         if "stream" in config:
-            sconfig = config["stream"]
+            sconfig = config["stream"].copy()
             task = sconfig.pop("task") if "task" in sconfig else "stream"
 
             config["stream"] = TaskFactory.create(sconfig, task)
