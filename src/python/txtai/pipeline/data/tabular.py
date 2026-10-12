@@ -78,7 +78,13 @@ class Tabular(Pipeline):
 
         if dicts:
             df = pd.DataFrame(dicts)
-            results.extend(self.process(df))
+            rows = self.process(df)
+
+            # A single dict input returns all of its rows, same as a single CSV file input
+            if not isinstance(data, list):
+                return rows
+
+            results.extend(rows)
 
         return results[0] if not isinstance(data, list) else results
 
