@@ -88,13 +88,13 @@ class Labels(HFPipeline):
 
         for result in results:
             if self.dynamic:
-                if flatten:
+                if flatten is not None and flatten is not False:
                     result = [label for x, label in enumerate(result["labels"]) if result["scores"][x] >= threshold]
                     yield result[:1] if isinstance(flatten, bool) else result
                 else:
                     yield [(labels.index(label), result["scores"][x]) for x, label in enumerate(result["labels"])]
             else:
-                if flatten:
+                if flatten is not None and flatten is not False:
                     result = [x["label"] for x in result if x["score"] >= threshold and (not labels or x["label"] in labels)]
                     yield result[:1] if isinstance(flatten, bool) else result
                 else:
