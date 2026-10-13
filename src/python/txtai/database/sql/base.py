@@ -44,7 +44,7 @@ class SQL:
         clauses = None
         if self.issql(query):
             # Multiple statements are not supported
-            components = [x for x in query.split(";") if x.strip()]
+            components = self.statements(query)
             if len(components) > 1:
                 raise SQLError("Multiple SQL statements are not supported. Pass values that contain a semicolon as a bind parameter.")
             query = components[0]
@@ -111,6 +111,43 @@ class SQL:
             return query.startswith("select ") and (" from txtai " in query or query.endswith(" from txtai"))
 
         return False
+
+    def statements(self, query):
+        """
+        Splits a SQL query on the semicolons that separate statements.
+
+        A semicolon inside a quoted string is part of the value, not a second statement, so
+        the query is scanned rather than split. A doubled quote is an escaped quote and does
+        not close the literal.
+
+        Args:
+            query: input query
+
+        Returns:
+            list of non-empty statements
+        """
+
+        components, start, quote = [], 0, None
+        index = 0
+        while index < len(query):
+            char = query[index]
+            if quote:
+                if char == quote:
+                    # A doubled quote is an escaped quote, not the end of the literal
+                    if index + 1 < len(query) and query[index + 1] == quote:
+                        index += 1
+                    else:
+                        quote = None
+            elif char in ("'", '"'):
+                quote = char
+            elif char == ";":
+                components.append(query[start:index])
+                start = index + 1
+            index += 1
+
+        components.append(query[start:])
+
+        return [x for x in components if x.strip()]
 
     def snippet(self, text):
         """

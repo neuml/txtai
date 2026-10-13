@@ -154,6 +154,18 @@ class TestSQL(unittest.TestCase):
         self.assertSql("select", ";select id from txtai", "s.id")
         self.assertSql("select", "select id from txtai;", "s.id")
 
+        # A semicolon inside a quoted string is part of the value, not a second statement
+        self.assertSql("where", "select id from txtai where a = 'b;c'", "json_extract(data, '$.a') = 'b;c'")
+        self.assertSql("where", 'select id from txtai where a = "b;c"', "json_extract(data, '$.a') = \"b;c\"")
+        self.assertSql("where", "select id from txtai where a like '%b;%'", "json_extract(data, '$.a') like '%b;%'")
+
+        # A doubled quote is an escaped quote. The tokenizer renders it with a space (it does the
+        # same for 'it''s' without a semicolon), which is not this guard's concern
+        self.assertSql("where", "select id from txtai where a = 'it''s;ok'", "json_extract(data, '$.a') = 'it' 's;ok'")
+
+        with self.assertRaises(SQLError):
+            self.db.search("select * from txtai where a = 'b;c' ; delete from sections")
+
     def testBracket(self):
         """
         Test bracket expressions
