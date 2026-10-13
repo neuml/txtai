@@ -73,6 +73,20 @@ class TestTabular(unittest.TestCase):
         self.assertEqual(uid, 0)
         self.assertEqual(text, "This is a test")
 
+    def testDictSingle(self):
+        """
+        Test parsing a single dict that is not wrapped in a list
+        """
+
+        row = {"id": 0, "text": "This is a test", "flag": 1}
+
+        # A single dict returns its list of rows, same as a single CSV file
+        self.assertEqual(self.tabular(row), [(0, "This is a test", None)])
+
+        # Content rows must not be dropped
+        tabular = Tabular("id", ["text"], True)
+        self.assertEqual(tabular(row), [(0, "This is a test", None), (0, row, None)])
+
     def testFalsyIDColumn(self):
         """
         Explicit column labels are used for IDs and excluded from default text.
