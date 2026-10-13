@@ -724,6 +724,18 @@ class TestEmbeddings(unittest.TestCase):
         # Close embeddings
         embeddings.close()
 
+        # Check documents without a vector are skipped by subindexes after a dense index is loaded
+        config = {"method": "external", "content": True, "indexes": {"labels": {"keyword": True, "columns": {"text": "label"}}}}
+        vector = np.array([1, 0], dtype=np.float32)
+        with Embeddings(config) as embeddings:
+            embeddings.index([("first", {"object": vector, "label": "red"})])
+            embeddings.save(index)
+
+        with Embeddings().load(index) as embeddings:
+            embeddings.upsert([("novector", {"label": "green"}), ("second", {"object": vector, "label": "blue"})])
+            self.assertEqual(embeddings.search("green", index="labels"), [])
+            self.assertEqual([row["id"] for row in embeddings.search("blue", index="labels")], ["second"])
+
     def testSubindexVectors(self):
         """
         Test subindexes with the same model path and different vectors settings
