@@ -148,3 +148,47 @@ class TestRaBitQ(DenseTest):
             ann.load(index)
             self.assertEqual(ann.count(), 100)
             self.assertEqual(ann.search(data[:2], 10), expected)
+
+    def testRabitQNativeCounts(self):
+        """
+        Test native counts after loading deleted rows and spare HNSW capacity.
+        """
+
+        data = np.random.default_rng(0).random((8, 64), dtype=np.float32)
+        self.normalize(data)
+        centroids = data.mean(axis=0, keepdims=True)
+        clusterids = np.zeros(len(data), dtype=np.uint32)
+
+        for mode in ["ivf", "hnsw"]:
+            native = (
+                IvfIndex(dim=64, max_elements=8, num_clusters=1, nbits=4, metric="ip")
+                if mode == "ivf"
+                else HnswIndex(dim=64, max_elements=16, nbits=4, metric="ip")
+            )
+            native.build(data, centroids, clusterids)
+            native.remove(np.array([0], dtype=np.int64))
+
+            with tempfile.TemporaryDirectory() as directory:
+                path = os.path.join(directory, "index")
+                native.save(path)
+
+                # Old saved configs may still have a deletes counter; native counts already exclude it.
+                for metadata in [{}, {"deletes": 1}]:
+                    with self.subTest(mode=mode, metadata=metadata):
+                        config = {"backend": "rabitq", "dimensions": 64, "rabitq": {"mode": mode, "nprobe": 1}, **metadata}
+                        ann = ANNFactory.create(config)
+                        self.assertEqual(ann.count(), 0)
+                        ann.load(path)
+                        self.assertEqual(ann.count(), 7)
+                        self.assertEqual(ann.backend.num_stored_points, 8)
+
+                        if mode == "ivf":
+                            # Deleted slots still occupy IDs; appended IDs must not reuse them.
+                            ann.append(data[:1])
+                            self.assertEqual(ann.config["offset"], 9)
+                            self.assertEqual(ann.count(), 8)
+                            ann.delete([8, 8, 9, -1])
+                            self.assertEqual(ann.count(), 7)
+                            ann.delete(list(range(9)))
+                            self.assertEqual(ann.count(), 0)
+                            self.assertEqual(ann.search(data[:1], 10), [[]])
