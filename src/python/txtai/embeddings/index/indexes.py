@@ -147,10 +147,11 @@ class Indexes:
         """
 
         for name, index in self.indexes.items():
-            index.index(self.documents, checkpoint=f"{self.checkpoint}/{name}" if self.checkpoint else None)
+            index.index(self.documents or [], checkpoint=f"{self.checkpoint}/{name}" if self.checkpoint else None)
 
         # Reset document stream
-        self.documents.close()
+        if self.documents is not None:
+            self.documents.close()
         self.documents = None
         self.checkpoint = None
 
@@ -160,10 +161,11 @@ class Indexes:
         """
 
         for index in self.indexes.values():
-            index.upsert(self.documents)
+            index.upsert(self.documents or [])
 
         # Reset document stream
-        self.documents.close()
+        if self.documents is not None:
+            self.documents.close()
         self.documents = None
 
     def load(self, path):
