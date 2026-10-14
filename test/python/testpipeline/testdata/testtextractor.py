@@ -175,6 +175,34 @@ class TestTextractor(unittest.TestCase):
             "|Header1|Header2|\n|---|---|\n|Test1 Test2|Test3|",
         )
 
+    def testHTMLArticleSpan(self):
+        """
+        Test article paragraphs with text wrapped in inline elements
+        """
+
+        textractor = Textractor()
+
+        for section in ["article", "main"]:
+            with self.subTest(section=section):
+                html = f"<html><body><{section}><p><span>This is a test</span></p></{section}></body></html>"
+                self.assertEqual(textractor(html), "This is a test")
+
+        # Mixed paragraphs, nested spans and formatting inside a span
+        html = "<html><body><article><p>Test1</p><p><span><span>Test2</span></span></p><p><span>Test <b>3</b></span></p></article></body></html>"
+        self.assertEqual(textractor(html), "Test1\n\nTest2\n\nTest **3**")
+
+        # Link only paragraphs and asides are still skipped
+        html = (
+            "<html><body><article><p><span>This is a test</span></p><p><span><a href='link'>Home</a></span></p>"
+            "<aside><p>Skip</p></aside></article></body></html>"
+        )
+        self.assertEqual(textractor(html), "This is a test")
+
+        # Each paragraph is kept separate
+        textractor = Textractor(paragraphs=True)
+        html = "<html><body><article><p><span>Test1</span></p><p><span>Test2</span></p></article></body></html>"
+        self.assertEqual(textractor(html), ["Test1", "Test2"])
+
     def testHTMLListStart(self):
         """
         Test ordered lists retain their starting number
