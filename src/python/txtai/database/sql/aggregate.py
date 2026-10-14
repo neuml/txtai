@@ -154,9 +154,12 @@ class Aggregate(SQL):
             results grouped using group by clause
         """
 
-        groupby = [column for column in columns if column.lower() in query["groupby"]]
+        # Group by columns are matched case-insensitively
+        names = {name.lower() for name in query["groupby"]}
+        groupby = [column for column in columns if column.lower() in names]
         if groupby:
-            results = sorted(results, key=operator.itemgetter(*groupby))
+            # NULLs sort first like in SQLite
+            results = sorted(results, key=lambda row: [(row[column] is not None, row[column]) for column in groupby])
             return [list(value) for _, value in itertools.groupby(results, operator.itemgetter(*groupby))]
 
         return [results]
