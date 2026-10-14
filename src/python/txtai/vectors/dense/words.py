@@ -172,14 +172,14 @@ class WordVectors(Vectors):
 
         # Convert all documents to embedding arrays, stream embeddings to disk to control memory usage
         with Pool(parallel, initializer=create, initargs=args) as pool:
-            with self.spool(checkpoint, vectorsid) as output:
+            with self.spool(checkpoint, vectorsid) as output, self.idspool(checkpoint, vectorsid) as idstream:
                 stream = output.name
                 batch = []
                 for document in documents:
                     batch.append(document)
 
                     if len(batch) == batchsize:
-                        uids, dimensions = self.parallelbatch(pool, batch, output, recovery)
+                        uids, dimensions = self.parallelbatch(pool, batch, output, idstream, recovery)
                         ids.extend(uids)
                         batches += 1
 
@@ -187,13 +187,13 @@ class WordVectors(Vectors):
 
                 # Final batch
                 if batch:
-                    uids, dimensions = self.parallelbatch(pool, batch, output, recovery)
+                    uids, dimensions = self.parallelbatch(pool, batch, output, idstream, recovery)
                     ids.extend(uids)
                     batches += 1
 
         return (ids, dimensions, batches, stream)
 
-    def parallelbatch(self, pool, documents, output, recovery):
+    def parallelbatch(self, pool, documents, output, idstream, recovery):
         """
         Builds a batch of embeddings using the multiprocessing pool, honoring a recovery
         checkpoint if one is available for this batch.
@@ -202,6 +202,7 @@ class WordVectors(Vectors):
             documents: list of documents used to build embeddings
             pool: multiprocessing pool used to transform documents not served from recovery
             output: output stream to store embeddings
+            idstream: optional ids spool file, records each batch's ids for future recovery verification
             recovery: optional recovery instance
 
         Returns:
@@ -210,13 +211,17 @@ class WordVectors(Vectors):
 
         ids = [uid for uid, _, _ in documents]
 
-        # Attempt to read embeddings from a recovery file
-        embeddings = recovery() if recovery else None
+        # Attempt to read embeddings from a recovery file, only trusting rows that match this batch's ids
+        embeddings = recovery(ids) if recovery else None
         if embeddings is None:
             embeddings = np.array([embedding for _, embedding in pool.imap(transform, documents, self.encodebatch)], dtype=np.float32)
 
         dimensions = embeddings.shape[1]
         self.saveembeddings(output, embeddings)
+
+        # Record this batch's ids so a future resume can confirm the checkpoint still matches
+        if idstream is not None:
+            idstream.write(json.dumps(ids) + "\n")
 
         return (ids, dimensions)
 

@@ -2,6 +2,7 @@
 Vectors module tests
 """
 
+import json
 import os
 import tempfile
 import unittest
@@ -65,4 +66,59 @@ class TestVectors(unittest.TestCase):
 
         # Create the recovery instance with an empty checkpoint file
         recovery = Recovery(checkpoint, "id", np.load)
-        self.assertIsNone(recovery())
+        self.assertIsNone(recovery(["a"]))
+
+    def testRecoveryLegacyCheckpoint(self):
+        """
+        Test that a checkpoint written before ids tracking existed (no companion .ids file) is
+        treated as unavailable rather than trusted
+        """
+
+        checkpoint = os.path.join(tempfile.gettempdir(), "recovery-legacy")
+        os.makedirs(checkpoint, exist_ok=True)
+
+        embeddings = np.random.rand(2, 4).astype(np.float32)
+        with open(os.path.join(checkpoint, "id"), "wb") as f:
+            np.save(f, embeddings)
+
+        # No "id.ids" companion file present
+        recovery = Recovery(checkpoint, "id", np.load)
+        self.assertIsNone(recovery(["a", "b"]))
+
+    def testRecoveryMismatch(self):
+        """
+        Test that recovery rejects a batch whose checkpointed ids don't match the current run's ids
+        """
+
+        checkpoint = os.path.join(tempfile.gettempdir(), "recovery-mismatch")
+        os.makedirs(checkpoint, exist_ok=True)
+
+        embeddings = np.random.rand(2, 4).astype(np.float32)
+        with open(os.path.join(checkpoint, "id"), "wb") as f:
+            np.save(f, embeddings)
+
+        with open(os.path.join(checkpoint, "id.ids"), "w", encoding="utf-8") as f:
+            f.write(json.dumps(["a", "b"]) + "\n")
+
+        recovery = Recovery(checkpoint, "id", np.load)
+        self.assertIsNone(recovery(["a", "c"]))
+
+    def testRecoveryMatch(self):
+        """
+        Test that recovery returns the checkpointed embeddings when their recorded ids match
+        the current run's ids
+        """
+
+        checkpoint = os.path.join(tempfile.gettempdir(), "recovery-match")
+        os.makedirs(checkpoint, exist_ok=True)
+
+        embeddings = np.random.rand(2, 4).astype(np.float32)
+        with open(os.path.join(checkpoint, "id"), "wb") as f:
+            np.save(f, embeddings)
+
+        with open(os.path.join(checkpoint, "id.ids"), "w", encoding="utf-8") as f:
+            f.write(json.dumps(["a", "b"]) + "\n")
+
+        recovery = Recovery(checkpoint, "id", np.load)
+        result = recovery(["a", "b"])
+        self.assertTrue(np.allclose(result, embeddings))
