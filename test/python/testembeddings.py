@@ -212,6 +212,22 @@ class TestEmbeddings(unittest.TestCase):
             self.assertEqual(embeddings.count(), 0)
             self.assertEqual(embeddings.search("test"), [])
 
+        # Clearing a dense index must not reload vectors left by an earlier save.
+        vector = np.array([1, 0], dtype=np.float32)
+        for backend in ["faiss", "numpy"]:
+            with Embeddings({"method": "external", "backend": backend}) as embeddings:
+                index = os.path.join(tempfile.gettempdir(), f"embeddings.emptydense.{backend}")
+                embeddings.index([vector])
+                embeddings.save(index)
+                embeddings.index([])
+                for path in [index, f"{index}.copy"]:
+                    embeddings.save(path)
+                    with Embeddings().load(path) as loaded:
+                        self.assertEqual(loaded.count(), 0)
+                        self.assertEqual(loaded.search(vector), [])
+                        loaded.upsert([vector])
+                        self.assertEqual(loaded.count(), 1)
+
     def testEmptyString(self):
         """
         Test empty string indexing
