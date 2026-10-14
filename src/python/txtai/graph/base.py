@@ -760,7 +760,7 @@ class Graph:
             ids = ids.keys() if ids else None
 
             # Infer topic
-            topic = Counter(self.attribute(x, "topic") for x in ids).most_common(1)[0][0] if ids else None
+            topic = self.commonattribute(ids, "topic")
             if topic:
                 # Add id to topic list and set topic attribute
                 self.topics[topic].append(node)
@@ -770,5 +770,21 @@ class Graph:
                 self.addattribute(node, "topicrank", len(self.topics[topic]) - 1)
 
                 # Infer category
-                category = Counter(self.attribute(x, "category") for x in ids).most_common(1)[0][0]
-                self.addattribute(node, "category", category)
+                category = self.commonattribute([x for x in ids if self.attribute(x, "topic") == topic], "category")
+                if category:
+                    self.addattribute(node, "category", category)
+
+    def commonattribute(self, ids, attribute):
+        """
+        Gets the most common non-empty attribute value across a list of nodes.
+
+        Args:
+            ids: list of node ids
+            attribute: attribute name
+
+        Returns:
+            most common value or None if no node has the attribute
+        """
+
+        values = Counter(value for value in (self.attribute(x, attribute) for x in ids or []) if value is not None)
+        return values.most_common(1)[0][0] if values else None

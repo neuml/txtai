@@ -368,6 +368,9 @@ class Common:
                     for result, value in zip(results, expected):
                         self.assertAlmostEqual(result["score"], value["score"], places=5)
 
+                # Cleanup connection
+                embeddings.close()
+
         def testIndex(self):
             """
             Test index

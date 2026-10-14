@@ -279,25 +279,24 @@ class HTMLToMarkdown(Pipeline):
             # Nested list that is a direct child of this list
             if element.name != "li":
                 self.nested(element, article, elements)
-                continue
+            else:
+                # Unordered lists use dashes. Ordered lists use numbers.
+                count += 1
+                prefix = "-" if node.name == "ul" else f"{count}."
 
-            # Unordered lists use dashes. Ordered lists use numbers.
-            count += 1
-            prefix = "-" if node.name == "ul" else f"{count}."
+                # Detach nested lists, these are formatted separately
+                nested = [child.extract() for child in element.find_all(("ul", "ol"), recursive=False)]
 
-            # Detach nested lists, these are formatted separately
-            nested = [child.extract() for child in element.find_all(("ul", "ol"), recursive=False)]
+                # List item text
+                text = self.process(element, article)
 
-            # List item text
-            text = self.process(element, article)
+                # Add list element
+                if text:
+                    elements.append(f"{prefix} {text}")
 
-            # Add list element
-            if text:
-                elements.append(f"{prefix} {text}")
-
-            # Add nested lists
-            for child in nested:
-                self.nested(child, article, elements)
+                # Add nested lists
+                for child in nested:
+                    self.nested(child, article, elements)
 
         # Join elements together as string
         return "\n".join(elements)
