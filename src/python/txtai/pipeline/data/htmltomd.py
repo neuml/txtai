@@ -123,6 +123,9 @@ class HTMLToMarkdown(Pipeline):
         if self.iscontainer(node, children):
             texts = [self.process(node, article) for node in children]
             text = "\n".join(text for text in texts if text or not article)
+
+            # Apply paragraph formatting to article paragraphs that only have element children
+            text = self.articletext(node, text) if article and node.name == "p" else text
         else:
             text = self.text(node, article)
 
@@ -410,8 +413,8 @@ class HTMLToMarkdown(Pipeline):
         # List of valid text nodes
         valid = ("p", "th", "td", "li", "a", "b", "strong", "i", "em")
 
-        # Check if this node is valid or it's part of a table cell
-        valid = node.name in valid or (node.parent and node.parent.name in ("th", "td"))
+        # Check if this node is valid or it's part of a paragraph or table cell
+        valid = node.name in valid or node.find_parent(("p", "th", "td")) is not None
 
         # Check if text is valid article text
         text = text if (valid or self.isheader(node)) and not self.islink(node) else ""
