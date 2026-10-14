@@ -108,6 +108,8 @@ class TestTextractor(unittest.TestCase):
 
         # Blockquotes
         self.assertMarkdown("<blockquote>This is a test</blockquote>", "> This is a test")
+        self.assertMarkdown("<blockquote><p>Test1</p><p>Test2</p></blockquote>", "> Test1\n> Test2")
+        self.assertMarkdown("<blockquote>Test1<p>Test2</p>Test3</blockquote>", "> Test1\n> Test2\n> Test3")
 
         # Lists
         self.assertMarkdown("<ul><li>Test1</li><li>Test2</li></ul>", "- Test1\n- Test2")

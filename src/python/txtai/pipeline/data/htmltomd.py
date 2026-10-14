@@ -253,7 +253,17 @@ class HTMLToMarkdown(Pipeline):
             block as markdown
         """
 
-        text = "\n".join(f"> {x}" for x in node.text.strip().split("\n"))
+        # Start each paragraph on its own line, even when the HTML has no whitespace between them
+        text, newline = "", False
+        for child in node.children:
+            if child.name or child.text.strip():
+                if (child.name in ("p", "div") or newline) and text and not text.endswith("\n"):
+                    text += "\n"
+                newline = child.name in ("p", "div")
+
+            text += child.text
+
+        text = "\n".join(f"> {x}" for x in text.strip().split("\n"))
         return f"{text}\n\n" if self.paragraphs else f"{text}\n"
 
     def items(self, node, article):
