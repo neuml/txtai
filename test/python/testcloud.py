@@ -7,11 +7,81 @@ import tempfile
 import time
 import unittest
 
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from huggingface_hub import hf_hub_download
-from txtai.cloud import Cloud
+from txtai.cloud import Cloud, ObjectStorage
 from txtai.embeddings import Embeddings
+
+
+class TestObjectStorage(unittest.TestCase):
+    """
+    Object storage path tests.
+    """
+
+    def testLoadPaths(self):
+        """
+        Test nested object paths and prefix filtering
+        """
+
+        with tempfile.TemporaryDirectory() as directory:
+            cloud = ObjectStorage({"provider": "local", "container": "test", "key": directory, "prefix": "index"})
+            cloud.client = Mock()
+            obj = Mock()
+            obj.name = "index/nested/config.json"
+            container = cloud.client.get_container.return_value
+            container.list_objects.return_value = [obj]
+
+            path = os.path.join(directory, "output")
+            self.assertEqual(cloud.load(path), path)
+            container.list_objects.assert_called_once_with(prefix="index")
+            obj.download.assert_called_once_with(os.path.realpath(os.path.join(path, obj.name)), overwrite_existing=True)
+            self.assertTrue(os.path.isdir(os.path.join(path, "index", "nested")))
+
+    def testInvalidLoadPaths(self):
+        """
+        Test invalid object destinations before filesystem changes
+        """
+
+        with tempfile.TemporaryDirectory() as directory:
+            cloud = ObjectStorage({"provider": "local", "container": "test", "key": directory})
+            cloud.client = Mock()
+            obj = Mock()
+            cloud.client.get_container.return_value.list_objects.return_value = [obj]
+            path = os.path.join(directory, "output")
+            os.makedirs(os.path.join(path, "nested"))
+
+            for name in ["../other/file", os.path.join(directory, "other", "file"), "../output-other/file", ".", "nested"]:
+                with self.subTest(name=name), patch("txtai.cloud.storage.os.makedirs") as makedirs:
+                    obj.name = name
+                    with self.assertRaises(IOError):
+                        cloud.load(path)
+                    makedirs.assert_not_called()
+                    obj.download.assert_not_called()
+
+    def testLoadLink(self):
+        """
+        Test object destinations through a local directory link
+        """
+
+        with tempfile.TemporaryDirectory() as directory:
+            cloud = ObjectStorage({"provider": "local", "container": "test", "key": directory})
+            cloud.client = Mock()
+            obj = Mock()
+            obj.name = "nested/config.json"
+            cloud.client.get_container.return_value.list_objects.return_value = [obj]
+            path = os.path.join(directory, "output")
+            os.makedirs(path)
+            try:
+                os.symlink(directory, os.path.join(path, "nested"), target_is_directory=True)
+            except OSError as e:
+                if getattr(e, "winerror", None) != 1314:
+                    raise
+                self.skipTest("Creating symbolic links requires permission")
+
+            with self.assertRaises(IOError):
+                cloud.load(path)
+            obj.download.assert_not_called()
 
 
 class TestCloud(unittest.TestCase):
