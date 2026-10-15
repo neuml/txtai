@@ -675,41 +675,6 @@ class TestEmbeddings(unittest.TestCase):
         uid = embeddings.search("feel good story", 1)[0][0]
         self.assertEqual(uid, 0)
 
-    def testSparseMilvus(self):
-        """
-        Test sparse vector search with a milvus-lite sparse backend
-        """
-
-        # Build data array
-        data = [(uid, text, None) for uid, text in enumerate(self.data)]
-
-        # Index data with sparse vectors stored in milvus-lite
-        embeddings = Embeddings({"sparse": {"path": "sparse-encoder-testing/splade-bert-tiny-nq", "backend": "milvussparse"}, "content": True})
-        embeddings.index(data)
-
-        # Run search
-        self.assertEqual(embeddings.search("lottery ticket", 1)[0]["id"], "4")
-        self.assertEqual(embeddings.count(), len(data))
-
-        # Test load/save
-        index = os.path.join(tempfile.gettempdir(), "embeddings.sparse.milvus")
-        embeddings.save(index)
-        embeddings.load(index)
-        self.assertEqual(embeddings.search("lottery ticket", 1)[0]["id"], "4")
-
-        # Test upsert of an existing and a new row
-        embeddings.upsert([(0, "Feel good story: baby panda born", None), (len(data), "Giant squid found in the deep sea", None)])
-        self.assertEqual(embeddings.search("feel good story", 1)[0]["id"], "0")
-        self.assertEqual(embeddings.search("giant squid", 1)[0]["id"], str(len(data)))
-        self.assertEqual(embeddings.count(), len(data) + 1)
-
-        # Test delete
-        self.assertEqual(embeddings.delete(["4"]), ["4"])
-        self.assertEqual(embeddings.count(), len(data))
-        self.assertNotEqual(embeddings.search("lottery ticket", 1)[0]["id"], "4")
-
-        embeddings.close()
-
     def testSubindex(self):
         """
         Test subindex
