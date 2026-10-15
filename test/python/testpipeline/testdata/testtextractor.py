@@ -203,6 +203,29 @@ class TestTextractor(unittest.TestCase):
         html = "<html><body><article><p><span>Test1</span></p><p><span>Test2</span></p></article></body></html>"
         self.assertEqual(textractor(html), ["Test1", "Test2"])
 
+    def testHTMLArticleListSpan(self):
+        """
+        Test article list items with text wrapped in inline elements
+        """
+
+        textractor = Textractor()
+
+        for section in ["article", "main"]:
+            with self.subTest(section=section):
+                html = f"<html><body><{section}><p>Test</p><ul><li><span>Test1</span></li><li><span>Test2</span></li></ul></{section}></body></html>"
+                self.assertEqual(textractor(html), "Test\n\n- Test1\n- Test2")
+
+        # Nested lists
+        html = "<html><body><article><p>Test</p><ol><li><span>Test1</span><ul><li><span>Test2</span></li></ul></li></ol></article></body></html>"
+        self.assertEqual(textractor(html), "Test\n\n1. Test1\n\t- Test2")
+
+        # Link only list items are still skipped
+        html = (
+            "<html><body><article><p>Test</p><ul><li><span>Test1</span></li>"
+            "<li><span><a href='link'>Home</a></span></li></ul></article></body></html>"
+        )
+        self.assertEqual(textractor(html), "Test\n\n- Test1")
+
     def testHTMLListStart(self):
         """
         Test ordered lists retain their starting number
