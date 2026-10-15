@@ -224,8 +224,10 @@ class TestSparse(unittest.TestCase):
 
         scoring = ScoringFactory.create({"method": "sparse", "path": "sparse-encoder-testing/splade-bert-tiny-nq"})
 
-        # Start encoding thread, wait until the model call is reached, then stop
+        # Start encoding thread and queue a document so the error-path drain
+        # loop has a batch to consume, then wait for the model call and stop
         scoring.start(None)
+        scoring.insert([("0", "test document", None)])
         self.assertTrue(started.wait(10))
 
         # Encoding errors surface instead of failing silently
