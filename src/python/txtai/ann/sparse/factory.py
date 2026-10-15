@@ -6,6 +6,7 @@ from ...util import Resolver
 
 from ..base import ANN
 from .ivfsparse import IVFSparse
+from .milvussparse import MilvusSparse
 from .pgsparse import PGSparse
 from .zvecsparse import ZvecSparse
 
@@ -34,6 +35,8 @@ class SparseANNFactory:
         # Create ANN instance
         if backend == "ivfsparse":
             ann = IVFSparse(config)
+        elif backend == "milvussparse":
+            ann = MilvusSparse(config)
         elif backend == "pgsparse":
             ann = PGSparse(config)
         elif backend == "zvecsparse":

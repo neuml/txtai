@@ -61,11 +61,11 @@ class Milvus(ANN):
         schema = milvus_lite.CollectionSchema(
             fields=[
                 milvus_lite.FieldSchema("id", milvus_lite.DataType.INT64, is_primary=True),
-                milvus_lite.FieldSchema("embedding", milvus_lite.DataType.FLOAT_VECTOR, dim=self.config["dimensions"]),
+                self.field(),
             ]
         )
         self.collection = self.backend.create_collection("txtai", schema)
-        self.collection.create_index("embedding", {"index_type": "HNSW", "metric_type": "IP", "params": {"M": m}})
+        self.collection.create_index("embedding", self.indexparams(m))
         self.collection.load()
 
         # Add items - position in embeddings is used as the id
@@ -127,10 +127,56 @@ class Milvus(ANN):
             offset: starting id
         """
 
-        if embeddings.shape[0]:
-            for start in range(0, embeddings.shape[0], 1024):
-                batch = embeddings[start : start + 1024]
-                self.collection.insert([{"id": offset + start + uid, "embedding": embedding.tolist()} for uid, embedding in enumerate(batch)])
+        # Prepare and validate all records before writing to keep inserts all or nothing
+        records = [{"id": offset + uid, "embedding": self.prepare(embeddings[uid])} for uid in range(embeddings.shape[0])]
+
+        inserted = []
+        try:
+            for start in range(0, len(records), 1024):
+                batch = records[start : start + 1024]
+                self.collection.insert(batch)
+                inserted.extend(record["id"] for record in batch)
+        except Exception:
+            # Roll back partial inserts
+            if inserted:
+                self.collection.delete(inserted)
+            raise
+
+    def field(self):
+        """
+        Creates the vector field schema.
+
+        Returns:
+            milvus-lite FieldSchema
+        """
+
+        return milvus_lite.FieldSchema("embedding", milvus_lite.DataType.FLOAT_VECTOR, dim=self.config["dimensions"])
+
+    def indexparams(self, m):
+        """
+        Creates the vector index parameters.
+
+        Args:
+            m: number of HNSW links per element
+
+        Returns:
+            index parameters
+        """
+
+        return {"index_type": "HNSW", "metric_type": "IP", "params": {"M": m}}
+
+    def prepare(self, data):
+        """
+        Prepares a single vector for insertion.
+
+        Args:
+            data: input vector
+
+        Returns:
+            vector formatted for milvus-lite
+        """
+
+        return data.tolist()
 
     def open(self):
         """
