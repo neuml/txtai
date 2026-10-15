@@ -11,10 +11,14 @@ import tempfile
 import sys
 import unittest
 
+from datetime import datetime, timezone
 from itertools import product
+from unittest.mock import patch
 
 import numpy as np
 import torch
+
+from croniter import croniter
 
 from txtai.api import API
 from txtai.app import Application
@@ -536,6 +540,21 @@ class TestWorkflow(unittest.TestCase):
             app.wait()
 
         self.assertIn("a sentence to segment", output.getvalue())
+
+    def testScheduleElapsedWorkflow(self):
+        """
+        Test that an elapsed cron deadline still runs its scheduled task.
+        """
+
+        start = datetime(2026, 1, 1, tzinfo=timezone.utc)
+        executed = []
+        workflow = Workflow([Task(action=executed.append)])
+
+        with patch("txtai.workflow.base.croniter", return_value=croniter("* * * * * *", start)):
+            with patch("txtai.workflow.base.time.time", return_value=start.timestamp() + 1.01):
+                workflow.schedule("* * * * * *", ["test"], 1)
+
+        self.assertEqual(executed, [["test"]])
 
     def testScheduleErrorWorkflow(self):
         """
