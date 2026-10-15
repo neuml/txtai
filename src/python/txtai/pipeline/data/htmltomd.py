@@ -98,7 +98,7 @@ class HTMLToMarkdown(Pipeline):
             return self.header(node, article)
 
         if node.name in ("blockquote", "q"):
-            return self.block(node)
+            return self.block(node, article)
 
         if node.name in ("ul", "ol"):
             return self.items(node, article)
@@ -244,27 +244,29 @@ class HTMLToMarkdown(Pipeline):
         # Return formatted header. Remove leading whitespace as it was added before level in step above.
         return f"{level} {text.lstrip()}" if text.strip() else ""
 
-    def block(self, node):
+    def block(self, node, article):
         """
         Blockquote handler. This method transforms a HTML blockquote or q block into a Markdown formatted
         blockquote
 
         Args:
             node: input node
+            article: True if the main section node is an article
 
         Returns:
             block as markdown
         """
 
-        # Start each paragraph on its own line, even when the HTML has no whitespace between them
+        # Start each paragraph and list on its own line, even when the HTML has no whitespace between them
         text, newline = "", False
         for child in node.children:
             if child.name or child.text.strip():
-                if (child.name in ("p", "div") or newline) and text and not text.endswith("\n"):
+                if (child.name in ("p", "div", "ul", "ol") or newline) and text and not text.endswith("\n"):
                     text += "\n"
-                newline = child.name in ("p", "div")
+                newline = child.name in ("p", "div", "ul", "ol")
 
-            text += child.text
+            # Lists keep their markers, with one item per line
+            text += self.items(child, article) if child.name in ("ul", "ol") else child.text
 
         text = "\n".join(f"> {x}" for x in text.strip().split("\n"))
         return f"{text}\n\n" if self.paragraphs else f"{text}\n"
