@@ -423,8 +423,8 @@ class HTMLToMarkdown(Pipeline):
         # List of valid text nodes
         valid = ("p", "th", "td", "li", "a", "b", "strong", "i", "em")
 
-        # Check if this node is valid or it's part of a paragraph or table cell
-        valid = node.name in valid or node.find_parent(("p", "th", "td")) is not None
+        # Check if this node is valid or it's part of a paragraph, list item or table cell
+        valid = node.name in valid or node.find_parent(("p", "li", "th", "td")) is not None
 
         # Check if text is valid article text
         text = text if (valid or self.isheader(node)) and not self.islink(node) else ""
