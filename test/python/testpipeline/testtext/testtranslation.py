@@ -4,6 +4,7 @@ Translation module tests
 
 import unittest
 import time
+from unittest.mock import patch
 
 import requests
 
@@ -173,3 +174,29 @@ class TestTranslation(unittest.TestCase):
         self.assertEqual(language, "es")
         # Validate model
         self.assertEqual(modelpath, "Helsinki-NLP/opus-mt-es-en")
+
+
+class TestTranslationSameLanguage(unittest.TestCase):
+    """
+    Model-free same-language translation tests.
+    """
+
+    def testSameLanguage(self):
+        """
+        Test scalar and batched inputs with and without model metadata.
+        """
+
+        translate = Translation(gpu=False, findmodels=False, batch=2)
+        texts = ["hello", "hi", "a", "", "  hello  ", "This is a long text. " * 100]
+
+        with patch.object(translate, "lookup") as lookup:
+            for showmodels in (False, True):
+                expected = [(text.strip(), "en", None) if showmodels else text.strip() for text in texts]
+                with self.subTest(showmodels=showmodels):
+                    self.assertEqual(translate(texts, source="en", target="en", showmodels=showmodels), expected)
+                    self.assertEqual(translate([], source="en", target="en", showmodels=showmodels), [])
+                for text, result in zip(texts, expected):
+                    with self.subTest(text=text, showmodels=showmodels):
+                        self.assertEqual(translate(text, source="en", target="en", showmodels=showmodels), result)
+
+            lookup.assert_not_called()
