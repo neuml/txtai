@@ -5,7 +5,6 @@ MilvusSparse ANN module tests
 import os
 import tempfile
 
-from unittest.mock import patch
 
 from scipy.sparse import csr_matrix
 
@@ -109,36 +108,6 @@ class TestMilvusSparse(SparseTest):
         # Validate a valid append after a rejected append uses the next id
         ann.append(csr_matrix([[0.0, 1.0]]))
         self.assertEqual(ann.search(csr_matrix([[0.0, 1.0]]), 1), [[(1, 1.0)]])
-
-        # Close ANN
-        ann.close()
-
-    def testMilvusSparseRollback(self):
-        """
-        Test MilvusSparse rolls back a partially inserted batch
-        """
-
-        # Create ANN
-        ann = SparseANNFactory.create({"backend": "milvussparse", "dimensions": 2})
-        ann.index(csr_matrix([[1.0, 0.0]]))
-
-        # Fail the second insert batch after the first batch is written
-        insert, batches = ann.collection.insert, []
-
-        def failsecond(records):
-            batches.append(records)
-            if len(batches) > 1:
-                raise RuntimeError("insert failed")
-
-            return insert(records)
-
-        with patch.object(ann.collection, "insert", side_effect=failsecond):
-            with self.assertRaises(RuntimeError):
-                ann.append(csr_matrix([[0.0, 1.0]] * 1025))
-
-        # Validate the index and offset are unchanged
-        self.assertEqual(ann.count(), 1)
-        self.assertEqual(ann.config["offset"], 1)
 
         # Close ANN
         ann.close()

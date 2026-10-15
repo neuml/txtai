@@ -127,20 +127,11 @@ class Milvus(ANN):
             offset: starting id
         """
 
-        # Prepare and validate all records before writing to keep inserts all or nothing
+        # Prepare and validate all records before writing
         records = [{"id": offset + uid, "embedding": self.prepare(embeddings[uid])} for uid in range(embeddings.shape[0])]
 
-        inserted = []
-        try:
-            for start in range(0, len(records), 1024):
-                batch = records[start : start + 1024]
-                self.collection.insert(batch)
-                inserted.extend(record["id"] for record in batch)
-        except Exception:
-            # Roll back partial inserts
-            if inserted:
-                self.collection.delete(inserted)
-            raise
+        for start in range(0, len(records), 1024):
+            self.collection.insert(records[start : start + 1024])
 
     def field(self):
         """
