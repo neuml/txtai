@@ -232,6 +232,21 @@ class TestAgent(unittest.TestCase):
         # Timeout is disabled when set to None
         self.assertIsNone(BashTool(timeout=None).timeout)
 
+    def testToolsEditCRLF(self):
+        """
+        Test the edit tool preserves CRLF line endings
+        """
+
+        # Test file with CRLF line endings
+        path = os.path.join(tempfile.gettempdir(), "agent_tools_crlf.txt")
+        with open(path, "wb") as f:
+            f.write(b"hello\r\nworld\r\n")
+
+        # Editing a word must not rewrite the line endings of untouched lines
+        ToolFactory.default("edit")(path, "hello", "bye")
+        with open(path, "rb") as f:
+            self.assertEqual(f.read(), b"bye\r\nworld\r\n")
+
     def testToolsBashAllowedEmpty(self):
         """
         Test an empty allowed commands list permits no commands
