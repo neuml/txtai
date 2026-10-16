@@ -207,6 +207,47 @@ class TestSQL(unittest.TestCase):
         self.assertSql("groupby", "select * from txtai group by [a]", "json_extract(data, '$.a')")
         self.assertSql("orderby", "select * from txtai where order by [a]", "json_extract(data, '$.a')")
 
+    def testBracketKeywords(self):
+        """
+        Test clause keywords inside bracket expressions are field names.
+        """
+
+        fields = ["select", "from", "where", "group by", "having", "order by", "limit", "offset", "LIMIT", "a[0].limit"]
+        for field in fields:
+            with self.subTest(field=field):
+                self.assertSql("select", f"select [{field}] from txtai", f"json_extract(data, '$.{field}') as \"{field}\"")
+
+        query = "select [limit] from txtai where [where] = 1 group by [group by] having [having] > 0 order by [order by] limit 2 offset 1"
+        for clause, expected in (
+            ("where", "json_extract(data, '$.where') = 1"),
+            ("groupby", "json_extract(data, '$.group by')"),
+            ("having", "json_extract(data, '$.having') > 0"),
+            ("orderby", "json_extract(data, '$.order by')"),
+            ("limit", "2"),
+            ("offset", "1"),
+        ):
+            with self.subTest(clause=clause):
+                self.assertSql(clause, query, expected)
+
+    def testBracketKeywordsSearch(self):
+        """
+        Test bracketed keyword fields can be queried in SQLite.
+        """
+
+        db = DatabaseFactory.create({"content": True})
+        self.addCleanup(db.close)
+        db.insert(
+            [
+                ("1", {"text": "first", "limit": 7, "where": 1, "a": [{"limit": 3}]}, None),
+                ("2", {"text": "second", "limit": 9, "where": 0, "a": [{"limit": 4}]}, None),
+            ]
+        )
+
+        self.assertEqual(db.search("select [limit] from txtai order by [limit] desc limit 1 offset 1"), [{"limit": 7}])
+        self.assertEqual(db.search("select [limit] from txtai where [where] = 1"), [{"limit": 7}])
+        self.assertEqual(db.search("select [a[0].limit] from txtai order by id limit 1"), [{"a[0].limit": 3}])
+        self.assertEqual(db.search("select [limit] from txtai limit 0"), [])
+
     def testDistinct(self):
         """
         Test distinct expressions

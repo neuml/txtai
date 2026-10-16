@@ -147,10 +147,18 @@ class SQL:
         tokens = list(tokens)
 
         # Identify sql clause token positions
-        positions = {}
+        positions, brackets = {}, 0
 
         # Get position of clause keywords. For multi-term clauses, validate next token matches as well
         for x, token in enumerate(tokens):
+            # Clause keywords within bracket expressions are part of a field name
+            if token == "[":
+                brackets += 1
+            elif token == "]":
+                brackets -= 1
+            if brackets:
+                continue
+
             t = token.lower()
             if t not in positions and t in SQL.CLAUSES and (t not in ["group", "order"] or (x + 1 < len(tokens) and tokens[x + 1].lower() == "by")):
                 positions[t] = x
