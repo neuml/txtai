@@ -146,14 +146,22 @@ class SQL:
         tokens.commenters = ""
         tokens = list(tokens)
 
-        # Identify sql clause token positions
+        # Identify sql clause token positions. Skip keywords inside [bracket] field names,
+        # including nested JSON paths such as [a[0]] or [a[limit]].
         positions = {}
+        brackets = 0
 
-        # Get position of clause keywords. For multi-term clauses, validate next token matches as well
         for x, token in enumerate(tokens):
+            if token == "[":
+                brackets += 1
+            elif token == "]" and brackets:
+                brackets -= 1
+
             t = token.lower()
-            if t not in positions and t in SQL.CLAUSES and (t not in ["group", "order"] or (x + 1 < len(tokens) and tokens[x + 1].lower() == "by")):
-                positions[t] = x
+            if not brackets and t not in positions and t in SQL.CLAUSES:
+                # Multi-term clauses need the following "by" token
+                if t not in ["group", "order"] or (x + 1 < len(tokens) and tokens[x + 1].lower() == "by"):
+                    positions[t] = x
 
         return (tokens, positions)
 

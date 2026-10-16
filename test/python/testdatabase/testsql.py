@@ -207,6 +207,34 @@ class TestSQL(unittest.TestCase):
         self.assertSql("groupby", "select * from txtai group by [a]", "json_extract(data, '$.a')")
         self.assertSql("orderby", "select * from txtai where order by [a]", "json_extract(data, '$.a')")
 
+        # Clause keywords inside brackets are field names, not clause boundaries
+        self.assertSql("select", "select [limit] from txtai", "json_extract(data, '$.limit') as \"limit\"")
+        self.assertSql("select", "select [where] from txtai", "json_extract(data, '$.where') as \"where\"")
+        self.assertSql("select", "select [from] from txtai", "json_extract(data, '$.from') as \"from\"")
+        self.assertSql("select", "select [offset] from txtai", "json_extract(data, '$.offset') as \"offset\"")
+        self.assertSql("select", "select [group by] from txtai", "json_extract(data, '$.group by') as \"group by\"")
+        self.assertSql("select", "select [order by] from txtai", "json_extract(data, '$.order by') as \"order by\"")
+        self.assertSql("select", "select [a[limit]] from txtai", "json_extract(data, '$.a[limit]') as \"a[limit]\"")
+        self.assertSql("limit", "select [limit] from txtai limit 1", "1")
+        self.assertSql("where", "select * from txtai where [limit] = 1", "json_extract(data, '$.limit') = 1")
+        self.assertSql("groupby", "select * from txtai group by [limit]", "json_extract(data, '$.limit')")
+        self.assertSql("orderby", "select * from txtai order by [offset]", "json_extract(data, '$.offset')")
+
+    def testBracketClauseKeywordSearch(self):
+        """
+        Test SQLite search with bracketed fields named after clause keywords
+        """
+
+        db = DatabaseFactory.create({"content": True})
+        db.insert([("1", {"text": "demo", "limit": 7, "from": "src", "where": "x", "offset": 2}, None)])
+
+        self.assertEqual(db.search("select [limit] from txtai"), [{"limit": 7}])
+        self.assertEqual(db.search("select [from] from txtai"), [{"from": "src"}])
+        self.assertEqual(db.search("select [where] from txtai"), [{"where": "x"}])
+        self.assertEqual(db.search("select [offset] from txtai"), [{"offset": 2}])
+        self.assertEqual(db.search("select [limit] from txtai limit 1"), [{"limit": 7}])
+        self.assertEqual(db.search("select [limit] from txtai where [offset] = 2"), [{"limit": 7}])
+
     def testDistinct(self):
         """
         Test distinct expressions
@@ -361,6 +389,9 @@ class TestSQL(unittest.TestCase):
         # Unterminated bracket expressions
         with self.assertRaises(SQLError):
             self.db.search("select [a from txtai")
+
+        with self.assertRaises(SQLError):
+            self.db.search("select [limit from txtai")
 
         with self.assertRaises(SQLError):
             self.db.search("select avg([a) from txtai")
