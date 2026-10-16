@@ -564,8 +564,10 @@ class Embeddings:
 
         # Approximate nearest neighbor index - stores dense vectors
         self.ann = self.createann()
-        if self.ann:
+        if self.ann and self.config.get("offset"):
             self.ann.load(f"{path}/embeddings")
+        else:
+            self.ann = None
 
         # Dimensionality reduction model - word vectors only
         if self.config.get("pca"):
@@ -798,6 +800,9 @@ class Embeddings:
 
         # Initialize index ids, only created when content is disabled
         self.ids = None
+
+        # Reset the number of indexed vectors, including when the new index is empty.
+        self.config["offset"] = 0
 
         # Create document database, if necessary
         if not reindex:
