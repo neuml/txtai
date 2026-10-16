@@ -43,24 +43,48 @@ class TestSQL(unittest.TestCase):
 
     def testAggregateAvg(self):
         """
-        Test Aggregate combines avg() results as a count(*)-weighted mean, not an unweighted
+        Test Aggregate combines avg() results as a count()-weighted mean, not an unweighted
         average of averages
         """
 
         aggregate = Aggregate()
 
         # 2 rows averaging 100 and 8 rows averaging 10 must combine to the true weighted mean, 28
-        query = "select count(*), avg(price) from txtai"
-        results = [{"count(*)": 2, "avg(price)": 100.0}, {"count(*)": 8, "avg(price)": 10.0}]
-        self.assertEqual(aggregate(query, results), [{"count(*)": 10, "avg(price)": 28.0}])
+        query = "select count(price), avg(price) from txtai"
+        results = [{"count(price)": 2, "avg(price)": 100.0}, {"count(price)": 8, "avg(price)": 10.0}]
+        self.assertEqual(aggregate(query, results), [{"count(price)": 10, "avg(price)": 28.0}])
 
         # A single shard's average passes through unchanged
         self.assertEqual(aggregate("select avg(price) from txtai", [{"avg(price)": 42.0}]), [{"avg(price)": 42.0}])
 
-        # Combining averages from multiple shards with no count(*) to weight by cannot be done
+        # Combining averages from multiple shards with no count() to weight by cannot be done
         # correctly, so it must raise rather than return an unweighted, silently wrong result
         with self.assertRaises(SQLError):
             aggregate("select avg(price) from txtai", [{"avg(price)": 100.0}, {"avg(price)": 10.0}])
+
+    def testAggregateAvgNull(self):
+        """
+        Test Aggregate weights avg() by the non-NULL count of the averaged column
+        """
+
+        aggregate = Aggregate()
+
+        # Shard A has prices [100, NULL], shard B has eight prices of 10, the true average is 180 / 9 = 20
+        query = "select count(*), count(price), avg(price) from txtai"
+        results = [{"count(*)": 2, "count(price)": 1, "avg(price)": 100.0}, {"count(*)": 8, "count(price)": 8, "avg(price)": 10.0}]
+        self.assertEqual(aggregate(query, results), [{"count(*)": 10, "count(price)": 9, "avg(price)": 20.0}])
+
+        # Shard A has x priced [100, NULL, NULL], shard B has x priced [10, 10, 10], the true average is 130 / 4 = 32.5
+        query = "select text, count(*), count(price), avg(price) from txtai group by text"
+        results = [
+            {"text": "x", "count(*)": 3, "count(price)": 1, "avg(price)": 100.0},
+            {"text": "x", "count(*)": 3, "count(price)": 3, "avg(price)": 10.0},
+        ]
+        self.assertEqual(aggregate(query, results), [{"text": "x", "count(*)": 6, "count(price)": 4, "avg(price)": 32.5}])
+
+        # count(*) alone cannot weight avg() correctly when the averaged column has NULLs
+        with self.assertRaises(SQLError):
+            aggregate("select count(*), avg(price) from txtai", [{"count(*)": 2, "avg(price)": 100.0}, {"count(*)": 8, "avg(price)": 10.0}])
 
     def testAggregateCase(self):
         """
