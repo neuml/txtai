@@ -127,11 +127,12 @@ class Milvus(ANN):
             offset: starting id
         """
 
-        # Prepare and validate all records before writing
-        records = [{"id": offset + uid, "embedding": self.prepare(embeddings[uid])} for uid in range(embeddings.shape[0])]
+        if embeddings.shape[0]:
+            # Prepare and validate all records before writing
+            records = [{"id": offset + uid, "embedding": self.prepare(embeddings[uid])} for uid in range(embeddings.shape[0])]
 
-        for start in range(0, len(records), 1024):
-            self.collection.insert(records[start : start + 1024])
+            for start in range(0, len(records), 1024):
+                self.collection.insert(records[start : start + 1024])
 
     def field(self):
         """
