@@ -52,6 +52,12 @@ class Sparse(Scoring):
         self.batch = self.config.get("batch", 1024)
         self.thread, self.queue, self.data = None, None, None
 
+        # Error raised by the encoding thread, re-raised by stop()
+        self.error = None
+
+        # True once stream() has consumed the COMPLETE message
+        self.streamcomplete = False
+
     def insert(self, documents, index=None, checkpoint=None):
         # Start processing thread, if necessary
         self.start(checkpoint)
@@ -152,12 +158,16 @@ class Sparse(Scoring):
 
         if not self.thread:
             self.queue = Queue(5)
+            self.error, self.streamcomplete = None, False
             self.thread = Thread(target=self.encode, args=(checkpoint,))
             self.thread.start()
 
     def stop(self):
         """
-        Stops an encoding processing thread. Return processed results.
+        Stops an encoding processing thread. Returns processed results.
+
+        Raises:
+            Exception: re-raises any exception raised by the encoding thread
 
         Returns:
             results
@@ -170,6 +180,12 @@ class Sparse(Scoring):
 
             self.thread.join()
             self.thread, self.queue = None, None
+
+            # Re-raise encoding thread errors, so sparse index/upsert failures
+            # surface the same as the dense path
+            if self.error:
+                error, self.error = self.error, None
+                raise error
 
             # Get return value
             results = self.data
@@ -185,11 +201,23 @@ class Sparse(Scoring):
             checkpoint: checkpoint directory
         """
 
-        # Streaming encoding of data
-        _, dimensions, self.data = self.model.vectors(self.stream(), self.batch, checkpoint)
+        try:
+            # Streaming encoding of data
+            _, dimensions, self.data = self.model.vectors(self.stream(), self.batch, checkpoint)
 
-        # Save number of dimensions
-        self.config["dimensions"] = dimensions
+            # Save number of dimensions
+            self.config["dimensions"] = dimensions
+        except Exception as ex:  # pylint: disable=broad-exception-caught
+            # Keep the exception to re-raise on stop(). All model errors must be
+            # captured here, so they surface instead of failing silently.
+            self.error = ex
+
+            # Drain the queue so a producer blocked on a full queue can't hang.
+            # Skip draining if stream() already consumed the COMPLETE message,
+            # as there is nothing left to read.
+            if not self.streamcomplete:
+                for _ in self.stream():
+                    pass
 
     def stream(self):
         """
@@ -200,6 +228,9 @@ class Sparse(Scoring):
         while batch != Sparse.COMPLETE:
             yield from batch
             batch = self.queue.get()
+
+        # Flag that the end of stream message was consumed
+        self.streamcomplete = True
 
     def normalize(self, queries, scores):
         """
