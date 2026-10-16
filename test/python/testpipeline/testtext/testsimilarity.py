@@ -69,6 +69,22 @@ class TestSimilarity(unittest.TestCase):
         uid = similarity(premise, [entailment, contradiction], labels=["1"])[0][0]
         self.assertEqual(uid, 0)
 
+    def testCrossEncoderLabelsProbability(self):
+        """
+        Test cross-encoder labels rank candidates by the requested label's probability, not its raw logit
+        """
+
+        similarity = Similarity("prajjwal1/bert-medium-mnli", crossencode=True)
+
+        premise = "A dog is running in the park."
+        texts = ["The dog is chasing a ball in the park.", "It is raining.", "Nobody is running."]
+
+        # "Nobody is running." has the highest entailment logit but the lowest entailment probability
+        for multilabel in [True, None, False]:
+            result = similarity(premise, texts, multilabel=multilabel, labels=["1"])
+            self.assertEqual([uid for uid, _ in result], [0, 1, 2])
+            self.assertAlmostEqual(result[0][1], 0.052, places=3)
+
     def testCrossEncoderLabelsOrder(self):
         """
         Test cross-encoder labels resolve to label ids when the model config's label order differs from id order

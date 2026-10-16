@@ -31,24 +31,35 @@ class CrossEncoder(Labels):
         Args:
             query: query text|list
             texts: list of text
-            multilabel: labels are independent if True, scores are normalized to sum to 1 per text item if False, raw scores returned if None
+            multilabel: labels are independent if True, scores are normalized to sum to 1 per text item if False, raw scores returned if None,
+                        not used when labels select a class of a multi-class model
             workers: number of concurrent workers to use for processing data, defaults to None
             labels: optional list of labels to score by, resolved by name/id via the model config the same way
                     Labels.limit() does. Restricts ranking to a fixed label so multi-class models (e.g. NLI
                     cross-encoders) compare every candidate on the same class, instead of whichever one each
-                    candidate happened to score highest on. Defaults to that original top-scored label when None.
+                    candidate happened to score highest on. Each candidate is scored by that label's probability
+                    over the model's classes. Defaults to that original top-scored label when None.
 
         Returns:
             list of (id, score)
         """
 
+        # Score a fixed label of a multi-class model by its probability over the classes of each pair
+        probability = labels and self.pipeline.model.config.num_labels > 1
+
         scores = []
         for q in [query] if isinstance(query, str) else query:
             # Pass (query, text) pairs to model
-            result = self.pipeline([{"text": q, "text_pair": t} for t in texts], top_k=None, function_to_apply="none", num_workers=workers)
+            result = self.pipeline(
+                [{"text": q, "text_pair": t} for t in texts],
+                top_k=None,
+                function_to_apply="softmax" if probability else "none",
+                num_workers=workers,
+            )
 
             # Apply score transform function
-            scores.append(self.function([self.score(r, labels) for r in result], multilabel))
+            row = [self.score(r, labels) for r in result]
+            scores.append(np.array(row) if probability else self.function(row, multilabel))
 
         # Build list of (id, score) per query sorted by highest score
         scores = [sorted(enumerate(row), key=lambda x: x[1], reverse=True) for row in scores]
