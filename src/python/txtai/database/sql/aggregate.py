@@ -76,15 +76,17 @@ class Aggregate(SQL):
 
         return aggregates
 
-    def avg(self, values, counts):
+    def avg(self, column, values, counts):
         """
         Combines per-shard/per-group average values into a single average, weighted by a
-        matching count(*) column when one was selected. Without it, there is no way to
-        recombine the averages correctly, so this raises instead of returning a wrong number.
+        matching count(col) column when one was selected. count(col) only counts the rows where
+        col is not NULL, which are the rows avg(col) is computed over. Without it, there is no way
+        to recombine the averages correctly, so this raises instead of returning a wrong number.
 
         Args:
+            column: avg column name
             values: list of per-shard/per-group average values
-            counts: list of matching count(*) values, or None
+            counts: list of matching count(col) values, or None
 
         Returns:
             combined average
@@ -94,7 +96,7 @@ class Aggregate(SQL):
             return values[0]
 
         if not counts or sum(counts) == 0:
-            raise SQLError("avg() requires a count(*) column to combine results from multiple shards")
+            raise SQLError(f"{column} requires a count({column[4:]} column to combine results from multiple shards")
 
         return sum(value * count for value, count in zip(values, counts)) / sum(counts)
 
@@ -118,8 +120,9 @@ class Aggregate(SQL):
         else:
             results = [results]
 
-        # Column providing the row count each group's values were computed over, used to weight avg() columns
-        countcolumn = next((column for column in columns if column.lower() == "count(*)"), None)
+        # Map each avg(col) column to its count(col) column, the non-NULL row count used to weight it
+        countnames = {column[6:]: column for column in columns if column.lower().startswith("count(")}
+        countcolumns = {column: countnames.get(column[4:]) for column in aggcolumns if column.lower().startswith("avg(")}
 
         # Compute column values
         rows = []
@@ -130,8 +133,9 @@ class Aggregate(SQL):
                 if column in aggcolumns:
                     # Calculate aggregate value, skip NULLs from shards with no matching rows
                     matches = [r for r in result if r[column] is not None]
+                    countcolumn = countcolumns.get(column)
                     values, counts = [r[column] for r in matches], [r[countcolumn] for r in matches] if countcolumn else None
-                    row[column] = (self.avg(values, counts) if column.lower().startswith("avg(") else aggcolumns[column](values)) if values else None
+                    row[column] = (self.avg(column, values, counts) if column in countcolumns else aggcolumns[column](values)) if values else None
                 else:
                     # Non aggregate column value repeat, use first value
                     row[column] = result[0][column]
