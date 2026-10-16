@@ -120,7 +120,7 @@ class Indexes:
             # Add to documents collection if text or object field is set
             parent = document
             if isinstance(parent, dict):
-                parent = parent.get(self.text, document.get(self.object))
+                parent = document[self.text] if document.get(self.text) is not None else document.get(self.object)
 
             # Add if field is available or top-level indexing is disabled
             if parent is not None or not indexing:

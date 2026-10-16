@@ -238,6 +238,52 @@ class TestEmbeddings(unittest.TestCase):
         self.assertEqual(self.embeddings.search("alpha content", 1)[0][0], 0)
         self.assertEqual(self.embeddings.search("gamma content", 1)[0][0], 2)
 
+    def testNoneTextObject(self):
+        """
+        Test dict documents where the text field is set to None and an object is set
+        """
+
+        def transform(data):
+            # Dummy embedding per input using sum and mean of byte values
+            embeddings = []
+            for x in data:
+                values = list(x if isinstance(x, bytes) else x.encode())
+                embeddings.append([sum(values), sum(values) / len(values)])
+
+            return np.array(embeddings, dtype=np.float32)
+
+        # Graph and scoring are tested separately, graph edge inference doesn't support object queries with scoring
+        for config in [{"graph": {"approximate": False}}, {"scoring": {"method": "bm25", "terms": True}}]:
+            embeddings = Embeddings(method="external", transform=transform, content=True, backend="numpy", **config)
+            embeddings.index(
+                [
+                    ("d0", {"text": "alpha content"}, None),
+                    ("d1", {"text": None, "object": b"objbytes"}, None),
+                    ("d2", {"text": "gamma content"}, None),
+                ]
+            )
+
+            # The object document is vectorized and kept with its own id everywhere
+            self.assertEqual(embeddings.ann.count(), 3)
+            self.assertEqual(embeddings.count(), 3)
+            self.assertEqual(
+                embeddings.search("select indexid, id, text from txtai", 10),
+                [
+                    {"indexid": 0, "id": "d0", "text": "alpha content"},
+                    {"indexid": 1, "id": "d1", "text": None},
+                    {"indexid": 2, "id": "d2", "text": "gamma content"},
+                ],
+            )
+
+            # Vectors, database rows and search results should all line up
+            self.assertEqual(embeddings.search("select id from txtai where similar('alpha content')", 1), [{"id": "d0"}])
+            self.assertEqual(embeddings.search("select id from txtai where similar('gamma content')", 1), [{"id": "d2"}])
+
+            if embeddings.graph:
+                self.assertEqual([embeddings.graph.attribute(node, "id") for node in range(3)], ["d0", "d1", "d2"])
+            else:
+                self.assertEqual(embeddings.scoring.search("gamma", 1)[0][0], 2)
+
     def testExternal(self):
         """
         Test embeddings backed by external vectors
