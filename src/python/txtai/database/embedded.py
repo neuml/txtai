@@ -2,6 +2,8 @@
 Embedded module
 """
 
+import os
+
 from .rdbms import RDBMS
 
 
@@ -49,8 +51,8 @@ class Embedded(RDBMS):
             self.session(connection=connection)
             self.path = path
 
-        # Paths are equal, commit changes
-        elif self.path == path:
+        # Paths refer to the same file, commit changes without replacing the active database
+        elif self.path == path or (os.path.exists(self.path) and os.path.exists(path) and os.path.samefile(self.path, path)):
             self.connection.commit()
 
         # New path is different from current path, copy data and continue using current connection
