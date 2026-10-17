@@ -37,10 +37,10 @@ class Terms:
                 # Parse query
                 parse = self.database.parse(query)
 
-                # Join query text from similar clauses (absent when the query has no similar() clause).
-                # Only the first argument is query text, the rest are candidates, index and weights.
-                if "similar" in parse:
-                    terms.append(" ".join(s[0] for s in parse["similar"]))
+                # Join query text from similar clauses. Only the first argument is query text, the rest are
+                # candidates, index and weights. A query without a similar() clause has no keyword terms,
+                # add None to keep the output aligned with the input queries.
+                terms.append(" ".join(s[0] for s in parse["similar"]) if "similar" in parse else None)
 
             return terms
 
