@@ -66,7 +66,7 @@ class Sparse(Scoring):
         for uid, document, tags in documents:
             # Extract text, if necessary
             if isinstance(document, dict):
-                document = document.get(self.text, document.get(self.object))
+                document = document[self.text] if document.get(self.text) is not None else document.get(self.object)
 
             if document is not None:
                 # Add data
