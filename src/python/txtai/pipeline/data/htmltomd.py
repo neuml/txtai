@@ -27,6 +27,36 @@ class HTMLToMarkdown(Pipeline):
     This pipeline searches for the best node that has relevant text, often found with an article, main or body tag.
     """
 
+    # Elements that are part of a line of text rather than blocks of their own. Excludes q, which is formatted as a
+    # blockquote.
+    INLINE = (
+        "a",
+        "abbr",
+        "b",
+        "bdi",
+        "bdo",
+        "cite",
+        "code",
+        "data",
+        "del",
+        "dfn",
+        "em",
+        "i",
+        "ins",
+        "kbd",
+        "mark",
+        "s",
+        "samp",
+        "small",
+        "span",
+        "strong",
+        "sub",
+        "sup",
+        "time",
+        "u",
+        "var",
+    )
+
     def __init__(self, paragraphs=False, sections=False):
         """
         Create a new Extract instance.
@@ -122,7 +152,10 @@ class HTMLToMarkdown(Pipeline):
         # Join elements into text
         if self.iscontainer(node, children):
             texts = [self.process(node, article) for node in children]
-            text = "\n".join(text for text in texts if text or not article)
+
+            # Inline elements (span, b, a...) are parts of one line of text, block elements each start a new line
+            separator = "" if all(child.name in self.INLINE for child in children) else "\n"
+            text = separator.join(text for text in texts if text or not article)
 
             # Apply paragraph formatting to article paragraphs that only have element children
             text = self.articletext(node, text) if article and node.name == "p" else text

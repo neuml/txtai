@@ -156,6 +156,15 @@ class TestTextractor(unittest.TestCase):
         self.assertMarkdown("<p>This is<em> a test</em></p>", "This is *a test*")
         self.assertMarkdown("<p>This is<a href='link'> a test</a></p>", "This is [a test](link)")
         self.assertMarkdown("<p>This is a te<b>st</b></p>", "This is a te**st**")
+
+        # Text made only of inline elements stays on one line in a paragraph, list item and table cell
+        self.assertMarkdown("<p><span>This is</span><span> a test</span></p>", "This is a test")
+        self.assertMarkdown("<p><b>This</b> <i>test</i></p>", "**This** *test*")
+        self.assertMarkdown("<ul><li><span>Test1</span><span> Test2</span></li></ul>", "- Test1 Test2")
+        self.assertMarkdown(
+            "<table><tr><th>A</th><th>B</th></tr><tr><td><span>Test</span><span> 1</span></td><td>2</td></tr></table>",
+            "|A|B|\n|---|---|\n|Test 1|2|",
+        )
         self.assertMarkdown("<p>This is\n<b> a test</b></p>", "This is\n**a test**")
 
         # Links without a target are plain text
