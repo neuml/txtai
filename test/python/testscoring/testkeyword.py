@@ -397,6 +397,7 @@ class TestKeyword(unittest.TestCase):
         scoring.index([(uid, f"word{uid} common", None) for uid in range(100)])
         scoring.delete(list(range(50)))
         scoring.terms.deletes = Deletes(scoring.terms.deletes)
+        Deletes.lookups = 0
 
         with tempfile.TemporaryDirectory() as directory:
             path = os.path.join(directory, "scoring")
@@ -407,6 +408,7 @@ class TestKeyword(unittest.TestCase):
             scoring.load(path)
 
             self.assertEqual(scoring.count(), 50)
+            self.assertEqual(sorted(scoring.terms.deletes), list(range(50)))
             self.assertEqual(Deletes.lookups, 0)
 
             scoring.close()
