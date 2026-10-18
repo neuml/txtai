@@ -376,6 +376,41 @@ class TestKeyword(unittest.TestCase):
             self.assertFalse(scoring.search("lunar eclipse", 1))
             self.assertEqual(scoring.count(), total - 1)
 
+    def testDeleteSave(self):
+        """
+        Test that saving an index with deletes does not scan the deletes list for every document
+        """
+
+        class Deletes(list):
+            """
+            List that counts membership checks.
+            """
+
+            lookups = 0
+
+            def __contains__(self, item):
+                Deletes.lookups += 1
+                return super().__contains__(item)
+
+        # Terms.save checked "i in self.deletes" once per document, making save O(documents x deletes)
+        scoring = ScoringFactory.create({"method": "bm25", "terms": True})
+        scoring.index([(uid, f"word{uid} common", None) for uid in range(100)])
+        scoring.delete(list(range(50)))
+        scoring.terms.deletes = Deletes(scoring.terms.deletes)
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = os.path.join(directory, "scoring")
+            scoring.save(path)
+            scoring.close()
+
+            scoring = ScoringFactory.create({"method": "bm25", "terms": True})
+            scoring.load(path)
+
+            self.assertEqual(scoring.count(), 50)
+            self.assertEqual(Deletes.lookups, 0)
+
+            scoring.close()
+
     def testTFIDF(self):
         """
         Test tfidf

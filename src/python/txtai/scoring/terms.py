@@ -306,8 +306,9 @@ class Terms:
 
         # Serialize ids as BLOBs so SQLite TEXT affinity does not discard their types.
         serializer = SerializeFactory.create()
+        deletes = set(self.deletes)
         for i, uid in enumerate(self.ids):
-            self.cursor.execute(Terms.INSERT_DOCUMENT, [i, serializer.savebytes(uid), 1 if i in self.deletes else 0, self.lengths[i]])
+            self.cursor.execute(Terms.INSERT_DOCUMENT, [i, serializer.savebytes(uid), 1 if i in deletes else 0, self.lengths[i]])
 
         # Temporary database
         if not self.path:
