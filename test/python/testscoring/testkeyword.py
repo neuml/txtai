@@ -125,6 +125,20 @@ class TestKeyword(unittest.TestCase):
         # Close scoring
         scoring.close()
 
+    def testPGTextEmpty(self):
+        """
+        Test PGText with a batch that has no text rows
+        """
+
+        scoring = ScoringFactory.create({"method": "pgtext", "url": "sqlite:///:memory:"})
+        scoring.index([(0, None, None), (1, 5, None)])
+
+        # No phantom row should be inserted
+        self.assertEqual(scoring.count(), 0)
+
+        # Close scoring
+        scoring.close()
+
     def testSIF(self):
         """
         Test sif
