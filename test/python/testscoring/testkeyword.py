@@ -130,7 +130,9 @@ class TestKeyword(unittest.TestCase):
         Test PGText with a batch that has no text rows
         """
 
-        scoring = ScoringFactory.create({"method": "pgtext", "url": "sqlite:///:memory:"})
+        # Create scoring
+        path = os.path.join(tempfile.gettempdir(), "pgtext.sqlite")
+        scoring = ScoringFactory.create({"method": "pgtext", "url": f"sqlite:///{path}", "schema": "txtai"})
         scoring.index([(0, None, None), (1, 5, None)])
 
         # No phantom row should be inserted
