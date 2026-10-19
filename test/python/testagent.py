@@ -247,6 +247,29 @@ class TestAgent(unittest.TestCase):
         with open(path, "rb") as f:
             self.assertEqual(f.read(), b"bye\r\nworld\r\n")
 
+    def testToolsGrepUnreadable(self):
+        """
+        Test the grep tool skips a file it is not allowed to read
+        """
+
+        with tempfile.TemporaryDirectory() as work:
+            for name in ("a.txt", "b.txt"):
+                with open(os.path.join(work, name), "w", encoding="utf-8") as f:
+                    f.write("hello world\n")
+
+            # Matches found in readable files must survive an unreadable file
+            unreadable = os.path.join(work, "b.txt")
+            os.chmod(unreadable, 0o000)
+
+            try:
+                if os.access(unreadable, os.R_OK):
+                    self.skipTest("File permissions are not enforced for this user")
+
+                result = ToolFactory.default("grep")("world", work)
+                self.assertEqual(result, {os.path.join(work, "a.txt"): ["hello world\n"]})
+            finally:
+                os.chmod(unreadable, 0o644)
+
     def testToolsBashAllowedEmpty(self):
         """
         Test an empty allowed commands list permits no commands
