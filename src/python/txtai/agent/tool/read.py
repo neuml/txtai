@@ -2,11 +2,12 @@
 Read imports
 """
 
+import os
 import re
 
 from smolagents import Tool
 
-from ...pipeline import Textractor
+from ...pipeline import SafeOpen, Textractor
 
 
 class ReadTool(Tool):
@@ -35,6 +36,7 @@ class ReadTool(Tool):
 
         # Create textractor instance
         self.textractor = Textractor()
+        self.safeopen = SafeOpen()
         self.maxlength = maxlength
 
         # Validate parameters and initialize tool
@@ -51,6 +53,11 @@ class ReadTool(Tool):
         Returns:
             content
         """
+
+        # Validate file path exists or is a valid URL
+        valid, _ = self.safeopen.valid(path)
+        if not valid:
+            raise FileNotFoundError(f"File not found: {path}")
 
         content = self.textractor(path)
         content = re.sub(r"\n{3,}", "\n\n", content)
