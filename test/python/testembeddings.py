@@ -804,6 +804,12 @@ class TestEmbeddings(unittest.TestCase):
         # SQL query without a similar() clause has no keyword terms (previously raised KeyError)
         self.assertEqual(embeddings.terms("select id, text from txtai where id = 1"), None)
 
+        # Batch results stay aligned with the input queries when a query has no similar() clause
+        self.assertEqual(
+            embeddings.batchterms(["select id, text from txtai where id = 1", "select id, text from txtai where similar('feel good story')"]),
+            [None, "feel good story"],
+        )
+
     def testTruncate(self):
         """
         Test dimensionality truncation
