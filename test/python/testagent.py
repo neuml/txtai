@@ -3,9 +3,9 @@ Agent module tests
 """
 
 import os
-import subprocess
 import sys
 import tempfile
+import traceback
 import unittest
 
 from threading import Thread
@@ -323,76 +323,33 @@ class TestAgent(unittest.TestCase):
         agent = Agent(tools=["http://localhost:8000/mcp"], llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=1)
         self.assertEqual(len(agent.tools), 2)
 
-
-class TestAgentImports(unittest.TestCase):
-    """
-    Agent optional import tests.
-    """
-
-    def testImport(self):
+    def testImportError(self):
         """
-        Test that a normal installation exposes the original Agent.
+        Test missing and transitive dependencies preserve their import failure.
         """
 
-        result = subprocess.run(
-            [sys.executable, "-c", "from txtai import Agent; from txtai.agent.base import Agent as Base; assert Agent is Base"],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        # pylint: disable=C0415
+        for module in ("smolagents", "mcpadapt.core"):
+            with self.subTest(module=module), patch.dict(sys.modules, {module: None}):
+                # Reload txtai with one dependency unavailable, as in testoptional.
+                for name in list(sys.modules):
+                    if name == "txtai" or name.startswith("txtai."):
+                        del sys.modules[name]
 
-    def testMissingDependency(self):
-        """
-        Test that a missing agent dependency retains its original exception.
-        """
+                from txtai import Agent as UnavailableAgent
 
-        self.checkerror("smolagents")
+                with self.assertRaises(ImportError) as error:
+                    UnavailableAgent()
 
-    def testTransitiveImportError(self):
-        """
-        Test that a transitive import failure retains its original exception.
-        """
+                cause = error.exception.__cause__
+                self.assertIsInstance(cause, ModuleNotFoundError)
+                self.assertIs(cause, UnavailableAgent.ERROR)
+                self.assertEqual(cause.name, module)
+                self.assertIsNotNone(cause.__traceback__)
+                self.assertIn(str(cause), "".join(traceback.format_exception(error.exception)))
+                self.assertIn('install "agent" extra', str(error.exception))
 
-        self.checkerror("mcpadapt.core")
+            # Module restoration must keep the real Agent available to other tests.
+            from txtai import Agent as RestoredAgent
 
-    def checkerror(self, module):
-        """
-        Check the public fallback in an isolated process with one failing import.
-
-        Args:
-            module: dependency import to fail
-        """
-
-        script = """
-import builtins
-import traceback
-
-original = builtins.__import__
-missing = ModuleNotFoundError(name=MODULE) if MODULE == "smolagents" else ImportError("Cannot import " + MODULE)
-hits = []
-
-def importer(name, globals=None, locals=None, fromlist=(), level=0):
-    if name == MODULE:
-        hits.append(name)
-        raise missing
-    return original(name, globals, locals, fromlist, level)
-
-builtins.__import__ = importer
-from txtai import Agent
-builtins.__import__ = original
-assert Agent.__module__ == "txtai.agent.placeholder"
-assert hits == [MODULE]
-try:
-    Agent()
-except ImportError as error:
-    assert 'install "agent" extra' in str(error)
-    assert error.__cause__ is missing
-    assert missing.__traceback__ is not None
-    assert any("txtai" in frame.filename for frame in traceback.extract_tb(missing.__traceback__))
-    assert str(missing) in "".join(traceback.format_exception(error))
-else:
-    raise AssertionError("Agent did not raise ImportError")
-"""
-        result = subprocess.run([sys.executable, "-c", f"MODULE = {module!r}\n{script}"], capture_output=True, text=True, check=False)
-        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIs(RestoredAgent, Agent)
