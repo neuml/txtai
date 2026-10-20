@@ -376,6 +376,43 @@ class TestKeyword(unittest.TestCase):
             self.assertFalse(scoring.search("lunar eclipse", 1))
             self.assertEqual(scoring.count(), total - 1)
 
+    def testDeleteScan(self):
+        """
+        Test that deleting many ids scans the index ids once instead of once per id
+        """
+
+        class Ids(list):
+            """
+            List that counts linear searches.
+            """
+
+            scans = 0
+
+            def index(self, *args):
+                Ids.scans += 1
+                return super().index(*args)
+
+        # Terms.delete called self.ids.index() for every requested id, making delete O(documents x ids)
+        scoring = ScoringFactory.create({"method": "bm25", "terms": True})
+        scoring.index([(uid, f"word{uid} common", None) for uid in range(100)])
+
+        # Re-add id 3 so it has two index ids
+        scoring.upsert([(3, "word3 again", None)])
+
+        scoring.terms.ids = Ids(scoring.terms.ids)
+        Ids.scans = 0
+
+        scoring.delete([3, 5, 7, 1000])
+
+        self.assertEqual(Ids.scans, 0)
+        self.assertEqual(sorted(scoring.terms.deletes), [3, 5, 7, 100])
+        self.assertEqual(scoring.count(), 97)
+        self.assertFalse(scoring.search("word3", 1))
+
+        # Empty delete is a no-op
+        scoring.delete([])
+        self.assertEqual(scoring.count(), 97)
+
     def testDeleteSave(self):
         """
         Test that saving an index with deletes does not scan the deletes list for every document

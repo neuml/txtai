@@ -130,21 +130,16 @@ class Terms:
             ids: ids to delete
         """
 
-        # Walk each requested id from its last match to mark every index id, including re-added ids
+        # Single pass over the ids to mark every index id for the requested ids, including re-added ids
+        requested = set(ids)
+        if not requested:
+            return
+
         deletes = set(self.deletes)
-        for uid in ids:
-            start = 0
-            while True:
-                try:
-                    indexid = self.ids.index(uid, start)
-                except ValueError:
-                    break
-
-                if indexid not in deletes:
-                    self.deletes.append(indexid)
-                    deletes.add(indexid)
-
-                start = indexid + 1
+        for indexid, uid in enumerate(self.ids):
+            if uid in requested and indexid not in deletes:
+                self.deletes.append(indexid)
+                deletes.add(indexid)
 
     def index(self):
         """
