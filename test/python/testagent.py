@@ -270,6 +270,41 @@ class TestAgent(unittest.TestCase):
             finally:
                 os.chmod(unreadable, 0o644)
 
+    def testToolsGrepInvalidEncoding(self):
+        """
+        Test the grep tool preserves matches when another file is not UTF-8
+        """
+
+        with tempfile.TemporaryDirectory() as work:
+            readable = os.path.join(work, "a.txt")
+            with open(readable, "w", encoding="utf-8") as f:
+                f.write("hello world\n")
+            with open(os.path.join(work, "b.txt"), "wb") as f:
+                f.write(b"hello world\n\xff\n")
+
+            self.assertEqual(ToolFactory.default("grep")("world", work), {readable: ["hello world\n"]})
+
+    def testToolsGrepDisappeared(self):
+        """
+        Test the grep tool skips a file removed between discovery and opening
+        """
+
+        with tempfile.TemporaryDirectory() as work:
+            readable, removed = (os.path.join(work, name) for name in ("a.txt", "b.txt"))
+            for path in (readable, removed):
+                with open(path, "w", encoding="utf-8") as f:
+                    f.write("hello world\n")
+
+            def openfile(path, mode, encoding):
+                if path == removed:
+                    os.remove(path)
+                return open(path, mode, encoding=encoding)
+
+            with patch("txtai.agent.tool.grep.open", side_effect=openfile):
+                self.assertEqual(ToolFactory.default("grep")("world", work), {readable: ["hello world\n"]})
+
+            self.assertFalse(os.path.exists(removed))
+
     def testToolsBashAllowedEmpty(self):
         """
         Test an empty allowed commands list permits no commands
