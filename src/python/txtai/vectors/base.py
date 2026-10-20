@@ -3,6 +3,7 @@ Vectors module
 """
 
 import hashlib
+import io
 import json
 import os
 import tempfile
@@ -354,12 +355,17 @@ class Vectors:
         if embeddings is not None:
             dimensions = embeddings.shape[1]
 
-            # Record this batch's checksum, in the same file, so a future resume can confirm the
-            # checkpoint still matches before trusting it
             if checksum is not None:
-                output.write((checksum + "\n").encode("utf-8"))
-
-            self.saveembeddings(output, embeddings)
+                # Build the checksum and embeddings in memory first and write them with a single
+                # call, so a batch can't be left half-written (a checksum with no matching
+                # embeddings, or embeddings a future resume has no checksum to confirm) if the
+                # process is interrupted mid-batch
+                buffer = io.BytesIO()
+                buffer.write((checksum + "\n").encode("utf-8"))
+                self.saveembeddings(buffer, embeddings)
+                output.write(buffer.getvalue())
+            else:
+                self.saveembeddings(output, embeddings)
 
         return (ids, dimensions)
 
