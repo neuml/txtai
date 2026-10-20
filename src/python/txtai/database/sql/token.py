@@ -2,6 +2,8 @@
 Token module
 """
 
+import re
+
 
 class Token:
     """
@@ -28,6 +30,26 @@ class Token:
 
     # Default list of boolean literals
     BOOLEANS = ["true", "false"]
+
+    # Numeric literal, including exponent notation (1e3, 1e-3, 1.5e10)
+    NUMERIC = re.compile(r"^\d+\.?\d*(?:[eE][+-]?\d+)?$|^\.\d+(?:[eE][+-]?\d+)?$")
+
+    @staticmethod
+    def isnumeric(token):
+        """
+        Checks if token is a numeric literal.
+
+        Decimal and exponent notation are both supported. A token such as ``1e3``
+        used to fall through to a column name because ``str.isdigit`` rejects it.
+
+        Args:
+            token: token to test
+
+        Returns:
+            True if this token is a numeric literal, False otherwise
+        """
+
+        return bool(token and Token.NUMERIC.match(token))
 
     @staticmethod
     def get(tokens, x):
@@ -201,7 +223,7 @@ class Token:
         """
 
         # Literals are wrapped in quotes, parens, wildcards, numeric or boolean.
-        return token and (token.startswith(("'", '"', ",", "(", ")", "*")) or token.replace(".", "", 1).isdigit() or token.lower() in Token.BOOLEANS)
+        return token and (token.startswith(("'", '"', ",", "(", ")", "*")) or Token.isnumeric(token) or token.lower() in Token.BOOLEANS)
 
     @staticmethod
     def islogicseparator(token):

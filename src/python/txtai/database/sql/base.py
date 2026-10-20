@@ -2,6 +2,8 @@
 SQL module
 """
 
+import re
+
 from io import StringIO
 from shlex import shlex
 
@@ -16,6 +18,9 @@ class SQL:
 
     # List of clauses to parse
     CLAUSES = ["select", "from", "where", "group", "having", "order", "limit", "offset"]
+
+    # Leading part of an exponent literal the lexer split before its sign, e.g. "1e" in "1e-3"
+    EXPONENT_PREFIX = re.compile(r"^(?:\d+\.?\d*|\.\d+)[eE]$", re.IGNORECASE)
 
     def __init__(self, database=None, tolist=False):
         """
@@ -144,7 +149,7 @@ class SQL:
         tokens = shlex(StringIO(query), punctuation_chars="=!<>+-*/%|")
         tokens.wordchars += ":@#"
         tokens.commenters = ""
-        tokens = list(tokens)
+        tokens = self.mergeexponents(list(tokens))
 
         # Identify sql clause token positions
         positions = {}
@@ -156,6 +161,34 @@ class SQL:
                 positions[t] = x
 
         return (tokens, positions)
+
+    def mergeexponents(self, tokens):
+        """
+        Merges exponent literals the lexer split around their sign.
+
+        Args:
+            tokens: input tokens
+
+        Returns:
+            tokens with split exponent literals rejoined
+        """
+
+        # shlex treats "+" and "-" as punctuation, so "1e-3" becomes ["1e", "-", "3"].
+        # Rejoin only when a mantissa+exponent prefix is followed by a sign and digits,
+        # which leaves ordinary expressions such as "a - b" and "v-1" untouched.
+        merged = []
+        x = 0
+        while x < len(tokens):
+            token = tokens[x]
+            if x + 2 < len(tokens) and self.EXPONENT_PREFIX.match(token) and tokens[x + 1] in ("+", "-") and tokens[x + 2].isdigit():
+                merged.append(f"{token}{tokens[x + 1]}{tokens[x + 2]}")
+                x += 3
+                continue
+
+            merged.append(token)
+            x += 1
+
+        return merged
 
     def parse(self, tokens, positions, name, offset=1, alias=False, aliases=None, similar=None):
         """

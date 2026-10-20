@@ -442,6 +442,43 @@ class TestSQL(unittest.TestCase):
         self.assertSql("where", prefix + "WHERE a is not FALSE", "json_extract(data, '$.a') is not FALSE")
         self.assertSql("where", prefix + "WHERE score >= 0.15", "score >= 0.15")
 
+        # Exponent notation is a numeric literal, not a JSON column name
+        self.assertSql("where", prefix + "where a > 1e3", "json_extract(data, '$.a') > 1e3")
+        self.assertSql("where", prefix + "where a > 1E3", "json_extract(data, '$.a') > 1E3")
+        self.assertSql("where", prefix + "where a > 1.5e10", "json_extract(data, '$.a') > 1.5e10")
+
+        # A signed exponent is split by the lexer around its sign and must be rejoined
+        self.assertSql("where", prefix + "where a < 1e-1", "json_extract(data, '$.a') < 1e-1")
+        self.assertSql("where", prefix + "where a <= 5e-2", "json_extract(data, '$.a') <= 5e-2")
+        self.assertSql("where", prefix + "where a > 1e+3", "json_extract(data, '$.a') > 1e+3")
+
+    def testTokenizeExponent(self):
+        """
+        Test exponent literals survive tokenization as a single token
+        """
+
+        # Signed exponents are split by the punctuation lexer and rejoined
+        self.assertEqual(self.sql.tokenize("select * from txtai where a < 1e-1")[0][-1], "1e-1")
+        self.assertEqual(self.sql.tokenize("select * from txtai where a > 1e+3")[0][-1], "1e+3")
+
+        # Unsigned exponents are already a single token
+        self.assertEqual(self.sql.tokenize("select * from txtai where a > 1e3")[0][-1], "1e3")
+
+        # Ordinary arithmetic must not be merged
+        self.assertIn(["a", "-", "b", ">", "0"], self.windows(self.sql.tokenize("select * from txtai where a - b > 0")[0]))
+        self.assertIn(["v", "-", "1", ">", "2"], self.windows(self.sql.tokenize("select * from txtai where v-1 > 2")[0]))
+
+        # A bare exponent-like name stays as it was
+        self.assertEqual(self.sql.tokenize("select * from txtai where a > e3")[0][-1], "e3")
+        self.assertEqual(self.sql.tokenize("select * from txtai where a > 1e")[0][-1], "1e")
+
+    def windows(self, tokens):
+        """
+        Returns every contiguous 5-token window in tokens.
+        """
+
+        return [tokens[x : x + 5] for x in range(max(len(tokens) - 4, 0))]
+
     def testWhereCompound(self):
         """
         Test compound where clauses
