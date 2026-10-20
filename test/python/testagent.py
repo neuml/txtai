@@ -3,7 +3,9 @@ Agent module tests
 """
 
 import os
+import sys
 import tempfile
+import traceback
 import unittest
 
 from threading import Thread
@@ -48,6 +50,37 @@ class TestAgent(unittest.TestCase):
         agent.process.model.llm = lambda *args, **kwargs: 'Action:\n{"name": "final_answer", "arguments": "Hi"}'
 
         self.assertEqual(agent("Hello"), "Hi")
+
+    def testImportError(self):
+        """
+        Test missing and transitive dependencies preserve their import failure.
+        """
+
+        # pylint: disable=C0415
+        for module in ("smolagents", "mcpadapt.core"):
+            with self.subTest(module=module), patch.dict(sys.modules, {module: None}):
+                # Reload txtai with one dependency unavailable, as in testoptional.
+                for name in list(sys.modules):
+                    if name == "txtai" or name.startswith("txtai."):
+                        del sys.modules[name]
+
+                from txtai import Agent as UnavailableAgent
+
+                with self.assertRaises(ImportError) as error:
+                    UnavailableAgent()
+
+                cause = error.exception.__cause__
+                self.assertIsInstance(cause, ModuleNotFoundError)
+                self.assertIs(cause, UnavailableAgent.ERROR)
+                self.assertEqual(cause.name, module)
+                self.assertIsNotNone(cause.__traceback__)
+                self.assertIn(str(cause), "".join(traceback.format_exception(error.exception)))
+                self.assertIn('install "agent" extra', str(error.exception))
+
+            # Module restoration must keep the real Agent available to other tests.
+            from txtai import Agent as RestoredAgent
+
+            self.assertIs(RestoredAgent, Agent)
 
     def testInstructions(self):
         """
