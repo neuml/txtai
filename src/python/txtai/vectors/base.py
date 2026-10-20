@@ -2,12 +2,12 @@
 Vectors module
 """
 
-import hashlib
 import io
 import json
 import os
 import tempfile
 import uuid
+import zlib
 
 from ..pipeline import Tokenizer
 
@@ -315,7 +315,9 @@ class Vectors:
             data: raw document content for this batch, prior to any model-specific preparation
 
         Returns:
-            hex digest uniquely identifying this batch's ids and content
+            checksum identifying this batch's ids and content. Not a security use case, just a
+            change-detection check against the current batch, so a fast CRC32 is used in place of
+            a cryptographic hash.
         """
 
         try:
@@ -323,7 +325,7 @@ class Vectors:
         except TypeError:
             encoded = str((ids, data)).encode("utf-8")
 
-        return hashlib.sha256(encoded).hexdigest()
+        return format(zlib.crc32(encoded), "08x")
 
     def batch(self, documents, output, recovery):
         """
