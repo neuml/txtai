@@ -4,7 +4,6 @@ Query module
 
 import logging
 import re
-from io import StringIO
 from shlex import shlex
 
 try:
@@ -110,15 +109,16 @@ class Query:
                 offset = match.group(1)
 
         # Parse similar clauses
-        clauses, spans = self.clauses(query), []
-        for x, (start, end, params) in enumerate(clauses):
-            spans.append((start, end, f"{Query.SIMILAR}{x}"))
+        for x, match in enumerate(re.finditer(r"""similar\(((?:(['"]).*?\2|[^)'"])+)\)""", query, flags=re.DOTALL | re.IGNORECASE)):
+            # Replace similar clause with placeholder
+            query = query.replace(match.group(0), f"{Query.SIMILAR}{x}")
+
+            # Parse similar clause parameters, commas inside quotes are kept
+            params = shlex(match.group(1), posix=True)
+            params.whitespace, params.whitespace_split = ",", True
+            params = [param.strip() for param in params]
             nodes.append(params[0])
             similar.append(params[1:])
-
-        # Replace similar clauses with placeholders
-        for start, end, placeholder in reversed(spans):
-            query = query[:start] + placeholder + query[end:]
 
         # Return parsed query
         return {
@@ -129,66 +129,6 @@ class Query:
             "nodes": nodes,
             "similar": similar,
         }
-
-    def clauses(self, query):
-        """
-        Finds similar clauses in a graph query. Quoted text is kept as is, including commas and parentheses.
-
-        Args:
-            query: graph query
-
-        Returns:
-            list of (start, end, parameters) for each similar clause
-        """
-
-        if "similar" not in query.lower():
-            return []
-
-        # Tokenize query, quotes are kept in quoted tokens
-        try:
-            tokens = shlex(StringIO(query))
-            tokens.commenters = ""
-            tokens = list(tokens)
-        except ValueError:
-            # Unbalanced quotes
-            return []
-
-        # Find the character position of each token
-        positions, offset = [], 0
-        for token in tokens:
-            offset = query.index(token, offset)
-            positions.append((offset, offset + len(token)))
-            offset += len(token)
-
-        clauses, x = [], 0
-        while x < len(tokens) - 1:
-            if tokens[x].lower() == "similar" and tokens[x + 1] == "(":
-                # Split parameters on commas at the top level of the clause
-                params, depth, y = [[]], 1, x + 2
-                while y < len(tokens):
-                    token = tokens[y]
-                    depth += (token == "(") - (token == ")")
-                    if depth == 0:
-                        break
-
-                    if token == "," and depth == 1:
-                        params.append([])
-                    else:
-                        params[-1].append(y)
-                    y += 1
-
-                if depth == 0:
-                    # Parameter text is unquoted when it's a single quoted token
-                    values = []
-                    for param in params:
-                        value = query[positions[param[0]][0] : positions[param[-1]][1]] if param else ""
-                        values.append(value[1:-1] if len(param) == 1 and value[:1] in ("'", '"') else value.replace("'", "").replace('"', ""))
-
-                    clauses.append((positions[x][0], positions[y][1], [value.strip() for value in values]))
-                    x = y
-            x += 1
-
-        return clauses
 
     def build(self, parse):
         """

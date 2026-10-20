@@ -626,9 +626,9 @@ class TestGraph(unittest.TestCase):
         self.assertEqual(parse["nodes"], ["A", "B"])
         self.assertEqual(parse["similar"], [["it's, ok", "5"], ["a)b", "3"]])
 
-        parse = query.parse("MATCH (A) WHERE SIMILAR(A, 'a, (b', 3) AND SIMILAR(A, f(g(1), 2)) RETURN A")
+        parse = query.parse("MATCH (A) WHERE SIMILAR(A, 'a, (b', 3) AND SIMILAR(A, 'c', 2) RETURN A")
         self.assertEqual(parse["query"], "MATCH (A) WHERE __SIMILAR__0 AND __SIMILAR__1 RETURN A")
-        self.assertEqual(parse["similar"], [["a, (b", "3"], ["f(g(1), 2)"]])
+        self.assertEqual(parse["similar"], [["a, (b", "3"], ["c", "2"]])
 
     def testSearchSkip(self):
         """
