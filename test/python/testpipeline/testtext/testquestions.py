@@ -14,12 +14,15 @@ class TestQuestions(unittest.TestCase):
 
     def testNoAnswer(self):
         """
-        Test a SQuAD2 no-answer prediction alongside an answerable question
+        Test unmapped span tokens alongside an ordinary context span
         """
 
-        questions = Questions("deepset/minilm-uncased-squad2", gpu=False)
+        questions = Questions("distilbert-base-cased-distilled-squad", gpu=False)
         context = "Paris is the capital of France."
-        self.assertEqual(
-            questions(["Who is the president of Mars?", "What is the capital of France?"], [context, context]),
-            [None, "Paris"],
-        )
+        tokens = questions.tokenizer("What is the capital of France?", context, return_tensors="pt")
+        cls = tokens["input_ids"][0].tolist().index(questions.tokenizer.cls_token_id)
+        start = tokens.char_to_token(0, sequence_index=1)
+        end = tokens.char_to_token(4, sequence_index=1)
+
+        self.assertIsNone(questions.answer(context, tokens, cls, cls))
+        self.assertEqual(questions.answer(context, tokens, start, end), "Paris")
