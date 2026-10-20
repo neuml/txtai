@@ -173,6 +173,34 @@ class TestWordVectors(unittest.TestCase):
         expected = model.transform((999, "a completely different sentence", None))
         self.assertTrue(np.allclose(embeddings[ids.index(999)], expected))
 
+    def testIndexCheckpointContentChanged(self):
+        """
+        Test that a resumed run where a document's id is unchanged but its content was edited
+        (e.g. an updated row from the source) re-encodes that document instead of reusing the
+        checkpoint's stale embedding for the old content under the same id
+        """
+
+        checkpoint = os.path.join(tempfile.gettempdir(), "wordvectors-checkpoint-content-changed")
+        shutil.rmtree(checkpoint, ignore_errors=True)
+
+        documents = [(x, f"document number {x}", None) for x in range(10)]
+        model = VectorsFactory.create({"path": self.path, "parallel": False}, None)
+
+        # First run builds the checkpoint
+        model.index(documents, 5, checkpoint)
+
+        # Resume with the same id at the same batch position, but edited content
+        resumed = list(documents)
+        resumed[7] = (7, "document number 7 has been edited since the last run", None)
+
+        buffer = os.path.join(tempfile.gettempdir(), "wordvectors-checkpoint-content-changed.buffer")
+        ids, _, embeddings = model.vectors(resumed, 5, checkpoint, buffer=buffer, dtype=np.float32)
+
+        # The edited document's embedding must match a fresh encoding of its new text, not the
+        # checkpoint's stale embedding recorded for id 7's old content
+        expected = model.transform((7, "document number 7 has been edited since the last run", None))
+        self.assertTrue(np.allclose(embeddings[ids.index(7)], expected))
+
     @patch("os.cpu_count")
     def testIndexCheckpointParallel(self, cpucount):
         """

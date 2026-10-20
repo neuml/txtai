@@ -3,6 +3,7 @@ Vectors module
 """
 
 import contextlib
+import hashlib
 import json
 import os
 import tempfile
@@ -291,8 +292,9 @@ class Vectors:
 
     def idspool(self, checkpoint, vectorsid):
         """
-        Opens a spool file for queuing the ids of each embeddings batch. A recovery file uses this to
-        confirm its recorded batches still line up with the current run's ids before trusting them.
+        Opens a spool file for queuing the ids and content checksums of each embeddings batch. A
+        recovery file uses this to confirm its recorded batches still line up with the current run's
+        documents before trusting them.
 
         Args:
             checkpoint: optional checkpoint directory, enables indexing restart
@@ -308,6 +310,27 @@ class Vectors:
 
         return contextlib.nullcontext(None)
 
+    def checksum(self, data):
+        """
+        Computes a stable checksum for a document's raw content. Used to confirm a recovered
+        checkpoint batch still matches the document currently being indexed at that position - an id
+        matching alone isn't enough, since the same id can carry different content across runs (an
+        updated row from the source, for example).
+
+        Args:
+            data: raw document content, prior to any model-specific preparation
+
+        Returns:
+            hex digest uniquely identifying this content
+        """
+
+        try:
+            encoded = json.dumps(data, sort_keys=True, default=str).encode("utf-8")
+        except TypeError:
+            encoded = str(data).encode("utf-8")
+
+        return hashlib.sha256(encoded).hexdigest()
+
     def batch(self, documents, output, idstream, recovery):
         """
         Builds a batch of embeddings.
@@ -315,28 +338,32 @@ class Vectors:
         Args:
             documents: list of documents used to build embeddings
             output: output temp file to store embeddings
-            idstream: optional ids spool file, records each batch's ids for future recovery verification
+            idstream: optional ids spool file, records each batch's ids/checksums for future recovery
+                      verification
             recovery: optional recovery instance
 
         Returns:
             (ids, dimensions) list of ids and number of dimensions in embeddings
         """
 
-        # Extract ids and prepare input documents for vectors model
+        # Extract ids and content checksums, then prepare input documents for vectors model
         ids = [uid for uid, _, _ in documents]
+        hashes = [self.checksum(data) for _, data, _ in documents]
         documents = [self.prepare(data, "data") for _, data, _ in documents]
         dimensions = None
 
-        # Attempt to read embeddings from a recovery file, only trusting rows that match this batch's ids
-        embeddings = recovery(ids) if recovery else None
+        # Attempt to read embeddings from a recovery file, only trusting rows whose ids and content
+        # checksums both match this batch
+        embeddings = recovery(ids, hashes) if recovery else None
         embeddings = self.vectorize(documents, "data") if embeddings is None else embeddings
         if embeddings is not None:
             dimensions = embeddings.shape[1]
             self.saveembeddings(output, embeddings)
 
-            # Record this batch's ids so a future resume can confirm the checkpoint still matches
+            # Record this batch's ids and checksums so a future resume can confirm the checkpoint
+            # still matches
             if idstream is not None:
-                idstream.write(json.dumps(ids) + "\n")
+                idstream.write(json.dumps([ids, hashes]) + "\n")
 
         return (ids, dimensions)
 

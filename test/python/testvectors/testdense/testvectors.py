@@ -66,7 +66,7 @@ class TestVectors(unittest.TestCase):
 
         # Create the recovery instance with an empty checkpoint file
         recovery = Recovery(checkpoint, "id", np.load)
-        self.assertIsNone(recovery(["a"]))
+        self.assertIsNone(recovery(["a"], ["hash-a"]))
 
     def testRecoveryLegacyCheckpoint(self):
         """
@@ -83,7 +83,7 @@ class TestVectors(unittest.TestCase):
 
         # No "id.ids" companion file present
         recovery = Recovery(checkpoint, "id", np.load)
-        self.assertIsNone(recovery(["a", "b"]))
+        self.assertIsNone(recovery(["a", "b"], ["hash-a", "hash-b"]))
 
     def testRecoveryMismatch(self):
         """
@@ -98,15 +98,36 @@ class TestVectors(unittest.TestCase):
             np.save(f, embeddings)
 
         with open(os.path.join(checkpoint, "id.ids"), "w", encoding="utf-8") as f:
-            f.write(json.dumps(["a", "b"]) + "\n")
+            f.write(json.dumps([["a", "b"], ["hash-a", "hash-b"]]) + "\n")
 
         recovery = Recovery(checkpoint, "id", np.load)
-        self.assertIsNone(recovery(["a", "c"]))
+        self.assertIsNone(recovery(["a", "c"], ["hash-a", "hash-c"]))
+
+    def testRecoveryContentMismatch(self):
+        """
+        Test that recovery rejects a batch whose ids match but whose content checksums don't - the
+        same id can carry different content across runs (an updated row from the source, for
+        example), and matching ids alone must not be trusted in that case
+        """
+
+        checkpoint = os.path.join(tempfile.gettempdir(), "recovery-content-mismatch")
+        os.makedirs(checkpoint, exist_ok=True)
+
+        embeddings = np.random.rand(2, 4).astype(np.float32)
+        with open(os.path.join(checkpoint, "id"), "wb") as f:
+            np.save(f, embeddings)
+
+        with open(os.path.join(checkpoint, "id.ids"), "w", encoding="utf-8") as f:
+            f.write(json.dumps([["a", "b"], ["hash-a", "hash-b"]]) + "\n")
+
+        # Same ids as the checkpoint, but "b"'s content checksum has changed
+        recovery = Recovery(checkpoint, "id", np.load)
+        self.assertIsNone(recovery(["a", "b"], ["hash-a", "hash-b-changed"]))
 
     def testRecoveryMatch(self):
         """
-        Test that recovery returns the checkpointed embeddings when their recorded ids match
-        the current run's ids
+        Test that recovery returns the checkpointed embeddings when their recorded ids and content
+        checksums match the current run's ids and checksums
         """
 
         checkpoint = os.path.join(tempfile.gettempdir(), "recovery-match")
@@ -117,8 +138,8 @@ class TestVectors(unittest.TestCase):
             np.save(f, embeddings)
 
         with open(os.path.join(checkpoint, "id.ids"), "w", encoding="utf-8") as f:
-            f.write(json.dumps(["a", "b"]) + "\n")
+            f.write(json.dumps([["a", "b"], ["hash-a", "hash-b"]]) + "\n")
 
         recovery = Recovery(checkpoint, "id", np.load)
-        result = recovery(["a", "b"])
+        result = recovery(["a", "b"], ["hash-a", "hash-b"])
         self.assertTrue(np.allclose(result, embeddings))

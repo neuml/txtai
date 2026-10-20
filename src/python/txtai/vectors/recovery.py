@@ -11,12 +11,15 @@ class Recovery:
     """
     Vector embeddings recovery. This class handles streaming embeddings from a vector checkpoint file.
 
-    Alongside the embeddings, a checkpoint carries a companion ids file with one JSON-encoded batch of
-    ids per line. Before trusting a recovered batch, this class confirms its recorded ids still match
-    the current run's ids at that position - if the document stream was reordered or changed since the
-    checkpoint was written, a stale batch would otherwise be paired with the wrong documents. A
-    checkpoint written before this ids file existed has no way to be verified, so it's treated as
-    unavailable rather than trusted.
+    Alongside the embeddings, a checkpoint carries a companion ids file with one JSON-encoded
+    [ids, checksums] pair per batch. Before trusting a recovered batch, this class confirms both the
+    recorded ids and the recorded content checksums still match the current run's documents at that
+    position. Matching ids alone isn't sufficient - the same id can carry different content across runs
+    (an updated row from the source, for example) - so each document's raw content is also hashed and
+    compared. If the document stream was reordered, changed, or its content edited since the checkpoint
+    was written, a stale batch would otherwise be paired with the wrong documents. A checkpoint written
+    before this ids file existed has no way to be verified, so it's treated as unavailable rather than
+    trusted.
     """
 
     def __init__(self, checkpoint, vectorsid, load):
@@ -49,13 +52,15 @@ class Recovery:
             # pylint: disable=R1732
             self.idspool = open(self.idspath, "r", encoding="utf-8")
 
-    def __call__(self, ids):
+    def __call__(self, ids, hashes):
         """
-        Reads and returns the next batch of embeddings, provided the checkpoint's recorded ids for that
-        batch still match the ids about to be built.
+        Reads and returns the next batch of embeddings, provided the checkpoint's recorded ids and
+        content checksums for that batch still match the batch about to be built.
 
         Args:
             ids: ids for the batch about to be built, used to confirm a recovered batch applies to it
+            hashes: content checksums for the batch about to be built, used to confirm the recovered
+                    batch's documents weren't changed since the checkpoint was written
 
         Returns
             batch of embeddings, or None if unavailable or the checkpoint no longer lines up
@@ -69,15 +74,16 @@ class Recovery:
             if not line:
                 raise EOFError
 
-            recoveredids = json.loads(line)
+            recoveredids, recoveredhashes = json.loads(line)
             embeddings = self.load(self.spool)
         except EOFError:
             # End of spool file, cleanup
             self.cleanup()
             return None
 
-        if recoveredids != ids:
-            # The document stream no longer lines up with the checkpoint. Every later batch position is
+        if recoveredids != ids or recoveredhashes != hashes:
+            # The document stream no longer lines up with the checkpoint, either a different document
+            # (id) or the same id with changed content (checksum). Every later batch position is
             # unreliable too once this happens, so stop trusting the recovery file for the rest of this run.
             self.cleanup()
             return None
