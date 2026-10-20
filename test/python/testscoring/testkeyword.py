@@ -65,6 +65,148 @@ class TestKeyword(unittest.TestCase):
         with self.assertRaises(ImportError):
             ScoringFactory.create("notfound.scoring")
 
+    def testDelete(self):
+        """
+        Test deleting ids from a keyword index
+        """
+
+        class Ids(list):
+            """
+            List that counts linear searches.
+            """
+
+            scans = 0
+
+            def index(self, *args):
+                Ids.scans += 1
+                return super().index(*args)
+
+        scoring = ScoringFactory.create({"method": "bm25", "terms": True})
+        scoring.index([(uid, f"word{uid} common", None) for uid in range(100)])
+
+        # Terms.delete called self.ids.index() once per requested id, making it O(documents x ids)
+        scoring.terms.ids = Ids(scoring.terms.ids)
+        Ids.scans = 0
+
+        # Unknown and repeated ids are ignored
+        scoring.delete([3, 5, 5, 1000])
+        scoring.delete([3])
+
+        self.assertEqual(Ids.scans, 0)
+        self.assertEqual(sorted(scoring.terms.deletes), [3, 5])
+        self.assertEqual(scoring.count(), 98)
+        self.assertFalse(scoring.search("word3", 1))
+
+        # Empty delete is a no-op
+        scoring.delete([])
+        self.assertEqual(scoring.count(), 98)
+
+        # TFIDF content only, terms disabled: TFIDF.delete used dict.pop(), raising KeyError for unknown ids
+        scoring = ScoringFactory.create({"method": "tfidf", "content": True})
+        scoring.index(self.data)
+
+        scoring.delete([0, len(self.data) + 100])
+        self.assertNotIn(0, scoring.documents)
+
+    def testDeleteMixedTerms(self):
+        """
+        Test that common term scoring cannot restore deleted keyword results
+        """
+
+        for method in ["bm25", "tfidf", "sif"]:
+            for content in [False, True]:
+                with self.subTest(method=method, content=content), tempfile.TemporaryDirectory() as directory:
+                    config = {"method": method, "terms": True, "content": content}
+                    scoring = ScoringFactory.create(config)
+                    try:
+                        # rare occurs in one document; common occurs in every document.
+                        scoring.index([(uid, "rare common" if uid == 0 else "common", None) for uid in range(20)])
+                        scoring.search("rare common", 20)
+                        scoring.delete([1])
+
+                        for persisted in [False, True]:
+                            if persisted:
+                                path = os.path.join(directory, "scoring")
+                                scoring.save(path)
+                                scoring.close()
+                                scoring = ScoringFactory.create(config)
+                                scoring.load(path)
+
+                            for query in ["rare", "common", "rare common"]:
+                                for limit in [3, 20]:
+                                    results = scoring.search(query, limit)
+                                    ids = [result["id"] if content else result[0] for result in results]
+                                    self.assertNotIn(1, ids)
+                                    self.assertEqual(len(ids), 1 if query == "rare" else min(limit, 19))
+                                    if query == "rare common":
+                                        self.assertEqual(ids[0], 0)
+
+                        self.assertEqual(scoring.count(), 19)
+                    finally:
+                        scoring.close()
+
+    def testDeleteReinsert(self):
+        """
+        Test that an id deleted, re-added and deleted again is removed from count() and search()
+        """
+
+        # Terms index: Terms.delete resolved each id with self.ids.index(), which only found the first
+        # (already deleted) position. The re-added copy survived, count() was one too high and search()
+        # raised a KeyError for the re-added text since the content had been removed.
+        for method in ["bm25", "tfidf", "sif"]:
+            scoring = ScoringFactory.create({"method": method, "terms": True, "content": True})
+            scoring.index(self.data)
+
+            total = scoring.count()
+
+            scoring.delete([0])
+            self.assertEqual(scoring.count(), total - 1)
+
+            # Re-add the same id with new text, then delete it again
+            scoring.upsert([(0, "Lunar eclipse visible across North America", None)])
+            self.assertEqual(scoring.count(), total)
+
+            scoring.delete([0])
+            self.assertFalse(scoring.search("lunar eclipse", 1))
+            self.assertEqual(scoring.count(), total - 1)
+
+    def testDeleteSave(self):
+        """
+        Test that saving an index with deletes does not scan the deletes list for every document
+        """
+
+        class Deletes(list):
+            """
+            List that counts membership checks.
+            """
+
+            lookups = 0
+
+            def __contains__(self, item):
+                Deletes.lookups += 1
+                return super().__contains__(item)
+
+        # Terms.save checked "i in self.deletes" once per document, making save O(documents x deletes)
+        scoring = ScoringFactory.create({"method": "bm25", "terms": True})
+        scoring.index([(uid, f"word{uid} common", None) for uid in range(100)])
+        scoring.delete(list(range(50)))
+        scoring.terms.deletes = Deletes(scoring.terms.deletes)
+        Deletes.lookups = 0
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = os.path.join(directory, "scoring")
+            scoring.save(path)
+            scoring.close()
+
+            scoring = ScoringFactory.create({"method": "bm25", "terms": True})
+            scoring.load(path)
+
+            self.assertEqual(scoring.count(), 50)
+            self.assertEqual(sorted(scoring.terms.deletes), list(range(50)))
+            self.assertEqual(Deletes.lookups, 0)
+
+            scoring.close()
+
     def testNotImplemented(self):
         """
         Test exceptions for non-implemented methods
@@ -240,6 +382,13 @@ class TestKeyword(unittest.TestCase):
                     finally:
                         scoring.close()
 
+    def testTFIDF(self):
+        """
+        Test tfidf
+        """
+
+        self.runTests("tfidf")
+
     def testWildcardEscapedCharacters(self):
         """
         Test explicit escaping while preserving SQL LIKE wildcard behavior
@@ -274,151 +423,6 @@ class TestKeyword(unittest.TestCase):
                         self.assertEqual(len(results), len(expected))
             finally:
                 scoring.close()
-
-    def testDeleteUnknownId(self):
-        """
-        Test that deleting an id that was never indexed is a no-op, not a crash
-        """
-
-        # Terms index (bm25): Terms.delete used self.ids.index(), raising ValueError
-        scoring = ScoringFactory.create({"method": "bm25", "terms": True, "content": True})
-        scoring.index(self.data)
-
-        scoring.delete([0, len(self.data) + 100])
-        self.assertFalse(scoring.search("tops", 1))
-
-        # TFIDF content only, terms disabled: TFIDF.delete used dict.pop(), raising KeyError
-        scoring = ScoringFactory.create({"method": "tfidf", "content": True})
-        scoring.index(self.data)
-
-        scoring.delete([0, len(self.data) + 100])
-        self.assertNotIn(0, scoring.documents)
-
-    def testDeleteIdempotent(self):
-        """
-        Test that deleting the same id more than once does not corrupt count()
-        """
-
-        # Terms index (bm25): Terms.delete extended self.deletes without dedup, so a
-        # repeated delete appended the same index again and count() undercounted.
-        scoring = ScoringFactory.create({"method": "bm25", "terms": True, "content": True})
-        scoring.index(self.data)
-
-        total = scoring.count()
-        self.assertEqual(total, len(self.data))
-
-        scoring.delete([0])
-        self.assertEqual(scoring.count(), total - 1)
-
-        # Deleting the same id again is a no-op for the count
-        scoring.delete([0])
-        self.assertEqual(scoring.count(), total - 1)
-
-    def testDeleteMixedTerms(self):
-        """
-        Test that common term scoring cannot restore deleted keyword results
-        """
-
-        for method in ["bm25", "tfidf", "sif"]:
-            for content in [False, True]:
-                with self.subTest(method=method, content=content), tempfile.TemporaryDirectory() as directory:
-                    config = {"method": method, "terms": True, "content": content}
-                    scoring = ScoringFactory.create(config)
-                    try:
-                        # rare occurs in one document; common occurs in every document.
-                        scoring.index([(uid, "rare common" if uid == 0 else "common", None) for uid in range(20)])
-                        scoring.search("rare common", 20)
-                        scoring.delete([1])
-
-                        for persisted in [False, True]:
-                            if persisted:
-                                path = os.path.join(directory, "scoring")
-                                scoring.save(path)
-                                scoring.close()
-                                scoring = ScoringFactory.create(config)
-                                scoring.load(path)
-
-                            for query in ["rare", "common", "rare common"]:
-                                for limit in [3, 20]:
-                                    results = scoring.search(query, limit)
-                                    ids = [result["id"] if content else result[0] for result in results]
-                                    self.assertNotIn(1, ids)
-                                    self.assertEqual(len(ids), 1 if query == "rare" else min(limit, 19))
-                                    if query == "rare common":
-                                        self.assertEqual(ids[0], 0)
-
-                        self.assertEqual(scoring.count(), 19)
-                    finally:
-                        scoring.close()
-
-    def testDeleteReinsert(self):
-        """
-        Test that an id deleted, re-added and deleted again is removed from count() and search()
-        """
-
-        # Terms index: Terms.delete resolved each id with self.ids.index(), which only found the first
-        # (already deleted) position. The re-added copy survived, count() was one too high and search()
-        # raised a KeyError for the re-added text since the content had been removed.
-        for method in ["bm25", "tfidf", "sif"]:
-            scoring = ScoringFactory.create({"method": method, "terms": True, "content": True})
-            scoring.index(self.data)
-
-            total = scoring.count()
-
-            scoring.delete([0])
-            self.assertEqual(scoring.count(), total - 1)
-
-            # Re-add the same id with new text, then delete it again
-            scoring.upsert([(0, "Lunar eclipse visible across North America", None)])
-            self.assertEqual(scoring.count(), total)
-
-            scoring.delete([0])
-            self.assertFalse(scoring.search("lunar eclipse", 1))
-            self.assertEqual(scoring.count(), total - 1)
-
-    def testDeleteSave(self):
-        """
-        Test that saving an index with deletes does not scan the deletes list for every document
-        """
-
-        class Deletes(list):
-            """
-            List that counts membership checks.
-            """
-
-            lookups = 0
-
-            def __contains__(self, item):
-                Deletes.lookups += 1
-                return super().__contains__(item)
-
-        # Terms.save checked "i in self.deletes" once per document, making save O(documents x deletes)
-        scoring = ScoringFactory.create({"method": "bm25", "terms": True})
-        scoring.index([(uid, f"word{uid} common", None) for uid in range(100)])
-        scoring.delete(list(range(50)))
-        scoring.terms.deletes = Deletes(scoring.terms.deletes)
-        Deletes.lookups = 0
-
-        with tempfile.TemporaryDirectory() as directory:
-            path = os.path.join(directory, "scoring")
-            scoring.save(path)
-            scoring.close()
-
-            scoring = ScoringFactory.create({"method": "bm25", "terms": True})
-            scoring.load(path)
-
-            self.assertEqual(scoring.count(), 50)
-            self.assertEqual(sorted(scoring.terms.deletes), list(range(50)))
-            self.assertEqual(Deletes.lookups, 0)
-
-            scoring.close()
-
-    def testTFIDF(self):
-        """
-        Test tfidf
-        """
-
-        self.runTests("tfidf")
 
     def runTests(self, method):
         """
