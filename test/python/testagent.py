@@ -265,6 +265,15 @@ class TestAgent(unittest.TestCase):
         # Timeout is disabled when set to None
         self.assertIsNone(BashTool(timeout=None).timeout)
 
+    def testToolsReadNonexistent(self):
+        """
+        Test the read tool raises FileNotFoundError when a file does not exist
+        """
+
+        # Reading a non-existent file must raise FileNotFoundError
+        with self.assertRaises(FileNotFoundError):
+            ToolFactory.default("read")(os.path.join(tempfile.gettempdir(), "does_not_exist_file.txt"))
+
     def testToolsEditCRLF(self):
         """
         Test the edit tool preserves CRLF line endings

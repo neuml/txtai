@@ -52,6 +52,11 @@ class ReadTool(Tool):
             content
         """
 
+        # Validate file path exists or is a valid URL
+        valid, _ = self.textractor.safeopen.valid(path)
+        if not valid:
+            raise FileNotFoundError(f"File not found: {path}")
+
         content = self.textractor(path)
         content = re.sub(r"\n{3,}", "\n\n", content)
 
