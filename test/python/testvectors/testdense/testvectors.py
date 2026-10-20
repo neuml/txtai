@@ -2,7 +2,6 @@
 Vectors module tests
 """
 
-import json
 import os
 import tempfile
 import unittest
@@ -50,6 +49,26 @@ class TestVectors(unittest.TestCase):
         self.assertTrue(np.allclose(data1, data2))
         self.assertFalse(np.allclose(data1, original))
 
+    def write(self, path, checksum=None, embeddings=None):
+        """
+        Writes a checkpoint file in the single-file recovery format: a format marker, followed by
+        one checksum line and one npy array per batch.
+
+        Args:
+            path: file to write
+            checksum: checksum to write ahead of embeddings, or None to write a legacy file with
+                      neither the format marker nor a checksum
+            embeddings: embeddings array to write, or None to write an empty file
+        """
+
+        with open(path, "wb") as f:
+            if checksum is not None:
+                f.write(Recovery.MAGIC.encode("utf-8"))
+                f.write((checksum + "\n").encode("utf-8"))
+
+            if embeddings is not None:
+                np.save(f, embeddings, allow_pickle=False)
+
     def testRecovery(self):
         """
         Test vectors recovery failure
@@ -60,17 +79,15 @@ class TestVectors(unittest.TestCase):
         os.makedirs(checkpoint, exist_ok=True)
 
         # Create empty file
-        # pylint: disable=R1732
-        f = open(os.path.join(checkpoint, "id"), "w", encoding="utf-8")
-        f.close()
+        self.write(os.path.join(checkpoint, "id"))
 
         # Create the recovery instance with an empty checkpoint file
         recovery = Recovery(checkpoint, "id", np.load)
-        self.assertIsNone(recovery(["a"], ["hash-a"]))
+        self.assertIsNone(recovery("checksum-a"))
 
     def testRecoveryLegacyCheckpoint(self):
         """
-        Test that a checkpoint written before ids tracking existed (no companion .ids file) is
+        Test that a checkpoint written before checksum tracking existed (no format marker) is
         treated as unavailable rather than trusted
         """
 
@@ -78,68 +95,57 @@ class TestVectors(unittest.TestCase):
         os.makedirs(checkpoint, exist_ok=True)
 
         embeddings = np.random.rand(2, 4).astype(np.float32)
-        with open(os.path.join(checkpoint, "id"), "wb") as f:
-            np.save(f, embeddings)
+        self.write(os.path.join(checkpoint, "id"), embeddings=embeddings)
 
-        # No "id.ids" companion file present
+        # No format marker present
         recovery = Recovery(checkpoint, "id", np.load)
-        self.assertIsNone(recovery(["a", "b"], ["hash-a", "hash-b"]))
+        self.assertIsNone(recovery("checksum-a"))
 
     def testRecoveryMismatch(self):
         """
-        Test that recovery rejects a batch whose checkpointed ids don't match the current run's ids
+        Test that recovery rejects a batch whose checkpointed checksum doesn't match the current
+        run's checksum for that batch
         """
 
         checkpoint = os.path.join(tempfile.gettempdir(), "recovery-mismatch")
         os.makedirs(checkpoint, exist_ok=True)
 
         embeddings = np.random.rand(2, 4).astype(np.float32)
-        with open(os.path.join(checkpoint, "id"), "wb") as f:
-            np.save(f, embeddings)
-
-        with open(os.path.join(checkpoint, "id.ids"), "w", encoding="utf-8") as f:
-            f.write(json.dumps([["a", "b"], ["hash-a", "hash-b"]]) + "\n")
+        self.write(os.path.join(checkpoint, "id"), checksum="checksum-a", embeddings=embeddings)
 
         recovery = Recovery(checkpoint, "id", np.load)
-        self.assertIsNone(recovery(["a", "c"], ["hash-a", "hash-c"]))
+        self.assertIsNone(recovery("checksum-b"))
 
     def testRecoveryContentMismatch(self):
         """
-        Test that recovery rejects a batch whose ids match but whose content checksums don't - the
+        Test that recovery rejects a batch whose ids match but whose content checksum doesn't - the
         same id can carry different content across runs (an updated row from the source, for
-        example), and matching ids alone must not be trusted in that case
+        example), and matching ids alone must not be trusted in that case. The checksum covers both
+        ids and content, so this looks identical to any other checksum mismatch from here
         """
 
         checkpoint = os.path.join(tempfile.gettempdir(), "recovery-content-mismatch")
         os.makedirs(checkpoint, exist_ok=True)
 
         embeddings = np.random.rand(2, 4).astype(np.float32)
-        with open(os.path.join(checkpoint, "id"), "wb") as f:
-            np.save(f, embeddings)
+        self.write(os.path.join(checkpoint, "id"), checksum="checksum-ab", embeddings=embeddings)
 
-        with open(os.path.join(checkpoint, "id.ids"), "w", encoding="utf-8") as f:
-            f.write(json.dumps([["a", "b"], ["hash-a", "hash-b"]]) + "\n")
-
-        # Same ids as the checkpoint, but "b"'s content checksum has changed
+        # Same ids as the checkpoint, but content changed means the checksum won't match
         recovery = Recovery(checkpoint, "id", np.load)
-        self.assertIsNone(recovery(["a", "b"], ["hash-a", "hash-b-changed"]))
+        self.assertIsNone(recovery("checksum-ab-changed"))
 
     def testRecoveryMatch(self):
         """
-        Test that recovery returns the checkpointed embeddings when their recorded ids and content
-        checksums match the current run's ids and checksums
+        Test that recovery returns the checkpointed embeddings when their recorded checksum matches
+        the current run's checksum
         """
 
         checkpoint = os.path.join(tempfile.gettempdir(), "recovery-match")
         os.makedirs(checkpoint, exist_ok=True)
 
         embeddings = np.random.rand(2, 4).astype(np.float32)
-        with open(os.path.join(checkpoint, "id"), "wb") as f:
-            np.save(f, embeddings)
-
-        with open(os.path.join(checkpoint, "id.ids"), "w", encoding="utf-8") as f:
-            f.write(json.dumps([["a", "b"], ["hash-a", "hash-b"]]) + "\n")
+        self.write(os.path.join(checkpoint, "id"), checksum="checksum-ab", embeddings=embeddings)
 
         recovery = Recovery(checkpoint, "id", np.load)
-        result = recovery(["a", "b"], ["hash-a", "hash-b"])
+        result = recovery("checksum-ab")
         self.assertTrue(np.allclose(result, embeddings))
