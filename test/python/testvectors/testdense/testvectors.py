@@ -49,25 +49,25 @@ class TestVectors(unittest.TestCase):
         self.assertTrue(np.allclose(data1, data2))
         self.assertFalse(np.allclose(data1, original))
 
-    def write(self, path, checksum=None, embeddings=None):
+    def write(self, path, checksums=None, embeddings=None):
         """
-        Writes a checkpoint file in the single-file recovery format: a format marker, followed by
-        one checksum line and one npy array per batch.
+        Writes a checkpoint and an optional companion checksums file.
 
         Args:
-            path: file to write
-            checksum: checksum to write ahead of embeddings, or None to write a legacy file with
-                      neither the format marker nor a checksum
-            embeddings: embeddings array to write, or None to write an empty file
+            path: checkpoint file to write
+            checksums: list of checksums to write to a companion file, or None to omit it (simulating
+                       a checkpoint written before checksums existed)
+            embeddings: embeddings array to write, or None to write an empty checkpoint file
         """
 
         with open(path, "wb") as f:
-            if checksum is not None:
-                f.write(Recovery.MAGIC.encode("utf-8"))
-                f.write((checksum + "\n").encode("utf-8"))
-
             if embeddings is not None:
                 np.save(f, embeddings, allow_pickle=False)
+
+        if checksums is not None:
+            with open(f"{path}.checksums", "w", encoding="utf-8") as f:
+                for checksum in checksums:
+                    f.write(checksum + "\n")
 
     def testRecovery(self):
         """
@@ -87,8 +87,8 @@ class TestVectors(unittest.TestCase):
 
     def testRecoveryLegacyCheckpoint(self):
         """
-        Test that a checkpoint written before checksum tracking existed (no format marker) is
-        treated as unavailable rather than trusted
+        Test that a checkpoint written before checksum tracking existed (no companion checksums
+        file) is still read back and trusted as-is
         """
 
         checkpoint = os.path.join(tempfile.gettempdir(), "recovery-legacy")
@@ -97,9 +97,10 @@ class TestVectors(unittest.TestCase):
         embeddings = np.random.rand(2, 4).astype(np.float32)
         self.write(os.path.join(checkpoint, "id"), embeddings=embeddings)
 
-        # No format marker present
+        # No companion checksums file present
         recovery = Recovery(checkpoint, "id", np.load)
-        self.assertIsNone(recovery("checksum-a"))
+        result = recovery("checksum-a")
+        self.assertTrue(np.allclose(result, embeddings))
 
     def testRecoveryMismatch(self):
         """
@@ -111,7 +112,7 @@ class TestVectors(unittest.TestCase):
         os.makedirs(checkpoint, exist_ok=True)
 
         embeddings = np.random.rand(2, 4).astype(np.float32)
-        self.write(os.path.join(checkpoint, "id"), checksum="checksum-a", embeddings=embeddings)
+        self.write(os.path.join(checkpoint, "id"), checksums=["checksum-a"], embeddings=embeddings)
 
         recovery = Recovery(checkpoint, "id", np.load)
         self.assertIsNone(recovery("checksum-b"))
@@ -128,7 +129,7 @@ class TestVectors(unittest.TestCase):
         os.makedirs(checkpoint, exist_ok=True)
 
         embeddings = np.random.rand(2, 4).astype(np.float32)
-        self.write(os.path.join(checkpoint, "id"), checksum="checksum-ab", embeddings=embeddings)
+        self.write(os.path.join(checkpoint, "id"), checksums=["checksum-ab"], embeddings=embeddings)
 
         # Same ids as the checkpoint, but content changed means the checksum won't match
         recovery = Recovery(checkpoint, "id", np.load)
@@ -144,7 +145,7 @@ class TestVectors(unittest.TestCase):
         os.makedirs(checkpoint, exist_ok=True)
 
         embeddings = np.random.rand(2, 4).astype(np.float32)
-        self.write(os.path.join(checkpoint, "id"), checksum="checksum-ab", embeddings=embeddings)
+        self.write(os.path.join(checkpoint, "id"), checksums=["checksum-ab"], embeddings=embeddings)
 
         recovery = Recovery(checkpoint, "id", np.load)
         result = recovery("checksum-ab")

@@ -2,7 +2,6 @@
 Word Vectors module
 """
 
-import io
 import json
 import logging
 import os
@@ -173,14 +172,14 @@ class WordVectors(Vectors):
 
         # Convert all documents to embedding arrays, stream embeddings to disk to control memory usage
         with Pool(parallel, initializer=create, initargs=args) as pool:
-            with self.spool(checkpoint, vectorsid) as output:
+            with self.spool(checkpoint, vectorsid) as output, self.checksumspool(checkpoint, vectorsid) as checksums:
                 stream = output.name
                 batch = []
                 for document in documents:
                     batch.append(document)
 
                     if len(batch) == batchsize:
-                        uids, dimensions = self.parallelbatch(pool, batch, output, recovery)
+                        uids, dimensions = self.parallelbatch(pool, batch, output, checksums, recovery)
                         ids.extend(uids)
                         batches += 1
 
@@ -188,13 +187,13 @@ class WordVectors(Vectors):
 
                 # Final batch
                 if batch:
-                    uids, dimensions = self.parallelbatch(pool, batch, output, recovery)
+                    uids, dimensions = self.parallelbatch(pool, batch, output, checksums, recovery)
                     ids.extend(uids)
                     batches += 1
 
         return (ids, dimensions, batches, stream)
 
-    def parallelbatch(self, pool, documents, output, recovery):
+    def parallelbatch(self, pool, documents, output, checksums, recovery):
         """
         Builds a batch of embeddings using the multiprocessing pool, honoring a recovery
         checkpoint if one is available for this batch.
@@ -203,6 +202,7 @@ class WordVectors(Vectors):
             documents: list of documents used to build embeddings
             pool: multiprocessing pool used to transform documents not served from recovery
             output: output stream to store embeddings
+            checksums: output file to store this batch's checksum, only used when recovery is enabled
             recovery: optional recovery instance
 
         Returns:
@@ -222,18 +222,12 @@ class WordVectors(Vectors):
             embeddings = np.array([embedding for _, embedding in pool.imap(transform, documents, self.encodebatch)], dtype=np.float32)
 
         dimensions = embeddings.shape[1]
+        self.saveembeddings(output, embeddings)
 
+        # Only record the checksum once its embeddings are fully written, so a checksum is never
+        # found without a matching batch on a later recovery attempt
         if checksum is not None:
-            # Build the checksum and embeddings in memory first and write them with a single call,
-            # so a batch can't be left half-written (a checksum with no matching embeddings, or
-            # embeddings a future resume has no checksum to confirm) if the process is interrupted
-            # mid-batch
-            buffer = io.BytesIO()
-            buffer.write((checksum + "\n").encode("utf-8"))
-            self.saveembeddings(buffer, embeddings)
-            output.write(buffer.getvalue())
-        else:
-            self.saveembeddings(output, embeddings)
+            checksums.write(checksum + "\n")
 
         return (ids, dimensions)
 

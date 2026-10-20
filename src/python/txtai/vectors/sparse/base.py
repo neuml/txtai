@@ -53,15 +53,7 @@ class SparseVectors(Vectors):
         # Rebuild sparse array
         embeddings = None
         with open(stream, "rb") as queue:
-            if checkpoint:
-                # Discard the file's checksum format marker, written once at the start
-                queue.readline()
-
             for _ in range(batches):
-                if checkpoint:
-                    # Discard the batch's checksum header line, recorded for recovery verification
-                    queue.readline()
-
                 # Read in array batch
                 data = self.loadembeddings(queue)
                 embeddings = vstack((embeddings, data)) if embeddings is not None else data

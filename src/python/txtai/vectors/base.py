@@ -2,7 +2,7 @@
 Vectors module
 """
 
-import io
+import contextlib
 import json
 import os
 import tempfile
@@ -139,7 +139,7 @@ class Vectors:
         recovery = Recovery(checkpoint, vectorsid, self.loadembeddings) if checkpoint else None
 
         # Convert all documents to embedding arrays, stream embeddings to disk to control memory usage
-        with self.spool(checkpoint, vectorsid) as output:
+        with self.spool(checkpoint, vectorsid) as output, self.checksumspool(checkpoint, vectorsid) as checksums:
             stream = output.name
             batch = []
             for document in documents:
@@ -147,7 +147,7 @@ class Vectors:
 
                 if len(batch) == batchsize:
                     # Convert batch to embeddings
-                    uids, dimensions = self.batch(batch, output, recovery)
+                    uids, dimensions = self.batch(batch, output, checksums, recovery)
                     ids.extend(uids)
                     batches += 1
 
@@ -155,7 +155,7 @@ class Vectors:
 
             # Final batch
             if batch:
-                uids, dimensions = self.batch(batch, output, recovery)
+                uids, dimensions = self.batch(batch, output, checksums, recovery)
                 ids.extend(uids)
                 batches += 1
 
@@ -185,16 +185,8 @@ class Vectors:
             # Write batches
             embeddings = np.memmap(buffer, dtype=dtype, shape=(len(ids), dimensions), mode="w+")
             with open(stream, "rb") as queue:
-                if checkpoint:
-                    # Discard the file's checksum format marker, written once at the start
-                    queue.readline()
-
                 x = 0
                 for _ in range(batches):
-                    if checkpoint:
-                        # Discard the batch's checksum header line, recorded for recovery verification
-                        queue.readline()
-
                     batch = self.loadembeddings(queue)
                     embeddings[x : x + batch.shape[0]] = batch
                     x += batch.shape[0]
@@ -293,15 +285,30 @@ class Vectors:
         # Spool to vectors checkpoint file
         if checkpoint:
             os.makedirs(checkpoint, exist_ok=True)
-            output = open(f"{checkpoint}/{vectorsid}", "wb")
-
-            # Mark this file as carrying a per-batch checksum, so a future recovery attempt can tell
-            # it apart from a checkpoint written before checksums existed
-            output.write(Recovery.MAGIC.encode("utf-8"))
-            return output
+            return open(f"{checkpoint}/{vectorsid}", "wb")
 
         # Spool to temporary file
         return tempfile.NamedTemporaryFile(mode="wb", suffix=".npy", delete=False)
+
+    def checksumspool(self, checkpoint, vectorsid):
+        """
+        Opens a companion file to store each batch's checksum alongside a checkpoint, used by a
+        future recovery attempt to confirm a checkpointed batch still matches. Kept separate from
+        the embeddings checkpoint file so that file's format is unchanged - a checkpoint from
+        before this file existed is still read normally, just without checksum verification.
+
+        Args:
+            checkpoint: optional checkpoint directory, enables indexing restart
+            vectorsid: vectors uid for current configuration
+
+        Returns:
+            checksum spool file, or a no-op context when checkpointing is disabled
+        """
+
+        if checkpoint:
+            return open(f"{checkpoint}/{vectorsid}.checksums", "w", encoding="utf-8")
+
+        return contextlib.nullcontext()
 
     def checksum(self, ids, data):
         """
@@ -327,13 +334,14 @@ class Vectors:
 
         return format(zlib.crc32(encoded), "08x")
 
-    def batch(self, documents, output, recovery):
+    def batch(self, documents, output, checksums, recovery):
         """
         Builds a batch of embeddings.
 
         Args:
             documents: list of documents used to build embeddings
             output: output temp file to store embeddings
+            checksums: output file to store this batch's checksum, only used when recovery is enabled
             recovery: optional recovery instance
 
         Returns:
@@ -356,18 +364,12 @@ class Vectors:
         embeddings = self.vectorize(prepared, "data") if embeddings is None else embeddings
         if embeddings is not None:
             dimensions = embeddings.shape[1]
+            self.saveembeddings(output, embeddings)
 
+            # Only record the checksum once its embeddings are fully written, so a checksum is
+            # never found without a matching batch on a later recovery attempt
             if checksum is not None:
-                # Build the checksum and embeddings in memory first and write them with a single
-                # call, so a batch can't be left half-written (a checksum with no matching
-                # embeddings, or embeddings a future resume has no checksum to confirm) if the
-                # process is interrupted mid-batch
-                buffer = io.BytesIO()
-                buffer.write((checksum + "\n").encode("utf-8"))
-                self.saveembeddings(buffer, embeddings)
-                output.write(buffer.getvalue())
-            else:
-                self.saveembeddings(output, embeddings)
+                checksums.write(checksum + "\n")
 
         return (ids, dimensions)
 
