@@ -38,7 +38,7 @@ class Torch(NumPy):
 
         # Define array functions
         self.all, self.cat, self.dot, self.zeros = torch.all, torch.cat, torch.mm, torch.zeros
-        self.argsort, self.xor, self.clip = torch.argsort, torch.bitwise_xor, torch.clip
+        self.xor, self.clip = torch.bitwise_xor, torch.clip
 
         # Quantization parameters
         self.qstate, self.qdeleted = None, 0
@@ -88,6 +88,13 @@ class Torch(NumPy):
 
     def numpy(self, array):
         return array.cpu().numpy()
+
+    def topn(self, scores, limit):
+        # Sort all scores when topk isn't possible
+        if not 0 < limit < scores.shape[1]:
+            return torch.argsort(-scores)[:, :limit]
+
+        return torch.topk(scores, limit, dim=1).indices
 
     def totype(self, array, dtype):
         return array.long() if dtype == np.int64 else array
