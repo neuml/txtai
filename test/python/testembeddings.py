@@ -191,17 +191,6 @@ class TestEmbeddings(unittest.TestCase):
         embeddings.upsert([])
         self.assertIsNotNone(embeddings.ann)
 
-        # Empty batches must also reset subindexes on index and preserve them on upsert.
-        with Embeddings({"keyword": True, "indexes": {"terms": {"keyword": True}}}) as embeddings:
-            embeddings.index([])
-            self.assertEqual(embeddings.search("apple", index="terms"), [])
-            embeddings.upsert(["apple"])
-            embeddings.upsert([])
-            self.assertEqual(embeddings.search("apple", index="terms")[0][0], 0)
-            embeddings.index([])
-            self.assertEqual(embeddings.indexes.terms.count(), 0)
-            self.assertEqual(embeddings.search("apple", index="terms"), [])
-
     def testEmptySave(self):
         """
         Test saving an empty index
@@ -235,6 +224,26 @@ class TestEmbeddings(unittest.TestCase):
         # Test empty string with dict
         self.embeddings.index([(0, {"text": ""}, None)])
         self.assertTrue(self.embeddings.search("test"))
+
+    def testEmptySubindexes(self):
+        """
+        Test empty index and upsert with subindexes
+        """
+
+        with Embeddings({"keyword": True, "indexes": {"terms": {"keyword": True}}}) as embeddings:
+            # Test index with no data
+            embeddings.index([])
+            self.assertEqual(embeddings.search("apple", index="terms"), [])
+
+            # Test upsert with no data
+            embeddings.upsert(["apple"])
+            embeddings.upsert([])
+            self.assertEqual(embeddings.search("apple", index="terms")[0][0], 0)
+
+            # Test index with no data clears the subindex
+            embeddings.index([])
+            self.assertEqual(embeddings.indexes.terms.count(), 0)
+            self.assertEqual(embeddings.search("apple", index="terms"), [])
 
     def testNoneText(self):
         """
