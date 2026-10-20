@@ -147,25 +147,27 @@ class Indexes:
         Builds each subindex.
         """
 
-        for name, index in self.indexes.items():
-            index.index(self.documents, checkpoint=f"{self.checkpoint}/{name}" if self.checkpoint else None)
+        if self.documents is not None:
+            for name, index in self.indexes.items():
+                index.index(self.documents, checkpoint=f"{self.checkpoint}/{name}" if self.checkpoint else None)
 
-        # Reset document stream
-        self.documents.close()
-        self.documents = None
-        self.checkpoint = None
+            # Reset document stream
+            self.documents.close()
+            self.documents = None
+            self.checkpoint = None
 
     def upsert(self):
         """
         Runs upsert for each subindex.
         """
 
-        for index in self.indexes.values():
-            index.upsert(self.documents)
+        if self.documents is not None:
+            for index in self.indexes.values():
+                index.upsert(self.documents)
 
-        # Reset document stream
-        self.documents.close()
-        self.documents = None
+            # Reset document stream
+            self.documents.close()
+            self.documents = None
 
     def load(self, path):
         """
