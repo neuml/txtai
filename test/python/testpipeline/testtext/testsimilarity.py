@@ -69,7 +69,7 @@ class TestSimilarity(unittest.TestCase):
         uid = similarity(premise, [entailment, contradiction], labels=["1"])[0][0]
         self.assertEqual(uid, 0)
 
-    def testCrossEncoderLabelsProbability(self):
+    def testCrossEncoderProbability(self):
         """
         Test cross-encoder labels rank candidates by the requested label's probability, not its raw logit
         """
