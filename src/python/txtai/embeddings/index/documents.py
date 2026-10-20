@@ -37,6 +37,11 @@ class Documents:
         Streams all queued documents.
         """
 
+        # An empty batch never opens the streaming file, so there is nothing to
+        # close or read. Iterating is a no-op instead of raising on None.
+        if self.documents is None:
+            return
+
         # Close streaming file
         self.documents.close()
 

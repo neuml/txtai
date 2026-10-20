@@ -147,11 +147,17 @@ class Indexes:
         Builds each subindex.
         """
 
+        # An empty batch never reaches insert(), the only method that opens the
+        # document stream, so self.documents is still None here. Subindexes
+        # iterate whatever they are handed, so pass an empty stream instead of
+        # None: their own iteration must yield nothing, not raise.
+        documents = self.documents if self.documents is not None else Documents()
         for name, index in self.indexes.items():
-            index.index(self.documents, checkpoint=f"{self.checkpoint}/{name}" if self.checkpoint else None)
+            index.index(documents, checkpoint=f"{self.checkpoint}/{name}" if self.checkpoint else None)
 
         # Reset document stream
-        self.documents.close()
+        if self.documents is not None:
+            self.documents.close()
         self.documents = None
         self.checkpoint = None
 
@@ -160,11 +166,14 @@ class Indexes:
         Runs upsert for each subindex.
         """
 
+        # See index() - an empty batch leaves no stream behind.
+        documents = self.documents if self.documents is not None else Documents()
         for index in self.indexes.values():
-            index.upsert(self.documents)
+            index.upsert(documents)
 
         # Reset document stream
-        self.documents.close()
+        if self.documents is not None:
+            self.documents.close()
         self.documents = None
 
     def load(self, path):
