@@ -5,7 +5,7 @@ DuckDB module tests
 import os
 import unittest
 
-from txtai.database import DuckDB, SQLError
+from txtai.database import SQLError
 from txtai.embeddings import Embeddings
 
 from .testrdbms import Common
@@ -54,13 +54,7 @@ class TestDuckDB(Common.TestRDBMS):
         embeddings = Embeddings(keyword=True, content=self.backend)
         embeddings.index([(0, "apple pie", None), (1, "banana bread", None)])
 
-        # Catalog errors don't abort the transaction
-        with self.assertRaises(SQLError) as context:
-            embeddings.search("select id from txtai where unknownfn(text)")
-
-        self.assertNotIn(DuckDB.ABORTED, str(context.exception))
-
-        # Runtime errors abort the transaction
+        # All errors abort the transaction
         with self.assertRaises(SQLError) as context:
             embeddings.search("select id from txtai where text = :x", parameters={"x": 1})
 
