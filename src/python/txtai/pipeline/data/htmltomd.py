@@ -358,24 +358,54 @@ class HTMLToMarkdown(Pipeline):
             table as markdown
         """
 
-        elements, header = [], False
+        # Lay the cells out on the grid HTML defines. A cell takes the first column of its row not claimed by a span from above,
+        # then claims colspan columns and rowspan rows. Claimed positions become empty cells, so every value stays in its column.
+        rows, claimed = node.find_all("tr"), set()
+        grid = []
+        for r, row in enumerate(rows):
+            values, c = {}, 0
+            for column in row.find_all(lambda tag: tag.name in ("th", "td")):
+                while (r, c) in claimed:
+                    c += 1
 
-        # Process all rows
-        rows = node.find_all("tr")
-        for row in rows:
-            # Get list of columns for row
-            columns = row.find_all(lambda tag: tag.name in ("th", "td"))
+                values[c] = self.process(column, article)
+                colspan, rowspan = self.span(column, "colspan"), self.span(column, "rowspan")
+                claimed.update((r + y, c + x) for y in range(rowspan) for x in range(colspan) if x or y)
+                c += colspan
 
+            grid.append(values)
+
+        # Table width is the widest row, including the columns a span claims
+        width = max([c + 1 for values in grid for c in values] + [c + 1 for r, c in claimed if r < len(rows)], default=0)
+
+        elements = []
+        for x, values in enumerate(grid):
             # Add columns with separator
-            elements.append(f"|{'|'.join(self.process(column, article) for column in columns)}|")
+            elements.append(f"|{'|'.join(values.get(c, '') for c in range(width))}|")
 
             # If there are multiple rows, add header format row
-            if not header and len(rows) > 1:
-                elements.append(f"{'|---' * len(columns)}|")
-                header = True
+            if not x and len(rows) > 1:
+                elements.append(f"{'|---' * width}|")
 
         # Join elements together as string
         return "\n".join(elements)
+
+    def span(self, node, name):
+        """
+        Reads the colspan or rowspan of a table cell.
+
+        Args:
+            node: table cell node
+            name: span attribute name
+
+        Returns:
+            span as a number between 1 and 1000, 1 if the attribute is missing or not a number
+        """
+
+        try:
+            return min(max(int(node.get(name, 1)), 1), 1000)
+        except ValueError:
+            return 1
 
     def iscontainer(self, node, children):
         """

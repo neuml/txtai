@@ -140,6 +140,21 @@ class TestTextractor(unittest.TestCase):
             "|Header1|Header2|\n|---|---|\n|Test1|Test2|",
         )
 
+        # Merged cells keep every value in its column
+        self.assertMarkdown(
+            "<table><tr><th colspan='2'>Header</th></tr><tr><td>Test1</td><td>Test2</td></tr></table>",
+            "|Header||\n|---|---|\n|Test1|Test2|",
+        )
+        self.assertMarkdown(
+            "<table><tr><th>Header1</th><th>Header2</th><th>Header3</th></tr><tr><td rowspan='2'>Test1</td><td>Test2</td>"
+            "<td>Test3</td></tr><tr><td>Test4</td><td>Test5</td></tr></table>",
+            "|Header1|Header2|Header3|\n|---|---|---|\n|Test1|Test2|Test3|\n||Test4|Test5|",
+        )
+        self.assertMarkdown(
+            "<table><tr><th>Header1</th><th>Header2</th></tr><tr><td colspan='x'>Test1</td><td>Test2</td></tr></table>",
+            "|Header1|Header2|\n|---|---|\n|Test1|Test2|",
+        )
+
         # Ignore list
         self.assertMarkdown("<aside>This is a test</aside>", "")
 
