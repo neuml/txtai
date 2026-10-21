@@ -134,6 +134,15 @@ class TestTextractor(unittest.TestCase):
         self.assertMarkdown("<code>This is a test</code>", "```\nThis is a test\n```")
         self.assertMarkdown("<pre>This is a test</pre>", "```\nThis is a test\n```")
 
+        # Inline code keeps its backticks, also when it is all a list item, table cell or heading holds
+        self.assertMarkdown("<p>Run <code>a*b*c</code> now</p>", "Run `a*b*c` now")
+        self.assertMarkdown("<ul><li><code>pip install txtai</code></li></ul>", "- `pip install txtai`")
+        self.assertMarkdown(
+            "<table><tr><th>Option</th><th>Default</th></tr><tr><td><code>path</code></td><td>None</td></tr></table>",
+            "|Option|Default|\n|---|---|\n|`path`|None|",
+        )
+        self.assertMarkdown("<h2>The <code>config</code> file</h2>", "## The `config` file")
+
         # Tables
         self.assertMarkdown(
             "<table><tr><th>Header1</th><th>Header2</th></tr><tr><td>Test1</td><td>Test2</td></tr></table>",
