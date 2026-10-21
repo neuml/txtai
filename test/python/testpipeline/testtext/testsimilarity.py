@@ -83,7 +83,10 @@ class TestSimilarity(unittest.TestCase):
         for multilabel in [True, None, False]:
             result = similarity(premise, texts, multilabel=multilabel, labels=["1"])
             self.assertEqual([uid for uid, _ in result], [0, 1, 2])
-            self.assertAlmostEqual(result[0][1], 0.052, places=3)
+
+        # Raw scores are the entailment probabilities
+        result = similarity(premise, texts, multilabel=None, labels=["1"])
+        self.assertAlmostEqual(result[0][1], 0.052, places=3)
 
     def testCrossEncoderLabelsOrder(self):
         """

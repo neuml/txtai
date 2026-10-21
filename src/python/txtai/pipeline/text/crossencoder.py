@@ -31,8 +31,7 @@ class CrossEncoder(Labels):
         Args:
             query: query text|list
             texts: list of text
-            multilabel: labels are independent if True, scores are normalized to sum to 1 per text item if False, raw scores returned if None,
-                        not used when labels select a class of a multi-class model
+            multilabel: labels are independent if True, scores are normalized to sum to 1 per text item if False, raw scores returned if None
             workers: number of concurrent workers to use for processing data, defaults to None
             labels: optional list of labels to score by, resolved by name/id via the model config the same way
                     Labels.limit() does. Restricts ranking to a fixed label so multi-class models (e.g. NLI
@@ -44,22 +43,13 @@ class CrossEncoder(Labels):
             list of (id, score)
         """
 
-        # Score a fixed label of a multi-class model by its probability over the classes of each pair
-        probability = labels and self.pipeline.model.config.num_labels > 1
-
         scores = []
         for q in [query] if isinstance(query, str) else query:
             # Pass (query, text) pairs to model
-            result = self.pipeline(
-                [{"text": q, "text_pair": t} for t in texts],
-                top_k=None,
-                function_to_apply="softmax" if probability else "none",
-                num_workers=workers,
-            )
+            result = self.pipeline([{"text": q, "text_pair": t} for t in texts], top_k=None, function_to_apply="none", num_workers=workers)
 
             # Apply score transform function
-            row = [self.score(r, labels) for r in result]
-            scores.append(np.array(row) if probability else self.function(row, multilabel))
+            scores.append(self.function([self.score(r, labels) for r in result], multilabel))
 
         # Build list of (id, score) per query sorted by highest score
         scores = [sorted(enumerate(row), key=lambda x: x[1], reverse=True) for row in scores]
@@ -82,7 +72,13 @@ class CrossEncoder(Labels):
         if labels and not matches:
             raise ValueError(f"None of the requested labels {labels} matched model labels {list(self.pipeline.model.config.label2id.keys())}")
 
-        return matches[0][1]
+        score = matches[0][1]
+
+        # Score a requested label of a multi-class model by its probability over the classes of the pair
+        if labels and len(result) > 1:
+            score = np.exp(score) / np.sum(np.exp([x["score"] for x in result]))
+
+        return score
 
     def function(self, scores, multilabel):
         """
