@@ -22,7 +22,7 @@ class TestSegmentation(unittest.TestCase):
 
     def testParagraphs(self):
         """
-        Test paragraph segmentation with both LF and CRLF blank lines
+        Test paragraph segmentation with LF, CRLF and whitespace-only blank lines
         """
 
         segment = Segmentation(paragraphs=True)
@@ -31,9 +31,16 @@ class TestSegmentation(unittest.TestCase):
         # Windows blank lines (\r\n\r\n) must split the same way as LF.
         self.assertEqual(segment("Para A.\r\n\r\nPara B."), ["Para A.", "Para B."])
 
+        # Blank lines that only contain spaces or tabs must split the same way.
+        self.assertEqual(segment("Para A.\n  \nPara B."), ["Para A.", "Para B."])
+        self.assertEqual(segment("Para A.\r\n\t\r\nPara B."), ["Para A.", "Para B."])
+
+        # Whitespace inside a paragraph is kept.
+        self.assertEqual(segment("Line A.\n  Line B.\n\nPara B."), ["Line A.\n Line B.", "Para B."])
+
     def testSections(self):
         """
-        Test section segmentation with both LF and CRLF blank lines
+        Test section segmentation with LF, CRLF and whitespace-only blank lines
         """
 
         segment = Segmentation(sections=True)
@@ -44,3 +51,6 @@ class TestSegmentation(unittest.TestCase):
             segment("Sec A.\r\n\r\n\r\nSec B.\r\n\r\n\r\nSec C."),
             ["Sec A.", "Sec B.", "Sec C."],
         )
+
+        # Blank lines that only contain spaces or tabs must split the same way.
+        self.assertEqual(segment("Sec A.\n \n\t\nSec B."), ["Sec A.", "Sec B."])
