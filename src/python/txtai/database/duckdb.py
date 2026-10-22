@@ -47,10 +47,7 @@ class DuckDB(Embedded):
             return super().execute(function, *self.formatargs(args))
         except SQLError as e:
             # Runtime errors abort the transaction. DuckDB has no savepoints, so it can't be recovered without a rollback.
-            if self.aborted():
-                raise SQLError(f"{e}\n\n{DuckDB.ABORTED}") from None
-
-            raise
+            raise SQLError(f"{e}\n\n{DuckDB.ABORTED}") from None
 
     def insertdocument(self, uid, data, tags, entry):
         # Delete existing document
