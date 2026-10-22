@@ -62,7 +62,8 @@ class PGText(Scoring):
                 index = index + 1 if index is not None else None
 
         # Insert rows
-        self.database.execute(self.table.insert(), [{"indexid": x, "text": text} for x, text in rows])
+        if rows:
+            self.database.execute(self.table.insert(), [{"indexid": x, "text": text} for x, text in rows])
 
     def delete(self, ids):
         self.database.execute(delete(self.table).where(self.table.c["indexid"].in_(ids)))
