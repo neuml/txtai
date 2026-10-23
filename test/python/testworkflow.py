@@ -23,6 +23,7 @@ from croniter import croniter
 from txtai.api import API
 from txtai.app import Application
 from txtai.embeddings import Documents, Embeddings
+from txtai.pipeline.data.urlretrieve import URLRetrieve
 from txtai.pipeline import Nop, Segmentation, Summary, Translation, Textractor
 from txtai.workflow import (
     Workflow,
@@ -484,6 +485,21 @@ class TestWorkflow(unittest.TestCase):
         workflow = Workflow([RetrieveTask(flatten=False)])
         results = list(workflow(["file://" + Utils.PATH + "/books.jpg"]))
         self.assertTrue(results[0].endswith("books.jpg") and "txtai" in results[0])
+
+        # A URL with no filename must still write to a file, not to the output directory
+        with patch.object(URLRetrieve, "__call__", return_value=b"data"):
+            with tempfile.TemporaryDirectory() as directory:
+                path = RetrieveTask(directory=directory).prepare("https://example.com/")
+                self.assertTrue(os.path.isfile(path))
+                with open(path, "rb") as handle:
+                    self.assertEqual(handle.read(), b"data")
+
+                # Distinct bare host URLs must not resolve to the same file
+                first = RetrieveTask(directory=directory).prepare("https://a.example.com/")
+                second = RetrieveTask(directory=directory).prepare("https://b.example.com/")
+                self.assertNotEqual(first, second)
+                self.assertTrue(first.endswith("a.example.com"))
+                self.assertTrue(second.endswith("b.example.com"))
 
     def testRetrieveLocalFilenames(self):
         """
