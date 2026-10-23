@@ -2,7 +2,12 @@
 Textractor module tests
 """
 
+import os
+import tempfile
 import unittest
+
+from unittest.mock import patch
+from urllib.error import URLError
 
 from txtai.pipeline import Textractor
 
@@ -61,6 +66,22 @@ class TestTextractor(unittest.TestCase):
 
         # Check number of sections is as expected
         self.assertEqual(len(sections), 2)
+
+    def testDownloadError(self):
+        """
+        Test failed remote retrieval leaves no temporary file
+        """
+
+        textractor = Textractor()
+        error = URLError("download failed")
+
+        with tempfile.TemporaryDirectory() as directory:
+            with patch("tempfile.tempdir", directory), patch.object(textractor.safeopen, "retrieve", side_effect=error):
+                with self.assertRaises(URLError) as raised:
+                    textractor("https://example.com/missing.pdf")
+
+            self.assertIs(raised.exception, error)
+            self.assertEqual(os.listdir(directory), [])
 
     def testDocling(self):
         """
