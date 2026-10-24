@@ -412,6 +412,32 @@ class TestGraph(unittest.TestCase):
         self.assertEqual(len(embeddings.graph.edges(0)), len(self.data) - 1)
         embeddings.close()
 
+    def testRelationshipsIntegerIdsNoContent(self):
+        """
+        Test manually-provided relationships with integer ids and content disabled.
+
+        Regression test: graph relationship resolution looks up ids with
+        str(id), but ids stored without content kept their original int type,
+        so the lookup missed and the edge was silently dropped.
+        """
+
+        cases = [
+            (True, (0, 1)),
+            (False, ("0", "1")),
+            (False, (0, 1)),
+        ]
+
+        for content, ids in cases:
+            embeddings = Embeddings(keyword=True, content=content, graph={"minscore": 1.0})
+            embeddings.index(
+                [
+                    {"id": ids[0], "text": "apple", "relationships": [{"id": ids[1], "weight": 0.7}]},
+                    {"id": ids[1], "text": "banana"},
+                ]
+            )
+            self.assertEqual(embeddings.graph.edgecount(), 1)
+            embeddings.close()
+
     def testRelationshipsInvalid(self):
         """
         Test manually-provided relationships with no matching id
