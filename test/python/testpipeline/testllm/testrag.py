@@ -121,6 +121,11 @@ class TestRAG(unittest.TestCase):
         answers = rag([(question, question, question, True)], self.data)
         self.assertTrue(self.data[answers[0][2]].startswith("Giants hit 3 HRs"))
 
+        # Test reference field indexes into texts when empty texts are skipped
+        data = [""] + self.data
+        answers = rag([(question, question, question, True)], data)
+        self.assertTrue(data[answers[0][2]].startswith("Giants hit 3 HRs"))
+
     def testPrompt(self):
         """
         Test a user prompt with templating
