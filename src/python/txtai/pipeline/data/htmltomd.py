@@ -361,23 +361,47 @@ class HTMLToMarkdown(Pipeline):
             table as markdown
         """
 
-        elements, header = [], False
+        # Markdown has no merged cells. Expand each HTML span into the covered
+        # columns so values in later rows stay under their original headers.
+        def span(column, name, maximum):
+            """Read a bounded HTML cell span."""
+            try:
+                return min(max(int(column.get(name, 1)), 1), maximum)
+            except (TypeError, ValueError):
+                return 1
 
-        # Process all rows
+        grid, pending = [], {}
         rows = node.find_all("tr")
         for row in rows:
-            # Get list of columns for row
-            columns = row.find_all(lambda tag: tag.name in ("th", "td"))
+            values = {}
+            for index, (value, remaining) in list(pending.items()):
+                values[index] = value
+                if remaining == 1:
+                    del pending[index]
+                else:
+                    pending[index] = (value, remaining - 1)
 
-            # Add columns with separator
-            elements.append(f"|{'|'.join(self.process(column, article) for column in columns)}|")
+            index = 0
+            for column in row.find_all(lambda tag: tag.name in ("th", "td"), recursive=False):
+                while index in values:
+                    index += 1
 
-            # If there are multiple rows, add header format row
-            if not header and len(rows) > 1:
-                elements.append(f"{'|---' * len(columns)}|")
-                header = True
+                value = self.process(column, article)
+                colspan = span(column, "colspan", 1000)
+                rowspan = span(column, "rowspan", len(rows))
+                for position in range(index, index + colspan):
+                    values[position] = value
+                    if rowspan > 1:
+                        pending[position] = (value, rowspan - 1)
+                index += colspan
 
-        # Join elements together as string
+            grid.append(values)
+
+        width = max((max(row, default=-1) + 1 for row in grid), default=0)
+        elements = [f"|{'|'.join(row.get(index, '') for index in range(width))}|" for row in grid]
+        if len(elements) > 1:
+            elements.insert(1, f"{'|---' * width}|")
+
         return "\n".join(elements)
 
     def iscontainer(self, node, children):

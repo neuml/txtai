@@ -148,6 +148,16 @@ class TestTextractor(unittest.TestCase):
             "<table><tr><th>Header1</th><th>Header2</th></tr><tr><td>Test1</td><td>Test2</td></tr></table>",
             "|Header1|Header2|\n|---|---|\n|Test1|Test2|",
         )
+        self.assertMarkdown(
+            "<table><tr><th colspan='2'>Header</th></tr><tr><td>Test1</td><td>Test2</td></tr></table>",
+            "|Header|Header|\n|---|---|\n|Test1|Test2|",
+        )
+        self.assertMarkdown(
+            "<table><tr><th>Region</th><th>Product</th><th>Units</th></tr>"
+            "<tr><td rowspan='2'>EU</td><td>Cable</td><td>12</td></tr>"
+            "<tr><td>Hub</td><td>7</td></tr></table>",
+            "|Region|Product|Units|\n|---|---|---|\n|EU|Cable|12|\n|EU|Hub|7|",
+        )
 
         # Ignore list
         self.assertMarkdown("<aside>This is a test</aside>", "")
