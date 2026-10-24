@@ -207,6 +207,16 @@ class TestSQL(unittest.TestCase):
         self.assertSql("select", ";select id from txtai", "s.id")
         self.assertSql("select", "select id from txtai;", "s.id")
 
+    def testStatementWhitespace(self):
+        """
+        Test insignificant whitespace around SQL tokens and a trailing semicolon is accepted.
+        """
+
+        self.assertSql("select", "select id from  txtai", "s.id")
+        self.assertSql("select", "select id from txtai; ", "s.id")
+        self.assertSql("select", "select id from txtai;\n", "s.id")
+        self.assertSql("select", " ; select id from txtai", "s.id")
+
     def testBracket(self):
         """
         Test bracket expressions
