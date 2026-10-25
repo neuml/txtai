@@ -86,6 +86,19 @@ class TestTrainer(unittest.TestCase):
         labels = Labels((model, tokenizer), dynamic=False)
         self.assertEqual(labels("cat")[0][0], 1)
 
+    def testCustomLabel(self):
+        """
+        Test training a model with a label column not named label
+        """
+
+        data = [{"text": x["text"], "target": x["label"]} for x in self.data]
+
+        trainer = HFTrainer()
+        model, tokenizer = trainer("google/bert_uncased_L-2_H-128_A-2", data, columns=("text", "target"))
+
+        labels = Labels((model, tokenizer), dynamic=False)
+        self.assertEqual(labels("cat")[0][0], 1)
+
     def testDataFrame(self):
         """
         Test training a model with a mock pandas DataFrame
