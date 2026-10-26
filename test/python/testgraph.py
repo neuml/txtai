@@ -412,7 +412,7 @@ class TestGraph(unittest.TestCase):
         self.assertEqual(len(embeddings.graph.edges(0)), len(self.data) - 1)
         embeddings.close()
 
-    def testRelationshipsIntegerIdsNoContent(self):
+    def testRelationshipsIntIds(self):
         """
         Test manually-provided relationships with integer ids and content disabled.
 
