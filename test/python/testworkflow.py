@@ -302,6 +302,24 @@ class TestWorkflow(unittest.TestCase):
         path = glob.glob(os.path.join(tempfile.gettempdir(), "export-timestamp*.csv"))[0]
         self.assertGreater(os.path.getsize(path), 0)
 
+    def testExportWorkflowBatches(self):
+        """
+        Test an export task with multiple batches
+        """
+
+        path = os.path.join(tempfile.gettempdir(), "export-batches.csv")
+        workflow = Workflow([ExportTask(output=path)], batch=2)
+
+        # All batches are exported
+        list(workflow([{"id": x, "text": f"Sentence {x}"} for x in range(5)]))
+        with open(path, encoding="utf-8") as f:
+            self.assertEqual(len(f.readlines()), 6)
+
+        # Each workflow run starts a new export
+        list(workflow([{"id": x, "text": f"Sentence {x}"} for x in range(3)]))
+        with open(path, encoding="utf-8") as f:
+            self.assertEqual(len(f.readlines()), 4)
+
     def testExtractWorkflow(self):
         """
         Test column extraction tasks
