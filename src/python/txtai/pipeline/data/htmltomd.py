@@ -105,7 +105,7 @@ class HTMLToMarkdown(Pipeline):
 
         if node.name in ("code", "pre"):
             # Code inside a paragraph, list item, table cell or heading is inline code, not a code block
-            return f"`{node.text.strip()}`" if self.isinline(node) else self.code(node)
+            return self.inlinecode(node.text.strip()) if self.isinline(node) else self.code(node)
 
         if node.name == "table":
             return self.table(node, article)
@@ -206,7 +206,7 @@ class HTMLToMarkdown(Pipeline):
                 elif target.name in ("i", "em"):
                     text = f"{space}*{text.strip()}* "
                 elif target.name == "code":
-                    text = f"{space}`{text.strip()}` "
+                    text = f"{space}{self.inlinecode(text.strip())} "
                 elif target.name == "a":
                     # Links without a target are added as plain text
                     href = target.get("href")
@@ -442,6 +442,25 @@ class HTMLToMarkdown(Pipeline):
                 text = f"{text.strip()}\n\n" if self.paragraphs else f"{text.strip()}\n"
 
         return text
+
+    def inlinecode(self, text):
+        """
+        Formats text as a Markdown code span. The backtick fence is one longer than the longest run of backticks
+        in text, so that backticks in the code don't end the span early.
+
+        Args:
+            text: code text
+
+        Returns:
+            code span
+        """
+
+        fence = "`" * (max((len(x) for x in re.findall(r"`+", text)), default=0) + 1)
+
+        # Pad with spaces when text starts or ends with a backtick, the padding is stripped by Markdown renderers
+        pad = " " if text.startswith("`") or text.endswith("`") else ""
+
+        return f"{fence}{pad}{text}{pad}{fence}"
 
     def isinline(self, node):
         """

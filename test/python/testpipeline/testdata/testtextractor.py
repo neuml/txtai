@@ -143,6 +143,11 @@ class TestTextractor(unittest.TestCase):
         )
         self.assertMarkdown("<h2>The <code>config</code> file</h2>", "## The `config` file")
 
+        # Inline code that holds backticks uses a longer fence so the code span isn't cut short
+        self.assertMarkdown("<p>Use <code>a`b</code> here</p>", "Use ``a`b`` here")
+        self.assertMarkdown("<ul><li><code>`x`</code></li></ul>", "- `` `x` ``")
+        self.assertMarkdown("<p>Run <code>a``b</code> now</p>", "Run ```a``b``` now")
+
         # Tables
         self.assertMarkdown(
             "<table><tr><th>Header1</th><th>Header2</th></tr><tr><td>Test1</td><td>Test2</td></tr></table>",
