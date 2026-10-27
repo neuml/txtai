@@ -2,11 +2,18 @@
 SQL module
 """
 
+import re
 from io import StringIO
 from shlex import shlex
 
 from .error import SQLError
 from .expression import Expression
+
+# Matches a mantissa followed by a bare exponent letter, e.g. "1e", "1.5E".
+# shlex splits on the "-"/"+" in "1e-3", so these must be rejoined with the
+# following sign and digits to keep the numeric literal intact.
+_EXPONENT_PREFIX = re.compile(r"^(\d+\.?\d*|\.\d+)[eE]$")
+_UNSIGNED_INT = re.compile(r"^\d+$")
 
 
 class SQL:
@@ -145,6 +152,20 @@ class SQL:
         tokens.wordchars += ":@#"
         tokens.commenters = ""
         tokens = list(tokens)
+
+        # Rejoin exponent-notation literals that shlex split on the sign:
+        # "1e", "-", "3" -> "1e-3"; "1.5E", "+", "10" -> "1.5E+10".
+        merged = []
+        i = 0
+        while i < len(tokens):
+            token = tokens[i]
+            if _EXPONENT_PREFIX.match(token) and i + 2 < len(tokens) and tokens[i + 1] in ("+", "-") and _UNSIGNED_INT.match(tokens[i + 2]):
+                merged.append(token + tokens[i + 1] + tokens[i + 2])
+                i += 3
+            else:
+                merged.append(token)
+                i += 1
+        tokens = merged
 
         # Identify sql clause token positions
         positions = {}

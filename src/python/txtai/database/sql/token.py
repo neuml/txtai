@@ -2,6 +2,13 @@
 Token module
 """
 
+import re
+
+
+# Matches a numeric literal: integers, decimals, and exponent notation
+# (e.g. 1, 1.5, .5, 1., 1e3, 1.5E-10, .5e+2).
+_NUMBER = re.compile(r"^(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$")
+
 
 class Token:
     """
@@ -201,7 +208,7 @@ class Token:
         """
 
         # Literals are wrapped in quotes, parens, wildcards, numeric or boolean.
-        return token and (token.startswith(("'", '"', ",", "(", ")", "*")) or token.replace(".", "", 1).isdigit() or token.lower() in Token.BOOLEANS)
+        return token and (token.startswith(("'", '"', ",", "(", ")", "*")) or bool(_NUMBER.match(token)) or token.lower() in Token.BOOLEANS)
 
     @staticmethod
     def islogicseparator(token):

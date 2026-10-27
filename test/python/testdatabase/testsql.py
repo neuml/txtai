@@ -442,6 +442,28 @@ class TestSQL(unittest.TestCase):
         self.assertSql("where", prefix + "WHERE a is not FALSE", "json_extract(data, '$.a') is not FALSE")
         self.assertSql("where", prefix + "WHERE score >= 0.15", "score >= 0.15")
 
+    def testWhereExponentNotation(self):
+        """
+        Test numeric literals in exponent notation are treated as numbers, not column names.
+        """
+
+        prefix = "select * from txtai "
+
+        # Bare exponent stays a literal
+        self.assertSql("where", prefix + "where v > 1e3", "json_extract(data, '$.v') > 1e3")
+        # Negative exponent sign must not split the literal
+        self.assertSql("where", prefix + "where v > 1e-3", "json_extract(data, '$.v') > 1e-3")
+        # Uppercase E and positive sign
+        self.assertSql("where", prefix + "where v > 1.5E+10", "json_extract(data, '$.v') > 1.5E+10")
+        # Decimal mantissa starting with a dot
+        self.assertSql("where", prefix + "where v > .5e2", "json_extract(data, '$.v') > .5e2")
+        # Between with two exponent bounds
+        self.assertSql(
+            "where",
+            prefix + "where v between 1e-3 and 1e3",
+            "json_extract(data, '$.v') between 1e-3 and 1e3",
+        )
+
     def testWhereCompound(self):
         """
         Test compound where clauses
