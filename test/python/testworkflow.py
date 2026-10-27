@@ -308,7 +308,10 @@ class TestWorkflow(unittest.TestCase):
         """
 
         path = os.path.join(tempfile.gettempdir(), "export-batches.csv")
-        workflow = Workflow([ExportTask(output=path)], batch=2)
+
+        # Track initialize action calls
+        runs = []
+        workflow = Workflow([ExportTask(output=path, initialize=lambda: runs.append(1))], batch=2)
 
         # All batches are exported
         list(workflow([{"id": x, "text": f"Sentence {x}"} for x in range(5)]))
@@ -319,6 +322,9 @@ class TestWorkflow(unittest.TestCase):
         list(workflow([{"id": x, "text": f"Sentence {x}"} for x in range(3)]))
         with open(path, encoding="utf-8") as f:
             self.assertEqual(len(f.readlines()), 4)
+
+        # Initialize action runs once per workflow run
+        self.assertEqual(len(runs), 2)
 
     def testExtractWorkflow(self):
         """
