@@ -109,12 +109,26 @@ class IVFSparse(ANN):
         offset = self.size()
 
         # Sort into clusters and merge
-        for cluster, ids in self.aggregate(embeddings).items():
+        clusters = self.aggregate(embeddings)
+        for cluster, ids in clusters.items():
             # Add new ids
             self.ids[cluster].extend([x + offset for x in ids])
 
             # Add new data
             self.blocks[cluster] = vstack([self.blocks[cluster], embeddings[ids]])
+
+        # Update block max summary vectors for clusters with new data
+        if self.centroids is not None:
+            rows, start = [], 0
+            for cluster, ids in sorted(clusters.items()):
+                if start < cluster:
+                    rows.append(self.centroids[start:cluster])
+                maximum = csr_matrix(embeddings[ids].max(axis=0))
+                rows.append(self.centroids[cluster].maximum(maximum))
+                start = cluster + 1
+            if start < self.centroids.shape[0]:
+                rows.append(self.centroids[start:])
+            self.centroids = vstack(rows, format="csr")
 
         # Update id offset and index metadata
         self.config["offset"] += embeddings.shape[0]
