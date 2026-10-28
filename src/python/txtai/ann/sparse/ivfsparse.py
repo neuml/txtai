@@ -266,8 +266,10 @@ class IVFSparse(ANN):
             list of matching (indices, scores)
         """
 
-        # Dot product similarity
-        scores = safe_sparse_dot(queries, data.T, dense_output=True)
+        # Dot product similarity, dense output requires matching dtypes
+        scores = safe_sparse_dot(queries, data.T, dense_output=queries.dtype == data.dtype)
+        if hasattr(scores, "toarray"):
+            scores = scores.toarray()
 
         # Clear deletes
         if deletes is not None:
