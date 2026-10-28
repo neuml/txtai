@@ -18,6 +18,7 @@ if platform.system() == "Darwin" or os.name == "nt":
 try:
     from faiss import index_factory, IO_FLAG_MMAP, METRIC_INNER_PRODUCT, read_index, write_index
     from faiss import index_binary_factory, read_index_binary, write_index_binary, IndexBinaryIDMap
+    from faiss import PyCallbackIOReader, PyCallbackIOWriter
 
     FAISS = True
 except ImportError:
@@ -50,8 +51,14 @@ class Faiss(ANN):
         # Get read function
         readindex = read_index_binary if self.qbits else read_index
 
-        # Load index
-        self.backend = readindex(path, IO_FLAG_MMAP if self.setting("mmap") is True else 0)
+        # Load index. Faiss can't open non-ASCII paths on Windows, so read those through a Python file.
+        # Memory mapped indexes still need a file path.
+        mmap = self.setting("mmap") is True
+        if path.isascii() or mmap:
+            self.backend = readindex(path, IO_FLAG_MMAP if mmap else 0)
+        else:
+            with open(path, "rb") as f:
+                self.backend = readindex(PyCallbackIOReader(f.read))
 
     def index(self, embeddings):
         # Compute model training size
@@ -118,8 +125,12 @@ class Faiss(ANN):
         # Get write function
         writeindex = write_index_binary if self.qbits else write_index
 
-        # Write index
-        writeindex(self.backend, path)
+        # Write index. Non-ASCII paths are written through a Python file, see load.
+        if path.isascii():
+            writeindex(self.backend, path)
+        else:
+            with open(path, "wb") as f:
+                writeindex(self.backend, PyCallbackIOWriter(f.write))
 
     def configure(self, count, train):
         """

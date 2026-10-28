@@ -4,6 +4,7 @@ Faiss ANN module tests
 
 import os
 import sys
+import tempfile
 import unittest
 
 from unittest.mock import patch
@@ -144,3 +145,29 @@ class TestFaiss(DenseTest):
             with self.subTest(quantize=quantize):
                 ann = ANNFactory.create({"backend": "faiss", "dimensions": 4, "quantize": quantize})
                 self.assertEqual(ann.configure(100, 100), expected)
+
+    def testFaissUnicodePath(self):
+        """
+        Test Faiss backend save and load with a non-ASCII path
+        """
+
+        for quantize in [None, 1]:
+            with self.subTest(quantize=quantize), tempfile.TemporaryDirectory() as directory:
+                # Generate test data, binary indexes store packed bits
+                data = np.random.rand(100, 240).astype(np.float32)
+                data = np.packbits(data > 0.5, axis=1) if quantize else data
+
+                ann = ANNFactory.create({"backend": "faiss", "dimensions": data.shape[1], "quantize": quantize})
+                ann.index(data)
+                results = ann.search(data[:1], 5)
+
+                # Save and reload index in a non-ASCII directory
+                path = os.path.join(directory, "índice", "embeddings")
+                os.makedirs(os.path.dirname(path))
+
+                ann.save(path)
+                ann.close()
+                ann.load(path)
+
+                self.assertEqual(ann.count(), 100)
+                self.assertEqual(ann.search(data[:1], 5), results)
