@@ -595,7 +595,7 @@ class GGMLTensors:
 
     def chunk(self, queries):
         """
-        Splits quries into separate batch sizes specified by size.
+        Splits queries into separate batch sizes specified by size.
 
         Args:
             queries: queries

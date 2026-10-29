@@ -96,7 +96,7 @@ class PipelineModel(Model):
         # Get clean message list
         messages = get_clean_message_list(messages, role_conversions=tool_role_conversions, flatten_messages_as_text=self.flatten_messages_as_text)
 
-        # Ensure all roles are strings and not enums for compability across LLM frameworks
+        # Ensure all roles are strings and not enums for compatibility across LLM frameworks
         for message in messages:
             if "role" in message:
                 message["role"] = message["role"].value if isinstance(message["role"], Enum) else message["role"]

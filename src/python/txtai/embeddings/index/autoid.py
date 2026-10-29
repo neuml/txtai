@@ -72,7 +72,7 @@ class AutoId:
         Generates a UUID and return as a string.
 
         Args:
-            data: used with determistic algorithms (uuid3, uuid5)
+            data: used with deterministic algorithms (uuid3, uuid5)
 
         Returns:
             UUID string

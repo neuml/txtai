@@ -54,7 +54,7 @@ class Signal:
             # Transpose audio
             audio = audio.T
 
-            # Resample audio and tranpose back
+            # Resample audio and transpose back
             samples = round(len(audio) * float(target) / rate)
             audio = signal.resample(audio, samples).T
 
@@ -163,7 +163,7 @@ class Signal:
             rate: sample rate
             threshold: energy below this level will be considered silence, defaults to 1.0
             leading: trim leading silence, defaults to True
-            trailing: trim trailing silence, defauls to True
+            trailing: trim trailing silence, defaults to True
 
         Returns:
             audio with silence removed
