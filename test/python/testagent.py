@@ -3,7 +3,9 @@ Agent module tests
 """
 
 import os
+import sys
 import tempfile
+import traceback
 import unittest
 
 from threading import Thread
@@ -48,6 +50,37 @@ class TestAgent(unittest.TestCase):
         agent.process.model.llm = lambda *args, **kwargs: 'Action:\n{"name": "final_answer", "arguments": "Hi"}'
 
         self.assertEqual(agent("Hello"), "Hi")
+
+    def testImportError(self):
+        """
+        Test missing and transitive dependencies preserve their import failure.
+        """
+
+        # pylint: disable=C0415
+        for module in ("smolagents", "mcpadapt.core"):
+            with self.subTest(module=module), patch.dict(sys.modules, {module: None}):
+                # Reload txtai with one dependency unavailable, as in testoptional.
+                for name in list(sys.modules):
+                    if name == "txtai" or name.startswith("txtai."):
+                        del sys.modules[name]
+
+                from txtai import Agent as UnavailableAgent
+
+                with self.assertRaises(ImportError) as error:
+                    UnavailableAgent()
+
+                cause = error.exception.__cause__
+                self.assertIsInstance(cause, ModuleNotFoundError)
+                self.assertIs(cause, UnavailableAgent.ERROR)
+                self.assertEqual(cause.name, module)
+                self.assertIsNotNone(cause.__traceback__)
+                self.assertIn(str(cause), "".join(traceback.format_exception(error.exception)))
+                self.assertIn('install "agent" extra', str(error.exception))
+
+            # Module restoration must keep the real Agent available to other tests.
+            from txtai import Agent as RestoredAgent
+
+            self.assertIs(RestoredAgent, Agent)
 
     def testInstructions(self):
         """
@@ -232,6 +265,15 @@ class TestAgent(unittest.TestCase):
         # Timeout is disabled when set to None
         self.assertIsNone(BashTool(timeout=None).timeout)
 
+    def testToolsReadNonexistent(self):
+        """
+        Test the read tool raises FileNotFoundError when a file does not exist
+        """
+
+        # Reading a non-existent file must raise FileNotFoundError
+        with self.assertRaises(FileNotFoundError):
+            ToolFactory.default("read")(os.path.join(tempfile.gettempdir(), "does_not_exist_file.txt"))
+
     def testToolsEditCRLF(self):
         """
         Test the edit tool preserves CRLF line endings
@@ -246,6 +288,29 @@ class TestAgent(unittest.TestCase):
         ToolFactory.default("edit")(path, "hello", "bye")
         with open(path, "rb") as f:
             self.assertEqual(f.read(), b"bye\r\nworld\r\n")
+
+    def testToolsGrepUnreadable(self):
+        """
+        Test the grep tool skips a file it is not allowed to read
+        """
+
+        with tempfile.TemporaryDirectory() as work:
+            for name in ("a.txt", "b.txt"):
+                with open(os.path.join(work, name), "w", encoding="utf-8") as f:
+                    f.write("hello world\n")
+
+            # Matches found in readable files must survive an unreadable file
+            unreadable = os.path.join(work, "b.txt")
+            os.chmod(unreadable, 0o000)
+
+            try:
+                if os.access(unreadable, os.R_OK):
+                    self.skipTest("File permissions are not enforced for this user")
+
+                result = ToolFactory.default("grep")("world", work)
+                self.assertEqual(result, {os.path.join(work, "a.txt"): ["hello world\n"]})
+            finally:
+                os.chmod(unreadable, 0o644)
 
     def testToolsBashAllowedEmpty(self):
         """

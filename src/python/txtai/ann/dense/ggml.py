@@ -66,7 +66,7 @@ class GGML(ANN):
         scores = self.backend.search(queries)
 
         # Get topn ids
-        ids = np.argsort(-scores)[:, :limit]
+        ids = self.topn(scores, limit)
 
         # Map results to [(id, score)]
         results = []
@@ -75,6 +75,28 @@ class GGML(ANN):
             results.append(list(zip(ids[x].tolist(), score[ids[x]].tolist())))
 
         return results
+
+    def topn(self, scores, limit):
+        """
+        Gets the ids of the top scores for each row, ordered from highest to lowest score.
+
+        Args:
+            scores: scores array of shape (queries, rows)
+            limit: maximum number of ids per row
+
+        Returns:
+            topn ids for each row
+        """
+
+        # Sort all scores when partitioning isn't possible
+        if not 0 < limit < scores.shape[1]:
+            return np.argsort(-scores)[:, :limit]
+
+        # Partition to find the topn candidates, then sort only those candidates
+        ids = np.argpartition(-scores, limit - 1, axis=1)[:, :limit]
+        order = np.argsort(-np.take_along_axis(scores, ids, axis=1), axis=1)
+
+        return np.take_along_axis(ids, order, axis=1)
 
     def count(self):
         return self.backend.count()

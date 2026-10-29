@@ -2,7 +2,12 @@
 Textractor module tests
 """
 
+import os
+import tempfile
 import unittest
+
+from unittest.mock import patch
+from urllib.error import URLError
 
 from txtai.pipeline import Textractor
 
@@ -61,6 +66,22 @@ class TestTextractor(unittest.TestCase):
 
         # Check number of sections is as expected
         self.assertEqual(len(sections), 2)
+
+    def testDownloadError(self):
+        """
+        Test failed remote retrieval leaves no temporary file
+        """
+
+        textractor = Textractor()
+        error = URLError("download failed")
+
+        with tempfile.TemporaryDirectory() as directory:
+            with patch("tempfile.tempdir", directory), patch.object(textractor.safeopen, "retrieve", side_effect=error):
+                with self.assertRaises(URLError) as raised:
+                    textractor("https://example.com/missing.pdf")
+
+            self.assertIs(raised.exception, error)
+            self.assertEqual(os.listdir(directory), [])
 
     def testDocling(self):
         """
@@ -133,6 +154,15 @@ class TestTextractor(unittest.TestCase):
         # Code
         self.assertMarkdown("<code>This is a test</code>", "```\nThis is a test\n```")
         self.assertMarkdown("<pre>This is a test</pre>", "```\nThis is a test\n```")
+
+        # Inline code keeps its backticks, also when it is all a list item, table cell or heading holds
+        self.assertMarkdown("<p>Run <code>a*b*c</code> now</p>", "Run `a*b*c` now")
+        self.assertMarkdown("<ul><li><code>pip install txtai</code></li></ul>", "- `pip install txtai`")
+        self.assertMarkdown(
+            "<table><tr><th>Option</th><th>Default</th></tr><tr><td><code>path</code></td><td>None</td></tr></table>",
+            "|Option|Default|\n|---|---|\n|`path`|None|",
+        )
+        self.assertMarkdown("<h2>The <code>config</code> file</h2>", "## The `config` file")
 
         # Tables
         self.assertMarkdown(

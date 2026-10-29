@@ -87,10 +87,13 @@ class Textractor(Segmentation):
             temporary file path
         """
 
+        # Retrieve data before creating a persistent temporary file
+        data = self.safeopen.retrieve(url)
+
         with tempfile.NamedTemporaryFile(mode="wb", delete=False) as output:
             path = output.name
 
-            # Retrieve and write data to temporary file
-            output.write(self.safeopen.retrieve(url))
+            # Write data to temporary file
+            output.write(data)
 
         return path

@@ -52,7 +52,8 @@ class RetrieveTask(Task):
         if url:
             if self.flatten:
                 # Flatten directory structure (default)
-                path = os.path.join(self.directory, os.path.basename(path))
+                # A URL with no filename falls back to its hostname, then to "download"
+                path = os.path.join(self.directory, os.path.basename(path) or urlparse(element).hostname or "download")
                 directory = None
             else:
                 # Derive output path

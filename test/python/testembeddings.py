@@ -225,6 +225,26 @@ class TestEmbeddings(unittest.TestCase):
         self.embeddings.index([(0, {"text": ""}, None)])
         self.assertTrue(self.embeddings.search("test"))
 
+    def testEmptySubindexes(self):
+        """
+        Test empty index and upsert with subindexes
+        """
+
+        with Embeddings({"keyword": True, "indexes": {"terms": {"keyword": True}}}) as embeddings:
+            # Test index with no data
+            embeddings.index([])
+            self.assertEqual(embeddings.search("apple", index="terms"), [])
+
+            # Test upsert with no data
+            embeddings.upsert(["apple"])
+            embeddings.upsert([])
+            self.assertEqual(embeddings.search("apple", index="terms")[0][0], 0)
+
+            # Test index with no data clears the subindex
+            embeddings.index([])
+            self.assertEqual(embeddings.indexes.terms.count(), 0)
+            self.assertEqual(embeddings.search("apple", index="terms"), [])
+
     def testNoneText(self):
         """
         Test dict documents where the text field is present but set to None
@@ -237,6 +257,52 @@ class TestEmbeddings(unittest.TestCase):
         self.assertEqual(self.embeddings.count(), 2)
         self.assertEqual(self.embeddings.search("alpha content", 1)[0][0], 0)
         self.assertEqual(self.embeddings.search("gamma content", 1)[0][0], 2)
+
+    def testNoneTextObject(self):
+        """
+        Test dict documents where the text field is set to None and an object is set
+        """
+
+        def transform(data):
+            # Dummy embedding per input using sum and mean of byte values
+            embeddings = []
+            for x in data:
+                values = list(x if isinstance(x, bytes) else x.encode())
+                embeddings.append([sum(values), sum(values) / len(values)])
+
+            return np.array(embeddings, dtype=np.float32)
+
+        # Graph and scoring are tested separately, graph edge inference doesn't support object queries with scoring
+        for config in [{"graph": {"approximate": False}}, {"scoring": {"method": "bm25", "terms": True}}]:
+            embeddings = Embeddings(method="external", transform=transform, content=True, backend="numpy", **config)
+            embeddings.index(
+                [
+                    ("d0", {"text": "alpha content"}, None),
+                    ("d1", {"text": None, "object": b"objbytes"}, None),
+                    ("d2", {"text": "gamma content"}, None),
+                ]
+            )
+
+            # The object document is vectorized and kept with its own id everywhere
+            self.assertEqual(embeddings.ann.count(), 3)
+            self.assertEqual(embeddings.count(), 3)
+            self.assertEqual(
+                embeddings.search("select indexid, id, text from txtai", 10),
+                [
+                    {"indexid": 0, "id": "d0", "text": "alpha content"},
+                    {"indexid": 1, "id": "d1", "text": None},
+                    {"indexid": 2, "id": "d2", "text": "gamma content"},
+                ],
+            )
+
+            # Vectors, database rows and search results should all line up
+            self.assertEqual(embeddings.search("select id from txtai where similar('alpha content')", 1), [{"id": "d0"}])
+            self.assertEqual(embeddings.search("select id from txtai where similar('gamma content')", 1), [{"id": "d2"}])
+
+            if embeddings.graph:
+                self.assertEqual([embeddings.graph.attribute(node, "id") for node in range(3)], ["d0", "d1", "d2"])
+            else:
+                self.assertEqual(embeddings.scoring.search("gamma", 1)[0][0], 2)
 
     def testExternal(self):
         """
@@ -803,6 +869,12 @@ class TestEmbeddings(unittest.TestCase):
 
         # SQL query without a similar() clause has no keyword terms (previously raised KeyError)
         self.assertEqual(embeddings.terms("select id, text from txtai where id = 1"), None)
+
+        # Batch results stay aligned with the input queries when a query has no similar() clause
+        self.assertEqual(
+            embeddings.batchterms(["select id, text from txtai where id = 1", "select id, text from txtai where similar('feel good story')"]),
+            [None, "feel good story"],
+        )
 
     def testTruncate(self):
         """

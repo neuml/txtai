@@ -104,7 +104,8 @@ class HTMLToMarkdown(Pipeline):
             return self.items(node, article)
 
         if node.name in ("code", "pre"):
-            return self.code(node)
+            # Code inside a paragraph, list item, table cell or heading is inline code, not a code block
+            return f"`{node.text.strip()}`" if self.isinline(node) else self.code(node)
 
         if node.name == "table":
             return self.table(node, article)
@@ -204,6 +205,8 @@ class HTMLToMarkdown(Pipeline):
                     text = f"{space}**{text.strip()}** "
                 elif target.name in ("i", "em"):
                     text = f"{space}*{text.strip()}* "
+                elif target.name == "code":
+                    text = f"{space}`{text.strip()}` "
                 elif target.name == "a":
                     # Links without a target are added as plain text
                     href = target.get("href")
@@ -439,6 +442,19 @@ class HTMLToMarkdown(Pipeline):
                 text = f"{text.strip()}\n\n" if self.paragraphs else f"{text.strip()}\n"
 
         return text
+
+    def isinline(self, node):
+        """
+        Checks if node is an inline code node, a code element inside a paragraph, list item, table cell or heading.
+
+        Args:
+            node: input node
+
+        Returns:
+            True if node is an inline code node, False otherwise
+        """
+
+        return node.name == "code" and node.parent is not None and (node.parent.name in ("p", "li", "td", "th", "a") or self.isheader(node.parent))
 
     def isheader(self, node):
         """

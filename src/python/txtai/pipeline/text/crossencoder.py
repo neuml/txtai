@@ -36,7 +36,8 @@ class CrossEncoder(Labels):
             labels: optional list of labels to score by, resolved by name/id via the model config the same way
                     Labels.limit() does. Restricts ranking to a fixed label so multi-class models (e.g. NLI
                     cross-encoders) compare every candidate on the same class, instead of whichever one each
-                    candidate happened to score highest on. Defaults to that original top-scored label when None.
+                    candidate happened to score highest on. Each candidate is scored by that label's probability
+                    over the model's classes. Defaults to that original top-scored label when None.
 
         Returns:
             list of (id, score)
@@ -71,7 +72,13 @@ class CrossEncoder(Labels):
         if labels and not matches:
             raise ValueError(f"None of the requested labels {labels} matched model labels {list(self.pipeline.model.config.label2id.keys())}")
 
-        return matches[0][1]
+        score = matches[0][1]
+
+        # Score a requested label of a multi-class model by its probability over the classes of the pair
+        if labels and len(result) > 1:
+            score = np.exp(score) / np.sum(np.exp([x["score"] for x in result]))
+
+        return score
 
     def function(self, scores, multilabel):
         """

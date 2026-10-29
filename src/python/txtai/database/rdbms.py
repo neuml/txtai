@@ -338,11 +338,11 @@ class RDBMS(Database):
                 self.insertdocument(uid, json.dumps(data, allow_nan=False), tags, entry)
 
         # If text and object are both available, load object as it won't otherwise be used
-        if self.text in document and obj:
+        if document.get(self.text) is not None and obj:
             self.loadobject(uid, obj, tags, entry)
 
         # Return value to use for section - use text if available otherwise use object
-        return document[self.text] if self.text in document else obj
+        return document[self.text] if document.get(self.text) is not None else obj
 
     def insertdocument(self, uid, data, tags, entry):
         """

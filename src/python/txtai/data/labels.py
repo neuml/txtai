@@ -35,8 +35,8 @@ class Labels(Data):
         # Tokenizer inputs can be single string or string pair, depending on task
         text = (data[text1], data[text2]) if text2 else (data[text1],)
 
-        # Tokenize text and add label
+        # Tokenize text and add label, models expect it under the label key
         inputs = self.tokenizer(*text, max_length=self.maxlength, padding=True, truncation=True)
-        inputs[label] = data[label]
+        inputs["label"] = data[label]
 
         return inputs

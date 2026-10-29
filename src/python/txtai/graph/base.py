@@ -422,7 +422,7 @@ class Graph:
                 }
 
                 # Require text or object field
-                document = document.get(self.text, document.get(self.object))
+                document = document[self.text] if document.get(self.text) is not None else document.get(self.object)
 
             if document is not None:
                 if isinstance(document, list):
