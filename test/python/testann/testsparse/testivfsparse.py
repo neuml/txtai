@@ -178,7 +178,7 @@ class TestIVFSparse(SparseTest):
 
     def testIVFSparseMixedDtypes(self):
         """
-        Test float32 queries after appending float64 rows
+        Test float32 and float64 queries after appending float64 rows
         """
 
         # Index float32 rows and append a float64 row
@@ -186,7 +186,9 @@ class TestIVFSparse(SparseTest):
         ann.index(csr_matrix([[1, 0], [0, 1]], dtype=np.float32))
         ann.append(csr_matrix([[0.5, 0.5]], dtype=np.float64))
 
-        # Validate promoted scores without losing the existing rows
-        results = ann.search(csr_matrix([[1, 0]], dtype=np.float32), 3)[0]
-        self.assertEqual(results, [(0, 1.0), (2, 0.5), (1, 0.0)])
+        # Validate scores for both query types without losing the existing rows
+        for dtype in [np.float32, np.float64]:
+            results = ann.search(csr_matrix([[1, 0]], dtype=dtype), 3)[0]
+            self.assertEqual(results, [(0, 1.0), (2, 0.5), (1, 0.0)])
+
         ann.close()
