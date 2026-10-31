@@ -51,7 +51,7 @@ The example above sets a specific embeddings vector model via the [path](configu
 embeddings = Embeddings()
 ```
 
-In this case, when loading and searching for data, the [default transformers vector model](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2) is used to vectorize data. See the [model guide](../models) for current model recommentations.
+In this case, when loading and searching for data, the [default transformers vector model](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2) is used to vectorize data. See the [model guide](../models) for current model recommendations.
 
 ## Index
 
