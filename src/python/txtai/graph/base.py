@@ -531,7 +531,7 @@ class Graph:
         # Set graph if available, otherwise create a new empty graph of the same type
         graph = graph if graph else type(self)(self.config)
 
-        # Initalize subgraph
+        # Initialize subgraph
         graph.initialize()
 
         nodeids = {node[0] if isinstance(node, tuple) else node for node in nodes}

@@ -63,7 +63,7 @@ class Scoring:
 
     def upsert(self, documents=None):
         """
-        Convience method for API clarity. Calls index method.
+        Convenience method for API clarity. Calls index method.
 
         Args:
             documents: list of (id, dict|text|tokens, tags)

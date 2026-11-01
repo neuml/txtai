@@ -461,7 +461,7 @@ class Terms:
 
         results = []
         for term in terms:
-            # Wilcard expressions
+            # Wildcard expressions
             if Terms.ASTERISK in term:
                 # Require a prefix or suffix
                 if term.replace(Terms.ASTERISK, "").strip():

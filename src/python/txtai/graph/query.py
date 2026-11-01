@@ -151,7 +151,7 @@ class Query:
                 attribute = f"match_{x}"
                 clause = f"{node}.{attribute} > 0"
 
-                # Replace placeholder with earch results
+                # Replace placeholder with search results
                 query = query.replace(f"{Query.SIMILAR}{x}", f"{clause}")
 
                 # Add uids and scores

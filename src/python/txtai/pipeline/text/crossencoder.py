@@ -82,7 +82,7 @@ class CrossEncoder(Labels):
 
     def function(self, scores, multilabel):
         """
-        Applys an output transformation function based on value of multilabel.
+        Applies an output transformation function based on value of multilabel.
 
         Args:
             scores: input scores
