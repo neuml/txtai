@@ -188,6 +188,13 @@ class TestTextractor(unittest.TestCase):
         self.assertMarkdown("<p>This is a te<b>st</b></p>", "This is a te**st**")
         self.assertMarkdown("<p>This is\n<b> a test</b></p>", "This is\n**a test**")
 
+        # Inline formatting keeps the spacing from the source, so punctuation and
+        # adjacent text aren't separated by an extra space
+        self.assertMarkdown("<p>This is a <b>test</b>.</p>", "This is a **test**.")
+        self.assertMarkdown("<p>An <i>italic</i>; and <b>bold</b>!</p>", "An *italic*; and **bold**!")
+        self.assertMarkdown("<p>Use <code>a</code>, then <a href='link'>link</a>.</p>", "Use `a`, then [link](link).")
+        self.assertMarkdown("<p>This is<b>bold</b>text</p>", "This is**bold**text")
+
         # Links without a target are plain text
         self.assertMarkdown("<p>This is a <a name='anchor'>test</a></p>", "This is a test")
         self.assertMarkdown("<p>This is<a name='anchor'> a test</a></p>", "This is a test")
