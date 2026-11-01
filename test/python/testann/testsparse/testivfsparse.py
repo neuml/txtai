@@ -9,6 +9,7 @@ from unittest.mock import patch
 
 import numpy as np
 
+from scipy.sparse import csr_matrix
 from sklearn.cluster import MiniBatchKMeans
 
 from txtai.ann import SparseANNFactory
@@ -174,3 +175,20 @@ class TestIVFSparse(SparseTest):
         ann.close()
 
         self.assertEqual(features, [100, 10])
+
+    def testIVFSparseMixedDtypes(self):
+        """
+        Test float32 and float64 queries after appending float64 rows
+        """
+
+        # Index float32 rows and append a float64 row
+        ann = SparseANNFactory.create({"backend": "ivfsparse"})
+        ann.index(csr_matrix([[1, 0], [0, 1]], dtype=np.float32))
+        ann.append(csr_matrix([[0.5, 0.5]], dtype=np.float64))
+
+        # Validate scores for both query types without losing the existing rows
+        for dtype in [np.float32, np.float64]:
+            results = ann.search(csr_matrix([[1, 0]], dtype=dtype), 3)[0]
+            self.assertEqual(results, [(0, 1.0), (2, 0.5), (1, 0.0)])
+
+        ann.close()

@@ -57,6 +57,9 @@ class IVFSparse(ANN):
         self.deletes = None
 
     def index(self, embeddings):
+        # Store data as float32
+        embeddings = embeddings.astype(np.float32, copy=False)
+
         # Compute model training size
         train, sample = embeddings, self.setting("sample")
         if sample:
@@ -99,6 +102,9 @@ class IVFSparse(ANN):
         self.metadata({"clusters": len(self.blocks)})
 
     def append(self, embeddings):
+        # Store data as float32
+        embeddings = embeddings.astype(np.float32, copy=False)
+
         # Get offset
         offset = self.size()
 
@@ -123,6 +129,9 @@ class IVFSparse(ANN):
                 self.deletes.append(int(x))
 
     def search(self, queries, limit):
+        # Search with float32 queries
+        queries = queries.astype(np.float32, copy=False)
+
         results = []
 
         # Calculate number of threads using a thread batch size of 32
@@ -154,7 +163,7 @@ class IVFSparse(ANN):
             header = next(unpacker)
 
             # Read cluster centroids, if available
-            self.centroids = SparseArray().load(f) if header["centroids"] else None
+            self.centroids = SparseArray().load(f).astype(np.float32, copy=False) if header["centroids"] else None
 
             # Read cluster ids
             self.ids = dict(next(unpacker))
@@ -162,7 +171,7 @@ class IVFSparse(ANN):
             # Read cluster data blocks
             self.blocks = {}
             for key in self.ids:
-                self.blocks[key] = SparseArray().load(f)
+                self.blocks[key] = SparseArray().load(f).astype(np.float32, copy=False)
 
             # Read deletes
             self.deletes = next(unpacker)
