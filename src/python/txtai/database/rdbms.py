@@ -97,6 +97,10 @@ class RDBMS(Database):
                     # Read JSON data, if provided
                     data = json.loads(data) if data and isinstance(data, str) else data
 
+                    # Add section text when the JSON data doesn't store the text column
+                    if isinstance(data, dict) and self.text not in data:
+                        data[self.text] = text
+
                     # Stream data if available, otherwise use section text
                     yield (uid, data if data else text, tags)
 
