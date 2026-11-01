@@ -525,6 +525,11 @@ class TestWorkflow(unittest.TestCase):
                 self.assertTrue(first.endswith("a.example.com"))
                 self.assertTrue(second.endswith("b.example.com"))
 
+                # Same for a URL with no path when the directory structure is kept
+                path = RetrieveTask(directory=directory, flatten=False).prepare("https://c.example.com/")
+                self.assertTrue(os.path.isfile(path))
+                self.assertTrue(path.endswith("c.example.com"))
+
     def testRetrieveLocalFilenames(self):
         """
         Test that local filenames are preserved instead of parsed as URLs
