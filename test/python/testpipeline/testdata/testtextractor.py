@@ -154,6 +154,8 @@ class TestTextractor(unittest.TestCase):
         # Code
         self.assertMarkdown("<code>This is a test</code>", "```\nThis is a test\n```")
         self.assertMarkdown("<pre>This is a test</pre>", "```\nThis is a test\n```")
+        self.assertMarkdown("<pre>before\n```\nafter</pre>", "````\nbefore\n```\nafter\n````")
+        self.assertMarkdown("<pre>````</pre>", "`````\n````\n`````")
 
         # Inline code keeps its backticks, also when it is all a list item, table cell or heading holds
         self.assertMarkdown("<p>Run <code>a*b*c</code> now</p>", "Run `a*b*c` now")

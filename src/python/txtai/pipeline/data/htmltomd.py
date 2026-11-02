@@ -346,7 +346,10 @@ class HTMLToMarkdown(Pipeline):
             code as markdown
         """
 
-        text = f"```\n{node.text.strip()}\n```"
+        content = node.text.strip()
+        runs = re.findall(r"`+", content)
+        fence = "`" * max(3, max((len(run) + 1 for run in runs), default=3))
+        text = f"{fence}\n{content}\n{fence}"
         return f"{text}\n\n" if self.paragraphs else f"{text}\n"
 
     def table(self, node, article):
