@@ -128,6 +128,50 @@ class Common:
             result = embeddings.search("lottery", 1)[0]
             self.assertEqual(result["text"], self.data[4])
 
+        def testReindexStore(self):
+            """
+            Test reindex with stored columns that exclude text
+            """
+        
+            data = [
+                {"id": "a", "text": "the quick brown fox jumps over the lazy dog", "title": "Fox"},
+                {"id": "b", "text": "stock markets fell sharply on rate fears", "title": "Markets"},
+                {"id": "c", "text": "a fox was seen near the river bank", "title": "River"},
+            ]
+        
+            embeddings = Embeddings({
+                "keyword": True,
+                "content": self.backend,
+                "columns": {"store": ["title"]}
+            })
+        
+            embeddings.index(data)
+        
+            embeddings.reindex({
+                "keyword": True,
+                "columns": {"store": ["title"]}
+            })
+        
+            # Verify all records were restored
+            self.assertEqual(embeddings.count(), 3)
+        
+            # Verify keyword search
+            result = embeddings.search("fox")
+            self.assertEqual({x["id"] for x in result}, {"a", "c"})
+        
+            # Verify upsert preserves existing records
+            embeddings.upsert([
+                {"id": "d", "text": "foxes are clever animals", "title": "Clever"}
+            ])
+        
+            result = embeddings.search("select id from txtai", 10)
+            self.assertEqual(
+                {x["id"] for x in result},
+                {"a", "b", "c", "d"}
+            )
+        
+            embeddings.close()
+        
         def testClose(self):
             """
             Test embeddings close
