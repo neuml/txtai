@@ -96,7 +96,11 @@ class RDBMS(Database):
                 else:
                     # Read JSON data, if provided
                     data = json.loads(data) if data and isinstance(data, str) else data
-
+                    
+                    # Add text to data if missing
+                    if data and self.text not in data:
+                        data[self.text] = text
+                    
                     # Stream data if available, otherwise use section text
                     yield (uid, data if data else text, tags)
 
