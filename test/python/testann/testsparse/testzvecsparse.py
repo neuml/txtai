@@ -48,6 +48,29 @@ class TestZvecSparse(SparseTest):
         self.assertEqual(ann.count(), 1)
         self.assertEqual(ann.search(data, 1)[0][0][0], 1)
 
+    def testZvecSparseDatatype(self):
+        """
+        Test Sparse zvec backend vector data type setting
+        """
+
+        data = self.generate(1, 30522)
+
+        for datatype, expected in (("fp32", "SPARSE_VECTOR_FP32"), ("fp16", "SPARSE_VECTOR_FP16")):
+            ann = SparseANNFactory.create({"backend": "zvecsparse", "dimensions": 30522, "zvecsparse": {"datatype": datatype}})
+            self.assertEqual(ann.datatype().name, expected)
+
+            ann.index(data)
+
+            # fp16 rounds the stored values, so the exact-match score is ~1.0 rather than 1.0
+            matches = ann.search(data, 1)[0]
+            self.assertEqual(matches[0][0], 0)
+            self.assertGreater(matches[0][1], 0.99)
+
+        # Unsupported values are rejected with the supported options
+        ann = SparseANNFactory.create({"backend": "zvecsparse", "dimensions": 30522, "zvecsparse": {"datatype": "int8"}})
+        with self.assertRaises(ValueError):
+            ann.index(data)
+
         # Close ANN
         ann.close()
 
