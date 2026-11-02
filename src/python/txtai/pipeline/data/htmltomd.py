@@ -361,7 +361,7 @@ class HTMLToMarkdown(Pipeline):
             table as markdown
         """
 
-        elements, header = [], False
+        table, spans = [], {}
 
         # Process all rows
         rows = node.find_all("tr")
@@ -369,13 +369,43 @@ class HTMLToMarkdown(Pipeline):
             # Get list of columns for row
             columns = row.find_all(lambda tag: tag.name in ("th", "td"))
 
-            # Add columns with separator
-            elements.append(f"|{'|'.join(self.process(column, article) for column in columns)}|")
+            values, position = [], 0
+            active = set(spans)
+            for column in columns:
+                # Keep cells beneath a rowspan in their original column
+                while position in active:
+                    values.append("")
+                    position += 1
 
-            # If there are multiple rows, add header format row
-            if not header and len(rows) > 1:
-                elements.append(f"{'|---' * len(columns)}|")
-                header = True
+                try:
+                    colspan = max(1, int(column.get("colspan", 1)))
+                    rowspan = max(1, int(column.get("rowspan", 1)))
+                except (TypeError, ValueError):
+                    colspan, rowspan = 1, 1
+
+                values.extend([self.process(column, article)] + [""] * (colspan - 1))
+                if rowspan > 1:
+                    for offset in range(colspan):
+                        spans[position + offset] = rowspan - 1
+                position += colspan
+
+            # Preserve trailing columns covered by a rowspan
+            while active and position <= max(active):
+                values.append("")
+                position += 1
+
+            for position in active:
+                spans[position] -= 1
+                if not spans[position]:
+                    del spans[position]
+
+            table.append(values)
+
+        # Markdown has no merged-cell syntax, so use empty placeholders to keep every row aligned
+        width = max((len(row) for row in table), default=0)
+        elements = [f"|{'|'.join(row + [''] * (width - len(row)))}|" for row in table]
+        if len(elements) > 1:
+            elements.insert(1, f"{'|---' * width}|")
 
         # Join elements together as string
         return "\n".join(elements)
