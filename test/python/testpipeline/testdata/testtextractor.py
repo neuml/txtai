@@ -83,6 +83,26 @@ class TestTextractor(unittest.TestCase):
             self.assertIs(raised.exception, error)
             self.assertEqual(os.listdir(directory), [])
 
+    def testConversionError(self):
+        """
+        Test failed conversion removes the downloaded temporary file
+        """
+
+        textractor = Textractor(backend=None)
+        error = RuntimeError("conversion failed")
+
+        with tempfile.TemporaryDirectory() as directory:
+            with (
+                patch("tempfile.tempdir", directory),
+                patch.object(textractor.safeopen, "retrieve", return_value=b"document"),
+                patch.object(textractor, "html", side_effect=error),
+            ):
+                with self.assertRaises(RuntimeError) as raised:
+                    textractor("https://example.com/document.pdf")
+
+            self.assertIs(raised.exception, error)
+            self.assertEqual(os.listdir(directory), [])
+
     def testDocling(self):
         """
         Test docling backend
