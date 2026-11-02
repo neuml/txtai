@@ -192,3 +192,28 @@ class TestIVFSparse(SparseTest):
             self.assertEqual(results, [(0, 1.0), (2, 0.5), (1, 0.0)])
 
         ann.close()
+
+    def testIVFSparseAppendMaxima(self):
+        """
+        Test appended rows update block maxima before query probing
+        """
+
+        # Build two distinct blocks and preserve their initial summaries
+        ann = SparseANNFactory.create({"backend": "ivfsparse", "ivfsparse": {"nlist": 2, "nprobe": 1}})
+        ann.index(csr_matrix([[1, 0, 0]] * 40 + [[0, 1, 0]] * 40, dtype=np.float64))
+        before = ann.centroids.copy()
+
+        # Append a row whose maximum differs from the full block maximum
+        ann.append(csr_matrix([[0.5, 0, 2]], dtype=np.float64))
+        self.assertEqual(ann.search(csr_matrix([[0, 0.1, 1]], dtype=np.float64), 1)[0], [(80, 2.0)])
+        cluster = next(key for key, ids in ann.ids.items() if 80 in ids)
+        np.testing.assert_array_equal(ann.centroids[cluster].toarray(), [[1, 0, 2]])
+        np.testing.assert_array_equal(ann.centroids[1 - cluster].toarray(), before[1 - cluster].toarray())
+
+        # Touch the other block while retaining the previous maximum
+        ann.append(csr_matrix([[0, 2, 0]], dtype=np.float64))
+        for key, block in ann.blocks.items():
+            np.testing.assert_array_equal(ann.centroids[key].toarray(), block.max(axis=0).toarray())
+        self.assertEqual(ann.centroids.format, "csr")
+        self.assertEqual(ann.centroids.shape, (2, 3))
+        ann.close()
