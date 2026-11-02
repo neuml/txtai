@@ -118,6 +118,21 @@ class TestEmbeddings(unittest.TestCase):
         uid = embeddings.search("lottery", 1)[0][0]
         self.assertEqual(uid, 4)
 
+    def testReindexColumnsStore(self):
+        """
+        Test reindex keeps the section text when columns.store leaves it out
+        """
+
+        config = {"keyword": True, "content": True, "columns": {"store": ["length"]}}
+        embeddings = Embeddings(config)
+        embeddings.index([{"id": str(uid), "text": text, "length": len(text)} for uid, text in enumerate(self.data)])
+
+        # Reindex rebuilds the index from the section text, which columns.store does not keep
+        embeddings.reindex(config)
+
+        self.assertEqual(embeddings.count(), len(self.data))
+        self.assertEqual(embeddings.search("lottery", 1)[0]["id"], "4")
+
     def testContext(self):
         """
         Test embeddings context manager

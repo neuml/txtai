@@ -97,6 +97,12 @@ class RDBMS(Database):
                     # Read JSON data, if provided
                     data = json.loads(data) if data and isinstance(data, str) else data
 
+                    # Add the section text back when the stored columns leave it out.
+                    # The stream is indexed through the same pipeline as index(), which
+                    # reads the text field of a dict and indexes nothing without it.
+                    if isinstance(data, dict) and text and not data.get(self.text):
+                        data[self.text] = text
+
                     # Stream data if available, otherwise use section text
                     yield (uid, data if data else text, tags)
 
