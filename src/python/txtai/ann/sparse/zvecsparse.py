@@ -28,8 +28,11 @@ class ZvecSparse(Zvec):
 
         return results
 
-    def datatype(self):
-        return zvec.DataType.SPARSE_VECTOR_FP32
+    def datatypes(self):
+        return {
+            "fp32": zvec.DataType.SPARSE_VECTOR_FP32,
+            "fp16": zvec.DataType.SPARSE_VECTOR_FP16,
+        }
 
     def prepare(self, data):
         return {int(index): float(value) for index, value in zip(data.indices, data.data)}

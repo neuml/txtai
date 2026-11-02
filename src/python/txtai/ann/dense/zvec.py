@@ -146,11 +146,35 @@ class Zvec(ANN):
         """
         Gets the vector data type.
 
+        The ``datatype`` setting selects it: ``fp32`` (default), ``fp16`` or ``int8``.
+        ``int8`` stores integer vectors, so the embeddings handed to this backend must
+        already be integers. ``fp64`` is not offered because zvec 0.8.0 rejects
+        ``VECTOR_FP64`` for dense vector fields.
+
         Returns:
             zvec vector data type
         """
 
-        return zvec.DataType.VECTOR_FP32
+        types = self.datatypes()
+        datatype = self.setting("datatype", "fp32")
+        if datatype not in types:
+            raise ValueError(f"Unsupported zvec datatype: {datatype} - options are {', '.join(types)}")
+
+        return types[datatype]
+
+    def datatypes(self):
+        """
+        Gets the supported vector data types.
+
+        Returns:
+            dict of datatype setting to zvec vector data type
+        """
+
+        return {
+            "fp32": zvec.DataType.VECTOR_FP32,
+            "fp16": zvec.DataType.VECTOR_FP16,
+            "int8": zvec.DataType.VECTOR_INT8,
+        }
 
     def prepare(self, data):
         """
