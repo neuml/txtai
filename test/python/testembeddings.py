@@ -11,7 +11,7 @@ from unittest.mock import patch
 
 import numpy as np
 
-from txtai.embeddings import Embeddings, Reducer
+from txtai.embeddings import Embeddings, IndexIds, Reducer
 from txtai.serialize import SerializeFactory
 
 
@@ -161,6 +161,24 @@ class TestEmbeddings(unittest.TestCase):
 
         self.assertEqual(self.embeddings.count(), 5)
         self.assertEqual(uid, 5)
+
+    def testDeleteIds(self):
+        """
+        Test delete with content disabled finds ids with a single pass over the index ids
+        """
+
+        # Create a keyword index with content disabled
+        embeddings = Embeddings({"keyword": True})
+        embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        # Delete a repeated id and an unknown id while counting the passes over the index ids
+        with patch.object(IndexIds, "__iter__", autospec=True, side_effect=IndexIds.__iter__) as scan:
+            deleted = embeddings.delete([4, 1, 4, 100])
+
+        self.assertEqual(scan.call_count, 1)
+        self.assertEqual(deleted, [1, 4])
+        self.assertEqual(embeddings.count(), 4)
+        self.assertEqual(embeddings.search("lottery ticket", 1), [])
 
     def testDense(self):
         """

@@ -227,9 +227,9 @@ class Embeddings:
             # Delete ids from database
             self.database.delete(deletes)
         elif self.ann or self.scoring:
-            # Find existing ids
-            for uid in ids:
-                indices.extend([index for index, value in enumerate(self.ids) if uid == value])
+            # Find existing ids with a single pass over the index ids
+            uids = set(ids)
+            indices = [index for index, value in enumerate(self.ids) if value in uids]
 
             # Clear embeddings ids
             for index in indices:
