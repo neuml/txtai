@@ -43,8 +43,10 @@ class API(Application):
         return super().search(query, limit, weights, index, parameters, graph)
 
     def batchsearch(self, queries, limit=None, weights=None, index=None, parameters=None, graph=False):
+        limit = self.limit(limit)
+
         if self.cluster:
-            return self.cluster.batchsearch(queries, self.limit(limit), weights, index, parameters, graph)
+            return self.cluster.batchsearch(queries, limit, weights, index, parameters, graph)
 
         return super().batchsearch(queries, limit, weights, index, parameters, graph)
 
