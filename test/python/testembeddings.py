@@ -162,6 +162,32 @@ class TestEmbeddings(unittest.TestCase):
         self.assertEqual(self.embeddings.count(), 5)
         self.assertEqual(uid, 5)
 
+    def testDeleteSparse(self):
+        """
+        Test delete with a keyword index, where ids are resolved from the index ids
+        """
+
+        embeddings = Embeddings({"keyword": True})
+        embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        self.assertEqual(embeddings.count(), len(self.data))
+
+        # Deletes the requested id and reports it
+        self.assertEqual(embeddings.delete([4]), [4])
+        self.assertEqual(embeddings.count(), len(self.data) - 1)
+
+        # Deleting an id that is no longer present is a no-op
+        self.assertEqual(embeddings.delete([4]), [])
+        self.assertEqual(embeddings.count(), len(self.data) - 1)
+
+        # Repeated ids do not produce duplicate deletions
+        self.assertEqual(embeddings.delete([1, 1]), [1])
+        self.assertEqual(embeddings.count(), len(self.data) - 2)
+
+        # Ids that were never indexed are ignored
+        self.assertEqual(embeddings.delete([9999]), [])
+        self.assertEqual(embeddings.count(), len(self.data) - 2)
+
     def testDense(self):
         """
         Test dense alias

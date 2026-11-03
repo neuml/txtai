@@ -227,14 +227,14 @@ class Embeddings:
             # Delete ids from database
             self.database.delete(deletes)
         elif self.ann or self.scoring:
-            # Find existing ids
-            for uid in ids:
-                indices.extend([index for index, value in enumerate(self.ids) if uid == value])
-
-            # Clear embeddings ids
-            for index in indices:
-                deletes.append(self.ids[index])
-                self.ids[index] = None
+            # Single pass over the index ids to find every position for the requested ids
+            requested = set(ids)
+            if requested:
+                for index, value in enumerate(self.ids):
+                    if value in requested:
+                        indices.append(index)
+                        deletes.append(value)
+                        self.ids[index] = None
 
         # Delete indices for all indexes and data stores
         if indices:
