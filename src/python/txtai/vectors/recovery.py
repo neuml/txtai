@@ -8,15 +8,8 @@ import shutil
 
 class Recovery:
     """
-    Vector embeddings recovery. This class handles streaming embeddings from a vector checkpoint file.
-
-    A checkpoint's embeddings are stored in one file, unchanged from the original checkpoint format. A
-    separate, optional companion file holds one checksum per batch, covering that batch's ids and raw
-    content. When present, a recovered batch is only trusted once its recorded checksum matches the
-    checksum of the current run's batch at that position - matching ids alone isn't sufficient, since
-    the same id can carry different content across runs (an updated row from the source, for example).
-    A checkpoint written before this checksum file existed has no such file to find, so its batches are
-    read back and trusted as-is, same as before checksums existed.
+    Vector embeddings recovery. Streams embeddings from a checkpoint file, verifying each batch
+    against an optional companion checksum file before trusting it.
     """
 
     def __init__(self, checkpoint, vectorsid, load):
