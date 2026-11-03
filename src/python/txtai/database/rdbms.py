@@ -4,6 +4,7 @@ RDBMS module
 
 import datetime
 import json
+import re
 
 from .base import Database
 from .schema import Statement
@@ -189,9 +190,11 @@ class RDBMS(Database):
         if indexids:
             select = f"{self.resolve('indexid')}, {self.resolve('score')}"
 
-        # Use JOIN when a JSON field is filtered, since that filter already excludes rows without a
-        # documents row. GROUP BY/ORDER BY don't filter, so they keep the LEFT JOIN.
-        join = "JOIN" if where and self.jsonprefix() in where else "LEFT JOIN"
+        # Use JOIN when a JSON field is filtered, since an AND-ed comparison against it already
+        # excludes rows without a documents row. An OR can still match one of those rows through
+        # another branch, and GROUP BY/ORDER BY don't filter at all, so both keep the LEFT JOIN.
+        filtered = where and self.jsonprefix() in where and not re.search(r"\bor\b", where, re.IGNORECASE)
+        join = "JOIN" if filtered else "LEFT JOIN"
 
         # Build query text
         query = Statement.TABLE_CLAUSE % (select, join)

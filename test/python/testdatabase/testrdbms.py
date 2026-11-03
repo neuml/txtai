@@ -733,6 +733,33 @@ class Common:
             # Filtering on the field still drops those rows
             self.assertEqual([x["id"] for x in embeddings.search("select id from txtai where length is not null")], ["1"])
 
+        def testQueryJsonOrText(self):
+            """
+            Test a JSON filter combined with OR keeps rows that have no documents row
+            """
+
+            embeddings = Embeddings({"keyword": True, "content": self.backend})
+            embeddings.index(
+                [
+                    (0, {"text": "hello", "name": "a"}, None),
+                    (1, "plain text alpha", None),
+                    (2, {"text": "x", "name": None}, None),
+                    (3, {"text": "y", "v": 5000}, None),
+                ]
+            )
+
+            # The text branch matches row 1, which has no documents row for the JSON filter to remove
+            self.assertEqual(
+                sorted(x["id"] for x in embeddings.search("select id from txtai where name = 'a' or text like '%plain%'")),
+                ["0", "1"],
+            )
+
+            # An AND-ed JSON filter still has to exclude rows without a documents row
+            self.assertEqual([x["id"] for x in embeddings.search("select id from txtai where name = 'a'")], ["0"])
+
+            # A JSON comparison that only matches through OR does not resurrect those rows
+            self.assertEqual([x["id"] for x in embeddings.search("select id from txtai where name = 'a' or name = 'b'")], ["0"])
+
         def testSQL(self):
             """
             Test running a SQL query
