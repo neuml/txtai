@@ -202,17 +202,23 @@ class HTMLToMarkdown(Pipeline):
                 space = " " if text[0].isspace() and texts and not texts[-1][-1:].isspace() else ""
 
                 if target.name in ("b", "strong"):
-                    text = f"{space}**{text.strip()}**"
+                    text = f"{space}**{text.strip()}** "
                 elif target.name in ("i", "em"):
-                    text = f"{space}*{text.strip()}*"
+                    text = f"{space}*{text.strip()}* "
                 elif target.name == "code":
-                    text = f"{space}`{text.strip()}`"
+                    text = f"{space}`{text.strip()}` "
                 elif target.name == "a":
                     # Links without a target are added as plain text
                     href = target.get("href")
-                    text = f"{space}[{text.strip()}]({href})" if href else f"{space}{text.strip()}"
+                    text = f"{space}[{text.strip()}]({href}) " if href else f"{space}{text.strip()} "
 
             texts.append(text)
+
+        # Keep the separator between words but not before punctuation, which has no space in the source
+        punctuation = ",.;:!?)]}'\"" + "\u2019\u201d%"
+        for index in range(len(texts) - 1):
+            if texts[index].endswith(" ") and texts[index + 1][:1] in punctuation:
+                texts[index] = texts[index][:-1]
 
         # Join text elements
         text = "".join(texts)
