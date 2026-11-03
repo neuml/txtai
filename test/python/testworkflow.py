@@ -13,6 +13,7 @@ import unittest
 
 from datetime import datetime, timezone
 from itertools import product
+from pathlib import Path
 from unittest.mock import patch
 
 import numpy as np
@@ -354,6 +355,18 @@ class TestWorkflow(unittest.TestCase):
             workflow = Workflow([FileTask()])
             results = list(workflow(inputs))
             self.assertEqual(results, inputs)
+
+    def testFileURIWorkflow(self):
+        """
+        Test encoded file URIs and plain paths with literal percent sequences.
+        """
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "notes %20 #1.txt"
+            path.write_text("research note", encoding="utf-8")
+
+            workflow = Workflow([FileTask(lambda paths: [Path(p).read_text(encoding="utf-8") for p in paths])])
+            self.assertEqual(list(workflow([str(path), path.as_uri()])), ["research note", "research note"])
 
     def testImageWorkflow(self):
         """

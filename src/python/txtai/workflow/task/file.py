@@ -5,6 +5,8 @@ FileTask module
 import os
 import re
 
+from urllib.request import url2pathname
+
 from .base import Task
 
 
@@ -21,12 +23,12 @@ class FileTask(Task):
         if not isinstance(element, str):
             return False
 
-        # Replace file prefixes
-        element = re.sub(FileTask.FILE, "", element)
+        # Normalize paths without running subclass preparation, such as loading images.
+        element = FileTask.prepare(self, element)
 
         # Only accept file paths that exist
         return super().accept(element) and os.path.exists(element)
 
     def prepare(self, element):
-        # Replace file prefixes
-        return re.sub(FileTask.FILE, "", element)
+        # Decode file URIs while preserving literal percent sequences in plain paths.
+        return url2pathname(re.sub(FileTask.FILE, "", element)) if element.startswith("file://") else element
