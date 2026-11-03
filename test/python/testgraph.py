@@ -641,6 +641,20 @@ class TestGraph(unittest.TestCase):
         self.assertEqual(sorted(results.scan()), [0, 1, 2])
         self.assertEqual(results.edgecount(), 2)
 
+    def testSearchManySimilar(self):
+        """
+        Test a graph query with more than 10 similar clauses
+        """
+
+        words = ["apple", "banana", "cherry", "date", "elder", "fig", "grape", "honey", "ice", "jack", "kiwi", "lemon"]
+
+        embeddings = Embeddings({"keyword": True, "content": True, "graph": True})
+        embeddings.index([(uid, f"{word} pie", None) for uid, word in enumerate(words)])
+
+        where = " OR ".join(f"SIMILAR(A, '{word}')" for word in words[:11])
+        results = embeddings.search(f"MATCH (A) WHERE {where} RETURN A.id", 20)
+        self.assertEqual(sorted(x["A.id"] for x in results), list(range(11)))
+
     def testSearchNoContent(self):
         """
         Test a similar clause with content disabled

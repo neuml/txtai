@@ -151,8 +151,9 @@ class Query:
                 attribute = f"match_{x}"
                 clause = f"{node}.{attribute} > 0"
 
-                # Replace placeholder with search results
-                query = query.replace(f"{Query.SIMILAR}{x}", f"{clause}")
+                # Replace placeholder with search results, matching the whole placeholder so that
+                # __SIMILAR__1 doesn't match the start of __SIMILAR__10
+                query = re.sub(rf"{Query.SIMILAR}{x}(?!\d)", clause, query)
 
                 # Add uids and scores
                 for uid, score in result:
