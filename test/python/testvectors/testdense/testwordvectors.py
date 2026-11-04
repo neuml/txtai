@@ -173,7 +173,7 @@ class TestWordVectors(unittest.TestCase):
         expected = model.transform((999, "a completely different sentence", None))
         self.assertTrue(np.allclose(embeddings[ids.index(999)], expected))
 
-    def testIndexCheckpointContentChanged(self):
+    def testIndexCheckpointContentEdit(self):
         """
         Test that a resumed run where a document's id is unchanged but its content was edited
         (e.g. an updated row from the source) re-encodes that document instead of reusing the
