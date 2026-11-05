@@ -656,6 +656,27 @@ class Common:
 
             self.assertEqual(result["text"], self.data[4])
 
+        def testReindexDelete(self):
+            """
+            Test reindex renumbers indexids after a delete
+            """
+
+            # Index documents and delete two of them, which leaves gaps in the indexids
+            embeddings = Embeddings({"keyword": True, "content": self.backend})
+            embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+            embeddings.delete([0, 2])
+
+            # Reindex
+            embeddings.reindex({"keyword": True})
+
+            # Test indexids are sequential and still point to the same documents
+            result = embeddings.search("select indexid, id from txtai order by indexid", 10)
+            self.assertEqual([(row["indexid"], row["id"]) for row in result], [(0, "1"), (1, "3"), (2, "4"), (3, "5")])
+
+            # Search for best match
+            result = embeddings.search("lottery ticket", 1)[0]
+            self.assertEqual(result["text"], self.data[4])
+
         def testReindexStore(self):
             """
             Test reindex when the JSON data doesn't store the text column
