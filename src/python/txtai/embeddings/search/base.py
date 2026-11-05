@@ -347,7 +347,9 @@ class Search:
         limit = max(limit, self.limit(queries))
 
         # Bulk index scan. The graph query drops SKIP rows, so add them to the number of candidates.
-        scan = Scan(self.search, limit + self.offset(queries), weights, index)(queries, None)
+        # Graph nodes are keyed by index ids, so results must not be resolved to ids.
+        search = Search(self.embeddings, indexids=True).search
+        scan = Scan(search, limit + self.offset(queries), weights, index)(queries, None)
 
         # Combine index search results with database search results
         for x, query in enumerate(queries):
