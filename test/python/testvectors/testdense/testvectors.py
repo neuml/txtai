@@ -150,3 +150,33 @@ class TestVectors(unittest.TestCase):
         recovery = Recovery(checkpoint, "id", np.load)
         result = recovery("checksum-ab")
         self.assertTrue(np.allclose(result, embeddings))
+
+    def testRecoveryChecksumsExhausted(self):
+        """
+        Test that recovery stops trusting the checkpoint once the checksums file runs out of lines,
+        even though the embeddings spool file still has data - a truncated or corrupted companion
+        file must not be read past its end
+        """
+
+        checkpoint = os.path.join(tempfile.gettempdir(), "recovery-checksums-exhausted")
+        os.makedirs(checkpoint, exist_ok=True)
+
+        embeddings = np.random.rand(2, 4).astype(np.float32)
+
+        # Checksums file exists but has no lines, while the spool file still has embeddings
+        self.write(os.path.join(checkpoint, "id"), checksums=[], embeddings=embeddings)
+
+        recovery = Recovery(checkpoint, "id", np.load)
+        self.assertIsNone(recovery("checksum-a"))
+
+    def testChecksumUnserializable(self):
+        """
+        Test that checksum falls back to str() when a batch's ids/data can't be JSON-serialized
+        (for example, a dict with mixed key types can't be sorted by json.dumps(sort_keys=True)),
+        producing a deterministic checksum instead of raising
+        """
+
+        vectors = Vectors(None, None, None)
+
+        data = [{1: "a", "b": "c"}]
+        self.assertEqual(vectors.checksum([1], data), vectors.checksum([1], data))
