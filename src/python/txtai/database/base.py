@@ -153,7 +153,7 @@ class Database:
                 # Match the whole token, so that __SIMILAR__1 doesn't match the start of __SIMILAR__10
                 token = re.compile(rf"{Token.SIMILAR_TOKEN}{x}(?!\d)")
                 if where and token.search(where):
-                    where = self.embed(similarity, x).join(token.split(where))
+                    where = token.sub(self.embed(similarity, x), where)
 
         elif similarity:
             # Not a SQL query, load similarity results, if any
