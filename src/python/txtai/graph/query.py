@@ -59,8 +59,7 @@ class Query:
         # Debug log graph query
         logger.debug(query)
 
-        # Run openCypher query. A caller-computed limit of 0 must be honored, not replaced with the default -
-        # only a missing limit should use it.
+        # Run openCypher query
         return GrandCypher(graph.backend, limit if limit is not None else 3).run(query)
 
     def isquery(self, queries):
