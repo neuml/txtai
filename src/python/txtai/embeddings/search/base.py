@@ -59,8 +59,7 @@ class Search:
             list of graph results for a graph index search
         """
 
-        # Default input parameters. A caller-computed limit of 0 (e.g. remaining page slots or a quota) must be
-        # honored, not replaced with the default - only a missing limit should use it.
+        # Default input parameters
         limit = limit if limit is not None else 3
         weights = weights if weights is not None else 0.5
 
