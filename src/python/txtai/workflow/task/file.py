@@ -23,12 +23,25 @@ class FileTask(Task):
         if not isinstance(element, str):
             return False
 
-        # Normalize paths without running subclass preparation, such as loading images.
-        element = FileTask.prepare(self, element)
+        # Normalize file paths
+        element = self.normalize(element)
 
         # Only accept file paths that exist
         return super().accept(element) and os.path.exists(element)
 
     def prepare(self, element):
+        return self.normalize(element)
+
+    def normalize(self, element):
+        """
+        Normalizes a local file path, decoding file URIs when necessary.
+
+        Args:
+            element: file path or URI
+
+        Returns:
+            local file path
+        """
+
         # Decode file URIs while preserving literal percent sequences in plain paths.
         return url2pathname(re.sub(FileTask.FILE, "", element)) if element.startswith("file://") else element
