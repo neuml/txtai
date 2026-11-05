@@ -241,6 +241,25 @@ class TestSQL(unittest.TestCase):
         self.assertSql("groupby", "select * from txtai group by [a]", "json_extract(data, '$.a')")
         self.assertSql("orderby", "select * from txtai where order by [a]", "json_extract(data, '$.a')")
 
+    def testCast(self):
+        """
+        Test cast expressions don't resolve the type name as a column
+        """
+
+        self.assertSql("select", "select cast(a as integer) from txtai", "cast(json_extract(data, '$.a') as integer) as \"cast(a as integer)\"")
+        self.assertSql("select", "select CAST(id AS TEXT) a from txtai", "CAST(s.id AS TEXT) a")
+        self.assertSql("where", "select * from txtai where cast(a as decimal(10, 2)) > 5", "cast(json_extract(data, '$.a') as decimal(10, 2)) > 5")
+        self.assertSql(
+            "where",
+            "select * from txtai where cast(a as double precision) > b",
+            "cast(json_extract(data, '$.a') as double precision) > json_extract(data, '$.b')",
+        )
+        self.assertSql(
+            "orderby",
+            "select * from txtai order by func(cast(a as integer), b)",
+            "func(cast(json_extract(data, '$.a') as integer), json_extract(data, '$.b'))",
+        )
+
     def testDistinct(self):
         """
         Test distinct expressions

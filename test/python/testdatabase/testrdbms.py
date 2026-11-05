@@ -715,6 +715,22 @@ class Common:
 
             self.assertEqual(result["text"], self.data[4])
 
+        def testCast(self):
+            """
+            Test casting a JSON field in select, where and order by clauses
+            """
+
+            embeddings = Embeddings({"keyword": True, "content": self.backend})
+            embeddings.index([{"text": text, "n": n} for text, n in zip(self.data[:3], ["10", "9", "100"])])
+
+            # Numeric order instead of text order
+            result = embeddings.search("select id, cast(n as integer) as n from txtai order by cast(n as integer)")
+            self.assertEqual([(x["id"], x["n"]) for x in result], [("1", 9), ("0", 10), ("2", 100)])
+
+            # Numeric comparison
+            result = embeddings.search("select id from txtai where cast(n as integer) > 9 order by id")
+            self.assertEqual([x["id"] for x in result], ["0", "2"])
+
         def testSortMixed(self):
             """
             Test sorting and grouping by a JSON field with mixed text and document data
