@@ -534,6 +534,24 @@ class TestEmbeddings(unittest.TestCase):
         # A plain integer limit still works
         self.assertEqual(len(embeddings.search("select id from txtai order by id limit 3")), 3)
 
+    def testLimitZero(self):
+        """
+        Test that a computed limit of 0 (e.g. remaining page slots or a quota) returns no results instead of
+        falling back to the default
+        """
+
+        data = [(0, "apple pie recipe", None), (1, "apple cake recipe", None), (2, "banana bread", None)]
+
+        embeddings = Embeddings({"keyword": True, "content": True})
+        embeddings.index(data)
+
+        # A limit that evaluates to 0 must return no results, not silently fall back to the default
+        self.assertEqual(embeddings.search("select id from txtai where similar('apple')", 0), [])
+        self.assertEqual(embeddings.batchsearch(["select id from txtai where similar('apple')"], 0), [[]])
+
+        # Omitting limit still uses the documented default and finds both apple matches
+        self.assertEqual(len(embeddings.search("select id from txtai where similar('apple')")), 2)
+
     def testOffset(self):
         """
         Test an OFFSET clause with a similar clause

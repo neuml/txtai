@@ -60,7 +60,7 @@ class Search:
         """
 
         # Default input parameters
-        limit = limit if limit else 3
+        limit = limit if limit is not None else 3
         weights = weights if weights is not None else 0.5
 
         # Return empty results if there is no database and indexes

@@ -594,6 +594,23 @@ class TestGraph(unittest.TestCase):
         )
         self.assertEqual(list(results.scan())[0], 4)
 
+    def testSearchLimitZero(self):
+        """
+        Test that a computed limit of 0 (e.g. remaining page slots or a quota) returns no results instead of
+        falling back to the default
+        """
+
+        self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        results = self.embeddings.search(
+            """
+            MATCH (A)-[]->(B)
+            RETURN A, B
+        """,
+            limit=0,
+        )
+        self.assertEqual(len(results), 0)
+
     def testSearchBatch(self):
         """
         Test batch search
