@@ -591,6 +591,23 @@ class TestGraph(unittest.TestCase):
         self.assertEqual(sorted(results.scan()), [0, 1, 2])
         self.assertEqual(results.edgecount(), 2)
 
+    def testSearchNoContent(self):
+        """
+        Test a similar clause with content disabled
+        """
+
+        embeddings = Embeddings({"keyword": True, "graph": True})
+
+        # String ids
+        embeddings.index([("a", "apple pie", None), ("b", "banana bread", None), ("c", "cherry tart", None), ("d", "apple juice", None)])
+        results = embeddings.search("MATCH (A) WHERE SIMILAR(A, 'apple') RETURN A.id ORDER BY A.id")
+        self.assertEqual([x["A.id"] for x in results], ["a", "d"])
+
+        # Integer ids that differ from the index ids
+        embeddings.index([(1, "apple pie", None), (2, "banana bread", None), (3, "cherry tart", None), (0, "apple juice", None)])
+        results = embeddings.search("MATCH (A) WHERE SIMILAR(A, 'apple') RETURN A.id ORDER BY A.id")
+        self.assertEqual([x["A.id"] for x in results], [0, 1])
+
     def testSearchQuoted(self):
         """
         Test similar clauses with quoted text containing commas, quotes and parentheses
