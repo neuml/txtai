@@ -503,6 +503,17 @@ class TestWorkflow(unittest.TestCase):
             results = list(Workflow([task])([2, 4]))
             self.assertEqual([int(x) for x in results], [4, 8, 16, 64])
 
+    def testMergeEmptyArrays(self):
+        """
+        Test vstack of empty array batches and batches with no selected rows
+        """
+
+        for array in (np.asarray, torch.tensor):
+            for values in ([], ["ignored"]):
+                with self.subTest(array=array, values=values):
+                    task = Task([array, array], merge="vstack", select="^selected$")
+                    self.assertEqual(task(values), values)
+
     def testRetrieveWorkflow(self):
         """
         Test a retrieve task

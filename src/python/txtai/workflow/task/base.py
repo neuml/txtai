@@ -420,12 +420,13 @@ class Task:
 
         # If all outputs are numpy arrays, use native method
         if all(isinstance(output, np.ndarray) for output in outputs):
-            return np.concatenate(np.stack(outputs, axis=1))
+            stacked = np.stack(outputs, axis=1)
+            return stacked.reshape((stacked.shape[0] * stacked.shape[1], *stacked.shape[2:]))
 
         # If all outputs are torch tensors, use native method
         # pylint: disable=E1101
         if all(torch.is_tensor(output) for output in outputs):
-            return torch.cat(tuple(torch.stack(outputs, axis=1)))
+            return torch.stack(outputs, axis=1).flatten(0, 1)
 
         # Flatten into lists of outputs per input row. Wrap as one to many transformation.
         merge = []
