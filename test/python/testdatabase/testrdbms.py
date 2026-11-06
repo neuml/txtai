@@ -796,22 +796,6 @@ class Common:
             with self.assertRaises(SQLError):
                 self.embeddings.search("select * from txtai where bad,query")
 
-        def testSQLManySimilar(self):
-            """
-            Test a query with more than 10 similar clauses
-            """
-
-            words = ["apple", "banana", "cherry", "date", "elder", "fig", "grape", "honey", "ice", "jack", "kiwi", "lemon"]
-
-            embeddings = Embeddings({"keyword": True, "content": self.backend})
-            embeddings.index([(uid, f"{word} pie", None) for uid, word in enumerate(words)])
-
-            where = " or ".join(f"similar('{word}')" for word in words[:11])
-            results = embeddings.search(f"select id from txtai where {where}", 20)
-            self.assertEqual(sorted(int(x["id"]) for x in results), list(range(11)))
-
-            embeddings.close()
-
         def testSQLBind(self):
             """
             Test SQL statements with bind parameters
@@ -850,6 +834,22 @@ class Common:
                 parameters={"document": "%iceberg%", "id": 4},
             )
             self.assertEqual({row["text"] for row in result}, {self.data[1], self.data[4]})
+
+        def testSQLManySimilar(self):
+            """
+            Test a query with more than 10 similar clauses
+            """
+
+            words = ["apple", "banana", "cherry", "date", "elder", "fig", "grape", "honey", "ice", "jack", "kiwi", "lemon"]
+
+            embeddings = Embeddings({"keyword": True, "content": self.backend})
+            embeddings.index([(uid, f"{word} pie", None) for uid, word in enumerate(words)])
+
+            where = " or ".join(f"similar('{word}')" for word in words[:11])
+            results = embeddings.search(f"select id from txtai where {where}", 20)
+            self.assertEqual(sorted(int(x["id"]) for x in results), list(range(11)))
+
+            embeddings.close()
 
         def testSparse(self):
             """
