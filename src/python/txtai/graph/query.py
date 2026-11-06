@@ -109,14 +109,15 @@ class Query:
                 offset = match.group(1)
 
         # Parse similar clauses
-        for x, match in enumerate(re.finditer(r"similar\((.+?)\)", query, flags=re.DOTALL | re.IGNORECASE)):
+        for x, match in enumerate(re.finditer(r"""similar\(((?:"[^"]*"|'[^']*'|[^)'"])+)\)""", query, flags=re.DOTALL | re.IGNORECASE)):
             # Replace similar clause with placeholder
             query = query.replace(match.group(0), f"{Query.SIMILAR}{x}")
 
             # Parse similar clause parameters, commas inside quotes are kept
             params = shlex(match.group(1), posix=True)
             params.whitespace, params.whitespace_split = ",", True
-            params = [param.strip().replace("'", "").replace('"', "") for param in params]
+            params = [param.strip() for param in params]
+
             nodes.append(params[0])
             similar.append(params[1:])
 
