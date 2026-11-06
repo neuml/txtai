@@ -725,6 +725,32 @@ class TestEmbeddings(unittest.TestCase):
             for attr in checks:
                 self.assertIsNotNone(getattr(embeddings, attr))
 
+    def testSimilarCandidates(self):
+        """
+        Test that each similar clause keeps its own number of candidates when clauses on the same index are batched
+        """
+
+        data = ["red apple fruit", "green pear fruit", "blue car vehicle", "yellow banana fruit", "fast red sports car vehicle"]
+
+        embeddings = Embeddings({"keyword": True, "content": True})
+        embeddings.index(data)
+
+        # A query without a candidates argument and a query that sets 1 candidate
+        queries = ["select id from txtai where similar('fruit')", "select id from txtai where similar('vehicle', 1)"]
+        alone = [sorted(x["id"] for x in embeddings.search(query, 3)) for query in queries]
+        self.assertEqual(alone, [["0", "1", "3"], ["2"]])
+
+        # Batching the queries must not change the results of either query
+        batch = [sorted(x["id"] for x in result) for result in embeddings.batchsearch(queries, 3)]
+        self.assertEqual(batch, alone)
+
+        # Same with both clauses in one query
+        results = embeddings.search("select id from txtai where similar('fruit') or similar('vehicle', 1)", 10)
+        self.assertEqual(sorted(x["id"] for x in results), ["0", "1", "2", "3"])
+
+        results = embeddings.search("select id from txtai where similar('fruit', 1) or similar('vehicle')", 10)
+        self.assertEqual(len([x for x in results if "fruit" in data[int(x["id"])]]), 1)
+
     def testSimilarity(self):
         """
         Test similarity

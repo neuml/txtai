@@ -54,12 +54,11 @@ class Scan:
 
         # Group by index and run
         for index, iqueries in self.parse(queries, parameters).items():
-            # Query limit to pass to batch search
-            candidates = [query.candidates for query in iqueries if query.candidates]
-            if not candidates and not default:
+            # Number of candidates per query. Queries without a candidates argument use the default.
+            if not default and any(not query.candidates for query in iqueries):
                 default = self.default(queries)
 
-            candidates = max(candidates) if candidates else default
+            candidates = [query.candidates if query.candidates else default for query in iqueries]
 
             # Query weights to pass to batch search. Each query keeps its own weights, queries without weights use the default.
             weights = [query.weights if query.weights is not None else self.weights for query in iqueries]
@@ -68,10 +67,10 @@ class Scan:
             # Index to run query against
             index = index if index else self.index
 
-            # Run index searches
-            for x, result in enumerate(self.search([query.text for query in iqueries], candidates, weights, index)):
-                # Save query id and results to later join to original query
-                results[iqueries[x].uid] = (iqueries[x].qid, result)
+            # Run index searches with the largest number of candidates
+            for x, result in enumerate(self.search([query.text for query in iqueries], max(candidates), weights, index)):
+                # Save query id and results to later join to original query. Each query keeps its own number of candidates.
+                results[iqueries[x].uid] = (iqueries[x].qid, result[: candidates[x]])
 
         # Sort by query uid and return results
         return [result for _, result in sorted(results.items())]
