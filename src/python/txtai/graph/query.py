@@ -116,7 +116,7 @@ class Query:
             # Parse similar clause parameters, commas inside quotes are kept
             params = shlex(match.group(1), posix=True)
             params.whitespace, params.whitespace_split = ",", True
-            params = [param.strip(" '\"") for param in params]
+            params = [param.strip("'\"").strip() for param in params]
             nodes.append(params[0])
             similar.append(params[1:])
 
