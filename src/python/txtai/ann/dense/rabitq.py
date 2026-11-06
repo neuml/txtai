@@ -40,9 +40,6 @@ class RabitQ(ANN):
         if not RABITQ:
             raise ImportError('rabitqlib is not available - install "ann" extra to enable')
 
-        # Number of rows removed from the native index (ivf mode only)
-        self.config["deletes"] = self.config.get("deletes", 0)
-
     def load(self, path):
         self.close()
 
@@ -97,7 +94,6 @@ class RabitQ(ANN):
 
         # Add id offset and index build metadata
         self.config["offset"] = rows
-        self.config["deletes"] = 0
         self.metadata(settings)
 
     def append(self, embeddings):
@@ -109,7 +105,7 @@ class RabitQ(ANN):
         self.backend.add(embeddings)
 
         # Update id offset and index metadata
-        self.config["offset"] = self.backend.max_elements
+        self.config["offset"] = self.backend.num_stored_points
         self.metadata()
 
     def delete(self, ids):
@@ -117,9 +113,9 @@ class RabitQ(ANN):
             super().delete(ids)
 
         # Native remove hides rows from search. Unknown ids are silently ignored.
-        ids = [uid for uid in ids if 0 <= uid < self.backend.max_elements]
+        ids = [uid for uid in ids if 0 <= uid < self.backend.num_stored_points]
         if ids:
-            self.config["deletes"] += self.backend.remove(np.array(ids, dtype=np.int64))
+            self.backend.remove(np.array(ids, dtype=np.int64))
 
     def search(self, queries, limit):
         if not self.count():
@@ -143,7 +139,7 @@ class RabitQ(ANN):
         ]
 
     def count(self):
-        return self.backend.max_elements - self.config["deletes"] if self.backend is not None else 0
+        return self.backend.num_points if self.backend is not None else 0
 
     def save(self, path):
         self.backend.save(path)

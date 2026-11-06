@@ -61,7 +61,7 @@ class Query:
         logger.debug(query)
 
         # Run openCypher query
-        return GrandCypher(graph.backend, limit if limit else 3).run(query)
+        return GrandCypher(graph.backend, limit if limit is not None else 3).run(query)
 
     def isquery(self, queries):
         """
@@ -154,7 +154,7 @@ class Query:
                 attribute = f"match_{x}"
                 clause = f"{node}.{attribute} > 0"
 
-                # Replace placeholder with earch results
+                # Replace placeholder with search results
                 query = query.replace(f"{Query.SIMILAR}{x}", f"{clause}")
 
                 # Add uids and scores

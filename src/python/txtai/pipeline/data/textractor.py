@@ -59,15 +59,17 @@ class Textractor(Segmentation):
             # Retrieve remote file, if necessary
             path = path if exists else self.download(path)
 
-            # Parse content to HTML
-            html = self.html(path)
+            try:
+                # Parse content to HTML
+                html = self.html(path)
 
-            # FiletoHTML pipeline returns None when input is already HTML
-            html = html if html else self.safeopen.retrieve(path)
+                # FiletoHTML pipeline returns None when input is already HTML
+                html = html if html else self.safeopen.retrieve(path)
 
-            # Delete temporary file
-            if not exists:
-                os.remove(path)
+            finally:
+                # Delete temporary file
+                if not exists:
+                    os.remove(path)
 
         else:
             # Read data from url/path
@@ -87,10 +89,13 @@ class Textractor(Segmentation):
             temporary file path
         """
 
+        # Retrieve data before creating a persistent temporary file
+        data = self.safeopen.retrieve(url)
+
         with tempfile.NamedTemporaryFile(mode="wb", delete=False) as output:
             path = output.name
 
-            # Retrieve and write data to temporary file
-            output.write(self.safeopen.retrieve(url))
+            # Write data to temporary file
+            output.write(data)
 
         return path

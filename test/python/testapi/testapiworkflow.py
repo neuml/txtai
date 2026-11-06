@@ -85,6 +85,12 @@ workflow:
               url: http://127.0.0.1:8001/testpost
               params:
 
+    empty:
+        tasks:
+            - task: service
+              url: http://127.0.0.1:8001/empty
+              params:
+
     xml:
         tasks:
             - task: service
@@ -143,6 +149,12 @@ class RequestHandler(BaseHTTPRequestHandler):
 
         length = int(self.headers["content-length"])
         data = json.loads(self.rfile.read(length))
+
+        if self.path.startswith("/empty"):
+            # Respond without a body or content-type
+            self.send_response(204)
+            self.end_headers()
+            return
 
         response = json.dumps([[y for y in x.split(".") if y] for x in data]).encode("utf-8")
 
@@ -234,6 +246,16 @@ class TestWorkflow(unittest.TestCase):
 
         self.assertEqual(len(results), 1)
         self.assertEqual(len(results[0]), 2)
+
+    def testServiceEmpty(self):
+        """
+        Test workflow with ServiceTask POST via API and an empty response
+        """
+
+        text = "This is a test sentence. And another sentence to split."
+        results = self.client.post("workflow", json={"name": "empty", "elements": [text]}).json()
+
+        self.assertEqual(results, [None])
 
     def testServiceXml(self):
         """

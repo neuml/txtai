@@ -81,6 +81,101 @@ class TestWordVectors(unittest.TestCase):
             self.assertEqual(np.load(queue).shape, (512, 300))
             self.assertEqual(np.load(queue).shape, (488, 300))
 
+    def testIndexCheckpoint(self):
+        """
+        Test word vector indexing writes a checkpoint file and a second run over the same
+        documents is served entirely from it
+        """
+
+        checkpoint = os.path.join(tempfile.gettempdir(), "wordvectors-checkpoint")
+        shutil.rmtree(checkpoint, ignore_errors=True)
+
+        documents = [(x, "This is a test", None) for x in range(10)]
+        model = VectorsFactory.create({"path": self.path, "parallel": False}, None)
+
+        # First run builds the checkpoint
+        model.index(documents, 5, checkpoint)
+        self.assertTrue(os.path.exists(os.path.join(checkpoint, model.vectorsid())))
+
+        # Second run over the same documents must be fully served from the checkpoint
+        with patch.object(WordVectors, "encode", wraps=model.encode) as encode:
+            model.index(documents, 5, checkpoint)
+            encode.assert_not_called()
+
+    def testIndexCheckpointContentEdit(self):
+        """
+        Test that a resumed run where a document's id is unchanged but its content was edited
+        (e.g. an updated row from the source) re-encodes that document instead of reusing the
+        checkpoint's stale embedding for the old content under the same id
+        """
+
+        checkpoint = os.path.join(tempfile.gettempdir(), "wordvectors-checkpoint-content-changed")
+        shutil.rmtree(checkpoint, ignore_errors=True)
+
+        documents = [(x, f"document number {x}", None) for x in range(10)]
+        model = VectorsFactory.create({"path": self.path, "parallel": False}, None)
+
+        # First run builds the checkpoint
+        model.index(documents, 5, checkpoint)
+
+        # Resume with the same id at the same batch position, but edited content
+        resumed = list(documents)
+        resumed[7] = (7, "document number 7 has been edited since the last run", None)
+
+        buffer = os.path.join(tempfile.gettempdir(), "wordvectors-checkpoint-content-changed.buffer")
+        ids, _, embeddings = model.vectors(resumed, 5, checkpoint, buffer=buffer, dtype=np.float32)
+
+        # The edited document's embedding must match a fresh encoding of its new text, not the
+        # checkpoint's stale embedding recorded for id 7's old content
+        expected = model.transform((7, "document number 7 has been edited since the last run", None))
+        self.assertTrue(np.allclose(embeddings[ids.index(7)], expected))
+
+    def testIndexCheckpointMismatch(self):
+        """
+        Test that a resumed run with a different document at the same batch position re-encodes
+        that document instead of reusing the checkpoint's embedding for whoever previously sat
+        in that position
+        """
+
+        checkpoint = os.path.join(tempfile.gettempdir(), "wordvectors-checkpoint-mismatch")
+        shutil.rmtree(checkpoint, ignore_errors=True)
+
+        documents = [(x, f"document number {x}", None) for x in range(10)]
+        model = VectorsFactory.create({"path": self.path, "parallel": False}, None)
+
+        # First run builds the checkpoint
+        model.index(documents, 5, checkpoint)
+
+        # Resume with one document swapped out at the same batch position (index 7)
+        resumed = list(documents)
+        resumed[7] = (999, "a completely different sentence", None)
+
+        buffer = os.path.join(tempfile.gettempdir(), "wordvectors-checkpoint-mismatch.buffer")
+        ids, _, embeddings = model.vectors(resumed, 5, checkpoint, buffer=buffer, dtype=np.float32)
+
+        # The swapped document's embedding must match a fresh encoding of its own text, not the
+        # checkpoint's stale embedding for whatever occupied that batch position previously
+        expected = model.transform((999, "a completely different sentence", None))
+        self.assertTrue(np.allclose(embeddings[ids.index(999)], expected))
+
+    @patch("os.cpu_count")
+    def testIndexCheckpointParallel(self, cpucount):
+        """
+        Test word vector parallel indexing writes a checkpoint file
+        """
+
+        # Mock CPU count
+        cpucount.return_value = 1
+
+        checkpoint = os.path.join(tempfile.gettempdir(), "wordvectors-checkpoint-parallel")
+        shutil.rmtree(checkpoint, ignore_errors=True)
+
+        documents = [(x, "This is a test", None) for x in range(10)]
+        model = VectorsFactory.create({"path": self.path, "parallel": True}, None)
+
+        model.index(documents, 5, checkpoint)
+        self.assertTrue(os.path.exists(os.path.join(checkpoint, model.vectorsid())))
+
     def testIndexSerial(self):
         """
         Test word vector indexing in single process mode
@@ -123,45 +218,6 @@ class TestWordVectors(unittest.TestCase):
         with open(stream, "rb") as queue:
             self.assertEqual(np.load(queue).shape, (512, 300))
             self.assertEqual(np.load(queue).shape, (488, 300))
-
-    def testIndexCheckpoint(self):
-        """
-        Test word vector indexing writes a checkpoint file and a second run over the same
-        documents is served entirely from it
-        """
-
-        checkpoint = os.path.join(tempfile.gettempdir(), "wordvectors-checkpoint")
-        shutil.rmtree(checkpoint, ignore_errors=True)
-
-        documents = [(x, "This is a test", None) for x in range(10)]
-        model = VectorsFactory.create({"path": self.path, "parallel": False}, None)
-
-        # First run builds the checkpoint
-        model.index(documents, 5, checkpoint)
-        self.assertTrue(os.path.exists(os.path.join(checkpoint, model.vectorsid())))
-
-        # Second run over the same documents must be fully served from the checkpoint
-        with patch.object(WordVectors, "encode", wraps=model.encode) as encode:
-            model.index(documents, 5, checkpoint)
-            encode.assert_not_called()
-
-    @patch("os.cpu_count")
-    def testIndexCheckpointParallel(self, cpucount):
-        """
-        Test word vector parallel indexing writes a checkpoint file
-        """
-
-        # Mock CPU count
-        cpucount.return_value = 1
-
-        checkpoint = os.path.join(tempfile.gettempdir(), "wordvectors-checkpoint-parallel")
-        shutil.rmtree(checkpoint, ignore_errors=True)
-
-        documents = [(x, "This is a test", None) for x in range(10)]
-        model = VectorsFactory.create({"path": self.path, "parallel": True}, None)
-
-        model.index(documents, 5, checkpoint)
-        self.assertTrue(os.path.exists(os.path.join(checkpoint, model.vectorsid())))
 
     def testLookup(self):
         """

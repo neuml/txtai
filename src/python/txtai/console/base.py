@@ -11,6 +11,7 @@ from cmd import Cmd
 try:
     from rich import box
     from rich.console import Console as RichConsole
+    from rich.markup import escape
     from rich.table import Table
 
     RICH = True
@@ -259,6 +260,8 @@ class Console(Cmd):
 
             output = ""
             for token, _, color in spans:
+                # Escape token text so that it isn't parsed as console markup
+                token = escape(token)
                 if color:
                     output += f"[{color}]{token}[/{color}] "
                 else:
@@ -266,4 +269,5 @@ class Console(Cmd):
 
             return output
 
-        return str(value)
+        # Escape value text so that it isn't parsed as console markup
+        return escape(str(value))

@@ -54,7 +54,7 @@ class Signal:
             # Transpose audio
             audio = audio.T
 
-            # Resample audio and tranpose back
+            # Resample audio and transpose back
             samples = round(len(audio) * float(target) / rate)
             audio = signal.resample(audio, samples).T
 
@@ -163,17 +163,21 @@ class Signal:
             rate: sample rate
             threshold: energy below this level will be considered silence, defaults to 1.0
             leading: trim leading silence, defaults to True
-            trailing: trim trailing silence, defauls to True
+            trailing: trim trailing silence, defaults to True
 
         Returns:
             audio with silence removed
         """
 
-        # Process in 20ms chunks
+        # Empty audio has no chunks to concatenate.
+        if len(audio) == 0:
+            return audio
+
+        # Process in chunks, including the final partial chunk
         n, offset = int(rate * (20 / 1000.0) * 2), 0
 
         chunks = []
-        while offset + n <= len(audio):
+        while offset < len(audio):
             # Calculate energy for chunk and detection result
             chunk = audio[offset : offset + n]
             energyfreq = Signal.energy(chunk, rate)

@@ -24,7 +24,7 @@ class NumPy(ANN):
 
         # Array function definitions
         self.all, self.cat, self.dot, self.zeros = np.all, np.concatenate, np.dot, np.zeros
-        self.argsort, self.xor, self.clip = np.argsort, np.bitwise_xor, np.clip
+        self.xor, self.clip = np.bitwise_xor, np.clip
 
         # Scalar quantization
         quantize = self.config.get("quantize")
@@ -79,7 +79,7 @@ class NumPy(ANN):
             scores = self.dot(self.tensor(queries), self.backend.T)
 
         # Get topn ids
-        ids = self.argsort(-scores)[:, :limit]
+        ids = self.topn(scores, limit)
 
         # Map results to [(id, score)]
         results = []
@@ -100,6 +100,29 @@ class NumPy(ANN):
         else:
             with open(path, "wb") as handle:
                 np.save(handle, self.numpy(self.backend), allow_pickle=False)
+
+    def topn(self, scores, limit):
+        """
+        Gets the ids of the top scores for each row, ordered from highest to lowest score. This partitions
+        the scores and only sorts the topn candidates rather than sorting every score.
+
+        Args:
+            scores: scores array of shape (queries, rows)
+            limit: maximum number of ids per row
+
+        Returns:
+            topn ids for each row
+        """
+
+        # Sort all scores when partitioning isn't possible
+        if not 0 < limit < scores.shape[1]:
+            return np.argsort(-scores)[:, :limit]
+
+        # Partition to find the topn candidates, then sort only those candidates
+        ids = np.argpartition(-scores, limit - 1, axis=1)[:, :limit]
+        order = np.argsort(-np.take_along_axis(scores, ids, axis=1), axis=1)
+
+        return np.take_along_axis(ids, order, axis=1)
 
     def tensor(self, array):
         """

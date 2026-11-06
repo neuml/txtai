@@ -8,6 +8,8 @@ import os
 import tempfile
 import unittest
 
+from rich.markup import render
+
 from txtai.console import Console
 from txtai.embeddings import Embeddings
 
@@ -121,6 +123,31 @@ class TestConsole(unittest.TestCase):
         self.assertIn("highlight", self.command(".highlight"))
         self.assertIn("wins", self.command("feel good story"))
         self.assertIn("Taiwan", self.command("asia"))
+
+    def testMarkup(self):
+        """
+        Test results with text that looks like console markup
+        """
+
+        console = Console()
+
+        # Create a keyword index with text containing square brackets
+        embeddings = Embeddings(keyword=True, content=True)
+        embeddings.index(["Format: [INST] query [/INST] answer", "Use the [bold] flag"])
+        console.app = embeddings
+
+        output = self.command("select id, text from txtai where id = 0", console)
+        self.assertNotIn("Traceback", output)
+        self.assertIn("[INST] query [/INST] answer", output)
+
+        output = self.command("select id, text from txtai where id = 1", console)
+        self.assertIn("Use the [bold] flag", output)
+
+        # Explain highlighting
+        result = {"text": "[INST] query [/INST]", "score": 0.5, "tokens": [("[INST]", 0.01), ("query", 0.5), ("[/INST]", 0.01)]}
+        self.command(".highlight", console)
+        output = render(console.render(result, "text", result["text"]))
+        self.assertEqual(output.plain.strip(), "[INST] query [/INST]")
 
     def testNoResults(self):
         """

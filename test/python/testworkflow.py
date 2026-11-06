@@ -3,6 +3,7 @@ Workflow module tests
 """
 
 import contextlib
+import copy
 import glob
 import io
 import os
@@ -10,16 +11,25 @@ import tempfile
 import sys
 import unittest
 
+from datetime import datetime, timezone
 from itertools import product
+from pathlib import Path
+from unittest.mock import patch
 
 import numpy as np
 import torch
 
+from croniter import croniter
+
 from txtai.api import API
+from txtai.app import Application
 from txtai.embeddings import Documents, Embeddings
+from txtai.pipeline.data.urlretrieve import URLRetrieve
 from txtai.pipeline import Nop, Segmentation, Summary, Translation, Textractor
 from txtai.workflow import (
     Workflow,
+    WorkflowFactory,
+    TaskFactory,
     Task,
     ConsoleTask,
     ExportTask,
@@ -75,6 +85,41 @@ class TestWorkflow(unittest.TestCase):
                 tasks:
                     - transform
         """
+
+    def testApplicationConfig(self):
+        """
+        Test that an application can reuse its workflow configuration
+        """
+
+        workflow = {
+            "tasks": [{"task": "template", "template": "Hi {text}"}, {"action": "nop", "args": []}],
+            "stream": {"task": "stream", "action": "nop", "batch": True},
+        }
+        config = {"workflow": {"test": workflow}}
+        expected = copy.deepcopy(config)
+        for _ in range(2):
+            app = Application(config)
+            self.assertEqual(list(app.workflow("test", ["x"])), ["Hi x"])
+            self.assertEqual(config, expected)
+
+    def testFactoryConfig(self):
+        """
+        Test that factories preserve task, argument and stream configuration
+        """
+
+        def action(values, suffix):
+            return [value + suffix for value in values]
+
+        args = ["!"]
+        task = {"action": action, "args": args}
+        config = {"tasks": [dict(task, task="")], "stream": {"task": "stream", "action": iter, "batch": True}}
+        expected = copy.deepcopy(config)
+        for _ in range(2):
+            self.assertEqual(TaskFactory.create(task, "")(["x"]), ["x!"])
+            self.assertIs(task["action"], action)
+            self.assertIs(task["args"], args)
+            self.assertEqual(list(WorkflowFactory.create(config, "test")(["x"])), ["x!"])
+            self.assertEqual(config, expected)
 
     def testBaseWorkflow(self):
         """
@@ -258,6 +303,30 @@ class TestWorkflow(unittest.TestCase):
         path = glob.glob(os.path.join(tempfile.gettempdir(), "export-timestamp*.csv"))[0]
         self.assertGreater(os.path.getsize(path), 0)
 
+    def testExportWorkflowBatches(self):
+        """
+        Test an export task with multiple batches
+        """
+
+        path = os.path.join(tempfile.gettempdir(), "export-batches.csv")
+
+        # Track initialize action calls
+        runs = []
+        workflow = Workflow([ExportTask(output=path, initialize=lambda: runs.append(1))], batch=2)
+
+        # All batches are exported
+        list(workflow([{"id": x, "text": f"Sentence {x}"} for x in range(5)]))
+        with open(path, encoding="utf-8") as f:
+            self.assertEqual(len(f.readlines()), 6)
+
+        # Each workflow run starts a new export
+        list(workflow([{"id": x, "text": f"Sentence {x}"} for x in range(3)]))
+        with open(path, encoding="utf-8") as f:
+            self.assertEqual(len(f.readlines()), 4)
+
+        # Initialize action runs once per workflow run
+        self.assertEqual(len(runs), 2)
+
     def testExtractWorkflow(self):
         """
         Test column extraction tasks
@@ -286,6 +355,18 @@ class TestWorkflow(unittest.TestCase):
             workflow = Workflow([FileTask()])
             results = list(workflow(inputs))
             self.assertEqual(results, inputs)
+
+    def testFileURIWorkflow(self):
+        """
+        Test encoded file URIs and plain paths with literal percent sequences.
+        """
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "notes %20 #1.txt"
+            path.write_text("research note", encoding="utf-8")
+
+            workflow = Workflow([FileTask(lambda paths: [Path(p).read_text(encoding="utf-8") for p in paths])])
+            self.assertEqual(list(workflow([str(path), path.as_uri()])), ["research note", "research note"])
 
     def testImageWorkflow(self):
         """
@@ -442,6 +523,26 @@ class TestWorkflow(unittest.TestCase):
         results = list(workflow(["file://" + Utils.PATH + "/books.jpg"]))
         self.assertTrue(results[0].endswith("books.jpg") and "txtai" in results[0])
 
+        # A URL with no filename must still write to a file, not to the output directory
+        with patch.object(URLRetrieve, "__call__", return_value=b"data"):
+            with tempfile.TemporaryDirectory() as directory:
+                path = RetrieveTask(directory=directory).prepare("https://example.com/")
+                self.assertTrue(os.path.isfile(path))
+                with open(path, "rb") as handle:
+                    self.assertEqual(handle.read(), b"data")
+
+                # Distinct bare host URLs must not resolve to the same file
+                first = RetrieveTask(directory=directory).prepare("https://a.example.com/")
+                second = RetrieveTask(directory=directory).prepare("https://b.example.com/")
+                self.assertNotEqual(first, second)
+                self.assertTrue(first.endswith("a.example.com"))
+                self.assertTrue(second.endswith("b.example.com"))
+
+                # Same for a URL with no path when the directory structure is kept
+                path = RetrieveTask(directory=directory, flatten=False).prepare("https://c.example.com/")
+                self.assertTrue(os.path.isfile(path))
+                self.assertTrue(path.endswith("c.example.com"))
+
     def testRetrieveLocalFilenames(self):
         """
         Test that local filenames are preserved instead of parsed as URLs
@@ -497,6 +598,21 @@ class TestWorkflow(unittest.TestCase):
             app.wait()
 
         self.assertIn("a sentence to segment", output.getvalue())
+
+    def testScheduleElapsedWorkflow(self):
+        """
+        Test that an elapsed cron deadline still runs its scheduled task.
+        """
+
+        start = datetime(2026, 1, 1, tzinfo=timezone.utc)
+        executed = []
+        workflow = Workflow([Task(action=executed.append)])
+
+        with patch("txtai.workflow.base.croniter", return_value=croniter("* * * * * *", start)):
+            with patch("txtai.workflow.base.time.time", return_value=start.timestamp() + 1.01):
+                workflow.schedule("* * * * * *", ["test"], 1)
+
+        self.assertEqual(executed, [["test"]])
 
     def testScheduleErrorWorkflow(self):
         """

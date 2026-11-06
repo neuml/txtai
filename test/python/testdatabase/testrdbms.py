@@ -239,6 +239,21 @@ class Common:
             self.assertEqual(result["text"], self.data[4])
             self.assertEqual(len(result.get("tokens")), 8)
 
+        def testExplainSimilarArgs(self):
+            """
+            Test query explain ignores extra similar clause arguments
+            """
+
+            self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+            expected = self.embeddings.explain("select id, text, score from txtai where similar('feel good story')", limit=1)[0]
+
+            # Candidates and weights are not part of the query text
+            for query in ["similar('feel good story', 10)", "similar('feel good story', 0.5)"]:
+                result = self.embeddings.explain(f"select id, text, score from txtai where {query}", limit=1)[0]
+                self.assertEqual(result["text"], self.data[4])
+                self.assertEqual(result["tokens"], expected["tokens"])
+
         def testExplainEmpty(self):
             """
             Test query explain with no filtering criteria
@@ -352,6 +367,9 @@ class Common:
                     self.assertEqual([r["id"] for r in results], [r["id"] for r in expected])
                     for result, value in zip(results, expected):
                         self.assertAlmostEqual(result["score"], value["score"], places=5)
+
+                # Cleanup connection
+                embeddings.close()
 
         def testIndex(self):
             """
@@ -637,6 +655,47 @@ class Common:
             result = self.embeddings.search("feel good story", 1)[0]
 
             self.assertEqual(result["text"], self.data[4])
+
+        def testReindexDelete(self):
+            """
+            Test reindex renumbers indexids after a delete
+            """
+
+            # Index documents and delete two of them, which leaves gaps in the indexids
+            embeddings = Embeddings({"keyword": True, "content": self.backend})
+            embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+            embeddings.delete([0, 2])
+
+            # Reindex
+            embeddings.reindex({"keyword": True})
+
+            # Test indexids are sequential and still point to the same documents
+            result = embeddings.search("select indexid, id from txtai order by indexid", 10)
+            self.assertEqual([(row["indexid"], row["id"]) for row in result], [(0, "1"), (1, "3"), (2, "4"), (3, "5")])
+
+            # Search for best match
+            result = embeddings.search("lottery ticket", 1)[0]
+            self.assertEqual(result["text"], self.data[4])
+
+        def testReindexStore(self):
+            """
+            Test reindex when the JSON data doesn't store the text column
+            """
+
+            # Index documents and only store the title field in the JSON data
+            embeddings = Embeddings({"keyword": True, "content": self.backend, "columns": {"store": ["title"]}})
+            embeddings.index([{"id": uid, "text": text, "title": f"Title {uid}"} for uid, text in enumerate(self.data)])
+
+            # Reindex
+            embeddings.reindex({"keyword": True, "columns": {"store": ["title"]}})
+
+            # Test all documents are indexed
+            self.assertEqual(embeddings.count(), len(self.data))
+
+            # Search for best match
+            result = embeddings.search("select id, text, title from txtai where similar('lottery ticket')", 1)[0]
+            self.assertEqual(result["text"], self.data[4])
+            self.assertEqual(result["title"], "Title 4")
 
         def testSave(self):
             """

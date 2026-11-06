@@ -59,6 +59,20 @@ class TestLabels(unittest.TestCase):
         results = [l[0] for l in self.labels(["This is the best sentence ever", "This is terrible"], ["positive", "negative"], flatten=True)]
         self.assertEqual(results, ["positive", "negative"])
 
+    def testLabelZeroThreshold(self):
+        """
+        Test numeric zero flattening thresholds with dynamic and fixed labels
+        """
+
+        text = "This is the best sentence ever"
+        for classifier, candidates in ((self.labels, ["positive", "negative"]), (Labels(dynamic=False), ["POSITIVE", "NEGATIVE"])):
+            with self.subTest(dynamic=classifier.dynamic):
+                self.assertCountEqual(classifier(text, candidates, flatten=0.0), candidates)
+                self.assertCountEqual(classifier([text], candidates, flatten=0.0)[0], candidates)
+
+                # Boolean False still requests the original score tuples.
+                self.assertEqual(classifier(text, candidates, flatten=False), classifier(text, candidates))
+
     def testLabelFixed(self):
         """
         Test labels with a fixed label text classification model

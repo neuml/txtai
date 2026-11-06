@@ -32,8 +32,8 @@ class ImageEncoder(Encoder):
         # Create byte stream
         output = BytesIO()
 
-        # Write image to byte stream
-        obj.save(output, format=obj.format, quality="keep")
+        # Write image to byte stream. Images created or modified in memory don't have a format, use lossless PNG for those.
+        obj.save(output, format=obj.format if obj.format else "PNG", quality="keep")
 
         # Return byte array
         return output.getvalue()

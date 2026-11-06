@@ -92,7 +92,7 @@ class TextToSpeech(Pipeline):
 
         # Streaming response
         if stream:
-            return self.stream(texts, speaker, encoding)
+            return self.stream(texts, speaker, encoding, **kwargs)
 
         # Transform text to speech
         results = [self.execute(x, speaker, encoding, **kwargs) for x in texts]
@@ -137,7 +137,7 @@ class TextToSpeech(Pipeline):
 
         return exists
 
-    def stream(self, texts, speaker, encoding):
+    def stream(self, texts, speaker, encoding, **kwargs):
         """
         Iterates over texts, splits into segments and yields snippets of audio.
         This method is designed to integrate with streaming LLM generation.
@@ -146,6 +146,7 @@ class TextToSpeech(Pipeline):
             texts: list of input texts
             speaker: speaker id
             encoding: audio encoding format
+            kwargs: additional keyword args
 
         Returns:
             snippets of audio as NumPy arrays or audio bytes depending on encoding parameter
@@ -157,11 +158,11 @@ class TextToSpeech(Pipeline):
 
             if x == "\n" or (x.strip().endswith(".") and len([y for y in buffer if y]) > 2):
                 data, buffer = "".join(buffer), []
-                yield self.execute(data, speaker, encoding)
+                yield self.execute(data, speaker, encoding, **kwargs)
 
         if buffer:
             data = "".join(buffer)
-            yield self.execute(data, speaker, encoding)
+            yield self.execute(data, speaker, encoding, **kwargs)
 
     def execute(self, text, speaker, encoding, **kwargs):
         """

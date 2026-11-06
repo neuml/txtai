@@ -86,8 +86,9 @@ class Explain:
             # Parse query
             query = self.database.parse(query)
 
-            # Extract query from similar clause
-            query = " ".join([" ".join(clause) for clause in query["similar"]]) if "similar" in query else None
+            # Extract query text from similar clauses. Only the first argument is query text, the rest are
+            # candidates, index and weights.
+            query = " ".join([clause[0] for clause in query["similar"]]) if "similar" in query else None
 
         # Return original texts if query, text or score not present
         if not query or not texts or "score" not in texts[0] or "text" not in texts[0]:

@@ -38,6 +38,39 @@ class TestNumPy(DenseTest):
                     np.testing.assert_array_equal(ann.numpy(ann.backend), expected)
                     self.assertEqual(ann.count(), 2)
 
+    def testTopn(self):
+        """
+        Test that searches return the same top scores as a full sort for all limit sizes
+        """
+
+        rng = np.random.default_rng(0)
+        data = rng.random((50, 8), dtype=np.float32)
+        data /= np.linalg.norm(data, axis=1, keepdims=True)
+        queries = data[:3] + 0.01
+
+        for backend in ("numpy", "torch"):
+            ann = ANNFactory.create({"backend": backend, "dimensions": data.shape[1]})
+            self.addCleanup(ann.close)
+            ann.index(data.copy())
+
+            scores = np.dot(queries, data.T)
+
+            # Limits that are zero, smaller than, equal to and larger than the number of rows
+            for limit in (0, 1, 5, 49, 50, 80):
+                with self.subTest(backend=backend, limit=limit):
+                    results = ann.search(queries, limit)
+
+                    for x, result in enumerate(results):
+                        expected = np.sort(scores[x])[::-1][:limit]
+
+                        self.assertEqual(len(result), len(expected))
+                        np.testing.assert_allclose([score for _, score in result], expected, rtol=1e-5)
+
+                        # Ids are unique and each id maps to its own score
+                        ids = [uid for uid, _ in result]
+                        self.assertEqual(len(set(ids)), len(ids))
+                        np.testing.assert_allclose([scores[x][uid] for uid in ids], [score for _, score in result], rtol=1e-5)
+
     def testNumPy(self):
         """
         Test NumPy backend

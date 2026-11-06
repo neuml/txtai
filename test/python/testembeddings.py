@@ -11,7 +11,7 @@ from unittest.mock import patch
 
 import numpy as np
 
-from txtai.embeddings import Embeddings, Reducer
+from txtai.embeddings import Embeddings, IndexIds, Reducer
 from txtai.serialize import SerializeFactory
 
 
@@ -162,6 +162,24 @@ class TestEmbeddings(unittest.TestCase):
         self.assertEqual(self.embeddings.count(), 5)
         self.assertEqual(uid, 5)
 
+    def testDeleteIds(self):
+        """
+        Test delete with content disabled finds ids with a single pass over the index ids
+        """
+
+        # Create a keyword index with content disabled
+        embeddings = Embeddings({"keyword": True})
+        embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        # Delete a repeated id and an unknown id while counting the passes over the index ids
+        with patch.object(IndexIds, "__iter__", autospec=True, side_effect=IndexIds.__iter__) as scan:
+            deleted = embeddings.delete([4, 1, 4, 100])
+
+        self.assertEqual(scan.call_count, 1)
+        self.assertEqual(deleted, [1, 4])
+        self.assertEqual(embeddings.count(), 4)
+        self.assertEqual(embeddings.search("lottery ticket", 1), [])
+
     def testDense(self):
         """
         Test dense alias
@@ -225,6 +243,26 @@ class TestEmbeddings(unittest.TestCase):
         self.embeddings.index([(0, {"text": ""}, None)])
         self.assertTrue(self.embeddings.search("test"))
 
+    def testEmptySubindexes(self):
+        """
+        Test empty index and upsert with subindexes
+        """
+
+        with Embeddings({"keyword": True, "indexes": {"terms": {"keyword": True}}}) as embeddings:
+            # Test index with no data
+            embeddings.index([])
+            self.assertEqual(embeddings.search("apple", index="terms"), [])
+
+            # Test upsert with no data
+            embeddings.upsert(["apple"])
+            embeddings.upsert([])
+            self.assertEqual(embeddings.search("apple", index="terms")[0][0], 0)
+
+            # Test index with no data clears the subindex
+            embeddings.index([])
+            self.assertEqual(embeddings.indexes.terms.count(), 0)
+            self.assertEqual(embeddings.search("apple", index="terms"), [])
+
     def testNoneText(self):
         """
         Test dict documents where the text field is present but set to None
@@ -237,6 +275,52 @@ class TestEmbeddings(unittest.TestCase):
         self.assertEqual(self.embeddings.count(), 2)
         self.assertEqual(self.embeddings.search("alpha content", 1)[0][0], 0)
         self.assertEqual(self.embeddings.search("gamma content", 1)[0][0], 2)
+
+    def testNoneTextObject(self):
+        """
+        Test dict documents where the text field is set to None and an object is set
+        """
+
+        def transform(data):
+            # Dummy embedding per input using sum and mean of byte values
+            embeddings = []
+            for x in data:
+                values = list(x if isinstance(x, bytes) else x.encode())
+                embeddings.append([sum(values), sum(values) / len(values)])
+
+            return np.array(embeddings, dtype=np.float32)
+
+        # Graph and scoring are tested separately, graph edge inference doesn't support object queries with scoring
+        for config in [{"graph": {"approximate": False}}, {"scoring": {"method": "bm25", "terms": True}}]:
+            embeddings = Embeddings(method="external", transform=transform, content=True, backend="numpy", **config)
+            embeddings.index(
+                [
+                    ("d0", {"text": "alpha content"}, None),
+                    ("d1", {"text": None, "object": b"objbytes"}, None),
+                    ("d2", {"text": "gamma content"}, None),
+                ]
+            )
+
+            # The object document is vectorized and kept with its own id everywhere
+            self.assertEqual(embeddings.ann.count(), 3)
+            self.assertEqual(embeddings.count(), 3)
+            self.assertEqual(
+                embeddings.search("select indexid, id, text from txtai", 10),
+                [
+                    {"indexid": 0, "id": "d0", "text": "alpha content"},
+                    {"indexid": 1, "id": "d1", "text": None},
+                    {"indexid": 2, "id": "d2", "text": "gamma content"},
+                ],
+            )
+
+            # Vectors, database rows and search results should all line up
+            self.assertEqual(embeddings.search("select id from txtai where similar('alpha content')", 1), [{"id": "d0"}])
+            self.assertEqual(embeddings.search("select id from txtai where similar('gamma content')", 1), [{"id": "d2"}])
+
+            if embeddings.graph:
+                self.assertEqual([embeddings.graph.attribute(node, "id") for node in range(3)], ["d0", "d1", "d2"])
+            else:
+                self.assertEqual(embeddings.scoring.search("gamma", 1)[0][0], 2)
 
     def testExternal(self):
         """
@@ -449,6 +533,24 @@ class TestEmbeddings(unittest.TestCase):
 
         # A plain integer limit still works
         self.assertEqual(len(embeddings.search("select id from txtai order by id limit 3")), 3)
+
+    def testLimitZero(self):
+        """
+        Test that a computed limit of 0 (e.g. remaining page slots or a quota) returns no results instead of
+        falling back to the default
+        """
+
+        data = [(0, "apple pie recipe", None), (1, "apple cake recipe", None), (2, "banana bread", None)]
+
+        embeddings = Embeddings({"keyword": True, "content": True})
+        embeddings.index(data)
+
+        # A limit that evaluates to 0 must return no results, not silently fall back to the default
+        self.assertEqual(embeddings.search("select id from txtai where similar('apple')", 0), [])
+        self.assertEqual(embeddings.batchsearch(["select id from txtai where similar('apple')"], 0), [[]])
+
+        # Omitting limit still uses the documented default and finds both apple matches
+        self.assertEqual(len(embeddings.search("select id from txtai where similar('apple')")), 2)
 
     def testOffset(self):
         """
@@ -724,6 +826,18 @@ class TestEmbeddings(unittest.TestCase):
         # Close embeddings
         embeddings.close()
 
+        # Check documents without a vector are skipped by subindexes after a dense index is loaded
+        config = {"method": "external", "content": True, "indexes": {"labels": {"keyword": True, "columns": {"text": "label"}}}}
+        vector = np.array([1, 0], dtype=np.float32)
+        with Embeddings(config) as embeddings:
+            embeddings.index([("first", {"object": vector, "label": "red"})])
+            embeddings.save(index)
+
+        with Embeddings().load(index) as embeddings:
+            embeddings.upsert([("novector", {"label": "green"}), ("second", {"object": vector, "label": "blue"})])
+            self.assertEqual(embeddings.search("green", index="labels"), [])
+            self.assertEqual([row["id"] for row in embeddings.search("blue", index="labels")], ["second"])
+
     def testSubindexVectors(self):
         """
         Test subindexes with the same model path and different vectors settings
@@ -785,8 +899,18 @@ class TestEmbeddings(unittest.TestCase):
         # SQL query with a similar() clause extracts its terms
         self.assertEqual(embeddings.terms("select id, text from txtai where similar('feel good story')"), "feel good story")
 
+        # Candidates, index and weights arguments are not keyword terms
+        self.assertEqual(embeddings.terms("select id, text from txtai where similar('feel good story', 10)"), "feel good story")
+        self.assertEqual(embeddings.terms("select id, text from txtai where similar('feel good story', 'index1', 0.5)"), "feel good story")
+
         # SQL query without a similar() clause has no keyword terms (previously raised KeyError)
         self.assertEqual(embeddings.terms("select id, text from txtai where id = 1"), None)
+
+        # Batch results stay aligned with the input queries when a query has no similar() clause
+        self.assertEqual(
+            embeddings.batchterms(["select id, text from txtai where id = 1", "select id, text from txtai where similar('feel good story')"]),
+            [None, "feel good story"],
+        )
 
     def testTruncate(self):
         """

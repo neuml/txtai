@@ -78,7 +78,13 @@ class Tabular(Pipeline):
 
         if dicts:
             df = pd.DataFrame(dicts)
-            results.extend(self.process(df))
+            rows = self.process(df)
+
+            # A single dict input returns all of its rows, same as a single CSV file input
+            if not isinstance(data, list):
+                return rows
+
+            results.extend(rows)
 
         return results[0] if not isinstance(data, list) else results
 
@@ -106,7 +112,8 @@ class Tabular(Pipeline):
         # Tuple iteration preserves column types instead of coercing each row to one dtype.
         for index, values in zip(df.index, df.itertuples(index=False, name=None)):
             row = dict(zip(df.columns, values))
-            uid = row[self.idcolumn] if self.idcolumn is not None else index
+            # Coerce NaN ids to None so the row-index fallback applies.
+            uid = self.column(row[self.idcolumn]) if self.idcolumn is not None else index
             uid = uid if uid is not None else index
             text = self.concat(row, columns)
 

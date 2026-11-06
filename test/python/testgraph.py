@@ -320,6 +320,30 @@ class TestGraph(unittest.TestCase):
         self.assertEqual(len(graph.topics), 6)
         self.assertEqual(len(graph.categories), 6)
 
+    def testInferTopics(self):
+        """
+        Test inferring topics when most neighbors have no topic
+        """
+
+        graph = GraphFactory.create({"backend": "networkx"})
+        graph.initialize()
+        graph.topics = {"t": [0]}
+
+        graph.addnode(0, topic="t", topicrank=0, category="c")
+        for x in range(1, 4):
+            graph.addnode(x, updated=True)
+        graph.addnode(4, updated=True)
+
+        for x, y in [(1, 2), (2, 3), (1, 3), (1, 0)]:
+            graph.addedge(x, y)
+
+        graph.infertopics()
+
+        self.assertEqual([graph.attribute(x, "topic") for x in range(4)], ["t"] * 4)
+        self.assertEqual(graph.topics["t"], [0, 1, 2, 3])
+        self.assertEqual(graph.attribute(1, "category"), "c")
+        self.assertIsNone(graph.attribute(4, "topic"))
+
     @patch.dict(os.environ, {"ALLOW_PICKLE": "True"})
     def testLegacy(self):
         """
@@ -417,6 +441,32 @@ class TestGraph(unittest.TestCase):
         embeddings.index({"id": f"ID{i}", "text": x, "relationships": relationships if i == 0 else None} for i, x in enumerate(self.data))
         self.assertEqual(len(embeddings.graph.edges(0)), len(self.data) - 1)
         embeddings.close()
+
+    def testRelationshipsIntIds(self):
+        """
+        Test manually-provided relationships with integer ids and content disabled.
+
+        Regression test: graph relationship resolution looks up ids with
+        str(id), but ids stored without content kept their original int type,
+        so the lookup missed and the edge was silently dropped.
+        """
+
+        cases = [
+            (True, (0, 1)),
+            (False, ("0", "1")),
+            (False, (0, 1)),
+        ]
+
+        for content, ids in cases:
+            embeddings = Embeddings(keyword=True, content=content, graph={"minscore": 1.0})
+            embeddings.index(
+                [
+                    {"id": ids[0], "text": "apple", "relationships": [{"id": ids[1], "weight": 0.7}]},
+                    {"id": ids[1], "text": "banana"},
+                ]
+            )
+            self.assertEqual(embeddings.graph.edgecount(), 1)
+            embeddings.close()
 
     def testRelationshipsInvalid(self):
         """
@@ -543,6 +593,23 @@ class TestGraph(unittest.TestCase):
             graph=True,
         )
         self.assertEqual(list(results.scan())[0], 4)
+
+    def testSearchLimitZero(self):
+        """
+        Test that a computed limit of 0 (e.g. remaining page slots or a quota) returns no results instead of
+        falling back to the default
+        """
+
+        self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        results = self.embeddings.search(
+            """
+            MATCH (A)-[]->(B)
+            RETURN A, B
+        """,
+            limit=0,
+        )
+        self.assertEqual(len(results), 0)
 
     def testSearchBatch(self):
         """

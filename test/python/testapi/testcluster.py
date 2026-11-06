@@ -49,9 +49,9 @@ class RequestHandler(BaseHTTPRequestHandler):
                 response = [{"count(*)": 12, "txt": "This is a test"}, {"count(*)": 14, "txt": "And another test"}]
             else:
                 if self.server.server_port == 8002:
-                    response = [{"count(*)": 12, "min(indexid)": 0, "max(indexid)": 11, "avg(indexid)": 6.3}]
+                    response = [{"count(*)": 12, "count(indexid)": 12, "min(indexid)": 0, "max(indexid)": 11, "avg(indexid)": 6.3}]
                 else:
-                    response = [{"count(*)": 16, "min(indexid)": 2, "max(indexid)": 14, "avg(indexid)": 6.7}]
+                    response = [{"count(*)": 16, "count(indexid)": 16, "min(indexid)": 2, "max(indexid)": 14, "avg(indexid)": 6.7}]
         elif self.path.startswith("/search"):
             response = [{"id": 4, "score": 0.40}]
         else:
@@ -284,10 +284,10 @@ class TestCluster(unittest.TestCase):
         Test cluster SQL statement
         """
 
-        query = urllib.parse.quote("select count(*), min(indexid), max(indexid), avg(indexid) from txtai where text='This is a test'")
+        query = urllib.parse.quote("select count(*), count(indexid), min(indexid), max(indexid), avg(indexid) from txtai where text='This is a test'")
         self.assertEqual(
             self.client.get(f"search?query={query}").json(),
-            [{"count(*)": 28, "min(indexid)": 0, "max(indexid)": 14, "avg(indexid)": 182.8 / 28}],
+            [{"count(*)": 28, "count(indexid)": 28, "min(indexid)": 0, "max(indexid)": 14, "avg(indexid)": 182.8 / 28}],
         )
 
         query = urllib.parse.quote("select count(*), text txt from txtai group by txt order by count(*) desc")

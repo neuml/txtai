@@ -60,7 +60,7 @@ class Search:
         """
 
         # Default input parameters
-        limit = limit if limit else 3
+        limit = limit if limit is not None else 3
         weights = weights if weights is not None else 0.5
 
         # Return empty results if there is no database and indexes
@@ -347,7 +347,9 @@ class Search:
         limit = max(limit, self.limit(queries))
 
         # Bulk index scan. The graph query drops SKIP rows, so add them to the number of candidates.
-        scan = Scan(self.search, limit + self.offset(queries), weights, index)(queries, None)
+        # Graph nodes are keyed by index ids, so results must not be resolved to ids.
+        search = Search(self.embeddings, indexids=True).search
+        scan = Scan(search, limit + self.offset(queries), weights, index)(queries, None)
 
         # Combine index search results with database search results
         for x, query in enumerate(queries):

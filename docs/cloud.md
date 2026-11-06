@@ -79,7 +79,7 @@ This section builds a scheduled workflow service. [More on scheduled workflows c
 
 ```bash
 # Get Dockerfile
-wget https://raw.githubusercontent.com/neuml/txtai/master/docker/service/Dockerfile
+wget https://raw.githubusercontent.com/neuml/txtai/master/docker/schedule/Dockerfile
 
 # CPU build
 docker build -t txtai-service .

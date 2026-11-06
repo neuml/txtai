@@ -98,13 +98,14 @@ class HTMLToMarkdown(Pipeline):
             return self.header(node, article)
 
         if node.name in ("blockquote", "q"):
-            return self.block(node)
+            return self.block(node, article)
 
         if node.name in ("ul", "ol"):
             return self.items(node, article)
 
         if node.name in ("code", "pre"):
-            return self.code(node)
+            # Code inside a paragraph, list item, table cell or heading is inline code, not a code block
+            return f"`{node.text.strip()}`" if self.isinline(node) else self.code(node)
 
         if node.name == "table":
             return self.table(node, article)
@@ -123,6 +124,9 @@ class HTMLToMarkdown(Pipeline):
         if self.iscontainer(node, children):
             texts = [self.process(node, article) for node in children]
             text = "\n".join(text for text in texts if text or not article)
+
+            # Apply paragraph formatting to article paragraphs that only have element children
+            text = self.articletext(node, text) if article and node.name == "p" else text
         else:
             text = self.text(node, article)
 
@@ -201,6 +205,8 @@ class HTMLToMarkdown(Pipeline):
                     text = f"{space}**{text.strip()}** "
                 elif target.name in ("i", "em"):
                     text = f"{space}*{text.strip()}* "
+                elif target.name == "code":
+                    text = f"{space}`{text.strip()}` "
                 elif target.name == "a":
                     # Links without a target are added as plain text
                     href = target.get("href")
@@ -241,19 +247,31 @@ class HTMLToMarkdown(Pipeline):
         # Return formatted header. Remove leading whitespace as it was added before level in step above.
         return f"{level} {text.lstrip()}" if text.strip() else ""
 
-    def block(self, node):
+    def block(self, node, article):
         """
         Blockquote handler. This method transforms a HTML blockquote or q block into a Markdown formatted
         blockquote
 
         Args:
             node: input node
+            article: True if the main section node is an article
 
         Returns:
             block as markdown
         """
 
-        text = "\n".join(f"> {x}" for x in node.text.strip().split("\n"))
+        # Start each paragraph and list on its own line, even when the HTML has no whitespace between them
+        text, newline = "", False
+        for child in node.children:
+            if child.name or child.text.strip():
+                if (child.name in ("p", "div", "ul", "ol") or newline) and text and not text.endswith("\n"):
+                    text += "\n"
+                newline = child.name in ("p", "div", "ul", "ol")
+
+            # Lists keep their markers, with one item per line
+            text += self.items(child, article) if child.name in ("ul", "ol") else child.text
+
+        text = "\n".join(f"> {x}" for x in text.strip().split("\n"))
         return f"{text}\n\n" if self.paragraphs else f"{text}\n"
 
     def items(self, node, article):
@@ -279,25 +297,24 @@ class HTMLToMarkdown(Pipeline):
             # Nested list that is a direct child of this list
             if element.name != "li":
                 self.nested(element, article, elements)
-                continue
+            else:
+                # Unordered lists use dashes. Ordered lists use numbers.
+                count += 1
+                prefix = "-" if node.name == "ul" else f"{count}."
 
-            # Unordered lists use dashes. Ordered lists use numbers.
-            count += 1
-            prefix = "-" if node.name == "ul" else f"{count}."
+                # Detach nested lists, these are formatted separately
+                nested = [child.extract() for child in element.find_all(("ul", "ol"), recursive=False)]
 
-            # Detach nested lists, these are formatted separately
-            nested = [child.extract() for child in element.find_all(("ul", "ol"), recursive=False)]
+                # List item text
+                text = self.process(element, article)
 
-            # List item text
-            text = self.process(element, article)
+                # Add list element
+                if text:
+                    elements.append(f"{prefix} {text}")
 
-            # Add list element
-            if text:
-                elements.append(f"{prefix} {text}")
-
-            # Add nested lists
-            for child in nested:
-                self.nested(child, article, elements)
+                # Add nested lists
+                for child in nested:
+                    self.nested(child, article, elements)
 
         # Join elements together as string
         return "\n".join(elements)
@@ -411,8 +428,8 @@ class HTMLToMarkdown(Pipeline):
         # List of valid text nodes
         valid = ("p", "th", "td", "li", "a", "b", "strong", "i", "em")
 
-        # Check if this node is valid or it's part of a table cell
-        valid = node.name in valid or (node.parent and node.parent.name in ("th", "td"))
+        # Check if this node is valid or it's part of a paragraph, list item or table cell
+        valid = node.name in valid or node.find_parent(("p", "li", "th", "td")) is not None
 
         # Check if text is valid article text
         text = text if (valid or self.isheader(node)) and not self.islink(node) else ""
@@ -425,6 +442,19 @@ class HTMLToMarkdown(Pipeline):
                 text = f"{text.strip()}\n\n" if self.paragraphs else f"{text.strip()}\n"
 
         return text
+
+    def isinline(self, node):
+        """
+        Checks if node is an inline code node, a code element inside a paragraph, list item, table cell or heading.
+
+        Args:
+            node: input node
+
+        Returns:
+            True if node is an inline code node, False otherwise
+        """
+
+        return node.name == "code" and node.parent is not None and (node.parent.name in ("p", "li", "td", "th", "a") or self.isheader(node.parent))
 
     def isheader(self, node):
         """

@@ -137,7 +137,7 @@ class HFLLM(HFPipeline):
 
         # Set parameters for vision models and return
         if self.pipeline.task == "image-text-to-text":
-            # Maxlength has to be large enough to accomodate images
+            # Maxlength has to be large enough to accommodate images
             defaults["max_length"] = max(maxlength, 2048)
 
             # Set default token id

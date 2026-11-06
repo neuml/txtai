@@ -47,6 +47,9 @@ class TaskFactory:
             Task
         """
 
+        # Copy configuration before binding arguments
+        config = config.copy()
+
         # Create lambda function if additional arguments present
         if "args" in config:
             args = config.pop("args")

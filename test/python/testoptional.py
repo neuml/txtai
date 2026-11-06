@@ -160,6 +160,9 @@ class TestOptional(unittest.TestCase):
             SparseANNFactory.create({"backend": "ivfsparse"})
 
         with self.assertRaises(ImportError):
+            SparseANNFactory.create({"backend": "milvussparse"})
+
+        with self.assertRaises(ImportError):
             SparseANNFactory.create({"backend": "pgsparse"})
 
         with self.assertRaises(ImportError):

@@ -85,7 +85,7 @@ class AudioStream(Pipeline):
         audio, rate = self.queue.get()
         while not isinstance(audio, int) or (audio, rate) != AudioStream.COMPLETE:
             # Resample to target sample rate, if necessary
-            audio, rate = (Signal.resample(audio, rate, self.rate), self.rate) if self.rate else (audio, rate)
+            audio, rate = (Signal.resample(audio.T, rate, self.rate).T, self.rate) if self.rate else (audio, rate)
 
             # Play audio segment
             sd.play(audio, rate, blocking=True)
