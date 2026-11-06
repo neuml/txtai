@@ -294,12 +294,15 @@ class Expression:
             similar: list where similar function call parameters are stored
         """
 
+        # Only cast functions take a type name after AS
+        cast = token.lower() in Token.CAST
+
         # Consume function parameters
         while token and token != ")":
             x, token = self.readtoken(iterator)
 
             # Check if token starts a cast type, i.e. cast(a as integer)
-            if token and token.lower() in Token.ALIAS:
+            if cast and token and token.lower() in Token.ALIAS:
                 # Skip type name, it's not a column
                 self.casttype(iterator, tokens, x)
 

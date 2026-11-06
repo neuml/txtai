@@ -248,6 +248,7 @@ class TestSQL(unittest.TestCase):
 
         self.assertSql("select", "select cast(a as integer) from txtai", "cast(json_extract(data, '$.a') as integer) as \"cast(a as integer)\"")
         self.assertSql("select", "select CAST(id AS TEXT) a from txtai", "CAST(s.id AS TEXT) a")
+        self.assertSql("select", "select try_cast(a as integer) b from txtai", "try_cast(json_extract(data, '$.a') as integer) b")
         self.assertSql("where", "select * from txtai where cast(a as decimal(10, 2)) > 5", "cast(json_extract(data, '$.a') as decimal(10, 2)) > 5")
         self.assertSql(
             "where",
