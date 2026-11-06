@@ -19,6 +19,9 @@ class Token:
     # Default alias token
     ALIAS = ["as"]
 
+    # Functions that take a type name after an alias token, i.e. cast(a as integer)
+    CAST = ["cast", "try_cast"]
+
     # Default list of comparison operators
     OPERATORS = ["=", "!=", "<>", ">", ">=", "<", "<=", "+", "-", "*", "/", "%", "||", "not", "between", "like", "is", "null"]
 

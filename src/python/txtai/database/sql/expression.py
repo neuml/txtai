@@ -294,12 +294,20 @@ class Expression:
             similar: list where similar function call parameters are stored
         """
 
+        # Only cast functions take a type name after AS
+        cast = token.lower() in Token.CAST
+
         # Consume function parameters
         while token and token != ")":
             x, token = self.readtoken(iterator)
 
+            # Check if token starts a cast type, i.e. cast(a as integer)
+            if cast and token and token.lower() in Token.ALIAS:
+                # Skip type name, it's not a column
+                self.casttype(iterator, tokens, x)
+
             # Check if token is a square bracket
-            if Token.isbracket(token):
+            elif Token.isbracket(token):
                 # Resolve bracket expression
                 self.bracket(iterator, tokens, x)
 
@@ -322,6 +330,28 @@ class Expression:
             elif Token.iscompound(tokens, x):
                 # Resolve compound expressions
                 self.compound(iterator, tokens, x, aliases, similar)
+
+    def casttype(self, iterator, tokens, x):
+        """
+        Consumes the type name of a cast expression without resolving it. Type names can have
+        multiple words or parameters, i.e. double precision, decimal(10, 2).
+
+        Args:
+            iterator: tokens iterator
+            tokens: input tokens
+            x: current position
+        """
+
+        # Read until the closing paren of the cast function
+        parens = 0
+        while Token.get(tokens, x + 1) and (Token.get(tokens, x + 1) != ")" or parens):
+            x, token = self.readtoken(iterator)
+
+            # Track type parameter parens
+            if token == "(":
+                parens += 1
+            elif token == ")":
+                parens -= 1
 
     def alias(self, iterator, tokens, x, aliases, index):
         """
