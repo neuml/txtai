@@ -6,6 +6,7 @@ import os
 import tempfile
 import unittest
 
+from pathlib import Path
 from unittest.mock import patch
 from urllib.error import URLError
 
@@ -66,6 +67,19 @@ class TestTextractor(unittest.TestCase):
 
         # Check number of sections is as expected
         self.assertEqual(len(sections), 2)
+
+    def testFileURI(self):
+        """
+        Test encoded file URIs and plain paths with literal percent sequences.
+        """
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "notes %20 #1.html"
+            path.write_text("<html><body><p>research note</p></body></html>", encoding="utf-8")
+            textractor = Textractor(backend=None)
+
+            self.assertEqual(textractor(str(path)), "research note")
+            self.assertEqual(textractor(path.as_uri()), "research note")
 
     def testDownloadError(self):
         """
