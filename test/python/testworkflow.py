@@ -48,6 +48,16 @@ from txtai.workflow import (
 from utils import Utils
 
 
+def iterator_upper(values):
+    """Return a finite iterator with a local callback, as task actions may do."""
+    return map(lambda value: value.upper(), values)
+
+
+def iterator_lower(values):
+    """Return a finite iterator with a local callback, as task actions may do."""
+    return map(lambda value: value.lower(), values)
+
+
 class TestWorkflow(unittest.TestCase):
     """
     Workflow tests.
@@ -262,6 +272,80 @@ class TestWorkflow(unittest.TestCase):
             with self.subTest(concurrency=concurrency):
                 workflow = Workflow([Task([Nop(), Nop()], concurrency=concurrency)], batch=2)
                 self.assertEqual(list(workflow(iter([1, 2, 3]))), [(1, 1), (2, 2), (3, 3)])
+
+    def testIteratorOutputWorkflow(self):
+        """
+        Test finite non-generator iterator outputs with list input batches
+        """
+
+        actions = [
+            (lambda values: map(lambda value: value * 2, values), [0, 2, 4]),
+            (lambda values: iter([value * 2 for value in values]), [0, 2, 4]),
+            (lambda values: zip(values, values), [(0, 0), (1, 1), (2, 2)]),
+        ]
+        for action, expected in actions:
+            with self.subTest(action=action):
+                self.assertEqual(list(Workflow([Task(action)])([0, 1, 2])), expected)
+
+    def testIteratorOutputPacked(self):
+        """
+        Test iterator outputs preserve tuple metadata and unselected rows
+        """
+
+        elements = [(0, "alpha.txt", "a"), (1, "skip.pdf", "b"), (2, "beta.txt", "c")]
+        expected = [(0, "ALPHA.TXT", "a"), (1, "skip.pdf", "b"), (2, "BETA.TXT", "c")]
+        for action in [iterator_upper, lambda values: iter([value.upper() for value in values])]:
+            with self.subTest(action=action):
+                self.assertEqual(list(Workflow([Task(action, select=r"\.txt$")])(elements)), expected)
+
+    def testIteratorOutputOneToMany(self):
+        """
+        Test iterator outputs retain single-action one-to-many handling
+        """
+
+        for onetomany in [True, False]:
+            with self.subTest(onetomany=onetomany):
+                task = Task(lambda values: map(lambda value: [value, value + "!"], values), onetomany=onetomany)
+                expected = [(0, "a", None), (0, "a!", None), (1, "b", None), (1, "b!", None)]
+                if not onetomany:
+                    expected = [(0, ["a", "a!"], None), (1, ["b", "b!"], None)]
+                self.assertEqual(list(Workflow([task])([(0, "a", None), (1, "b", None)])), expected)
+
+    def testIteratorOutputConcurrent(self):
+        """
+        Test iterator outputs are collected inside each action worker
+        """
+
+        for concurrency in [None, "thread", "process"]:
+            with self.subTest(concurrency=concurrency):
+                task = Task([iterator_upper, iterator_lower], merge=None, concurrency=concurrency)
+                self.assertEqual(list(Workflow([task])(["Alpha", "Beta"])), [["ALPHA", "BETA"], ["alpha", "beta"]])
+
+    def testIteratorOutputInputLaziness(self):
+        """
+        Test direct single-action iterator runs keep their existing lazy behavior
+        """
+
+        for column in [None, 0]:
+            with self.subTest(column=column):
+                seen = []
+                values = iter([1, 2, 3] if column is None else [(1, 10), (2, 20), (3, 30)])
+                task = Task(lambda inputs, seen=seen: map(lambda value: seen.append(value) or value * 2, inputs), column=column, unpack=False)
+                outputs = task(values)
+                self.assertIs(iter(outputs), outputs)
+                self.assertEqual(seen, [])
+                self.assertEqual(next(outputs), 2)
+                self.assertEqual(seen, [1])
+
+    def testIteratorOutputEmpty(self):
+        """
+        Test unused iterator outputs are not consumed when no input was selected
+        """
+
+        seen = []
+        task = Task(lambda _: map(lambda value: seen.append(value) or value, ["unused"]), select="missing")
+        self.assertEqual(task(["alpha"]), ["alpha"])
+        self.assertEqual(seen, [])
 
     def testConsoleWorkflow(self):
         """
