@@ -282,6 +282,9 @@ class Task:
             if len(self.action) > 1 and isinstance(elements, Iterator):
                 raise ValueError("Iterator inputs are not supported for multi-action tasks")
 
+            # Collect iterator outputs only for nonempty list batches that require indexed packing.
+            processor = self._process_batch if isinstance(elements, list) and elements else self.process
+
             # Run actions
             outputs = []
             for x, action in enumerate(self.action):
@@ -290,11 +293,11 @@ class Task:
                 inputs = [self.extract(e, index) for e in elements] if index is not None else elements
 
                 # Queue arguments for executor, process immediately if no executor available
-                outputs.append((action, inputs) if executor else self.process(action, inputs))
+                outputs.append((action, inputs) if executor else processor(action, inputs))
 
             # Run with executor if available
             if executor:
-                outputs = executor.run(self.concurrency, self.process, outputs)
+                outputs = executor.run(self.concurrency, processor, outputs)
 
             # Run post process operations
             return self.postprocess(outputs)
@@ -320,6 +323,21 @@ class Task:
             return element[index]
 
         return element
+
+    def _process_batch(self, action, inputs):
+        """
+        Executes a batch action and collects iterator outputs before packing or returning from a worker.
+
+        Args:
+            action: callable object
+            inputs: action inputs
+
+        Returns:
+            action outputs with iterators collected into a list
+        """
+
+        outputs = self.process(action, inputs)
+        return list(outputs) if isinstance(outputs, Iterator) else outputs
 
     def process(self, action, inputs):
         """
