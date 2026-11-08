@@ -22,6 +22,21 @@ class TestIVFSparse(SparseTest):
     IVFSparse ANN tests.
     """
 
+    def testIVFSparseUnknownCPU(self):
+        """
+        Test sparse search when the operating system cannot determine the CPU count
+        """
+
+        data = csr_matrix(np.eye(3, dtype=np.float32))
+        ann = SparseANNFactory.create({"backend": "ivfsparse"})
+        try:
+            ann.index(data)
+            expected = ann.search(data, 1)
+            with patch("txtai.ann.sparse.ivfsparse.os.cpu_count", return_value=None):
+                self.assertEqual(ann.search(data, 1), expected)
+        finally:
+            ann.close()
+
     def testIVFSparse(self):
         """
         Test IVFSparse backend

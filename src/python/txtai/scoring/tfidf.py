@@ -182,7 +182,7 @@ class TFIDF(Scoring):
     def batchsearch(self, queries, limit=3, threads=True):
         # Calculate number of threads using a thread per 25k records in index
         threads = math.ceil(self.count() / 25000) if isinstance(threads, bool) and threads else int(threads)
-        threads = min(max(threads, 1), os.cpu_count())
+        threads = min(max(threads, 1), os.cpu_count() or 1)
 
         # This method is able to run as multiple threads due to a number of regex and numpy method calls that drop the GIL.
         results = []
