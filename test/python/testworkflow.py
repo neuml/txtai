@@ -368,6 +368,50 @@ class TestWorkflow(unittest.TestCase):
             workflow = Workflow([FileTask(lambda paths: [Path(p).read_text(encoding="utf-8") for p in paths])])
             self.assertEqual(list(workflow([str(path), path.as_uri()])), ["research note", "research note"])
 
+    def testFilteredPackingScales(self):
+        """
+        Test that packing a batch does not repeatedly compare all process positions.
+        """
+
+        class Position(int):
+            """Integer position that counts equality comparisons."""
+
+            comparisons = 0
+            __hash__ = int.__hash__
+
+            def __eq__(self, other):
+                Position.comparisons += 1
+                return super().__eq__(other)
+
+        positions = [Position(index) for index in range(128)]
+        results = [str(index) for index in positions]
+        indexed = list(zip(positions, results))
+
+        self.assertEqual(Task().filteredpack(results, indexed, positions), results)
+        self.assertLessEqual(Position.comparisons, len(positions) * 2)
+
+    def testFilteredPackingResults(self):
+        """
+        Test selected, one-to-many and unmerged outputs keep input order and metadata.
+        """
+
+        inputs = [(["first"], "keep a", "tag"), (["skip"], "skip", "tag"), (["last"], "keep b", "tag")]
+        task = Task(lambda values: [[value.upper(), None] for value in values], select="keep")
+        self.assertEqual(
+            task(inputs),
+            [(["first"], "KEEP A", "tag"), (["first"], None, "tag"), inputs[1], (["last"], "KEEP B", "tag"), (["last"], None, "tag")],
+        )
+
+        task = Task([lambda values: [value.upper() for value in values], list], select="keep", merge=None)
+        self.assertEqual(task(inputs), [[(["first"], "KEEP A", "tag"), inputs[1], (["last"], "KEEP B", "tag")], inputs])
+
+        # Repeated process positions continue to select the first corresponding result.
+        self.assertEqual(Task().filteredpack(["first", "second", "last"], [(0, "a"), (1, "skip"), (2, "b")], [0, 0, 2]), ["first", "skip", "last"])
+
+        # None action results and unselected inputs remain in the Workflow's output.
+        workflow = Workflow([Task(lambda values: [None for _ in values], select="keep")])
+        self.assertEqual(list(workflow(["keep", "skip"])), [None, "skip"])
+
     def testImageWorkflow(self):
         """
         Test an image task
