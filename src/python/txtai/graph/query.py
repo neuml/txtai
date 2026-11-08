@@ -25,6 +25,9 @@ class Query:
     # Similar token
     SIMILAR = "__SIMILAR__"
 
+    # Require a node or named path after MATCH when recognizing additional spellings.
+    MATCH_RETURN = re.compile(r"\s*match\s+(?:\w+\s*=\s*)?\(.*\breturn\s+", re.IGNORECASE | re.DOTALL)
+
     def __init__(self):
         """
         Create a new graph query instance.
@@ -74,8 +77,11 @@ class Query:
             True if all queries are openCypher queries
         """
 
-        # Check for required graph query clauses
-        return all(query and query.strip().startswith("MATCH ") and "RETURN " in query for query in queries)
+        # Preserve queries recognized by the original check, including comments after MATCH.
+        return all(
+            isinstance(query, str) and ((query.lstrip().startswith("MATCH ") and "RETURN " in query) or self.MATCH_RETURN.match(query))
+            for query in queries
+        )
 
     def parse(self, query):
         """
