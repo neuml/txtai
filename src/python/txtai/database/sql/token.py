@@ -23,7 +23,7 @@ class Token:
     CAST = ["cast", "try_cast"]
 
     # Default list of comparison operators
-    OPERATORS = ["=", "!=", "<>", ">", ">=", "<", "<=", "+", "-", "*", "/", "%", "||", "not", "between", "like", "is", "null"]
+    OPERATORS = ["=", "!=", "<>", ">", ">=", "<", "<=", "+", "-", "*", "/", "%", "||", "not", "between", "like", "is"]
 
     # Default list of logic separators
     LOGIC_SEPARATORS = ["and", "or"]
@@ -31,8 +31,8 @@ class Token:
     # Default list of sort order operators
     SORT_ORDER = ["asc", "desc"]
 
-    # Default list of boolean literals
-    BOOLEANS = ["true", "false"]
+    # Default list of keyword literals
+    LITERALS = ["true", "false", "null"]
 
     # Numeric literals, including exponent notation
     NUMERIC = re.compile(r"(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?")
@@ -208,8 +208,8 @@ class Token:
             True if this token is a literal, False otherwise
         """
 
-        # Literals are wrapped in quotes, parens, wildcards, numeric or boolean.
-        return token and (token.startswith(("'", '"', ",", "(", ")", "*")) or Token.NUMERIC.fullmatch(token) or token.lower() in Token.BOOLEANS)
+        # Literals are wrapped in quotes, parens, wildcards, numeric or keyword literals.
+        return token and (token.startswith(("'", '"', ",", "(", ")", "*")) or Token.NUMERIC.fullmatch(token) or token.lower() in Token.LITERALS)
 
     @staticmethod
     def islogicseparator(token):

@@ -167,6 +167,12 @@ class TestSQL(unittest.TestCase):
         )
         self.assertSql("select", "select id as myid from txtai", "s.id as myid")
         self.assertSql("select", "select length(a) t from txtai", "length(json_extract(data, '$.a')) t")
+        self.assertSql("select", "select a is null as flag from txtai", "json_extract(data, '$.a') is null as flag")
+        self.assertSql("select", "select a is not null flag from txtai", "json_extract(data, '$.a') is not null flag")
+        self.assertSql("select", "select sum(a is null) missing from txtai", "sum(json_extract(data, '$.a') is null) missing")
+        self.assertSql("select", "select iif(a is null, 1, 0) x from txtai", "iif(json_extract(data, '$.a') is null, 1, 0) x")
+        self.assertSql("select", "select a + null x from txtai", "json_extract(data, '$.a') + null x")
+        self.assertSql("select", "select null x from txtai", "null x")
 
         self.assertSql("where", "select id as myid from txtai where myid != 3 and a != 1", "myid != 3 and json_extract(data, '$.a') != 1")
         self.assertSql("where", "select txt T from txtai where t LIKE '%abc%'", "t LIKE '%abc%'")
