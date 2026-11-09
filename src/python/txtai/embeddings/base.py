@@ -568,8 +568,8 @@ class Embeddings:
             self.ann.load(f"{path}/embeddings")
 
         # Dimensionality reduction model - word vectors only
-        if self.config.get("pca"):
-            self.reducer = Reducer()
+        self.reducer = Reducer() if self.config.get("pca") else None
+        if self.reducer:
             self.reducer.load(f"{path}/lsa")
 
         # Index ids when content is disabled

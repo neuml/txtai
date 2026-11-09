@@ -679,6 +679,25 @@ class TestEmbeddings(unittest.TestCase):
         reducer(query)
         self.assertFalse(np.array_equal(query, original))
 
+    def testReducerReload(self):
+        """
+        Test loading an index without a reducer into an instance with a reducer
+        """
+
+        # Create an index with a reducer
+        embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2", "pca": 1})
+        embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        # Create and save an index without a reducer
+        index = os.path.join(tempfile.gettempdir(), "embeddings.noreducer")
+        self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+        self.embeddings.save(index)
+
+        # Load the index without a reducer and check the previous reducer isn't applied to queries
+        embeddings.load(index)
+        self.assertIsNone(embeddings.reducer)
+        self.assertEqual(embeddings.search("feel good story", 3), self.embeddings.search("feel good story", 3))
+
     def testSave(self):
         """
         Test save
