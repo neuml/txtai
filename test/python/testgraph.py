@@ -594,6 +594,21 @@ class TestGraph(unittest.TestCase):
         )
         self.assertEqual(list(results.scan())[0], 4)
 
+    def testCypherKeywordFormatting(self):
+        """
+        Test that valid Cypher formatting variants reach the graph search.
+        """
+
+        embeddings = Embeddings(keyword=True, content=True, graph={"backend": "networkx", "limit": 1})
+        embeddings.index([("0", "machine learning", None), ("1", "machine learning applications", None)])
+
+        for query in ("match (n) return n.id", "MATCH\t(n)\nRETURN\n n.id"):
+            with self.subTest(query=query):
+                self.assertCountEqual(embeddings.search(query), [{"n.id": "0"}, {"n.id": "1"}])
+
+        results = embeddings.search("match machine learning and return examples")
+        self.assertCountEqual([row["id"] for row in results], ["0", "1"])
+
     def testSearchLimitZero(self):
         """
         Test that a computed limit of 0 (e.g. remaining page slots or a quota) returns no results instead of
@@ -850,24 +865,3 @@ class TestGraph(unittest.TestCase):
         self.assertEqual(graph.edgecount(), 2)
         self.assertEqual(sum((len(graph.topics[x]) for x in graph.topics)), 6)
         self.assertEqual(len(graph.categories), 5)
-
-
-class TestGraphQueryDispatch(unittest.TestCase):
-    """
-    Graph query routing tests with a local keyword index.
-    """
-
-    def testCypherKeywordFormatting(self):
-        """
-        Test that valid Cypher formatting variants reach the graph search.
-        """
-
-        embeddings = Embeddings(keyword=True, content=True, graph={"backend": "networkx", "limit": 1})
-        embeddings.index([("0", "machine learning", None), ("1", "machine learning applications", None)])
-
-        for query in ("match (n) return n.id", "MATCH\t(n)\nRETURN\n n.id"):
-            with self.subTest(query=query):
-                self.assertCountEqual(embeddings.search(query), [{"n.id": "0"}, {"n.id": "1"}])
-
-        results = embeddings.search("match machine learning and return examples")
-        self.assertCountEqual([row["id"] for row in results], ["0", "1"])
