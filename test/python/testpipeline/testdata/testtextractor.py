@@ -249,6 +249,20 @@ class TestTextractor(unittest.TestCase):
             "|Header1|Header2|\n|---|---|\n|Test1 Test2|Test3|",
         )
 
+    def testHTMLArticleDefinitionList(self):
+        """
+        Test article definition lists, such as the API signatures in Sphinx documentation
+        """
+
+        textractor = Textractor()
+
+        # Definition terms are kept along with their descriptions
+        html = (
+            "<html><body><article><p>Functions</p><dl><dt><span>json.</span><span>dump</span>(<em>obj</em>)</dt>"
+            "<dd><p>Serialize obj</p></dd></dl><dl><dt>Term</dt><dd>Definition</dd></dl></article></body></html>"
+        )
+        self.assertEqual(textractor(html), "Functions\n\njson.dump(*obj* )\n\nSerialize obj\n\nTerm\n\nDefinition")
+
     def testHTMLArticleSpan(self):
         """
         Test article paragraphs with text wrapped in inline elements
