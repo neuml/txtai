@@ -101,6 +101,14 @@ workflow:
               params:
                 text:
 
+    error:
+        tasks:
+            - task: service
+              url: http://127.0.0.1:8001/error
+              method: get
+              params:
+                text:
+
     slow:
         tasks:
             - task: service
@@ -125,6 +133,19 @@ class RequestHandler(BaseHTTPRequestHandler):
         if self.path.startswith("/slow"):
             # Sleep longer than the client timeout to force a read timeout
             time.sleep(2)
+
+        if self.path.startswith("/error"):
+            # Respond with a server error that has a valid JSON body
+            response = '{"detail": "internal error"}'.encode("utf-8")
+
+            self.send_response(500)
+            self.send_header("content-type", "application/json")
+            self.send_header("content-length", len(response))
+            self.end_headers()
+
+            self.wfile.write(response)
+            self.wfile.flush()
+            return
 
         self.send_response(200)
 
@@ -267,6 +288,15 @@ class TestWorkflow(unittest.TestCase):
 
         self.assertEqual(len(results), 1)
         self.assertEqual(len(results[0]), 1)
+
+    def testServiceError(self):
+        """
+        Test workflow with ServiceTask GET that raises an error for an HTTP error response
+        """
+
+        text = "This is a test sentence. And another sentence to split."
+        with self.assertRaises(requests.exceptions.HTTPError):
+            self.client.post("workflow", json={"name": "error", "elements": [text]})
 
     def testServiceTimeout(self):
         """
