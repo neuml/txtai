@@ -147,7 +147,8 @@ class Task:
         # These are enumerate-generated process positions, not application ids.
         positions = {}
         for index, pid in enumerate(ids):
-            positions.setdefault(pid, index)
+            if pid not in positions:
+                positions[pid] = index
 
         # Update with transformed elements. Handle one to many transformations.
         elements = []
