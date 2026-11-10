@@ -139,16 +139,15 @@ class SQL:
         """
 
         # Build a simple SQL lexer
-        #   - Punctuation chars are parsed as standalone tokens which helps identify operators
+        #   - Runs of punctuation chars are grouped, which builds multi-character comparison operators (<=, !=, ||)
+        #   - Arithmetic operators are standalone tokens, so a sign never merges with an operator (a=-1 is a, =, -, 1).
+        #     shlex adds - * / to wordchars when punctuation_chars is set, remove them.
         #   - Add additional wordchars to prevent splitting on those values
         #   - Disable comments
-        tokens = shlex(StringIO(query), punctuation_chars="=!<>+-*/%|")
-        tokens.wordchars += ":@#"
+        tokens = shlex(StringIO(query), punctuation_chars="=!<>|")
+        tokens.wordchars = tokens.wordchars.translate(str.maketrans("", "", "-*/")) + ":@#"
         tokens.commenters = ""
         tokens = list(tokens)
-
-        # Split a sign from the operator it was merged with (a=-1 is tokenized as a, =-, 1)
-        tokens = [part for token in tokens for part in self.splitsign(token)]
 
         # Rejoin signed exponents split on punctuation (1e-3 is tokenized as 1e, -, 3)
         x = 0
@@ -167,24 +166,6 @@ class SQL:
                 positions[t] = x
 
         return (tokens, positions)
-
-    def splitsign(self, token):
-        """
-        Splits trailing signs from an operator token. Operators and signs are both punctuation chars,
-        so the lexer merges them when they are not separated by whitespace.
-
-        Args:
-            token: input token
-
-        Returns:
-            [operator, sign, ...] if token is an operator followed by signs, otherwise [token]
-        """
-
-        operator = token.rstrip("+-")
-        if len(token) > 1 and (not operator or Token.isoperator(operator)):
-            return ([operator] if operator else []) + list(token[len(operator) :])
-
-        return [token]
 
     def parse(self, tokens, positions, name, offset=1, alias=False, aliases=None, similar=None):
         """
