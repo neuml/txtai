@@ -94,6 +94,9 @@ class ServiceTask(Task):
         else:
             response = requests.post(self.url, json=params, timeout=self.timeout)
 
+        # Raise an error for 4xx/5xx responses. Otherwise, error payloads are passed downstream as task output.
+        response.raise_for_status()
+
         # Empty response body (e.g. 204 No Content), nothing to parse
         if not response.content:
             return None
