@@ -63,6 +63,12 @@ class Annoy(ANN):
 
         return results
 
+    def append(self, embeddings):
+        raise NotImplementedError("Annoy indexes can't be modified after they are built")
+
+    def delete(self, ids):
+        raise NotImplementedError("Annoy indexes can't be modified after they are built")
+
     def count(self):
         # Number of items in index
         return self.backend.get_n_items()

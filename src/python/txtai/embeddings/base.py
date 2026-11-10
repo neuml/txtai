@@ -223,9 +223,6 @@ class Embeddings:
             # Parse out indices and ids to delete
             indices = [i for i, _ in ids]
             deletes = sorted(set(uid for _, uid in ids))
-
-            # Delete ids from database
-            self.database.delete(deletes)
         elif self.ann or self.scoring:
             # Find existing ids with a single pass over the index ids
             uids = set(ids)
@@ -253,6 +250,10 @@ class Embeddings:
             # Delete ids from graph
             if self.graph:
                 self.graph.delete(indices)
+
+        # Delete ids from database last, so it stays unchanged if an index can't delete
+        if self.database:
+            self.database.delete(deletes)
 
         return deletes
 
