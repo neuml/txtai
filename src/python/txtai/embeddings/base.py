@@ -6,7 +6,7 @@ import json
 import os
 import tempfile
 
-from ..ann import ANNFactory
+from ..ann import ANN, ANNFactory
 from ..archive import ArchiveFactory
 from ..cloud import CloudFactory
 from ..database import DatabaseFactory
@@ -167,6 +167,9 @@ class Embeddings:
             self.index(documents, checkpoint=checkpoint)
             return
 
+        # Check that the ANN index can be appended to before any data is changed
+        self.checkann("append")
+
         # Create transform and stream
         transform = Transform(self, Action.UPSERT, checkpoint=checkpoint)
         stream = Stream(self, Action.UPSERT)
@@ -210,6 +213,9 @@ class Embeddings:
             list of ids deleted
         """
 
+        # Check that the ANN index supports deletes before any data is changed
+        self.checkann("delete")
+
         # List of internal indices for each candidate id to delete
         indices = []
 
@@ -223,6 +229,9 @@ class Embeddings:
             # Parse out indices and ids to delete
             indices = [i for i, _ in ids]
             deletes = sorted(set(uid for _, uid in ids))
+
+            # Delete ids from database
+            self.database.delete(deletes)
         elif self.ann or self.scoring:
             # Find existing ids with a single pass over the index ids
             uids = set(ids)
@@ -250,10 +259,6 @@ class Embeddings:
             # Delete ids from graph
             if self.graph:
                 self.graph.delete(indices)
-
-        # Delete ids from database last, so it stays unchanged if an index can't delete
-        if self.database:
-            self.database.delete(deletes)
 
         return deletes
 
@@ -733,6 +738,17 @@ class Embeddings:
         """
 
         return self.ann is not None
+
+    def checkann(self, method):
+        """
+        Checks that the ANN index implements method. Raises an error otherwise.
+
+        Args:
+            method: ANN method name
+        """
+
+        if self.ann and getattr(type(self.ann), method) is getattr(ANN, method):
+            raise NotImplementedError(f"{method} is not supported by the {self.config.get('backend')} backend")
 
     def isweighted(self):
         """
