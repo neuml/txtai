@@ -39,9 +39,9 @@ class RequestHandler(BaseHTTPRequestHandler):
                     {
                         "id": str(uuid.uuid4()),
                         "object": "chat.completion.chunk",
-                        "created": int(time.time() * 1000),
+                        "created": int(time.time()),
                         "model": "test",
-                        "choices": [{"id": 0, "delta": {"content": "blue"}}],
+                        "choices": [{"index": 0, "delta": {"content": "blue"}, "finish_reason": "stop"}],
                     }
                 )
                 + "\n\ndata: [DONE]\n\n"
@@ -53,9 +53,9 @@ class RequestHandler(BaseHTTPRequestHandler):
                 {
                     "id": str(uuid.uuid4()),
                     "object": "chat.completion",
-                    "created": int(time.time() * 1000),
+                    "created": int(time.time()),
                     "model": "test",
-                    "choices": [{"id": 0, "message": {"role": "assistant", "content": "blue"}, "finish_reason": "stop"}],
+                    "choices": [{"index": 0, "message": {"role": "assistant", "content": "blue"}, "finish_reason": "stop"}],
                 }
             )
 
