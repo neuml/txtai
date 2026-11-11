@@ -77,7 +77,7 @@ class Query:
             True if all queries are openCypher queries
         """
 
-        return all(isinstance(query, str) and self.QUERY.match(query) for query in queries)
+        return all(isinstance(query, str) and Query.QUERY.match(query) for query in queries)
 
     def parse(self, query):
         """
