@@ -247,6 +247,51 @@ class TestSQL(unittest.TestCase):
         self.assertSql("groupby", "select * from txtai group by [a]", "json_extract(data, '$.a')")
         self.assertSql("orderby", "select * from txtai where order by [a]", "json_extract(data, '$.a')")
 
+    def testCase(self):
+        """
+        Test case expressions
+        """
+
+        self.assertSql(
+            "select",
+            "select id, case when flag = 1 then 'odd' else 'even' end as kind from txtai",
+            "s.id, case when json_extract(data, '$.flag') = 1 then 'odd' else 'even' end as kind",
+        )
+        self.assertSql(
+            "select",
+            "select case when a = 1 then b else c end from txtai",
+            "case when json_extract(data, '$.a') = 1 then json_extract(data, '$.b') else json_extract(data, '$.c') end "
+            + 'as "case when a = 1 then b else c end"',
+        )
+        self.assertSql("select", "select case a when 1 then 'x' end k from txtai", "case json_extract(data, '$.a') when 1 then 'x' end k")
+        self.assertSql(
+            "select",
+            "select case when a = 1 then case when b = 2 then 'x' else c end else 'z' end k from txtai",
+            "case when json_extract(data, '$.a') = 1 then case when json_extract(data, '$.b') = 2 then 'x' else json_extract(data, '$.c') end "
+            + "else 'z' end k",
+        )
+        self.assertSql(
+            "select",
+            "select case when a = 1 and b = 2 then 1 end k from txtai",
+            "case when json_extract(data, '$.a') = 1 and json_extract(data, '$.b') = 2 then 1 end k",
+        )
+        self.assertSql(
+            "select",
+            "select case when a = 1 or b in (1, 2) then 1 end k from txtai",
+            "case when json_extract(data, '$.a') = 1 or json_extract(data, '$.b') in (1, 2) then 1 end k",
+        )
+        self.assertSql("select", "select [end] from txtai", "json_extract(data, '$.end') as \"end\"")
+        self.assertSql(
+            "where",
+            "select * from txtai where CASE WHEN a > 1 THEN b ELSE 0 END = 1",
+            "CASE WHEN json_extract(data, '$.a') > 1 THEN json_extract(data, '$.b') ELSE 0 END = 1",
+        )
+        self.assertSql(
+            "orderby",
+            "select * from txtai order by case when a = 1 then 0 else 1 end desc, id",
+            "case when json_extract(data, '$.a') = 1 then 0 else 1 end desc, s.id",
+        )
+
     def testCast(self):
         """
         Test cast expressions don't resolve the type name as a column
@@ -403,6 +448,7 @@ class TestSQL(unittest.TestCase):
         self.assertSql("select", "select 'prefix' || id from txtai", "'prefix' || s.id as \"'prefix' || id\"")
         self.assertSql("select", "select 'prefix' || id id from txtai", "'prefix' || s.id id")
         self.assertSql("select", "select 'prefix' || a a from txtai", "'prefix' || json_extract(data, '$.a') a")
+        self.assertSql("select", "select a = 1 and b = 2 x from txtai", "json_extract(data, '$.a') = 1 and json_extract(data, '$.b') = 2 x")
 
     def testSimilar(self):
         """

@@ -28,6 +28,9 @@ class Token:
     # Default list of logic separators
     LOGIC_SEPARATORS = ["and", "or"]
 
+    # Default list of conditional keywords, i.e. case when a = 1 then b else c end
+    CONDITIONALS = ["case", "when", "then", "else", "end"]
+
     # Default list of sort order operators
     SORT_ORDER = ["asc", "desc"]
 
@@ -72,13 +75,16 @@ class Token:
         prior = Token.get(tokens, x - 1)
         token = tokens[x]
 
-        # True if prior token is not a separator, grouping token or distinct token and current token is either a column token or quoted token
+        # True if prior token is not a separator, grouping token, distinct token, conditional keyword or logic separator and current token is
+        # either a column token or quoted token. Conditional keywords open an expression, end closes it like ")".
         return (
             alias
             and x > 0
             and not Token.isseparator(prior)
             and not Token.isgroupstart(prior)
             and not Token.isdistinct(prior)
+            and not (Token.isconditional(prior) and prior.lower() != "end")
+            and not Token.islogicseparator(prior)
             and (Token.iscolumn(token) or Token.isquoted(token))
         )
 
@@ -125,10 +131,11 @@ class Token:
             True if this token is a column name token, False otherwise
         """
 
-        # Columns are not operators, logic separators, literals or sort order tokens
+        # Columns are not operators, conditional keywords, logic separators, literals or sort order tokens
         return (
             token
             and not Token.isoperator(token)
+            and not Token.isconditional(token)
             and not Token.islogicseparator(token)
             and not Token.isliteral(token)
             and not Token.issortorder(token)
@@ -149,6 +156,21 @@ class Token:
 
         # Compound expression is defined as: <column> <operator(s)> <column>
         return Token.isoperator(tokens[x]) and (Token.iscolumn(Token.get(tokens, x - 1)) or Token.iscolumn(Token.get(tokens, x + 1)))
+
+    @staticmethod
+    def isconditional(token):
+        """
+        Checks if token is a conditional keyword.
+
+        Args:
+            token: token to test
+
+        Returns:
+            True if this token is a conditional keyword, False otherwise
+        """
+
+        # Token is a conditional keyword
+        return token and token.lower() in Token.CONDITIONALS
 
     @staticmethod
     def isdistinct(token):
