@@ -430,7 +430,10 @@ class Expression:
 
         # Resolve right side
         x, token = next(iterator, (None, None))
-        if token and Token.iscolumn(token):
+        if Token.isbracket(token):
+            # Resolve bracket expression
+            self.bracket(iterator, tokens, x)
+        elif token and Token.iscolumn(token):
             # Need to process functions since it hasn't went through the standard loop yet
             if Token.isfunction(tokens, x):
                 self.function(iterator, tokens, token, aliases, similar)
