@@ -77,10 +77,7 @@ class Query:
             True if all queries are openCypher queries
         """
 
-        # Preserve queries recognized by the original check, including comments after MATCH.
-        return all(
-            isinstance(query, str) and ((query.lstrip().startswith("MATCH ") and "RETURN " in query) or self.QUERY.match(query)) for query in queries
-        )
+        return all(isinstance(query, str) and self.QUERY.match(query) for query in queries)
 
     def parse(self, query):
         """
