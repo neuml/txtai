@@ -68,6 +68,17 @@ class ANN:
 
         raise NotImplementedError
 
+    def implements(self, method):
+        """
+        Checks that this ANN implements method. Raises an error if it doesn't.
+
+        Args:
+            method: ANN method name
+        """
+
+        if getattr(type(self), method) is getattr(ANN, method):
+            raise NotImplementedError(f"{method} is not supported by the {self.config['backend']} backend")
+
     def search(self, queries, limit):
         """
         Searches ANN index for query. Returns topn results.

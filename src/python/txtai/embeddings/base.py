@@ -6,7 +6,7 @@ import json
 import os
 import tempfile
 
-from ..ann import ANN, ANNFactory
+from ..ann import ANNFactory
 from ..archive import ArchiveFactory
 from ..cloud import CloudFactory
 from ..database import DatabaseFactory
@@ -168,7 +168,8 @@ class Embeddings:
             return
 
         # Check that the ANN index can be appended to before any data is changed
-        self.checkann("append")
+        if self.ann:
+            self.ann.implements("append")
 
         # Create transform and stream
         transform = Transform(self, Action.UPSERT, checkpoint=checkpoint)
@@ -214,7 +215,8 @@ class Embeddings:
         """
 
         # Check that the ANN index supports deletes before any data is changed
-        self.checkann("delete")
+        if self.ann:
+            self.ann.implements("delete")
 
         # List of internal indices for each candidate id to delete
         indices = []
@@ -738,17 +740,6 @@ class Embeddings:
         """
 
         return self.ann is not None
-
-    def checkann(self, method):
-        """
-        Checks that the ANN index implements method. Raises an error otherwise.
-
-        Args:
-            method: ANN method name
-        """
-
-        if self.ann and getattr(type(self.ann), method) is getattr(ANN, method):
-            raise NotImplementedError(f"{method} is not supported by the {self.config.get('backend')} backend")
 
     def isweighted(self):
         """
