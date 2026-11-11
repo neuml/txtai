@@ -109,6 +109,17 @@ class ANN:
 
         self.backend = None
 
+    def implements(self, method):
+        """
+        Checks that this ANN implements method. Raises an error if it doesn't.
+
+        Args:
+            method: ANN method name
+        """
+
+        if getattr(type(self), method) is getattr(ANN, method):
+            raise NotImplementedError(f"{method} is not supported by the {self.config['backend']} backend")
+
     def setting(self, name, default=None):
         """
         Looks up backend specific setting.
