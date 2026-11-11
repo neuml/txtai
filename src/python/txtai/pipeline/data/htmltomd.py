@@ -428,11 +428,11 @@ class HTMLToMarkdown(Pipeline):
             article text
         """
 
-        # List of valid text nodes
-        valid = ("p", "th", "td", "li", "a", "b", "strong", "i", "em")
+        # List of valid text nodes. Definition list terms and descriptions hold content such as API signatures in Sphinx docs.
+        valid = ("p", "th", "td", "li", "dt", "dd", "a", "b", "strong", "i", "em")
 
-        # Check if this node is valid or it's part of a paragraph, list item or table cell
-        valid = node.name in valid or node.find_parent(("p", "li", "th", "td")) is not None
+        # Check if this node is valid or it's part of a paragraph, list item, table cell or definition list item
+        valid = node.name in valid or node.find_parent(("p", "li", "th", "td", "dt", "dd")) is not None
 
         # Check if text is valid article text
         text = text if (valid or self.isheader(node)) and not self.islink(node) else ""
@@ -441,7 +441,7 @@ class HTMLToMarkdown(Pipeline):
             text = text.replace("\xa0\n", "\n\n")
 
             # Format paragraph whitespace
-            if node.name == "p":
+            if node.name in ("p", "dt", "dd"):
                 text = f"{text.strip()}\n\n" if self.paragraphs else f"{text.strip()}\n"
 
         return text
