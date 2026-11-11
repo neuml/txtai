@@ -369,8 +369,11 @@ class HTMLToMarkdown(Pipeline):
             # Get list of columns for row
             columns = row.find_all(lambda tag: tag.name in ("th", "td"))
 
+            # Escape pipes in cell text so they don't start a new column
+            cells = [self.process(column, article).replace("|", r"\|") for column in columns]
+
             # Add columns with separator
-            elements.append(f"|{'|'.join(self.process(column, article) for column in columns)}|")
+            elements.append(f"|{'|'.join(cells)}|")
 
             # If there are multiple rows, add header format row
             if not header and len(rows) > 1:

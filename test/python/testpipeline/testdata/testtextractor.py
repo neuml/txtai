@@ -204,6 +204,12 @@ class TestTextractor(unittest.TestCase):
             "|Header1|Header2|\n|---|---|\n|Test1|Test2|",
         )
 
+        # Pipes in table cells are escaped so they stay in the cell
+        self.assertMarkdown(
+            "<table><tr><th>Header1</th><th>Header2</th></tr><tr><td>Test1 | Test2</td><td><code>a|b</code></td></tr></table>",
+            "|Header1|Header2|\n|---|---|\n|Test1 \\| Test2|`a\\|b`|",
+        )
+
         # Ignore list
         self.assertMarkdown("<aside>This is a test</aside>", "")
 

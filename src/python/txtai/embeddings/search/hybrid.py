@@ -3,6 +3,7 @@ Hybrid module
 """
 
 import math
+import statistics
 
 
 class Hybrid:
@@ -193,7 +194,7 @@ class LogOdds:
 
         array = [s for s in raw if s > 0]
         if array:
-            median = sorted(array)[len(array) // 2]
+            median = statistics.median(array)
             mean = sum(array) / len(array)
             std = (sum((x - mean) ** 2 for x in array) / len(array)) ** 0.5
             alpha = 1.0 / std if std > 0 else 1.0
