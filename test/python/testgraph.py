@@ -606,7 +606,7 @@ class TestGraph(unittest.TestCase):
             with self.subTest(query=query):
                 self.assertCountEqual(embeddings.search(query), [{"n.id": "0"}, {"n.id": "1"}])
 
-        results = embeddings.search("match machine learning and return examples")
+        results = embeddings.search("machine learning")
         self.assertCountEqual([row["id"] for row in results], ["0", "1"])
 
     def testSearchLimitZero(self):

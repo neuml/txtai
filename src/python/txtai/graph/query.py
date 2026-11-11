@@ -25,8 +25,8 @@ class Query:
     # Similar token
     SIMILAR = "__SIMILAR__"
 
-    # Require a node or named path after MATCH when recognizing additional spellings.
-    MATCH_RETURN = re.compile(r"\s*match\s+(?:\w+\s*=\s*)?\(.*\breturn\s+", re.IGNORECASE | re.DOTALL)
+    # Query pattern
+    QUERY = re.compile(r"\s*match\s+.+\breturn\s+", re.IGNORECASE | re.DOTALL)
 
     def __init__(self):
         """
@@ -79,8 +79,7 @@ class Query:
 
         # Preserve queries recognized by the original check, including comments after MATCH.
         return all(
-            isinstance(query, str) and ((query.lstrip().startswith("MATCH ") and "RETURN " in query) or self.MATCH_RETURN.match(query))
-            for query in queries
+            isinstance(query, str) and ((query.lstrip().startswith("MATCH ") and "RETURN " in query) or self.QUERY.match(query)) for query in queries
         )
 
     def parse(self, query):
