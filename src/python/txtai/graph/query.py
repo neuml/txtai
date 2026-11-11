@@ -26,7 +26,7 @@ class Query:
     SIMILAR = "__SIMILAR__"
 
     # Query pattern
-    QUERY = re.compile(r"\s*match\s+.+\breturn\s+", re.IGNORECASE | re.DOTALL)
+    QUERY = re.compile(r"\s*match\s+.+\breturn\s+", re.DOTALL | re.IGNORECASE)
 
     def __init__(self):
         """
