@@ -14,7 +14,7 @@ import unittest
 from datetime import datetime, timezone
 from itertools import product
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import numpy as np
 import torch
@@ -32,6 +32,7 @@ from txtai.workflow import (
     TaskFactory,
     Task,
     ConsoleTask,
+    ServiceTask,
     ExportTask,
     FileTask,
     ImageTask,
@@ -672,6 +673,25 @@ class TestWorkflow(unittest.TestCase):
             workflow.schedule("* * * * * *", ["test"], 1)
 
         self.assertIn("FileNotFoundError", " ".join(logs.output))
+
+    def testServiceParamsFalsy(self):
+        """
+        Test ServiceTask preserves explicit falsy values and only replaces placeholders
+        """
+
+        response = Mock()
+        response.content = b"{}"
+        response.headers = {"Content-Type": "application/json"}
+        response.json.return_value = {}
+
+        params = {"limit": 0, "stream": False, "text": None, "query": ""}
+        task = ServiceTask(url="http://example", method="post", params=params)
+
+        with patch("txtai.workflow.task.service.requests.post", return_value=response) as post:
+            task.request("value")
+
+        self.assertEqual(post.call_args.kwargs["json"], {"limit": 0, "stream": False, "text": "value", "query": "value"})
+        self.assertEqual(params, {"limit": 0, "stream": False, "text": None, "query": ""})
 
     def testStorageWorkflow(self):
         """
