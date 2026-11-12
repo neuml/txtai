@@ -139,11 +139,13 @@ class SQL:
         """
 
         # Build a simple SQL lexer
-        #   - Punctuation chars are parsed as standalone tokens which helps identify operators
+        #   - Runs of punctuation chars are grouped, which builds multi-character comparison operators (<=, !=, ||)
+        #   - Arithmetic operators are standalone tokens, so a sign never merges with an operator (a=-1 is a, =, -, 1).
+        #     shlex adds - * / to wordchars when punctuation_chars is set, remove them.
         #   - Add additional wordchars to prevent splitting on those values
         #   - Disable comments
-        tokens = shlex(StringIO(query), punctuation_chars="=!<>+-*/%|")
-        tokens.wordchars += ":@#"
+        tokens = shlex(StringIO(query), punctuation_chars="=!<>|")
+        tokens.wordchars = tokens.wordchars.translate(str.maketrans("", "", "-*/")) + ":@#"
         tokens.commenters = ""
         tokens = list(tokens)
 

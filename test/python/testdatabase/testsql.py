@@ -476,6 +476,14 @@ class TestSQL(unittest.TestCase):
         self.assertSql("where", prefix + "where a > .5e-3 and x1e-3 > 1", "json_extract(data, '$.a') > .5e-3 and json_extract(data, '$.x1e') - 3 > 1")
         self.assertSql("select", "select 1e-3 as x from txtai", "1e-3 as x")
 
+        # Signed number directly after an operator
+        self.assertSql("where", prefix + "where a=-1", "json_extract(data, '$.a') = - 1")
+        self.assertSql("where", prefix + "where a>=-1 and b<-2", "json_extract(data, '$.a') >= - 1 and json_extract(data, '$.b') < - 2")
+        self.assertSql("where", prefix + "where a--1 > 0", "json_extract(data, '$.a') - - 1 > 0")
+        self.assertSql("where", prefix + "where a=-1e-3", "json_extract(data, '$.a') = - 1e-3")
+        self.assertSql("where", prefix + "where a=--1", "json_extract(data, '$.a') = - - 1")
+        self.assertSql("select", "select a*-1 as x from txtai", "json_extract(data, '$.a') * - 1 as x")
+
     def testWhereCompound(self):
         """
         Test compound where clauses
