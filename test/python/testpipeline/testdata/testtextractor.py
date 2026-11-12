@@ -204,6 +204,12 @@ class TestTextractor(unittest.TestCase):
             "|Header1|Header2|\n|---|---|\n|Test1|Test2|",
         )
 
+        # Pipes in table cells are escaped so they stay in the cell
+        self.assertMarkdown(
+            "<table><tr><th>Header1</th><th>Header2</th></tr><tr><td>Test1 | Test2</td><td><code>a|b</code></td></tr></table>",
+            "|Header1|Header2|\n|---|---|\n|Test1 \\| Test2|`a\\|b`|",
+        )
+
         # Ignore list
         self.assertMarkdown("<aside>This is a test</aside>", "")
 
@@ -242,6 +248,20 @@ class TestTextractor(unittest.TestCase):
             "<table><tr><th>Header1</th><th>Header2</th></tr><tr><td>Test1<br>Test2</td><td>Test3</td></tr></table>",
             "|Header1|Header2|\n|---|---|\n|Test1 Test2|Test3|",
         )
+
+    def testHTMLArticleDefinitionList(self):
+        """
+        Test article definition lists, such as the API signatures in Sphinx documentation
+        """
+
+        textractor = Textractor()
+
+        # Definition terms are kept along with their descriptions
+        html = (
+            "<html><body><article><p>Functions</p><dl><dt><span>json.</span><span>dump</span>(<em>obj</em>)</dt>"
+            "<dd><p>Serialize obj</p></dd></dl><dl><dt>Term</dt><dd>Definition</dd></dl></article></body></html>"
+        )
+        self.assertEqual(textractor(html), "Functions\n\njson.dump(*obj* )\n\nSerialize obj\n\nTerm\n\nDefinition")
 
     def testHTMLArticleSpan(self):
         """

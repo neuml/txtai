@@ -24,3 +24,15 @@ class TestAnnoy(DenseTest):
 
         # Test with custom settings
         self.runTests("annoy", {"annoy": {"ntrees": 2, "searchk": 1}}, False)
+
+    def testAnnoyImplements(self):
+        """
+        Test that Annoy reports appends and deletes as not supported
+        """
+
+        model = self.backend("annoy")
+        model.implements("search")
+
+        for method in ["append", "delete"]:
+            with self.assertRaisesRegex(NotImplementedError, f"{method} is not supported by the annoy backend"):
+                model.implements(method)
