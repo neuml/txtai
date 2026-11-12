@@ -11,7 +11,7 @@ from unittest.mock import patch
 
 import numpy as np
 
-from txtai.embeddings import Embeddings, IndexIds, Reducer
+from txtai.embeddings import Documents, Embeddings, IndexIds, Reducer
 from txtai.serialize import SerializeFactory
 
 
@@ -262,6 +262,20 @@ class TestEmbeddings(unittest.TestCase):
             embeddings.index([])
             self.assertEqual(embeddings.indexes.terms.count(), 0)
             self.assertEqual(embeddings.search("apple", index="terms"), [])
+
+    @patch("txtai.embeddings.index.indexes.Documents", wraps=Documents)
+    def testEmptySubindexBatch(self, documents):
+        """
+        Test a first batch with no subindex documents followed by a batch with data
+        """
+
+        with Embeddings({"keyword": True, "content": True, "batch": 1, "indexes": {"terms": {"keyword": True}}}) as embeddings:
+            # First batch has no text, so nothing is queued for the subindexes
+            embeddings.index([{"id": 0, "title": "no text"}, {"id": 1, "text": "apple"}])
+
+            # Both batches share one documents queue, no temporary file is left behind
+            self.assertEqual(documents.call_count, 1)
+            self.assertEqual(embeddings.search("select id from txtai where similar('apple', 'terms')")[0]["id"], "1")
 
     def testNoneText(self):
         """
