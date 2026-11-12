@@ -106,7 +106,7 @@ class Indexes:
             checkpoint: optional checkpoint directory, enables indexing restart
         """
 
-        # Check for None, an empty queue is falsy
+        # Create documents file if not already open
         if self.documents is None:
             self.documents = Documents()
             self.checkpoint = checkpoint
