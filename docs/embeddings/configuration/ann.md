@@ -91,7 +91,7 @@ mlxvs:
     dtype: float32|float16 - how vectors are stored for search, float16 halves the memory - defaults to float32
 ```
 
-The [mlxvs](https://github.com/mikepapadim/mlxvs) backend runs on the GPU of Apple silicon Macs (macOS 14+) through [MLX](https://github.com/ml-explore/mlx). It builds a [CAGRA](https://arxiv.org/abs/2308.15136) search graph and searches it on the GPU. Appends rebuild the graph, which takes seconds per million vectors. Deletes are filtered out of results without a rebuild. Indexes up to 64 vectors are searched exactly.
+The [mlxvs](https://github.com/mikepapadim/mlxvs) backend runs on the GPU of Apple silicon Macs (macOS 14+) through [MLX](https://github.com/ml-explore/mlx). It builds a [CAGRA](https://arxiv.org/abs/2308.15136) search graph and searches it on the GPU. Appends rebuild the graph, which takes seconds per million vectors. Deletes are filtered out of results without a rebuild. Indexes up to 64 vectors are searched exactly. On other platforms, or without the mlxvs package, the backend searches exactly with NumPy over the same stored vectors, so indexes work everywhere.
 
 ### numpy
 

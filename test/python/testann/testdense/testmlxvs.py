@@ -2,8 +2,7 @@
 mlxvs ANN module tests
 """
 
-import platform
-import unittest
+from unittest.mock import patch
 
 import numpy as np
 
@@ -12,10 +11,10 @@ from txtai.ann import ANNFactory
 from .base import DenseTest
 
 
-@unittest.skipIf(platform.system() != "Darwin" or platform.machine() != "arm64", "mlxvs requires macOS on Apple silicon")
 class TestMlxvs(DenseTest):
     """
-    mlxvs ANN tests.
+    mlxvs ANN tests. On Apple silicon with mlxvs installed they run the GPU graph search, elsewhere the exact NumPy
+    fallback.
     """
 
     def testMlxvs(self):
@@ -31,6 +30,14 @@ class TestMlxvs(DenseTest):
         """
 
         self.runTests("mlxvs", {"mlxvs": {"graphdegree": 16, "intermediategraphdegree": 32, "itopk": 128, "dtype": "float16"}})
+
+    @patch("txtai.ann.dense.mlxvs.MLXVS", False)
+    def testMlxvsFallback(self):
+        """
+        Test the exact NumPy search used when mlxvs isn't available
+        """
+
+        self.runTests("mlxvs")
 
     def testMlxvsDeleteNumPy(self):
         """

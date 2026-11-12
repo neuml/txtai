@@ -139,9 +139,6 @@ class TestOptional(unittest.TestCase):
             ANNFactory.create({"backend": "milvus"})
 
         with self.assertRaises(ImportError):
-            ANNFactory.create({"backend": "mlxvs"})
-
-        with self.assertRaises(ImportError):
             ANNFactory.create({"backend": "pgvector"})
 
         with self.assertRaises(ImportError):

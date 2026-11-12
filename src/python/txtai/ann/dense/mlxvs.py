@@ -24,13 +24,13 @@ safetensors = library.safetensors()
 class Mlxvs(ANN):
     """
     Builds an ANN index on the Apple silicon GPU using mlxvs, a CAGRA graph index built on MLX.
+
+    mlxvs only installs on macOS with Apple silicon. Elsewhere, or when it isn't installed, this backend runs exact
+    search with NumPy over the same stored vectors, so indexes and files work on every platform.
     """
 
     def __init__(self, config):
         super().__init__(config)
-
-        if not MLXVS:
-            raise ImportError('mlxvs is not available - install "ann" extra to enable (requires macOS on Apple silicon)')
 
         # Indexed vectors (graph rebuilds and exact search use them) and deleted rows
         self.vectors, self.deleted = None, None
@@ -40,7 +40,8 @@ class Mlxvs(ANN):
             self.vectors, self.deleted = f.get_tensor("vectors"), f.get_tensor("deleted").astype(bool)
             graph = f.get_tensor("graph") if "graph" in f.keys() else None
 
-        self.backend = mlxvs.CagraIndex(self.dataset(), mx.array(graph), "inner_product") if graph is not None else None
+        # Without mlxvs, the stored graph is ignored and searches are exact
+        self.backend = mlxvs.CagraIndex(self.dataset(), mx.array(graph), "inner_product") if MLXVS and graph is not None else None
 
     def index(self, embeddings):
         self.vectors = embeddings.astype(np.float32)
@@ -104,11 +105,12 @@ class Mlxvs(ANN):
 
     def build(self):
         """
-        Builds the search graph over the indexed vectors. Small indexes are searched exactly.
+        Builds the search graph over the indexed vectors. Small indexes, and every index when mlxvs isn't available,
+        are searched exactly.
         """
 
         degree, intermediate = self.setting("graphdegree", 32), self.setting("intermediategraphdegree", 64)
-        if self.vectors.shape[0] <= intermediate:
+        if not MLXVS or self.vectors.shape[0] <= intermediate:
             self.backend = None
         else:
             graph = mlxvs.cagra_build(self.vectors, degree, "inner_product", intermediate_graph_degree=intermediate)
