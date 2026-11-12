@@ -106,7 +106,7 @@ class Indexes:
             checkpoint: optional checkpoint directory, enables indexing restart
         """
 
-        # Documents defines __len__, check for None so an empty first batch doesn't orphan its temporary file
+        # Check for None, an empty queue is falsy
         if self.documents is None:
             self.documents = Documents()
             self.checkpoint = checkpoint
