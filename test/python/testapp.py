@@ -2,8 +2,11 @@
 Application module tests
 """
 
+import tempfile
 import unittest
 import types
+
+from unittest.mock import patch
 
 from txtai.app import Application
 from txtai.pipeline import Pipeline
@@ -21,6 +24,21 @@ class TestApp(unittest.TestCase):
 
         with self.assertRaises(FileNotFoundError):
             Application.read("No file here")
+
+    def testEmptyAdd(self):
+        """
+        Test an empty first add keeps a single documents queue
+        """
+
+        app = Application("writable: true\nembeddings:\n  keyword: true\n  content: true\n")
+
+        with patch("tempfile.NamedTemporaryFile", wraps=tempfile.NamedTemporaryFile) as queue:
+            app.add([])
+            app.add([{"id": 0, "text": "apple"}])
+            app.index()
+
+        self.assertEqual(len([x for x in queue.call_args_list if x.kwargs.get("suffix") == ".docs"]), 1)
+        self.assertEqual(app.search("apple")[0]["id"], "0")
 
     def testParameter(self):
         """

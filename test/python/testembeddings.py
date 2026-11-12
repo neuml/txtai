@@ -263,6 +263,18 @@ class TestEmbeddings(unittest.TestCase):
             self.assertEqual(embeddings.indexes.terms.count(), 0)
             self.assertEqual(embeddings.search("apple", index="terms"), [])
 
+    def testEmptySubindexBatch(self):
+        """
+        Test a first batch with no subindex documents keeps a single documents queue
+        """
+
+        with patch("tempfile.NamedTemporaryFile", wraps=tempfile.NamedTemporaryFile) as queue:
+            with Embeddings({"keyword": True, "content": True, "batch": 1, "indexes": {"terms": {"keyword": True}}}) as embeddings:
+                embeddings.index([{"id": 0, "title": "no text"}, {"id": 1, "text": "apple"}])
+                self.assertEqual(embeddings.search("apple", index="terms")[0]["id"], "1")
+
+        self.assertEqual(len([x for x in queue.call_args_list if x.kwargs.get("suffix") == ".docs"]), 1)
+
     def testNoneText(self):
         """
         Test dict documents where the text field is present but set to None
