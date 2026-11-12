@@ -297,9 +297,18 @@ class Expression:
         # Only cast functions take a type name after AS
         cast = token.lower() in Token.CAST
 
-        # Consume function parameters
-        while token and token != ")":
+        # Paren counter (current token is the function name, open paren is read next)
+        parens = 0
+
+        # Consume function parameters until the closing paren of this function
+        while token and (token != ")" or parens > 0):
             x, token = self.readtoken(iterator)
+
+            # Increase/decrease paren counter
+            if token == "(":
+                parens += 1
+            elif token == ")":
+                parens -= 1
 
             # Check if token starts a cast type, i.e. cast(a as integer)
             if cast and token and token.lower() in Token.ALIAS:
@@ -412,11 +421,15 @@ class Expression:
             tokens[x - 1] = self.resolve(tokens[x - 1], aliases)
 
         # Consume operator(s), handle both single and compound operators, i.e. column NOT LIKE 1
-        token = tokens[x]
-        while token and Token.isoperator(token):
+        while Token.isoperator(Token.get(tokens, x + 1)):
             x, token = next(iterator, (None, None))
 
+        # Leave a parenthesized right side to the caller, which tracks paren depth
+        if Token.isgroupstart(Token.get(tokens, x + 1)):
+            return
+
         # Resolve right side
+        x, token = next(iterator, (None, None))
         if token and Token.iscolumn(token):
             # Need to process functions since it hasn't went through the standard loop yet
             if Token.isfunction(tokens, x):

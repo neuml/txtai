@@ -260,6 +260,12 @@ class TestSQL(unittest.TestCase):
             "select * from txtai order by func(cast(a as integer), b)",
             "func(cast(json_extract(data, '$.a') as integer), json_extract(data, '$.b'))",
         )
+        self.assertSql("where", "select * from txtai where cast((a) as text) = '1'", "cast((json_extract(data, '$.a')) as text) = '1'")
+        self.assertSql(
+            "where",
+            "select * from txtai where cast(a * (b + c) as text) = '1'",
+            "cast(json_extract(data, '$.a') * (json_extract(data, '$.b') + json_extract(data, '$.c')) as text) = '1'",
+        )
 
     def testDistinct(self):
         """
@@ -378,6 +384,16 @@ class TestSQL(unittest.TestCase):
             "func(func2(s.indexid + 1), json_extract(data, '$.a')) as \"func(func2(indexid + 1), a)\"",
         )
         self.assertSql("select", "select func(func2(indexid + 1), a) a from txtai", "func(func2(s.indexid + 1), json_extract(data, '$.a')) a")
+        self.assertSql(
+            "select",
+            "select round((a + b) / 2.0, 1) r from txtai",
+            "round((json_extract(data, '$.a') + json_extract(data, '$.b')) / 2.0, 1) r",
+        )
+        self.assertSql(
+            "select",
+            "select round(a * (b + c), 1) r from txtai",
+            "round(json_extract(data, '$.a') * (json_extract(data, '$.b') + json_extract(data, '$.c')), 1) r",
+        )
         self.assertSql("select", "select 'prefix' || id from txtai", "'prefix' || s.id as \"'prefix' || id\"")
         self.assertSql("select", "select 'prefix' || id id from txtai", "'prefix' || s.id id")
         self.assertSql("select", "select 'prefix' || a a from txtai", "'prefix' || json_extract(data, '$.a') a")
