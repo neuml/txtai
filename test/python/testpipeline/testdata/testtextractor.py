@@ -249,6 +249,19 @@ class TestTextractor(unittest.TestCase):
             "|Header1|Header2|\n|---|---|\n|Test1 Test2|Test3|",
         )
 
+    def testHTMLNestedArticles(self):
+        """
+        Test nested articles are processed once while independent articles are kept.
+        """
+
+        textractor = Textractor(backend=None, paragraphs=True)
+        for html, expected in [
+            ("<article><p>Post</p><article><p>Comment</p></article></article>", ["Post", "Comment"]),
+            ("<article><p>Comment</p></article><article><p>Comment</p></article>", ["Comment", "Comment"]),
+        ]:
+            with self.subTest(html=html):
+                self.assertEqual(textractor(f"<html><body>{html}</body></html>"), expected)
+
     def testHTMLArticleDefinitionList(self):
         """
         Test article definition lists, such as the API signatures in Sphinx documentation

@@ -74,8 +74,8 @@ class HTMLToMarkdown(Pipeline):
         # Extract text from each section element
         nodes = []
         for node in soup.find_all(article if article else "body"):
-            # Skip article sections without at least 1 paragraph
-            if not article or node.find("p"):
+            # Skip article sections without paragraphs or already included in a parent section
+            if not article or (node.find("p") and not node.find_parent(article)):
                 nodes.append(self.process(node, article))
 
         # Return extracted text, fallback to default text extraction if no nodes found
