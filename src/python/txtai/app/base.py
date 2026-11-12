@@ -443,8 +443,7 @@ class Application:
 
         if self.embeddings:
             with self.lock:
-                # Create documents file if not already open. Documents defines __len__, check for None so an
-                # empty queue isn't replaced (and its temporary file orphaned) on the next add.
+                # Create documents file if not already open. Check for None, an empty queue is falsy.
                 if self.documents is None:
                     self.documents = Documents()
 
