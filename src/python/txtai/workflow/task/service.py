@@ -26,7 +26,7 @@ class ServiceTask(Task):
         Args:
             url: url to connect to
             method: http method, GET or POST
-            params: default query parameters. None and empty string values are replaced with the current input.
+            params: default query parameters
             batch: if True, all elements are passed in a single batch request, otherwise a service call is executed per element
             extract: list of sections to extract from response
             timeout: request timeout in seconds, defaults to 30
