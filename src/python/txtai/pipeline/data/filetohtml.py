@@ -5,10 +5,12 @@ FileToHTML module
 import os
 import re
 
+from html import escape
 from subprocess import Popen
 
 # Conditional import
 try:
+    from bs4 import UnicodeDammit
     from tika import detector, parser
 
     TIKA = True
@@ -143,10 +145,15 @@ class Tika(Backend):
             html
         """
 
-        # Skip parsing if input is plain text or HTML
+        # Skip parsing if input is HTML
         mimetype = detector.from_file(path)
-        if mimetype in ("text/plain", "text/html", "text/xhtml"):
+        if mimetype in ("text/html", "text/xhtml"):
             return None
+
+        # Escape plain text, so text that looks like markup (e.g. <user@example.com>) isn't parsed as HTML tags
+        if mimetype == "text/plain":
+            with open(path, "rb") as f:
+                return escape(UnicodeDammit(f.read()).unicode_markup, quote=False)
 
         # Parse content to HTML
         parsed = parser.from_file(path, xmlContent=True)

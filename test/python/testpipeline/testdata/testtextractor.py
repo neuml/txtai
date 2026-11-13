@@ -141,6 +141,18 @@ class TestTextractor(unittest.TestCase):
         # Check number of lines is as expected
         self.assertEqual(len(lines), 35)
 
+    def testPlainText(self):
+        """
+        Test plain text files keep text that looks like markup
+        """
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "notes.txt"
+            path.write_text("Contact <user@example.com>\n\nSee <https://example.com/rfc> and Vec<String>, a & b", encoding="utf-8")
+
+            textractor = Textractor(backend="tika", paragraphs=True)
+            self.assertEqual(textractor(str(path)), ["Contact <user@example.com>", "See <https://example.com/rfc> and Vec<String>, a & b"])
+
     def testLiteParse(self):
         """
         Test liteparse backend
