@@ -444,7 +444,7 @@ class Application:
         if self.embeddings:
             with self.lock:
                 # Create documents file if not already open
-                if not self.documents:
+                if self.documents is None:
                     self.documents = Documents()
 
                 # Add documents

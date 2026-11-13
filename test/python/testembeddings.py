@@ -11,7 +11,7 @@ from unittest.mock import patch
 
 import numpy as np
 
-from txtai.embeddings import Embeddings, IndexIds, Reducer
+from txtai.embeddings import Documents, Embeddings, IndexIds, Reducer
 from txtai.serialize import SerializeFactory
 
 
@@ -263,64 +263,19 @@ class TestEmbeddings(unittest.TestCase):
             self.assertEqual(embeddings.indexes.terms.count(), 0)
             self.assertEqual(embeddings.search("apple", index="terms"), [])
 
-    def testNoneText(self):
+    @patch("txtai.embeddings.index.indexes.Documents", wraps=Documents)
+    def testEmptySubindexBatch(self, documents):
         """
-        Test dict documents where the text field is present but set to None
-        """
-
-        # None text mixed with real text
-        self.embeddings.index([(0, {"text": "alpha content"}, None), (1, {"text": None}, None), (2, {"text": "gamma content"}, None)])
-
-        # Only the two documents with real text should be indexed
-        self.assertEqual(self.embeddings.count(), 2)
-        self.assertEqual(self.embeddings.search("alpha content", 1)[0][0], 0)
-        self.assertEqual(self.embeddings.search("gamma content", 1)[0][0], 2)
-
-    def testNoneTextObject(self):
-        """
-        Test dict documents where the text field is set to None and an object is set
+        Test a first batch with no subindex documents followed by a batch with data
         """
 
-        def transform(data):
-            # Dummy embedding per input using sum and mean of byte values
-            embeddings = []
-            for x in data:
-                values = list(x if isinstance(x, bytes) else x.encode())
-                embeddings.append([sum(values), sum(values) / len(values)])
+        with Embeddings({"keyword": True, "content": True, "batch": 1, "indexes": {"terms": {"keyword": True}}}) as embeddings:
+            # First batch has no text, so nothing is queued for the subindexes
+            embeddings.index([{"id": 0, "title": "no text"}, {"id": 1, "text": "apple"}])
 
-            return np.array(embeddings, dtype=np.float32)
-
-        # Graph and scoring are tested separately, graph edge inference doesn't support object queries with scoring
-        for config in [{"graph": {"approximate": False}}, {"scoring": {"method": "bm25", "terms": True}}]:
-            embeddings = Embeddings(method="external", transform=transform, content=True, backend="numpy", **config)
-            embeddings.index(
-                [
-                    ("d0", {"text": "alpha content"}, None),
-                    ("d1", {"text": None, "object": b"objbytes"}, None),
-                    ("d2", {"text": "gamma content"}, None),
-                ]
-            )
-
-            # The object document is vectorized and kept with its own id everywhere
-            self.assertEqual(embeddings.ann.count(), 3)
-            self.assertEqual(embeddings.count(), 3)
-            self.assertEqual(
-                embeddings.search("select indexid, id, text from txtai", 10),
-                [
-                    {"indexid": 0, "id": "d0", "text": "alpha content"},
-                    {"indexid": 1, "id": "d1", "text": None},
-                    {"indexid": 2, "id": "d2", "text": "gamma content"},
-                ],
-            )
-
-            # Vectors, database rows and search results should all line up
-            self.assertEqual(embeddings.search("select id from txtai where similar('alpha content')", 1), [{"id": "d0"}])
-            self.assertEqual(embeddings.search("select id from txtai where similar('gamma content')", 1), [{"id": "d2"}])
-
-            if embeddings.graph:
-                self.assertEqual([embeddings.graph.attribute(node, "id") for node in range(3)], ["d0", "d1", "d2"])
-            else:
-                self.assertEqual(embeddings.scoring.search("gamma", 1)[0][0], 2)
+            # Both batches share one documents queue, no temporary file is left behind
+            self.assertEqual(documents.call_count, 1)
+            self.assertEqual(embeddings.search("select id from txtai where similar('apple', 'terms')")[0]["id"], "1")
 
     def testExternal(self):
         """
@@ -551,6 +506,65 @@ class TestEmbeddings(unittest.TestCase):
 
         # Omitting limit still uses the documented default and finds both apple matches
         self.assertEqual(len(embeddings.search("select id from txtai where similar('apple')")), 2)
+
+    def testNoneText(self):
+        """
+        Test dict documents where the text field is present but set to None
+        """
+
+        # None text mixed with real text
+        self.embeddings.index([(0, {"text": "alpha content"}, None), (1, {"text": None}, None), (2, {"text": "gamma content"}, None)])
+
+        # Only the two documents with real text should be indexed
+        self.assertEqual(self.embeddings.count(), 2)
+        self.assertEqual(self.embeddings.search("alpha content", 1)[0][0], 0)
+        self.assertEqual(self.embeddings.search("gamma content", 1)[0][0], 2)
+
+    def testNoneTextObject(self):
+        """
+        Test dict documents where the text field is set to None and an object is set
+        """
+
+        def transform(data):
+            # Dummy embedding per input using sum and mean of byte values
+            embeddings = []
+            for x in data:
+                values = list(x if isinstance(x, bytes) else x.encode())
+                embeddings.append([sum(values), sum(values) / len(values)])
+
+            return np.array(embeddings, dtype=np.float32)
+
+        # Graph and scoring are tested separately, graph edge inference doesn't support object queries with scoring
+        for config in [{"graph": {"approximate": False}}, {"scoring": {"method": "bm25", "terms": True}}]:
+            embeddings = Embeddings(method="external", transform=transform, content=True, backend="numpy", **config)
+            embeddings.index(
+                [
+                    ("d0", {"text": "alpha content"}, None),
+                    ("d1", {"text": None, "object": b"objbytes"}, None),
+                    ("d2", {"text": "gamma content"}, None),
+                ]
+            )
+
+            # The object document is vectorized and kept with its own id everywhere
+            self.assertEqual(embeddings.ann.count(), 3)
+            self.assertEqual(embeddings.count(), 3)
+            self.assertEqual(
+                embeddings.search("select indexid, id, text from txtai", 10),
+                [
+                    {"indexid": 0, "id": "d0", "text": "alpha content"},
+                    {"indexid": 1, "id": "d1", "text": None},
+                    {"indexid": 2, "id": "d2", "text": "gamma content"},
+                ],
+            )
+
+            # Vectors, database rows and search results should all line up
+            self.assertEqual(embeddings.search("select id from txtai where similar('alpha content')", 1), [{"id": "d0"}])
+            self.assertEqual(embeddings.search("select id from txtai where similar('gamma content')", 1), [{"id": "d2"}])
+
+            if embeddings.graph:
+                self.assertEqual([embeddings.graph.attribute(node, "id") for node in range(3)], ["d0", "d1", "d2"])
+            else:
+                self.assertEqual(embeddings.scoring.search("gamma", 1)[0][0], 2)
 
     def testOffset(self):
         """
