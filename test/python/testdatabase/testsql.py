@@ -238,6 +238,12 @@ class TestSQL(unittest.TestCase):
         self.assertSql("where", "select * from txtai where [a b] < 1 or a > 1", "json_extract(data, '$.a b') < 1 or json_extract(data, '$.a') > 1")
         self.assertSql("where", "select [a[0].c[0]] a from txtai where a < 1", "a < 1")
         self.assertSql("where", "select * from txtai where [true] = 1", "json_extract(data, '$.true') = 1")
+        self.assertSql("where", "select * from txtai where a = [b c]", "json_extract(data, '$.a') = json_extract(data, '$.b c')")
+        self.assertSql("where", "select * from txtai where a = [a]", "json_extract(data, '$.a') = json_extract(data, '$.a')")
+        self.assertSql("where", "select * from txtai where [a b] != [c d]", "json_extract(data, '$.a b') != json_extract(data, '$.c d')")
+        self.assertSql("where", "select * from txtai where a not like [b c]", "json_extract(data, '$.a') not like json_extract(data, '$.b c')")
+        self.assertSql("where", "select * from txtai where f(a + [b c]) > 1", "f(json_extract(data, '$.a') + json_extract(data, '$.b c')) > 1")
+        self.assertSql("select", "select a + [b c] ab from txtai", "json_extract(data, '$.a') + json_extract(data, '$.b c') ab")
         self.assertSql("groupby", "select * from txtai group by [a]", "json_extract(data, '$.a')")
         self.assertSql("orderby", "select * from txtai where order by [a]", "json_extract(data, '$.a')")
 
