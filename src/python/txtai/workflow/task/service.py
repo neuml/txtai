@@ -83,9 +83,9 @@ class ServiceTask(Task):
             # Create copy of parameters
             params = self.params.copy()
 
-            # Add data to parameters
+            # Replace None and empty string placeholders with the current input
             for key in params:
-                if not params[key]:
+                if params[key] is None or (isinstance(params[key], str) and not params[key]):
                     params[key] = data
 
         # Run request
