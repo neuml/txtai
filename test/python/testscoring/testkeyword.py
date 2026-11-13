@@ -35,6 +35,24 @@ class TestKeyword(unittest.TestCase):
 
         cls.data = [(uid, x, None) for uid, x in enumerate(cls.data)]
 
+    def testBatchSearchUnknownCPU(self):
+        """
+        Test keyword batch search when the operating system cannot determine the CPU count
+        """
+
+        for method in ["bm25", "tfidf", "sif"]:
+            scoring = ScoringFactory.create({"method": method, "terms": True})
+            try:
+                scoring.index([(0, ["forest", "trail"], None), (1, ["forest", "lake"], None)])
+                queries = [["trail"], ["lake"]]
+                expected = [scoring.search(query, 1) for query in queries]
+
+                for threads in [True, False, 2]:
+                    with self.subTest(method=method, threads=threads), patch("txtai.scoring.tfidf.os.cpu_count", return_value=None):
+                        self.assertEqual(scoring.batchsearch(queries, 1, threads), expected)
+            finally:
+                scoring.close()
+
     def testBM25(self):
         """
         Test bm25

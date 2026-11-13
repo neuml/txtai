@@ -150,7 +150,7 @@ class IVFSparse(ANN):
 
         # Calculate number of threads using a thread batch size of 32
         threads = queries.shape[0] // 32
-        threads = min(max(threads, 1), os.cpu_count())
+        threads = min(max(threads, 1), os.cpu_count() or 1)
 
         # Approximate search
         blockids = self.topn(queries, self.centroids, self.nprobe())[0] if self.centroids is not None else None
