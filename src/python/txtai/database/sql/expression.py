@@ -270,8 +270,9 @@ class Expression:
         while token and token != ")":
             x, token = self.readtoken(iterator)
             if token and token not in ["(", ",", ")"]:
-                # Strip quotes and accumulate tokens
-                params.append(token.replace("'", "").replace('"', ""))
+                # Strip wrapping quotes and accumulate tokens, quotes inside a quoted value are kept
+                quoted = len(token) > 1 and token[0] == token[-1] and token[0] in "'\""
+                params.append(token[1:-1] if quoted else token.replace("'", "").replace('"', ""))
 
             # Clear token from stream
             tokens[x] = None

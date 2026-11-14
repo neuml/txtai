@@ -426,6 +426,9 @@ class TestSQL(unittest.TestCase):
         self.assertSql("where", prefix + "where similar('abc', 1000) and similar('def', 10)", "__SIMILAR__0 and __SIMILAR__1")
         self.assertSql("similar", prefix + "where similar('abc', 1000) and similar('def', 10)", [["abc", "1000"], ["def", "10"]])
 
+        self.assertSql("similar", prefix + 'where similar("don\'t stop")', [["don't stop"]])
+        self.assertSql("similar", prefix + "where similar('say \"hi\"')", [['say "hi"']])
+
         self.assertSql("where", prefix + "where coalesce(similar('abc'), similar('abc'))", "coalesce(__SIMILAR__0, __SIMILAR__1)")
         self.assertSql("similar", prefix + "where coalesce(similar('abc'), similar('abc'))", [["abc"], ["abc"]])
 
