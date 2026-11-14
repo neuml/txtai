@@ -180,8 +180,15 @@ class Aggregate(SQL):
             results ordered using order by clause
         """
 
+        # Order by columns are matched case-insensitively
+        orderby = []
+        for clause in query["orderby"]:
+            column = clause.rsplit(" ")[0]
+            canonical = next((name for name in query["select"] if name.lower() == column.lower()), column)
+            orderby.append(canonical + clause[len(column):])
+
         # Sort in reverse order
-        for clause in query["orderby"][::-1]:
+        for clause in orderby[::-1]:
             # Order by columns must be selected
             reverse = False
             if clause.lower().endswith(" asc"):
