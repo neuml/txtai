@@ -182,6 +182,9 @@ class Aggregate(SQL):
                 clause = clause.rsplit(" ")[0]
                 reverse = True
 
+            # Order by columns are matched case-insensitively
+            clause = next((name for name in query["select"] if name.lower() == clause.lower()), clause)
+
             # Order by columns must be in select clause
             if clause in query["select"]:
                 results = sorted(results, key=operator.itemgetter(clause), reverse=reverse)
