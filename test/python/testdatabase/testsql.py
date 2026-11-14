@@ -75,24 +75,6 @@ class TestSQL(unittest.TestCase):
         self.assertEqual(aggregate(query, [empty, result]), [result])
         self.assertEqual(aggregate(query, [empty, empty]), [empty])
 
-    def testAggregateOrderByCase(self):
-        """
-        Test Aggregate matches order by columns case-insensitively
-        """
-
-        aggregate = Aggregate()
-
-        query = "select id, score from txtai order by score desc"
-        results = [{"id": 1, "score": 0.2}, {"id": 2, "score": 0.9}, {"id": 3, "score": 0.5}]
-        expected = [{"id": 2, "score": 0.9}, {"id": 3, "score": 0.5}, {"id": 1, "score": 0.2}]
-
-        # Lowercase order by sorts correctly
-        self.assertEqual(aggregate(query, results), expected)
-
-        # Uppercase and mixed-case order by columns sort identically
-        self.assertEqual(aggregate("select id, score from txtai order by SCORE desc", results), expected)
-        self.assertEqual(aggregate("select id, score from txtai order by Score asc", results), list(reversed(expected)))
-
     def testAlias(self):
         """
         Test alias clauses
@@ -394,6 +376,24 @@ class TestSQL(unittest.TestCase):
         self.assertSql("where", prefix + "where (id = 1 AND id = 2) OR indexid = 3", "(s.id = 1 AND s.id = 2) OR s.indexid = 3")
         self.assertSql("where", prefix + "where f(id) = b(id)", "f(s.id) = b(s.id)")
         self.assertSql("where", prefix + "WHERE f(id)", "f(s.id)")
+
+    def testAggregateOrderByCase(self):
+        """
+        Test Aggregate matches order by columns case-insensitively
+        """
+
+        aggregate = Aggregate()
+
+        query = "select id, score from txtai order by score desc"
+        results = [{"id": 1, "score": 0.2}, {"id": 2, "score": 0.9}, {"id": 3, "score": 0.5}]
+        expected = [{"id": 2, "score": 0.9}, {"id": 3, "score": 0.5}, {"id": 1, "score": 0.2}]
+
+        # Lowercase order by sorts correctly
+        self.assertEqual(aggregate(query, results), expected)
+
+        # Uppercase and mixed-case order by columns sort identically
+        self.assertEqual(aggregate("select id, score from txtai order by SCORE desc", results), expected)
+        self.assertEqual(aggregate("select id, score from txtai order by Score asc", results), list(reversed(expected)))
 
     def assertSql(self, clause, query, expected):
         """
