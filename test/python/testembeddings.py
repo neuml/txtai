@@ -314,6 +314,26 @@ class TestEmbeddings(unittest.TestCase):
         uid = embeddings.search(data[4], 1)[0][0]
         self.assertEqual(uid, 4)
 
+        # Precomputed query scores are cosine similarities
+        score = embeddings.search(data[4] * 10, 1)[0][1]
+        self.assertAlmostEqual(score, 1.0, places=5)
+
+    def testExternalPrecomputedScore(self):
+        """
+        Test similarity with external pre-computed vectors is unchanged by positive scaling
+        """
+
+        embeddings = Embeddings({"method": "external"})
+
+        query = np.array([1.0, 1.0], dtype=np.float32)
+        data = np.array([[3.0, 4.0], [2.0, 1.0], [1.0, 0.0]], dtype=np.float32)
+
+        # Scaling a candidate vector doesn't change its direction, so the ranking must not change
+        for rows in [data, data * np.array([[1.0], [10.0], [1.0]], dtype=np.float32)]:
+            results = embeddings.similarity(query, list(rows))
+            self.assertEqual([uid for uid, _ in results], [0, 1, 2])
+            self.assertTrue(np.allclose([score for _, score in results], [0.989949, 0.948683, 0.707107]))
+
     def testHybrid(self):
         """
         Test hybrid search
