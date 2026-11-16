@@ -2,7 +2,7 @@
 Functions module
 """
 
-from types import FunctionType, MethodType
+from types import BuiltinFunctionType, FunctionType, MethodType
 
 
 class Functions:
@@ -141,7 +141,7 @@ class Reference:
 
         # Determine if attribute is a function
         if self.function is None:
-            self.function = isinstance(attribute, (FunctionType, MethodType)) or (hasattr(attribute, "__call__") and args)
+            self.function = isinstance(attribute, (BuiltinFunctionType, FunctionType, MethodType)) or (hasattr(attribute, "__call__") and args)
 
         # If attribute is a function, execute and return, otherwise return attribute
         return attribute(*args) if self.function else attribute

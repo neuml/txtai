@@ -2,13 +2,14 @@
 Application module tests
 """
 
+import os
 import unittest
 import types
 
 from unittest.mock import patch
 
 from txtai.app import Application
-from txtai.embeddings import Documents
+from txtai.embeddings import Documents, Embeddings
 from txtai.pipeline import Pipeline
 
 
@@ -48,6 +49,32 @@ class TestApp(unittest.TestCase):
 
         with self.assertRaises(FileNotFoundError):
             Application.read("No file here")
+
+    def testBuiltinFunction(self):
+        """
+        Test zero-argument builtin SQL functions with direct and application configuration
+        """
+
+        for application in (False, True):
+            with self.subTest(application=application):
+                if application:
+                    embeddings = Application(
+                        """
+                        embeddings:
+                            defaults: false
+                            content: true
+                            functions:
+                                - {name: processid, function: os.getpid, argcount: 0}
+                        """
+                    ).embeddings
+                else:
+                    embeddings = Embeddings(defaults=False, content=True, functions=[{"name": "processid", "function": "os.getpid", "argcount": 0}])
+
+                try:
+                    embeddings.index(["note"])
+                    self.assertEqual(embeddings.search("select processid() pid from txtai")[0]["pid"], os.getpid())
+                finally:
+                    embeddings.close()
 
     def testParameter(self):
         """

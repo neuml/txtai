@@ -52,7 +52,7 @@ class PipelineFactory:
         pipeline = PipelineFactory.get(pipeline)
 
         # Return functions directly, otherwise create pipeline instance
-        return pipeline if isinstance(pipeline, types.FunctionType) else pipeline(**config)
+        return pipeline if isinstance(pipeline, (types.BuiltinFunctionType, types.FunctionType)) else pipeline(**config)
 
     @staticmethod
     def list():
