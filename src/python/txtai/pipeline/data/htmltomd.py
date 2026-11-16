@@ -369,8 +369,8 @@ class HTMLToMarkdown(Pipeline):
             # Get list of columns for row
             columns = row.find_all(lambda tag: tag.name in ("th", "td"))
 
-            # Escape pipes in cell text so they don't start a new column
-            cells = [self.process(column, article).replace("|", r"\|") for column in columns]
+            # Format each cell
+            cells = [self.cell(column, article) for column in columns]
 
             # Add columns with separator
             elements.append(f"|{'|'.join(cells)}|")
@@ -382,6 +382,25 @@ class HTMLToMarkdown(Pipeline):
 
         # Join elements together as string
         return "\n".join(elements)
+
+    def cell(self, node, article):
+        """
+        Table cell handler. This method formats a cell's text and reduces it to a single line, as a
+        Markdown table row cannot span lines.
+
+        Args:
+            node: input node
+            article: True if the main section node is an article
+
+        Returns:
+            cell text
+        """
+
+        # Escape pipes so they don't start a new column
+        text = self.process(node, article).replace("|", r"\|")
+
+        # Join the cell's lines with a space, same as the handling for line breaks in cells
+        return re.sub(r"\s*\n\s*", " ", text).strip()
 
     def iscontainer(self, node, children):
         """
