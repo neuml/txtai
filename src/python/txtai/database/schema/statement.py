@@ -74,7 +74,7 @@ class Statement:
     DELETE_SECTIONS = "DELETE FROM sections WHERE id IN (SELECT id FROM batch)"
     COPY_SECTIONS = (
         "INSERT INTO %s SELECT ROW_NUMBER() OVER (ORDER BY s.indexid) - 1 AS indexid, "
-        + "s.id, %s AS text, s.tags, s.entry FROM sections s LEFT JOIN documents d ON s.id = d.id ORDER BY indexid"
+        + "s.id, COALESCE(%s, s.text) AS text, s.tags, s.entry FROM sections s LEFT JOIN documents d ON s.id = d.id ORDER BY indexid"
     )
     STREAM_SECTIONS = (
         "SELECT s.id, s.text, data, object, s.tags FROM %s s "
