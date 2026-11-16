@@ -132,6 +132,18 @@ class Indexes:
         # Add filtered documents batch
         self.documents.add(batch)
 
+    def implements(self, method):
+        """
+        Checks that each subindex ANN implements method. Raises an error if any don't.
+
+        Args:
+            method: ANN method name
+        """
+
+        for index in self.indexes.values():
+            if index.ann:
+                index.ann.implements(method)
+
     def delete(self, ids):
         """
         Deletes ids from each subindex.
