@@ -208,6 +208,33 @@ class TestCluster(unittest.TestCase):
         uid = self.client.get(f"search?query={query}&limit=1&weights=0.5&index=default&parameters={params}&graph=False").json()[0]["id"]
         self.assertEqual(uid, 4)
 
+    def testSearchLimit(self):
+        """
+        Test cluster search honors a SQL LIMIT clause
+        """
+
+        cluster = Cluster({"shards": ["http://127.0.0.1:8002", "http://127.0.0.1:8003"]})
+
+        # Each shard returns 12 rows, same as a shard running a query with limit 20
+        shard = [{"id": x, "score": 1.0 - (x / 100)} for x in range(12)]
+        query = "select id, score from txtai where similar('test') limit 20"
+
+        with patch.object(Cluster, "execute", return_value=[shard, shard]):
+            self.assertEqual(len(cluster.search(query, 10)), 20)
+            self.assertEqual(len(cluster.search(query)), 20)
+
+            # SQL LIMIT takes precedence over the request limit, same as a single index
+            self.assertEqual(len(cluster.search(query, 22)), 20)
+            self.assertEqual(len(cluster.search(query.replace("limit 20", "limit 2"), 10)), 2)
+
+            # Request limit is used for queries without a LIMIT clause
+            self.assertEqual(len(cluster.search("select id, score from txtai where similar('test')", 5)), 5)
+            self.assertEqual(len(cluster.search("test")), 10)
+
+        with patch.object(Cluster, "execute", return_value=[[shard, shard], [shard, shard]]):
+            results = cluster.batchsearch([query, "test"], 10)
+            self.assertEqual([len(result) for result in results], [20, 10])
+
     def testSearchParameters(self):
         """
         Test cluster search forwards bind parameters with characters that are special in a query string
