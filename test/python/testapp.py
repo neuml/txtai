@@ -5,7 +5,10 @@ Application module tests
 import unittest
 import types
 
+from unittest.mock import patch
+
 from txtai.app import Application
+from txtai.embeddings import Documents
 from txtai.pipeline import Pipeline
 
 
@@ -13,6 +16,30 @@ class TestApp(unittest.TestCase):
     """
     Application tests.
     """
+
+    @patch("txtai.app.base.Documents", wraps=Documents)
+    def testAddEmpty(self, documents):
+        """
+        Test adding an empty batch before a batch with data
+        """
+
+        app = Application(
+            """
+            writable: true
+            embeddings:
+                keyword: true
+                content: true
+        """
+        )
+
+        app.add([])
+        app.add([{"id": 0, "text": "hello world"}])
+
+        # Both batches share one documents queue, no temporary file is left behind
+        self.assertEqual(documents.call_count, 1)
+
+        app.index()
+        self.assertEqual(app.search("hello")[0]["text"], "hello world")
 
     def testConfig(self):
         """

@@ -44,6 +44,20 @@ class TestEntity(unittest.TestCase):
         )
         self.assertEqual(entities, "Canada Manhattan")
 
+    def testEntityZeroThreshold(self):
+        """
+        Test zero-threshold flattened and joined entity outputs
+        """
+
+        text = "Canada's last fully intact ice shelf has suddenly collapsed, forming a Manhattan-sized iceberg"
+        self.assertEqual(self.entity(text, flatten=0.0), ["Canada", "Manhattan"])
+        self.assertEqual(self.entity([text], flatten=0.0), [["Canada", "Manhattan"]])
+        self.assertEqual(self.entity(text, flatten=0.0, join=True), "Canada Manhattan")
+        self.assertEqual(self.entity(text, labels=["LOC"], flatten=0.0), ["Canada"])
+
+        # Boolean False keeps scored tuples, even when joining is requested.
+        self.assertEqual(self.entity(text, flatten=False, join=True), self.entity(text))
+
     def testEntityTypes(self):
         """
         Test entity type filtering

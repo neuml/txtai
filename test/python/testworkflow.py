@@ -3,6 +3,7 @@ Workflow module tests
 """
 
 import contextlib
+import copy
 import glob
 import io
 import os
@@ -10,16 +11,25 @@ import tempfile
 import sys
 import unittest
 
+from datetime import datetime, timezone
 from itertools import product
+from pathlib import Path
+from unittest.mock import Mock, patch
 
 import numpy as np
 import torch
 
+from croniter import croniter
+
 from txtai.api import API
+from txtai.app import Application
 from txtai.embeddings import Documents, Embeddings
+from txtai.pipeline.data.urlretrieve import URLRetrieve
 from txtai.pipeline import Nop, Segmentation, Summary, Translation, Textractor
 from txtai.workflow import (
     Workflow,
+    WorkflowFactory,
+    TaskFactory,
     Task,
     ConsoleTask,
     ExportTask,
@@ -27,6 +37,7 @@ from txtai.workflow import (
     ImageTask,
     RagTask,
     RetrieveTask,
+    ServiceTask,
     StorageTask,
     StreamTask,
     TemplateTask,
@@ -75,6 +86,41 @@ class TestWorkflow(unittest.TestCase):
                 tasks:
                     - transform
         """
+
+    def testApplicationConfig(self):
+        """
+        Test that an application can reuse its workflow configuration
+        """
+
+        workflow = {
+            "tasks": [{"task": "template", "template": "Hi {text}"}, {"action": "nop", "args": []}],
+            "stream": {"task": "stream", "action": "nop", "batch": True},
+        }
+        config = {"workflow": {"test": workflow}}
+        expected = copy.deepcopy(config)
+        for _ in range(2):
+            app = Application(config)
+            self.assertEqual(list(app.workflow("test", ["x"])), ["Hi x"])
+            self.assertEqual(config, expected)
+
+    def testFactoryConfig(self):
+        """
+        Test that factories preserve task, argument and stream configuration
+        """
+
+        def action(values, suffix):
+            return [value + suffix for value in values]
+
+        args = ["!"]
+        task = {"action": action, "args": args}
+        config = {"tasks": [dict(task, task="")], "stream": {"task": "stream", "action": iter, "batch": True}}
+        expected = copy.deepcopy(config)
+        for _ in range(2):
+            self.assertEqual(TaskFactory.create(task, "")(["x"]), ["x!"])
+            self.assertIs(task["action"], action)
+            self.assertIs(task["args"], args)
+            self.assertEqual(list(WorkflowFactory.create(config, "test")(["x"])), ["x!"])
+            self.assertEqual(config, expected)
 
     def testBaseWorkflow(self):
         """
@@ -258,6 +304,30 @@ class TestWorkflow(unittest.TestCase):
         path = glob.glob(os.path.join(tempfile.gettempdir(), "export-timestamp*.csv"))[0]
         self.assertGreater(os.path.getsize(path), 0)
 
+    def testExportWorkflowBatches(self):
+        """
+        Test an export task with multiple batches
+        """
+
+        path = os.path.join(tempfile.gettempdir(), "export-batches.csv")
+
+        # Track initialize action calls
+        runs = []
+        workflow = Workflow([ExportTask(output=path, initialize=lambda: runs.append(1))], batch=2)
+
+        # All batches are exported
+        list(workflow([{"id": x, "text": f"Sentence {x}"} for x in range(5)]))
+        with open(path, encoding="utf-8") as f:
+            self.assertEqual(len(f.readlines()), 6)
+
+        # Each workflow run starts a new export
+        list(workflow([{"id": x, "text": f"Sentence {x}"} for x in range(3)]))
+        with open(path, encoding="utf-8") as f:
+            self.assertEqual(len(f.readlines()), 4)
+
+        # Initialize action runs once per workflow run
+        self.assertEqual(len(runs), 2)
+
     def testExtractWorkflow(self):
         """
         Test column extraction tasks
@@ -286,6 +356,62 @@ class TestWorkflow(unittest.TestCase):
             workflow = Workflow([FileTask()])
             results = list(workflow(inputs))
             self.assertEqual(results, inputs)
+
+    def testFileURIWorkflow(self):
+        """
+        Test encoded file URIs and plain paths with literal percent sequences.
+        """
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "notes %20 #1.txt"
+            path.write_text("research note", encoding="utf-8")
+
+            workflow = Workflow([FileTask(lambda paths: [Path(p).read_text(encoding="utf-8") for p in paths])])
+            self.assertEqual(list(workflow([str(path), path.as_uri()])), ["research note", "research note"])
+
+    def testFilteredPackingScales(self):
+        """
+        Test that packing a batch does not repeatedly compare all process positions.
+        """
+
+        class Position(int):
+            """Integer position that counts equality comparisons."""
+
+            comparisons = 0
+            __hash__ = int.__hash__
+
+            def __eq__(self, other):
+                Position.comparisons += 1
+                return super().__eq__(other)
+
+        positions = [Position(index) for index in range(128)]
+        results = [str(index) for index in positions]
+        indexed = list(zip(positions, results))
+
+        self.assertEqual(Task().filteredpack(results, indexed, positions), results)
+        self.assertLessEqual(Position.comparisons, len(positions) * 2)
+
+    def testFilteredPackingResults(self):
+        """
+        Test selected, one-to-many and unmerged outputs keep input order and metadata.
+        """
+
+        inputs = [(["first"], "keep a", "tag"), (["skip"], "skip", "tag"), (["last"], "keep b", "tag")]
+        task = Task(lambda values: [[value.upper(), None] for value in values], select="keep")
+        self.assertEqual(
+            task(inputs),
+            [(["first"], "KEEP A", "tag"), (["first"], None, "tag"), inputs[1], (["last"], "KEEP B", "tag"), (["last"], None, "tag")],
+        )
+
+        task = Task([lambda values: [value.upper() for value in values], list], select="keep", merge=None)
+        self.assertEqual(task(inputs), [[(["first"], "KEEP A", "tag"), inputs[1], (["last"], "KEEP B", "tag")], inputs])
+
+        # Repeated process positions continue to select the first corresponding result.
+        self.assertEqual(Task().filteredpack(["first", "second", "last"], [(0, "a"), (1, "skip"), (2, "b")], [0, 0, 2]), ["first", "skip", "last"])
+
+        # None action results and unselected inputs remain in the Workflow's output.
+        workflow = Workflow([Task(lambda values: [None for _ in values], select="keep")])
+        self.assertEqual(list(workflow(["keep", "skip"])), [None, "skip"])
 
     def testImageWorkflow(self):
         """
@@ -442,6 +568,26 @@ class TestWorkflow(unittest.TestCase):
         results = list(workflow(["file://" + Utils.PATH + "/books.jpg"]))
         self.assertTrue(results[0].endswith("books.jpg") and "txtai" in results[0])
 
+        # A URL with no filename must still write to a file, not to the output directory
+        with patch.object(URLRetrieve, "__call__", return_value=b"data"):
+            with tempfile.TemporaryDirectory() as directory:
+                path = RetrieveTask(directory=directory).prepare("https://example.com/")
+                self.assertTrue(os.path.isfile(path))
+                with open(path, "rb") as handle:
+                    self.assertEqual(handle.read(), b"data")
+
+                # Distinct bare host URLs must not resolve to the same file
+                first = RetrieveTask(directory=directory).prepare("https://a.example.com/")
+                second = RetrieveTask(directory=directory).prepare("https://b.example.com/")
+                self.assertNotEqual(first, second)
+                self.assertTrue(first.endswith("a.example.com"))
+                self.assertTrue(second.endswith("b.example.com"))
+
+                # Same for a URL with no path when the directory structure is kept
+                path = RetrieveTask(directory=directory, flatten=False).prepare("https://c.example.com/")
+                self.assertTrue(os.path.isfile(path))
+                self.assertTrue(path.endswith("c.example.com"))
+
     def testRetrieveLocalFilenames(self):
         """
         Test that local filenames are preserved instead of parsed as URLs
@@ -498,6 +644,21 @@ class TestWorkflow(unittest.TestCase):
 
         self.assertIn("a sentence to segment", output.getvalue())
 
+    def testScheduleElapsedWorkflow(self):
+        """
+        Test that an elapsed cron deadline still runs its scheduled task.
+        """
+
+        start = datetime(2026, 1, 1, tzinfo=timezone.utc)
+        executed = []
+        workflow = Workflow([Task(action=executed.append)])
+
+        with patch("txtai.workflow.base.croniter", return_value=croniter("* * * * * *", start)):
+            with patch("txtai.workflow.base.time.time", return_value=start.timestamp() + 1.01):
+                workflow.schedule("* * * * * *", ["test"], 1)
+
+        self.assertEqual(executed, [["test"]])
+
     def testScheduleErrorWorkflow(self):
         """
         Test workflow schedules with errors
@@ -513,6 +674,25 @@ class TestWorkflow(unittest.TestCase):
 
         self.assertIn("FileNotFoundError", " ".join(logs.output))
 
+    def testServiceParamsFalsy(self):
+        """
+        Test ServiceTask preserves explicit falsy values and only replaces placeholders
+        """
+
+        response = Mock()
+        response.content = b"{}"
+        response.headers = {"Content-Type": "application/json"}
+        response.json.return_value = {}
+
+        params = {"limit": 0, "stream": False, "text": None, "query": ""}
+        task = ServiceTask(url="http://example", method="post", params=params)
+
+        with patch("txtai.workflow.task.service.requests.post", return_value=response) as post:
+            task.request("value")
+
+        self.assertEqual(post.call_args.kwargs["json"], {"limit": 0, "stream": False, "text": "value", "query": "value"})
+        self.assertEqual(params, {"limit": 0, "stream": False, "text": None, "query": ""})
+
     def testStorageWorkflow(self):
         """
         Test a storage task
@@ -523,6 +703,36 @@ class TestWorkflow(unittest.TestCase):
         results = list(workflow(["local://" + Utils.PATH, "test string"]))
 
         self.assertEqual(len(results), 22)
+
+    def testStorageTaggedWorkflow(self):
+        """
+        Test a storage task with tagged (id, data, tag) inputs (#1328)
+        """
+
+        task = StorageTask()
+
+        # matches() accepts untagged and tagged storage urls
+        self.assertIsNotNone(task.matches("local://" + Utils.PATH))
+        self.assertIsNotNone(task.matches(("id", "local://" + Utils.PATH, "tag")))
+        self.assertIsNone(task.matches("test string"))
+
+        workflow = Workflow([StorageTask()])
+
+        # Tagged inputs list the container and re-tag each file with the input (id, tag)
+        url = "local://" + Utils.PATH
+        results = list(workflow([("id", url, "tag")]))
+        self.assertEqual(len(results), 21)
+        for result in results:
+            self.assertEqual(len(result), 3)
+            self.assertEqual(result[0], "id")
+            # normpath: libcloud joins listing paths with os.path.join, which uses
+            # backslashes on Windows while Utils.PATH uses forward slashes
+            self.assertTrue(os.path.normpath(result[1]).startswith(os.path.normpath(Utils.PATH)))
+            self.assertEqual(result[2], "tag")
+
+        # Non-storage inputs pass through unmodified
+        results = list(workflow([("id2", "test string", "tag2")]))
+        self.assertEqual(results, [("id2", "test string", "tag2")])
 
     def testTemplateInput(self):
         """

@@ -85,6 +85,12 @@ workflow:
               url: http://127.0.0.1:8001/testpost
               params:
 
+    empty:
+        tasks:
+            - task: service
+              url: http://127.0.0.1:8001/empty
+              params:
+
     xml:
         tasks:
             - task: service
@@ -92,6 +98,14 @@ workflow:
               method: get
               batch: false
               extract: row
+              params:
+                text:
+
+    error:
+        tasks:
+            - task: service
+              url: http://127.0.0.1:8001/error
+              method: get
               params:
                 text:
 
@@ -120,6 +134,19 @@ class RequestHandler(BaseHTTPRequestHandler):
             # Sleep longer than the client timeout to force a read timeout
             time.sleep(2)
 
+        if self.path.startswith("/error"):
+            # Respond with a server error that has a valid JSON body
+            response = '{"detail": "internal error"}'.encode("utf-8")
+
+            self.send_response(500)
+            self.send_header("content-type", "application/json")
+            self.send_header("content-length", len(response))
+            self.end_headers()
+
+            self.wfile.write(response)
+            self.wfile.flush()
+            return
+
         self.send_response(200)
 
         if self.path.startswith("/xml"):
@@ -143,6 +170,12 @@ class RequestHandler(BaseHTTPRequestHandler):
 
         length = int(self.headers["content-length"])
         data = json.loads(self.rfile.read(length))
+
+        if self.path.startswith("/empty"):
+            # Respond without a body or content-type
+            self.send_response(204)
+            self.end_headers()
+            return
 
         response = json.dumps([[y for y in x.split(".") if y] for x in data]).encode("utf-8")
 
@@ -235,6 +268,16 @@ class TestWorkflow(unittest.TestCase):
         self.assertEqual(len(results), 1)
         self.assertEqual(len(results[0]), 2)
 
+    def testServiceEmpty(self):
+        """
+        Test workflow with ServiceTask POST via API and an empty response
+        """
+
+        text = "This is a test sentence. And another sentence to split."
+        results = self.client.post("workflow", json={"name": "empty", "elements": [text]}).json()
+
+        self.assertEqual(results, [None])
+
     def testServiceXml(self):
         """
         Test workflow with ServiceTask GET via API and XML response
@@ -245,6 +288,15 @@ class TestWorkflow(unittest.TestCase):
 
         self.assertEqual(len(results), 1)
         self.assertEqual(len(results[0]), 1)
+
+    def testServiceError(self):
+        """
+        Test workflow with ServiceTask GET that raises an error for an HTTP error response
+        """
+
+        text = "This is a test sentence. And another sentence to split."
+        with self.assertRaises(requests.exceptions.HTTPError):
+            self.client.post("workflow", json={"name": "error", "elements": [text]})
 
     def testServiceTimeout(self):
         """

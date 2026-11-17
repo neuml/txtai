@@ -97,6 +97,22 @@ class Common:
             result = embeddings.search(self.data[4], 1)[0]
             self.assertEqual(len(result["id"]), 36)
 
+        def testCast(self):
+            """
+            Test casting a JSON field in select, where and order by clauses
+            """
+
+            embeddings = Embeddings({"keyword": True, "content": self.backend})
+            embeddings.index([{"text": text, "n": n} for text, n in zip(self.data[:3], ["10", "9", "100"])])
+
+            # Numeric order instead of text order
+            result = embeddings.search("select id, cast(n as integer) as n from txtai order by cast(n as integer)")
+            self.assertEqual([(x["id"], x["n"]) for x in result], [("1", 9), ("0", 10), ("2", 100)])
+
+            # Numeric comparison
+            result = embeddings.search("select id from txtai where cast(n as integer) > 9 order by id")
+            self.assertEqual([x["id"] for x in result], ["0", "2"])
+
         def testCheckpoint(self):
             """
             Test embeddings index checkpoints
@@ -239,6 +255,21 @@ class Common:
             self.assertEqual(result["text"], self.data[4])
             self.assertEqual(len(result.get("tokens")), 8)
 
+        def testExplainSimilarArgs(self):
+            """
+            Test query explain ignores extra similar clause arguments
+            """
+
+            self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+            expected = self.embeddings.explain("select id, text, score from txtai where similar('feel good story')", limit=1)[0]
+
+            # Candidates and weights are not part of the query text
+            for query in ["similar('feel good story', 10)", "similar('feel good story', 0.5)"]:
+                result = self.embeddings.explain(f"select id, text, score from txtai where {query}", limit=1)[0]
+                self.assertEqual(result["text"], self.data[4])
+                self.assertEqual(result["tokens"], expected["tokens"])
+
         def testExplainEmpty(self):
             """
             Test query explain with no filtering criteria
@@ -328,6 +359,33 @@ class Common:
 
             result = embeddings.search("feel good story", 1)[0]
             self.assertEqual(result["text"], data[0][1])
+
+        def testHybridWeights(self):
+            """
+            Test hybrid search with different similar clause weights in the same batch
+            """
+
+            queries = [
+                "select id, score from txtai where similar('a day at work', 0.1)",
+                "select id, score from txtai where similar('feel good story', 0.9)",
+            ]
+
+            # Test with sparse + dense vectors in the top-level index and in a subindex
+            hybrid = {"path": "sentence-transformers/nli-mpnet-base-v2", "hybrid": True}
+            for config in [hybrid, {"defaults": False, "indexes": {"index1": hybrid}}]:
+                embeddings = Embeddings({**config, "content": self.backend})
+                embeddings.index(self.data)
+
+                # Each query in a batch must use its own weights
+                batch = embeddings.batchsearch(queries, 6)
+                for query, results in zip(queries, batch):
+                    expected = embeddings.search(query, 6)
+                    self.assertEqual([r["id"] for r in results], [r["id"] for r in expected])
+                    for result, value in zip(results, expected):
+                        self.assertAlmostEqual(result["score"], value["score"], places=5)
+
+                # Cleanup connection
+                embeddings.close()
 
         def testIndex(self):
             """
@@ -614,6 +672,47 @@ class Common:
 
             self.assertEqual(result["text"], self.data[4])
 
+        def testReindexDelete(self):
+            """
+            Test reindex renumbers indexids after a delete
+            """
+
+            # Index documents and delete two of them, which leaves gaps in the indexids
+            embeddings = Embeddings({"keyword": True, "content": self.backend})
+            embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+            embeddings.delete([0, 2])
+
+            # Reindex
+            embeddings.reindex({"keyword": True})
+
+            # Test indexids are sequential and still point to the same documents
+            result = embeddings.search("select indexid, id from txtai order by indexid", 10)
+            self.assertEqual([(row["indexid"], row["id"]) for row in result], [(0, "1"), (1, "3"), (2, "4"), (3, "5")])
+
+            # Search for best match
+            result = embeddings.search("lottery ticket", 1)[0]
+            self.assertEqual(result["text"], self.data[4])
+
+        def testReindexStore(self):
+            """
+            Test reindex when the JSON data doesn't store the text column
+            """
+
+            # Index documents and only store the title field in the JSON data
+            embeddings = Embeddings({"keyword": True, "content": self.backend, "columns": {"store": ["title"]}})
+            embeddings.index([{"id": uid, "text": text, "title": f"Title {uid}"} for uid, text in enumerate(self.data)])
+
+            # Reindex
+            embeddings.reindex({"keyword": True, "columns": {"store": ["title"]}})
+
+            # Test all documents are indexed
+            self.assertEqual(embeddings.count(), len(self.data))
+
+            # Search for best match
+            result = embeddings.search("select id, text, title from txtai where similar('lottery ticket')", 1)[0]
+            self.assertEqual(result["text"], self.data[4])
+            self.assertEqual(result["title"], "Title 4")
+
         def testSave(self):
             """
             Test save
@@ -751,6 +850,22 @@ class Common:
                 parameters={"document": "%iceberg%", "id": 4},
             )
             self.assertEqual({row["text"] for row in result}, {self.data[1], self.data[4]})
+
+        def testSQLManySimilar(self):
+            """
+            Test a query with more than 10 similar clauses
+            """
+
+            words = ["apple", "banana", "cherry", "date", "elder", "fig", "grape", "honey", "ice", "jack", "kiwi", "lemon"]
+
+            embeddings = Embeddings({"keyword": True, "content": self.backend})
+            embeddings.index([(uid, f"{word} pie", None) for uid, word in enumerate(words)])
+
+            where = " or ".join(f"similar('{word}')" for word in words[:11])
+            results = embeddings.search(f"select id from txtai where {where}", 20)
+            self.assertEqual(sorted(int(x["id"]) for x in results), list(range(11)))
+
+            embeddings.close()
 
         def testSparse(self):
             """

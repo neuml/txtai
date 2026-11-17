@@ -54,7 +54,10 @@ class ServiceTask(Task):
 
     def execute(self, elements, executor=None):
         if self.batch:
-            elements = self.request(elements)
+            response = self.request(elements)
+
+            # Empty response body returns None for each element, same as batch=False
+            elements = [None] * len(elements) if response is None else response
         else:
             elements = [self.request(element) for element in elements]
 
@@ -80,9 +83,9 @@ class ServiceTask(Task):
             # Create copy of parameters
             params = self.params.copy()
 
-            # Add data to parameters
+            # Replace None and empty string placeholders with the current input
             for key in params:
-                if not params[key]:
+                if params[key] is None or (isinstance(params[key], str) and not params[key]):
                     params[key] = data
 
         # Run request
@@ -91,8 +94,15 @@ class ServiceTask(Task):
         else:
             response = requests.post(self.url, json=params, timeout=self.timeout)
 
+        # Raise an error for 4xx/5xx responses. Otherwise, error payloads are passed downstream as task output.
+        response.raise_for_status()
+
+        # Empty response body (e.g. 204 No Content), nothing to parse
+        if not response.content:
+            return None
+
         # Parse data based on content-type
-        mimetype = response.headers["Content-Type"].split(";")[0]
+        mimetype = response.headers.get("Content-Type", "").split(";")[0]
         if mimetype.lower().endswith("xml"):
             data = xmltodict.parse(response.text)
         else:

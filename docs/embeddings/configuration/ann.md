@@ -142,9 +142,10 @@ zvec:
     efconstruction: ef_construction param for HnswIndexParam (int) - defaults to 200
     m: number of HNSW links per element (int) - defaults to 50
     efsearch: ef search param for HnswQueryParam (int) - defaults to 300
+    datatype: vector data type (fp32|fp16|int8) - defaults to fp32
 ```
 
-The [zvec](https://github.com/alibaba/zvec) backend is an embedded, path-based vector index.
+The [zvec](https://github.com/alibaba/zvec) backend is an embedded, path-based vector index. `datatype` sets the vector data type; `int8` stores integer vectors, so the embeddings must already be integers. The sparse backend (`zvecsparse`) accepts `fp32` (default) and `fp16`.
 
 ### pgvector
 ```yaml

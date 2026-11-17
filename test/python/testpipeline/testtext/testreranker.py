@@ -238,6 +238,26 @@ class TestReranker(unittest.TestCase):
             self.assertEqual(ranker("select id, text, score from txtai where id = 'missing'"), [])
             self.assertEqual(encode.call_count, 0)
 
+    def testEmpty(self):
+        """Return no results when a search has no matches, with or without a cache."""
+
+        empty = "select id, text, score from txtai where id = 'missing'"
+        models = [
+            self.similarity,
+            Similarity("cross-encoder/ms-marco-MiniLM-L-2-v2", crossencode=True),
+            Similarity("prajjwal1/bert-medium-mnli"),
+        ]
+
+        for similarity in models:
+            for cache in (None, True):
+                ranker = Reranker(self.embeddings, similarity, cache=cache)
+                self.assertEqual(ranker(empty), [])
+
+                # Empty and non-empty queries in the same batch
+                results = ranker([empty, "lottery winner"], 1)
+                self.assertEqual(results[0], [])
+                self.assertEqual(len(results[1]), 1)
+
     def testCacheBypass(self):
         """Keep text scoring for missing ids, non-late encoders and batch centering."""
 

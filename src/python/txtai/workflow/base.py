@@ -96,7 +96,7 @@ class Workflow:
             # Schedule using localtime
             schedule = croniter(cron, datetime.now().astimezone()).get_next(datetime)
             logger.info("'%s' next run scheduled for %s", self.name, schedule.isoformat())
-            time.sleep(schedule.timestamp() - time.time())
+            time.sleep(max(schedule.timestamp() - time.time(), 0))
 
             # Run workflow
             # pylint: disable=W0703

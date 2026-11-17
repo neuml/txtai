@@ -294,12 +294,29 @@ class Expression:
             similar: list where similar function call parameters are stored
         """
 
-        # Consume function parameters
-        while token and token != ")":
+        # Only cast functions take a type name after AS
+        cast = token.lower() in Token.CAST
+
+        # Paren counter (current token is the function name, open paren is read next)
+        parens = 0
+
+        # Consume function parameters until the closing paren of this function
+        while token and (token != ")" or parens > 0):
             x, token = self.readtoken(iterator)
 
+            # Increase/decrease paren counter
+            if token == "(":
+                parens += 1
+            elif token == ")":
+                parens -= 1
+
+            # Check if token starts a cast type, i.e. cast(a as integer)
+            if cast and token and token.lower() in Token.ALIAS:
+                # Skip type name, it's not a column
+                self.casttype(iterator, tokens, x)
+
             # Check if token is a square bracket
-            if Token.isbracket(token):
+            elif Token.isbracket(token):
                 # Resolve bracket expression
                 self.bracket(iterator, tokens, x)
 
@@ -322,6 +339,28 @@ class Expression:
             elif Token.iscompound(tokens, x):
                 # Resolve compound expressions
                 self.compound(iterator, tokens, x, aliases, similar)
+
+    def casttype(self, iterator, tokens, x):
+        """
+        Consumes the type name of a cast expression without resolving it. Type names can have
+        multiple words or parameters, i.e. double precision, decimal(10, 2).
+
+        Args:
+            iterator: tokens iterator
+            tokens: input tokens
+            x: current position
+        """
+
+        # Read until the closing paren of the cast function
+        parens = 0
+        while Token.get(tokens, x + 1) and (Token.get(tokens, x + 1) != ")" or parens):
+            x, token = self.readtoken(iterator)
+
+            # Track type parameter parens
+            if token == "(":
+                parens += 1
+            elif token == ")":
+                parens -= 1
 
     def alias(self, iterator, tokens, x, aliases, index):
         """
@@ -382,12 +421,19 @@ class Expression:
             tokens[x - 1] = self.resolve(tokens[x - 1], aliases)
 
         # Consume operator(s), handle both single and compound operators, i.e. column NOT LIKE 1
-        token = tokens[x]
-        while token and Token.isoperator(token):
+        while Token.isoperator(Token.get(tokens, x + 1)):
             x, token = next(iterator, (None, None))
 
+        # Leave a parenthesized right side to the caller, which tracks paren depth
+        if Token.isgroupstart(Token.get(tokens, x + 1)):
+            return
+
         # Resolve right side
-        if token and Token.iscolumn(token):
+        x, token = next(iterator, (None, None))
+        if Token.isbracket(token):
+            # Resolve bracket expression
+            self.bracket(iterator, tokens, x)
+        elif token and Token.iscolumn(token):
             # Need to process functions since it hasn't went through the standard loop yet
             if Token.isfunction(tokens, x):
                 self.function(iterator, tokens, token, aliases, similar)

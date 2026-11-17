@@ -11,6 +11,8 @@ from unittest.mock import patch
 
 from io import BytesIO
 
+import numpy as np
+
 from PIL import Image
 
 from txtai.embeddings import Embeddings
@@ -85,6 +87,24 @@ class TestEncoder(unittest.TestCase):
 
         self.assertTrue(result["id"].endswith("stars.jpg"))
         self.assertTrue(isinstance(result["object"], Image.Image))
+
+    def testImageNoFormat(self):
+        """
+        Test an index with image encoder and an image that has no format
+        """
+
+        # Image created in memory has no format
+        image = Image.new("RGB", (8, 8), (255, 0, 0))
+
+        embeddings = Embeddings(method="external", transform=lambda x: np.ones((len(x), 3), dtype=np.float32), content=True, objects="image")
+        embeddings.index([(0, {"object": image, "text": "red image"}, None)])
+
+        result = embeddings.search("select object from txtai limit 1")[0]
+
+        self.assertEqual(result["object"].format, "PNG")
+        self.assertEqual(result["object"].getpixel((0, 0)), (255, 0, 0))
+
+        embeddings.close()
 
     def testInvalid(self):
         """

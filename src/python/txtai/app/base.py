@@ -258,7 +258,7 @@ class Application:
         """
 
         # Check for task shorthand syntax
-        task = {"action": task} if isinstance(task, (str, list)) else task
+        task = {"action": task} if isinstance(task, (str, list)) else task.copy()
 
         if "action" in task:
             action = task["action"]
@@ -444,7 +444,7 @@ class Application:
         if self.embeddings:
             with self.lock:
                 # Create documents file if not already open
-                if not self.documents:
+                if self.documents is None:
                     self.documents = Documents()
 
                 # Add documents

@@ -167,6 +167,10 @@ class Embeddings:
             self.index(documents, checkpoint=checkpoint)
             return
 
+        # Check that the ANN index can be appended to before any data is changed
+        if self.ann:
+            self.ann.implements("append")
+
         # Create transform and stream
         transform = Transform(self, Action.UPSERT, checkpoint=checkpoint)
         stream = Stream(self, Action.UPSERT)
@@ -210,6 +214,10 @@ class Embeddings:
             list of ids deleted
         """
 
+        # Check that the ANN index supports deletes before any data is changed
+        if self.ann:
+            self.ann.implements("delete")
+
         # List of internal indices for each candidate id to delete
         indices = []
 
@@ -227,9 +235,9 @@ class Embeddings:
             # Delete ids from database
             self.database.delete(deletes)
         elif self.ann or self.scoring:
-            # Find existing ids
-            for uid in ids:
-                indices.extend([index for index, value in enumerate(self.ids) if uid == value])
+            # Find existing ids with a single pass over the index ids
+            uids = set(ids)
+            indices = [index for index, value in enumerate(self.ids) if value in uids]
 
             # Clear embeddings ids
             for index in indices:

@@ -97,6 +97,10 @@ class RDBMS(Database):
                     # Read JSON data, if provided
                     data = json.loads(data) if data and isinstance(data, str) else data
 
+                    # Add section text when the JSON data doesn't store the text column
+                    if isinstance(data, dict) and self.text not in data:
+                        data[self.text] = text
+
                     # Stream data if available, otherwise use section text
                     yield (uid, data if data else text, tags)
 
@@ -338,11 +342,11 @@ class RDBMS(Database):
                 self.insertdocument(uid, json.dumps(data, allow_nan=False), tags, entry)
 
         # If text and object are both available, load object as it won't otherwise be used
-        if self.text in document and obj:
+        if document.get(self.text) is not None and obj:
             self.loadobject(uid, obj, tags, entry)
 
         # Return value to use for section - use text if available otherwise use object
-        return document[self.text] if self.text in document else obj
+        return document[self.text] if document.get(self.text) is not None else obj
 
     def insertdocument(self, uid, data, tags, entry):
         """

@@ -3,6 +3,7 @@ Database module
 """
 
 import logging
+import re
 import types
 
 from .encoder import EncoderFactory
@@ -15,7 +16,7 @@ logger = logging.getLogger(__name__)
 class Database:
     """
     Base class for database instances. This class encapsulates a content database used for
-    storing field content as dicts and objects. The database instance works in conjuction
+    storing field content as dicts and objects. The database instance works in conjunction
     with a vector index to execute SQL-driven similarity search.
     """
 
@@ -149,9 +150,10 @@ class Database:
 
         if "select" in query and similarity:
             for x in range(len(similarity)):
-                token = f"{Token.SIMILAR_TOKEN}{x}"
-                if where and token in where:
-                    where = where.replace(token, self.embed(similarity, x))
+                # Match the whole token, so that __SIMILAR__1 doesn't match the start of __SIMILAR__10
+                token = re.compile(rf"{Token.SIMILAR_TOKEN}{x}(?!\d)")
+                if where and token.search(where):
+                    where = token.sub(self.embed(similarity, x), where)
 
         elif similarity:
             # Not a SQL query, load similarity results, if any

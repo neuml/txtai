@@ -7,7 +7,7 @@ The File To HTML pipeline transforms files to HTML. It supports the following te
 
 ## Apache Tika
 
-[Apache Tika](https://tika.apache.org/) detects and extracts metadata and text from over a thousand different file types. See [this link](https://tika.apache.org/2.9.2/formats.html) for a list of supported document formats.
+[Apache Tika](https://tika.apache.org/) detects and extracts metadata and text from over a thousand different file types. See [this link](https://tika.apache.org/3.3.2/formats.html) for a list of supported document formats.
 
 Apache Tika requires [Java](https://en.wikipedia.org/wiki/Java_(programming_language)) to be installed. An alternative to that is starting a separate Apache Tika service via [this Docker Image](https://hub.docker.com/r/apache/tika) and setting these [environment variables](https://github.com/chrismattmann/tika-python?tab=readme-ov-file#environment-variables).
 

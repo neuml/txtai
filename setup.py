@@ -60,9 +60,9 @@ extras["ann"] = [
     "bitsandbytes>=0.42.0",
     "ggml-python>=0.0.41",
     "hnswlib>=0.5.0",
-    "milvus-lite>=3.1.1",
+    "milvus-lite>=3.2.2",
     "pgvector>=0.4.1",
-    "rabitqlib>=0.5.1",
+    "rabitqlib>=0.7.0",
     "scikit-learn>=0.23.1",
     "scipy>=1.4.1",
     "sqlalchemy>=2.0.20",
@@ -181,7 +181,7 @@ extras["all"] = (
 
 setup(
     name=package,
-    version="9.14.0",
+    version="9.15.0",
     author="NeuML",
     description="All-in-one open-source AI framework for semantic search, LLM orchestration and language model workflows",
     long_description=DESCRIPTION,

@@ -60,7 +60,7 @@ class Search:
         """
 
         # Default input parameters
-        limit = limit if limit else 3
+        limit = limit if limit is not None else 3
         weights = weights if weights is not None else 0.5
 
         # Return empty results if there is no database and indexes
@@ -92,7 +92,7 @@ class Search:
         Args:
             queries: list of queries
             limit: maximum results
-            weights: hybrid score weights
+            weights: hybrid score weights, either one set of weights for all queries or a list of [dense, sparse] weights per query
             index: index name
 
         Returns:
@@ -114,9 +114,13 @@ class Search:
             if isinstance(weights, (int, float)):
                 weights = [weights, 1 - weights]
 
+            # Use the same weights for each query, unless a list of weights per query is passed
+            if not isinstance(weights[0], (list, tuple)):
+                weights = [weights] * len(queries)
+
             # Create weighted scores via hybrid fusion strategy
             fusion = Hybrid(self.scoring)
-            return [fusion(vectors, weights, limit) for vectors in zip(dense, sparse)]
+            return [fusion(vectors, weights[x], limit) for x, vectors in enumerate(zip(dense, sparse))]
 
         # Raise an error if when no indexes are available
         if not sparse and not dense:
@@ -343,7 +347,9 @@ class Search:
         limit = max(limit, self.limit(queries))
 
         # Bulk index scan. The graph query drops SKIP rows, so add them to the number of candidates.
-        scan = Scan(self.search, limit + self.offset(queries), weights, index)(queries, None)
+        # Graph nodes are keyed by index ids, so results must not be resolved to ids.
+        search = Search(self.embeddings, indexids=True).search
+        scan = Scan(search, limit + self.offset(queries), weights, index)(queries, None)
 
         # Combine index search results with database search results
         for x, query in enumerate(queries):

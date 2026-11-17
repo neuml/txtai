@@ -43,24 +43,88 @@ class TestSQL(unittest.TestCase):
 
     def testAggregateAvg(self):
         """
-        Test Aggregate combines avg() results as a count(*)-weighted mean, not an unweighted
+        Test Aggregate combines avg() results as a count()-weighted mean, not an unweighted
         average of averages
         """
 
         aggregate = Aggregate()
 
         # 2 rows averaging 100 and 8 rows averaging 10 must combine to the true weighted mean, 28
-        query = "select count(*), avg(price) from txtai"
-        results = [{"count(*)": 2, "avg(price)": 100.0}, {"count(*)": 8, "avg(price)": 10.0}]
-        self.assertEqual(aggregate(query, results), [{"count(*)": 10, "avg(price)": 28.0}])
+        query = "select count(price), avg(price) from txtai"
+        results = [{"count(price)": 2, "avg(price)": 100.0}, {"count(price)": 8, "avg(price)": 10.0}]
+        self.assertEqual(aggregate(query, results), [{"count(price)": 10, "avg(price)": 28.0}])
 
         # A single shard's average passes through unchanged
         self.assertEqual(aggregate("select avg(price) from txtai", [{"avg(price)": 42.0}]), [{"avg(price)": 42.0}])
 
-        # Combining averages from multiple shards with no count(*) to weight by cannot be done
+        # Combining averages from multiple shards with no count() to weight by cannot be done
         # correctly, so it must raise rather than return an unweighted, silently wrong result
         with self.assertRaises(SQLError):
             aggregate("select avg(price) from txtai", [{"avg(price)": 100.0}, {"avg(price)": 10.0}])
+
+    def testAggregateAvgNull(self):
+        """
+        Test Aggregate weights avg() by the non-NULL count of the averaged column
+        """
+
+        aggregate = Aggregate()
+
+        # Shard A has prices [100, NULL], shard B has eight prices of 10, the true average is 180 / 9 = 20
+        query = "select count(*), count(price), avg(price) from txtai"
+        results = [{"count(*)": 2, "count(price)": 1, "avg(price)": 100.0}, {"count(*)": 8, "count(price)": 8, "avg(price)": 10.0}]
+        self.assertEqual(aggregate(query, results), [{"count(*)": 10, "count(price)": 9, "avg(price)": 20.0}])
+
+        # Shard A has x priced [100, NULL, NULL], shard B has x priced [10, 10, 10], the true average is 130 / 4 = 32.5
+        query = "select text, count(*), count(price), avg(price) from txtai group by text"
+        results = [
+            {"text": "x", "count(*)": 3, "count(price)": 1, "avg(price)": 100.0},
+            {"text": "x", "count(*)": 3, "count(price)": 3, "avg(price)": 10.0},
+        ]
+        self.assertEqual(aggregate(query, results), [{"text": "x", "count(*)": 6, "count(price)": 4, "avg(price)": 32.5}])
+
+        # count(*) alone cannot weight avg() correctly when the averaged column has NULLs
+        with self.assertRaises(SQLError):
+            aggregate("select count(*), avg(price) from txtai", [{"count(*)": 2, "avg(price)": 100.0}, {"count(*)": 8, "avg(price)": 10.0}])
+
+    def testAggregateCase(self):
+        """
+        Test Aggregate combines aggregate columns written in any case
+        """
+
+        aggregate = Aggregate()
+
+        query = "select COUNT(*), Sum(price), MAX(price) from txtai"
+        results = [{"COUNT(*)": 1, "Sum(price)": 1.0, "MAX(price)": 1.0}, {"COUNT(*)": 2, "Sum(price)": 5.0, "MAX(price)": 4.0}]
+        self.assertEqual(aggregate(query, results), [{"COUNT(*)": 3, "Sum(price)": 6.0, "MAX(price)": 4.0}])
+
+    def testAggregateGroupby(self):
+        """
+        Test Aggregate groups results using mixed case and NULL group by columns
+        """
+
+        aggregate = Aggregate()
+
+        query = "select Category, count(*) from txtai group by Category"
+        results = [{"Category": "A", "count(*)": 2}, {"Category": "A", "count(*)": 1}, {"Category": "B", "count(*)": 4}]
+        self.assertEqual(aggregate(query, results), [{"Category": "A", "count(*)": 3}, {"Category": "B", "count(*)": 4}])
+
+        query = "select category, count(*) from txtai group by category"
+        results = [{"category": None, "count(*)": 2}, {"category": "A", "count(*)": 1}, {"category": None, "count(*)": 3}]
+        self.assertEqual(aggregate(query, results), [{"category": None, "count(*)": 5}, {"category": "A", "count(*)": 1}])
+
+        results = [
+            {"category": "B", "count(*)": 1},
+            {"category": None, "count(*)": 2},
+            {"category": "A", "count(*)": 3},
+            {"category": "B", "count(*)": 4},
+        ]
+        self.assertEqual(
+            aggregate(query, results), [{"category": None, "count(*)": 2}, {"category": "A", "count(*)": 3}, {"category": "B", "count(*)": 5}]
+        )
+
+        query = "select a, B, count(*) from txtai group by A, b"
+        results = [{"a": 1, "B": None, "count(*)": 1}, {"a": 1, "B": "x", "count(*)": 2}, {"a": 1, "B": None, "count(*)": 3}]
+        self.assertEqual(aggregate(query, results), [{"a": 1, "B": None, "count(*)": 4}, {"a": 1, "B": "x", "count(*)": 2}])
 
     def testAggregateNull(self):
         """
@@ -93,6 +157,17 @@ class TestSQL(unittest.TestCase):
         self.assertEqual(aggregate("select id, score from txtai order by SCORE desc", results), expected)
         self.assertEqual(aggregate("select id, score from txtai order by Score asc", results), list(reversed(expected)))
 
+    def testAggregateOrderByNull(self):
+        """
+        Test Aggregate orders NULL values the same way as SQLite
+        """
+
+        aggregate = Aggregate()
+
+        results = [{"id": "a", "price": 3.0}, {"id": "b", "price": None}, {"id": "c", "price": 1.0}]
+        self.assertEqual([x["id"] for x in aggregate("select id, price from txtai order by price", results)], ["b", "c", "a"])
+        self.assertEqual([x["id"] for x in aggregate("select id, price from txtai order by price desc", results)], ["a", "c", "b"])
+
     def testAlias(self):
         """
         Test alias clauses
@@ -110,6 +185,12 @@ class TestSQL(unittest.TestCase):
         )
         self.assertSql("select", "select id as myid from txtai", "s.id as myid")
         self.assertSql("select", "select length(a) t from txtai", "length(json_extract(data, '$.a')) t")
+        self.assertSql("select", "select a is null as flag from txtai", "json_extract(data, '$.a') is null as flag")
+        self.assertSql("select", "select a is not null flag from txtai", "json_extract(data, '$.a') is not null flag")
+        self.assertSql("select", "select sum(a is null) missing from txtai", "sum(json_extract(data, '$.a') is null) missing")
+        self.assertSql("select", "select iif(a is null, 1, 0) x from txtai", "iif(json_extract(data, '$.a') is null, 1, 0) x")
+        self.assertSql("select", "select a + null x from txtai", "json_extract(data, '$.a') + null x")
+        self.assertSql("select", "select null x from txtai", "null x")
 
         self.assertSql("where", "select id as myid from txtai where myid != 3 and a != 1", "myid != 3 and json_extract(data, '$.a') != 1")
         self.assertSql("where", "select txt T from txtai where t LIKE '%abc%'", "t LIKE '%abc%'")
@@ -139,6 +220,27 @@ class TestSQL(unittest.TestCase):
         with self.assertRaises(SQLError):
             self.db.search("select a b c from txtai where id match id")
 
+    def testMultipleStatements(self):
+        """
+        Test only the first statement is run
+        """
+
+        with self.assertRaises(SQLError):
+            self.db.search("select * from txtai ; delete from sections")
+
+        self.assertSql("select", ";select id from txtai", "s.id")
+        self.assertSql("select", "select id from txtai;", "s.id")
+
+    def testStatementWhitespace(self):
+        """
+        Test insignificant whitespace around SQL tokens and a trailing semicolon is accepted.
+        """
+
+        self.assertSql("select", "select id from  txtai", "s.id")
+        self.assertSql("select", "select id from txtai; ", "s.id")
+        self.assertSql("select", "select id from txtai;\n", "s.id")
+        self.assertSql("select", " ; select id from txtai", "s.id")
+
     def testBracket(self):
         """
         Test bracket expressions
@@ -160,8 +262,40 @@ class TestSQL(unittest.TestCase):
         self.assertSql("where", "select * from txtai where [a b] < 1 or a > 1", "json_extract(data, '$.a b') < 1 or json_extract(data, '$.a') > 1")
         self.assertSql("where", "select [a[0].c[0]] a from txtai where a < 1", "a < 1")
         self.assertSql("where", "select * from txtai where [true] = 1", "json_extract(data, '$.true') = 1")
+        self.assertSql("where", "select * from txtai where a = [b c]", "json_extract(data, '$.a') = json_extract(data, '$.b c')")
+        self.assertSql("where", "select * from txtai where a = [a]", "json_extract(data, '$.a') = json_extract(data, '$.a')")
+        self.assertSql("where", "select * from txtai where [a b] != [c d]", "json_extract(data, '$.a b') != json_extract(data, '$.c d')")
+        self.assertSql("where", "select * from txtai where a not like [b c]", "json_extract(data, '$.a') not like json_extract(data, '$.b c')")
+        self.assertSql("where", "select * from txtai where f(a + [b c]) > 1", "f(json_extract(data, '$.a') + json_extract(data, '$.b c')) > 1")
+        self.assertSql("select", "select a + [b c] ab from txtai", "json_extract(data, '$.a') + json_extract(data, '$.b c') ab")
         self.assertSql("groupby", "select * from txtai group by [a]", "json_extract(data, '$.a')")
         self.assertSql("orderby", "select * from txtai where order by [a]", "json_extract(data, '$.a')")
+
+    def testCast(self):
+        """
+        Test cast expressions don't resolve the type name as a column
+        """
+
+        self.assertSql("select", "select cast(a as integer) from txtai", "cast(json_extract(data, '$.a') as integer) as \"cast(a as integer)\"")
+        self.assertSql("select", "select CAST(id AS TEXT) a from txtai", "CAST(s.id AS TEXT) a")
+        self.assertSql("select", "select try_cast(a as integer) b from txtai", "try_cast(json_extract(data, '$.a') as integer) b")
+        self.assertSql("where", "select * from txtai where cast(a as decimal(10, 2)) > 5", "cast(json_extract(data, '$.a') as decimal(10, 2)) > 5")
+        self.assertSql(
+            "where",
+            "select * from txtai where cast(a as double precision) > b",
+            "cast(json_extract(data, '$.a') as double precision) > json_extract(data, '$.b')",
+        )
+        self.assertSql(
+            "orderby",
+            "select * from txtai order by func(cast(a as integer), b)",
+            "func(cast(json_extract(data, '$.a') as integer), json_extract(data, '$.b'))",
+        )
+        self.assertSql("where", "select * from txtai where cast((a) as text) = '1'", "cast((json_extract(data, '$.a')) as text) = '1'")
+        self.assertSql(
+            "where",
+            "select * from txtai where cast(a * (b + c) as text) = '1'",
+            "cast(json_extract(data, '$.a') * (json_extract(data, '$.b') + json_extract(data, '$.c')) as text) = '1'",
+        )
 
     def testDistinct(self):
         """
@@ -280,6 +414,16 @@ class TestSQL(unittest.TestCase):
             "func(func2(s.indexid + 1), json_extract(data, '$.a')) as \"func(func2(indexid + 1), a)\"",
         )
         self.assertSql("select", "select func(func2(indexid + 1), a) a from txtai", "func(func2(s.indexid + 1), json_extract(data, '$.a')) a")
+        self.assertSql(
+            "select",
+            "select round((a + b) / 2.0, 1) r from txtai",
+            "round((json_extract(data, '$.a') + json_extract(data, '$.b')) / 2.0, 1) r",
+        )
+        self.assertSql(
+            "select",
+            "select round(a * (b + c), 1) r from txtai",
+            "round(json_extract(data, '$.a') * (json_extract(data, '$.b') + json_extract(data, '$.c')), 1) r",
+        )
         self.assertSql("select", "select 'prefix' || id from txtai", "'prefix' || s.id as \"'prefix' || id\"")
         self.assertSql("select", "select 'prefix' || id id from txtai", "'prefix' || s.id id")
         self.assertSql("select", "select 'prefix' || a a from txtai", "'prefix' || json_extract(data, '$.a') a")
@@ -373,6 +517,18 @@ class TestSQL(unittest.TestCase):
         self.assertSql("where", prefix + "where a = true", "json_extract(data, '$.a') = true")
         self.assertSql("where", prefix + "WHERE a is not FALSE", "json_extract(data, '$.a') is not FALSE")
         self.assertSql("where", prefix + "WHERE score >= 0.15", "score >= 0.15")
+        self.assertSql("where", prefix + "where a > 1e3", "json_extract(data, '$.a') > 1e3")
+        self.assertSql("where", prefix + "where a > 1.5E+3 and b < 2e-3", "json_extract(data, '$.a') > 1.5E+3 and json_extract(data, '$.b') < 2e-3")
+        self.assertSql("where", prefix + "where a > .5e-3 and x1e-3 > 1", "json_extract(data, '$.a') > .5e-3 and json_extract(data, '$.x1e') - 3 > 1")
+        self.assertSql("select", "select 1e-3 as x from txtai", "1e-3 as x")
+
+        # Signed number directly after an operator
+        self.assertSql("where", prefix + "where a=-1", "json_extract(data, '$.a') = - 1")
+        self.assertSql("where", prefix + "where a>=-1 and b<-2", "json_extract(data, '$.a') >= - 1 and json_extract(data, '$.b') < - 2")
+        self.assertSql("where", prefix + "where a--1 > 0", "json_extract(data, '$.a') - - 1 > 0")
+        self.assertSql("where", prefix + "where a=-1e-3", "json_extract(data, '$.a') = - 1e-3")
+        self.assertSql("where", prefix + "where a=--1", "json_extract(data, '$.a') = - - 1")
+        self.assertSql("select", "select a*-1 as x from txtai", "json_extract(data, '$.a') * - 1 as x")
 
     def testWhereCompound(self):
         """

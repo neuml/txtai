@@ -19,7 +19,7 @@ from txtai.pipeline import Textractor
 
 # Step 1: Collect files from local directory
 #
-# Defaults to "data". Set to whereever your files are.
+# Defaults to "data". Set to wherever your files are.
 path = "data"
 files = [os.path.join(path, f) for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
 

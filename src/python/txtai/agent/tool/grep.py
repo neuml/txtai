@@ -69,7 +69,7 @@ class GrepTool(Tool):
                         if matches:
                             results[path] = matches
 
-                except (UnicodeDecodeError, FileNotFoundError):
+                except (UnicodeDecodeError, FileNotFoundError, PermissionError):
                     pass
 
         return results

@@ -73,7 +73,7 @@ class Statement:
     INSERT_SECTION = "INSERT INTO sections VALUES (?, ?, ?, ?, ?)"
     DELETE_SECTIONS = "DELETE FROM sections WHERE id IN (SELECT id FROM batch)"
     COPY_SECTIONS = (
-        "INSERT INTO %s SELECT (select count(*) - 1 from sections s1 where s.indexid >= s1.indexid) indexid, "
+        "INSERT INTO %s SELECT ROW_NUMBER() OVER (ORDER BY s.indexid) - 1 AS indexid, "
         + "s.id, %s AS text, s.tags, s.entry FROM sections s LEFT JOIN documents d ON s.id = d.id ORDER BY indexid"
     )
     STREAM_SECTIONS = (

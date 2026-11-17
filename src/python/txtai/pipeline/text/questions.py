@@ -89,6 +89,11 @@ class Questions(HFModel):
 
         startword = tokens.token_to_word(start)
         endword = tokens.token_to_word(end)
+
+        # Special tokens, such as the CLS no-answer prediction, have no word mapping.
+        if startword is None or endword is None:
+            return None
+
         startindex = tokens.word_to_chars(startword, sequence_index=1)[0]
         endindex = tokens.word_to_chars(endword, sequence_index=1)[1]
 

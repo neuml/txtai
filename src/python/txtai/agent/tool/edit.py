@@ -46,13 +46,13 @@ class EditTool(Tool):
         """
 
         content = None
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, "r", encoding="utf-8", newline="") as f:
             content = f.read()
 
         # Make edits
         modified = content.replace(search, replace)
         if modified != content:
-            with open(path, "w", encoding="utf-8") as f:
+            with open(path, "w", encoding="utf-8", newline="") as f:
                 f.write(modified)
 
         # Return diff of file edits

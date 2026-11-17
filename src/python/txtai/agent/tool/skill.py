@@ -40,7 +40,7 @@ class SkillTool(Tool):
     # pylint: disable=W0221
     def forward(self, request):
         """
-        Searchs the skill markdown for the best answer.
+        Searches the skill markdown for the best answer.
 
         Args:
             request: user request

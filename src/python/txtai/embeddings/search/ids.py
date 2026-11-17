@@ -34,8 +34,12 @@ class Ids:
         results = self.database.ids(ids) if self.database else self.scan(ids)
 
         # Create dict of id: [iids] given there is a one to many relationship
+        # Keys are stringified: graph relationship resolution looks up ids
+        # with str(id), and ids stored without content keep their original
+        # type (e.g. int), which would otherwise never match.
         ids = {}
         for iid, uid in results:
+            uid = str(uid)
             if uid not in ids:
                 ids[uid] = []
             ids[uid].append(iid)

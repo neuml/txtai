@@ -4,6 +4,8 @@ Object storage module
 
 import os
 
+from pathlib import Path
+
 # Conditional import
 try:
     from libcloud.storage.providers import get_driver, DRIVERS
@@ -77,17 +79,19 @@ class ObjectStorage(Cloud):
 
         # Download files in container. Optionally filter with a provided prefix.
         else:
+            root = Path(path).resolve()
             container = self.client.get_container(self.config["container"])
             for obj in container.list_objects(prefix=self.config.get("prefix")):
-                # Derive local path and directory
-                localpath = os.path.join(path, obj.name)
-                directory = os.path.dirname(localpath)
+                # Validate the resolved file destination
+                localpath = (root / obj.name).resolve()
+                if root not in localpath.parents or localpath.is_dir():
+                    raise IOError(f"Invalid object path: {obj.name}")
 
                 # Create local directory, if necessary
-                os.makedirs(directory, exist_ok=True)
+                os.makedirs(localpath.parent, exist_ok=True)
 
                 # Download file locally
-                obj.download(localpath, overwrite_existing=True)
+                obj.download(str(localpath), overwrite_existing=True)
 
         return path
 

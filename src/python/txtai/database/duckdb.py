@@ -18,6 +18,7 @@ except ImportError:
 
 from .embedded import Embedded
 from .schema import Statement
+from .sql import SQLError
 
 
 class DuckDB(Embedded):
@@ -29,6 +30,11 @@ class DuckDB(Embedded):
     DELETE_DOCUMENT = "DELETE FROM documents WHERE id = ?"
     DELETE_OBJECT = "DELETE FROM objects WHERE id = ?"
 
+    # Added to errors that abort the transaction
+    ABORTED = (
+        "This error aborted the DuckDB transaction. Unsaved changes are lost and later operations fail until the index is loaded or built again."
+    )
+
     def __init__(self, config):
         super().__init__(config)
 
@@ -36,8 +42,12 @@ class DuckDB(Embedded):
             raise ImportError('DuckDB is not available - install "database" extra to enable')
 
     def execute(self, function, *args):
-        # Call parent method with DuckDB compatible arguments
-        return super().execute(function, *self.formatargs(args))
+        try:
+            # Call parent method with DuckDB compatible arguments
+            return super().execute(function, *self.formatargs(args))
+        except SQLError as e:
+            # Runtime errors abort the transaction. DuckDB has no savepoints, so it can't be recovered without a rollback.
+            raise SQLError(f"{e}\n\n{DuckDB.ABORTED}") from None
 
     def insertdocument(self, uid, data, tags, entry):
         # Delete existing document

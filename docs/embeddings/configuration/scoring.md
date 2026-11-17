@@ -36,7 +36,7 @@ batch: Sets the transform batch size
 encodebatch: Sets the encode batch size
 vectors: additional model init args
 encodeargs: additional encode() args
-backend: ivfsparse|pgsparse|zvecsparse
+backend: ivfsparse|milvussparse|pgsparse|zvecsparse
 ```
 
 Sparse vector scoring options. The sparse scoring instance combines a sparse vector model with a sparse approximate nearest neighbor index (ANN). This method supports both vector normalization and score normalization.
@@ -61,6 +61,10 @@ ivfsparse:
 ```
 
 Inverted file (IVF) index with flat vector file storage and sparse array support.
+
+#### milvussparse
+
+Sparse ANN backed by [milvus-lite](https://github.com/milvus-io/milvus-lite). Stores sparse vectors in an embedded, path-based database with a sparse inverted index and exact inner product scoring. Only finite, non-negative weights are supported, which fits the output of SPLADE-style models. Vectors with negative or non-finite weights raise an error. Requires the [ann](../../../install/#ann) extras package.
 
 #### pgsparse
 

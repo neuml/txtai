@@ -2,7 +2,13 @@
 Textractor module tests
 """
 
+import os
+import tempfile
 import unittest
+
+from pathlib import Path
+from unittest.mock import patch
+from urllib.error import URLError
 
 from txtai.pipeline import Textractor
 
@@ -62,6 +68,55 @@ class TestTextractor(unittest.TestCase):
         # Check number of sections is as expected
         self.assertEqual(len(sections), 2)
 
+    def testFileURI(self):
+        """
+        Test encoded file URIs and plain paths with literal percent sequences.
+        """
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "notes %20 #1.html"
+            path.write_text("<html><body><p>research note</p></body></html>", encoding="utf-8")
+            textractor = Textractor(backend=None)
+
+            self.assertEqual(textractor(str(path)), "research note")
+            self.assertEqual(textractor(path.as_uri()), "research note")
+
+    def testDownloadError(self):
+        """
+        Test failed remote retrieval leaves no temporary file
+        """
+
+        textractor = Textractor()
+        error = URLError("download failed")
+
+        with tempfile.TemporaryDirectory() as directory:
+            with patch("tempfile.tempdir", directory), patch.object(textractor.safeopen, "retrieve", side_effect=error):
+                with self.assertRaises(URLError) as raised:
+                    textractor("https://example.com/missing.pdf")
+
+            self.assertIs(raised.exception, error)
+            self.assertEqual(os.listdir(directory), [])
+
+    def testConversionError(self):
+        """
+        Test failed conversion removes the downloaded temporary file
+        """
+
+        textractor = Textractor(backend=None)
+        error = RuntimeError("conversion failed")
+
+        with tempfile.TemporaryDirectory() as directory:
+            with (
+                patch("tempfile.tempdir", directory),
+                patch.object(textractor.safeopen, "retrieve", return_value=b"document"),
+                patch.object(textractor, "html", side_effect=error),
+            ):
+                with self.assertRaises(RuntimeError) as raised:
+                    textractor("https://example.com/document.pdf")
+
+            self.assertIs(raised.exception, error)
+            self.assertEqual(os.listdir(directory), [])
+
     def testDocling(self):
         """
         Test docling backend
@@ -108,6 +163,10 @@ class TestTextractor(unittest.TestCase):
 
         # Blockquotes
         self.assertMarkdown("<blockquote>This is a test</blockquote>", "> This is a test")
+        self.assertMarkdown("<blockquote><p>Test1</p><p>Test2</p></blockquote>", "> Test1\n> Test2")
+        self.assertMarkdown("<blockquote>Test1<p>Test2</p>Test3</blockquote>", "> Test1\n> Test2\n> Test3")
+        self.assertMarkdown("<blockquote><ul><li>Test1</li><li>Test2</li></ul></blockquote>", "> - Test1\n> - Test2")
+        self.assertMarkdown("<blockquote><p>Test1</p><ol><li>Test2</li><li>Test3</li></ol></blockquote>", "> Test1\n> 1. Test2\n> 2. Test3")
 
         # Lists
         self.assertMarkdown("<ul><li>Test1</li><li>Test2</li></ul>", "- Test1\n- Test2")
@@ -130,10 +189,25 @@ class TestTextractor(unittest.TestCase):
         self.assertMarkdown("<code>This is a test</code>", "```\nThis is a test\n```")
         self.assertMarkdown("<pre>This is a test</pre>", "```\nThis is a test\n```")
 
+        # Inline code keeps its backticks, also when it is all a list item, table cell or heading holds
+        self.assertMarkdown("<p>Run <code>a*b*c</code> now</p>", "Run `a*b*c` now")
+        self.assertMarkdown("<ul><li><code>pip install txtai</code></li></ul>", "- `pip install txtai`")
+        self.assertMarkdown(
+            "<table><tr><th>Option</th><th>Default</th></tr><tr><td><code>path</code></td><td>None</td></tr></table>",
+            "|Option|Default|\n|---|---|\n|`path`|None|",
+        )
+        self.assertMarkdown("<h2>The <code>config</code> file</h2>", "## The `config` file")
+
         # Tables
         self.assertMarkdown(
             "<table><tr><th>Header1</th><th>Header2</th></tr><tr><td>Test1</td><td>Test2</td></tr></table>",
             "|Header1|Header2|\n|---|---|\n|Test1|Test2|",
+        )
+
+        # Pipes in table cells are escaped so they stay in the cell
+        self.assertMarkdown(
+            "<table><tr><th>Header1</th><th>Header2</th></tr><tr><td>Test1 | Test2</td><td><code>a|b</code></td></tr></table>",
+            "|Header1|Header2|\n|---|---|\n|Test1 \\| Test2|`a\\|b`|",
         )
 
         # Ignore list
@@ -147,9 +221,131 @@ class TestTextractor(unittest.TestCase):
         self.assertMarkdown("<p>This is a <em>test</em></p>", "This is a *test*")
         self.assertMarkdown("<p>This is a <a href='link'>test</a>", "This is a [test](link)")
 
+        # Leading whitespace inside a formatting tag
+        self.assertMarkdown("<p>This is<b> a test</b></p>", "This is **a test**")
+        self.assertMarkdown("<p>This is<em> a test</em></p>", "This is *a test*")
+        self.assertMarkdown("<p>This is<a href='link'> a test</a></p>", "This is [a test](link)")
+        self.assertMarkdown("<p>This is a te<b>st</b></p>", "This is a te**st**")
+        self.assertMarkdown("<p>This is\n<b> a test</b></p>", "This is\n**a test**")
+
+        # Links without a target are plain text
+        self.assertMarkdown("<p>This is a <a name='anchor'>test</a></p>", "This is a test")
+        self.assertMarkdown("<p>This is<a name='anchor'> a test</a></p>", "This is a test")
+        self.assertMarkdown("<h2><a id='anchor'>This is a test</a></h2>", "## This is a test")
+
         # Collapse to outer tag
         self.assertMarkdown("<p>This is a <strong><em>test</em></strong></p>", "This is a **test**")
         self.assertMarkdown("<p>This is a <em><strong>test</strong></em></p>", "This is a *test*")
+
+        # Line breaks
+        self.assertMarkdown("<p>Test1<br>Test2</p>", "Test1\nTest2")
+        self.assertMarkdown("<p>This is a <b>test<br/>case</b></p>", "This is a **test\ncase**")
+        self.assertMarkdown("<pre>Test1<br>Test2</pre>", "```\nTest1\nTest2\n```")
+
+        # Line breaks in headings and table cells are replaced with a space
+        self.assertMarkdown("<h1>This is<br>a test</h1>", "# This is a test")
+        self.assertMarkdown(
+            "<table><tr><th>Header1</th><th>Header2</th></tr><tr><td>Test1<br>Test2</td><td>Test3</td></tr></table>",
+            "|Header1|Header2|\n|---|---|\n|Test1 Test2|Test3|",
+        )
+
+    def testHTMLNestedArticles(self):
+        """
+        Test nested articles are processed once while independent articles are kept.
+        """
+
+        textractor = Textractor(backend=None, paragraphs=True)
+        for html, expected in [
+            ("<article><p>Post</p><article><p>Comment</p></article></article>", ["Post", "Comment"]),
+            ("<article><p>Comment</p></article><article><p>Comment</p></article>", ["Comment", "Comment"]),
+        ]:
+            with self.subTest(html=html):
+                self.assertEqual(textractor(f"<html><body>{html}</body></html>"), expected)
+
+    def testHTMLArticleDefinitionList(self):
+        """
+        Test article definition lists, such as the API signatures in Sphinx documentation
+        """
+
+        textractor = Textractor()
+
+        # Definition terms are kept along with their descriptions
+        html = (
+            "<html><body><article><p>Functions</p><dl><dt><span>json.</span><span>dump</span>(<em>obj</em>)</dt>"
+            "<dd><p>Serialize obj</p></dd></dl><dl><dt>Term</dt><dd>Definition</dd></dl></article></body></html>"
+        )
+        self.assertEqual(textractor(html), "Functions\n\njson.dump(*obj* )\n\nSerialize obj\n\nTerm\n\nDefinition")
+
+    def testHTMLArticleSpan(self):
+        """
+        Test article paragraphs with text wrapped in inline elements
+        """
+
+        textractor = Textractor()
+
+        for section in ["article", "main"]:
+            with self.subTest(section=section):
+                html = f"<html><body><{section}><p><span>This is a test</span></p></{section}></body></html>"
+                self.assertEqual(textractor(html), "This is a test")
+
+        # Mixed paragraphs, nested spans and formatting inside a span
+        html = "<html><body><article><p>Test1</p><p><span><span>Test2</span></span></p><p><span>Test <b>3</b></span></p></article></body></html>"
+        self.assertEqual(textractor(html), "Test1\n\nTest2\n\nTest **3**")
+
+        # Link only paragraphs and asides are still skipped
+        html = (
+            "<html><body><article><p><span>This is a test</span></p><p><span><a href='link'>Home</a></span></p>"
+            "<aside><p>Skip</p></aside></article></body></html>"
+        )
+        self.assertEqual(textractor(html), "This is a test")
+
+        # Each paragraph is kept separate
+        textractor = Textractor(paragraphs=True)
+        html = "<html><body><article><p><span>Test1</span></p><p><span>Test2</span></p></article></body></html>"
+        self.assertEqual(textractor(html), ["Test1", "Test2"])
+
+    def testHTMLArticleListSpan(self):
+        """
+        Test article list items with text wrapped in inline elements
+        """
+
+        textractor = Textractor()
+
+        for section in ["article", "main"]:
+            with self.subTest(section=section):
+                html = f"<html><body><{section}><p>Test</p><ul><li><span>Test1</span></li><li><span>Test2</span></li></ul></{section}></body></html>"
+                self.assertEqual(textractor(html), "Test\n\n- Test1\n- Test2")
+
+        # Nested lists
+        html = "<html><body><article><p>Test</p><ol><li><span>Test1</span><ul><li><span>Test2</span></li></ul></li></ol></article></body></html>"
+        self.assertEqual(textractor(html), "Test\n\n1. Test1\n\t- Test2")
+
+        # Link only list items are still skipped
+        html = (
+            "<html><body><article><p>Test</p><ul><li><span>Test1</span></li>"
+            "<li><span><a href='link'>Home</a></span></li></ul></article></body></html>"
+        )
+        self.assertEqual(textractor(html), "Test\n\n- Test1")
+
+    def testHTMLListStart(self):
+        """
+        Test ordered lists retain their starting number
+        """
+
+        for start, expected in [("5", "5. Test1\n6. Test2"), ("0", "0. Test1\n1. Test2"), ("1", "1. Test1\n2. Test2")]:
+            with self.subTest(start=start):
+                self.assertMarkdown(f"<ol start='{start}'><li>Test1</li><li>Test2</li></ol>", expected)
+
+        self.assertMarkdown(
+            "<ol start='5'><li>Test1<ol start='3'><li>Test2</li></ol></li><li>Test3</li></ol>",
+            "5. Test1\n\t3. Test2\n6. Test3",
+        )
+
+        for start in ["", "invalid", "1.5"]:
+            with self.subTest(start=start):
+                self.assertMarkdown(f"<ol start='{start}'><li>Test1</li><li>Test2</li></ol>", "1. Test1\n2. Test2")
+
+        self.assertMarkdown("<ul start='invalid'><li>Test1</li><li>Test2</li></ul>", "- Test1\n- Test2")
 
     def testHTMLMetadataNoContent(self):
         """

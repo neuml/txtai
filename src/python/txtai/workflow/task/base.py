@@ -144,12 +144,17 @@ class Task:
             packed elements
         """
 
+        # These are enumerate-generated process positions, not application ids.
+        positions = {}
+        for index, pid in enumerate(ids):
+            positions.setdefault(pid, index)
+
         # Update with transformed elements. Handle one to many transformations.
         elements = []
         for x, element in indexed:
-            if x in ids:
+            if x in positions:
                 # Get result for process id
-                result = results[ids.index(x)]
+                result = results[positions[x]]
 
                 if isinstance(result, OneToMany):
                     # One to many transformations

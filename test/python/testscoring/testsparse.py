@@ -7,7 +7,8 @@ import platform
 import tempfile
 import unittest
 
-from unittest.mock import patch
+from threading import Event
+from unittest.mock import MagicMock, patch
 
 from txtai.scoring import ScoringFactory
 
@@ -204,6 +205,64 @@ class TestSparse(unittest.TestCase):
         # Run search and validate correct result returned
         results = scoring.search("lottery ticket", 1)
         self.assertGreater(len(results), 0)
+        scoring.close()
+
+    @patch("txtai.scoring.sparse.SparseVectorsFactory.create")
+    def testEncodingThreadError(self, create):
+        """
+        Test encoding thread errors are re-raised by stop()
+        """
+
+        # Model that fails during encoding, before consuming the stream
+        started = Event()
+
+        def vectors(stream, batch, checkpoint):  # pylint: disable=unused-argument
+            started.set()
+            raise RuntimeError("model failed")
+
+        create.return_value = MagicMock(vectors=vectors)
+
+        scoring = ScoringFactory.create({"method": "sparse", "path": "sparse-encoder-testing/splade-bert-tiny-nq"})
+
+        # Start encoding thread and queue a document so the error-path drain
+        # loop has a batch to consume, then wait for the model call and stop
+        scoring.start(None)
+        scoring.insert([("0", "test document", None)])
+        self.assertTrue(started.wait(10))
+
+        # Encoding errors surface instead of failing silently
+        with self.assertRaisesRegex(RuntimeError, "model failed"):
+            scoring.stop()
+
+        scoring.close()
+
+    @patch("txtai.scoring.sparse.SparseVectorsFactory.create")
+    def testEncodingThreadErrorLate(self, create):
+        """
+        Test encoding errors raised after stream() consumed the end-of-stream message
+        """
+
+        # Model that consumes the stream, then fails
+        started = Event()
+
+        def vectors(stream, batch, checkpoint):  # pylint: disable=unused-argument
+            started.set()
+            for _ in stream:
+                pass
+            raise RuntimeError("late failure")
+
+        create.return_value = MagicMock(vectors=vectors)
+
+        scoring = ScoringFactory.create({"method": "sparse", "path": "sparse-encoder-testing/splade-bert-tiny-nq"})
+
+        # Start encoding thread, wait until the model call is reached, then stop
+        scoring.start(None)
+        self.assertTrue(started.wait(10))
+
+        # Encoding errors surface instead of failing silently
+        with self.assertRaisesRegex(RuntimeError, "late failure"):
+            scoring.stop()
+
         scoring.close()
 
     def testZvecSparse(self):

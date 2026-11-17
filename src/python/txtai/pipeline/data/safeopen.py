@@ -6,6 +6,7 @@ import os
 import tempfile
 
 from urllib.parse import urlparse
+from urllib.request import url2pathname
 
 from .urlretrieve import URLRetrieve
 
@@ -51,8 +52,8 @@ class SafeOpen:
             (path, exists)
         """
 
-        # Convert file urls to local paths
-        path = path.replace("file://", "")
+        # Decode file URIs while preserving literal percent sequences in plain paths.
+        path = url2pathname(path[7:]) if path.startswith("file://") else path
 
         # Check if this is a local file path or local file url
         exists = os.path.exists(path)

@@ -65,6 +65,7 @@ class Translation(HFModel):
             texts: text|list
             target: target language code, defaults to "en"
             source: source language code, detects language if not provided
+            showmodels: return (text, language, model) tuples, with model set to None when no translation is needed
 
         Returns:
             list of translated text
@@ -176,7 +177,7 @@ class Translation(HFModel):
 
         # Return original if already in target language
         if source == target:
-            return texts
+            return [(None, text) for text in texts] if showmodels else texts
 
         # Load model and tokenizer
         path, model, tokenizer = self.lookup(source, target)

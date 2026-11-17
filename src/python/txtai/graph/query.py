@@ -4,6 +4,7 @@ Query module
 
 import logging
 import re
+from shlex import shlex
 
 try:
     from grandcypher import GrandCypher
@@ -23,6 +24,9 @@ class Query:
 
     # Similar token
     SIMILAR = "__SIMILAR__"
+
+    # Query pattern
+    QUERY = re.compile(r"\s*match\s+.+\breturn\s+", re.DOTALL | re.IGNORECASE)
 
     def __init__(self):
         """
@@ -60,7 +64,7 @@ class Query:
         logger.debug(query)
 
         # Run openCypher query
-        return GrandCypher(graph.backend, limit if limit else 3).run(query)
+        return GrandCypher(graph.backend, limit if limit is not None else 3).run(query)
 
     def isquery(self, queries):
         """
@@ -73,8 +77,7 @@ class Query:
             True if all queries are openCypher queries
         """
 
-        # Check for required graph query clauses
-        return all(query and query.strip().startswith("MATCH ") and "RETURN " in query for query in queries)
+        return all(isinstance(query, str) and Query.QUERY.match(query) for query in queries)
 
     def parse(self, query):
         """
@@ -108,12 +111,15 @@ class Query:
                 offset = match.group(1)
 
         # Parse similar clauses
-        for x, match in enumerate(re.finditer(r"similar\((.+?)\)", query, flags=re.DOTALL | re.IGNORECASE)):
+        for x, match in enumerate(re.finditer(r"""similar\(((?:"[^"]*"|'[^']*'|[^)'"])+)\)""", query, flags=re.DOTALL | re.IGNORECASE)):
             # Replace similar clause with placeholder
             query = query.replace(match.group(0), f"{Query.SIMILAR}{x}")
 
-            # Parse similar clause parameters
-            params = [param.strip().replace("'", "").replace('"', "") for param in match.group(1).split(",")]
+            # Parse similar clause parameters, commas inside quotes are kept
+            params = shlex(match.group(1), posix=True)
+            params.whitespace, params.whitespace_split = ",", True
+            params = [param.strip() for param in params]
+
             nodes.append(params[0])
             similar.append(params[1:])
 
@@ -151,8 +157,9 @@ class Query:
                 attribute = f"match_{x}"
                 clause = f"{node}.{attribute} > 0"
 
-                # Replace placeholder with earch results
-                query = query.replace(f"{Query.SIMILAR}{x}", f"{clause}")
+                # Replace placeholder with search results, matching the whole placeholder so that
+                # __SIMILAR__1 doesn't match the start of __SIMILAR__10
+                query = re.sub(rf"{Query.SIMILAR}{x}(?!\d)", clause, query)
 
                 # Add uids and scores
                 for uid, score in result:

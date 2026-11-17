@@ -2,10 +2,12 @@
 Vectors module
 """
 
+import contextlib
 import json
 import os
 import tempfile
 import uuid
+import zlib
 
 from ..pipeline import Tokenizer
 
@@ -137,7 +139,7 @@ class Vectors:
         recovery = Recovery(checkpoint, vectorsid, self.loadembeddings) if checkpoint else None
 
         # Convert all documents to embedding arrays, stream embeddings to disk to control memory usage
-        with self.spool(checkpoint, vectorsid) as output:
+        with self.spool(checkpoint, vectorsid) as output, self.checksumspool(checkpoint, vectorsid) as checksums:
             stream = output.name
             batch = []
             for document in documents:
@@ -145,7 +147,7 @@ class Vectors:
 
                 if len(batch) == batchsize:
                     # Convert batch to embeddings
-                    uids, dimensions = self.batch(batch, output, recovery)
+                    uids, dimensions = self.batch(batch, output, checksums, recovery)
                     ids.extend(uids)
                     batches += 1
 
@@ -153,7 +155,7 @@ class Vectors:
 
             # Final batch
             if batch:
-                uids, dimensions = self.batch(batch, output, recovery)
+                uids, dimensions = self.batch(batch, output, checksums, recovery)
                 ids.extend(uids)
                 batches += 1
 
@@ -288,30 +290,86 @@ class Vectors:
         # Spool to temporary file
         return tempfile.NamedTemporaryFile(mode="wb", suffix=".npy", delete=False)
 
-    def batch(self, documents, output, recovery):
+    def checksumspool(self, checkpoint, vectorsid):
+        """
+        Opens a companion file to store each batch's checksum alongside a checkpoint, used by a
+        future recovery attempt to confirm a checkpointed batch still matches. Kept separate from
+        the embeddings checkpoint file so that file's format is unchanged - a checkpoint from
+        before this file existed is still read normally, just without checksum verification.
+
+        Args:
+            checkpoint: optional checkpoint directory, enables indexing restart
+            vectorsid: vectors uid for current configuration
+
+        Returns:
+            checksum spool file, or a no-op context when checkpointing is disabled
+        """
+
+        if checkpoint:
+            return open(f"{checkpoint}/{vectorsid}.checksums", "w", encoding="utf-8")
+
+        return contextlib.nullcontext()
+
+    def checksum(self, ids, data):
+        """
+        Computes a stable checksum for a batch's ids and raw document content, as a single
+        value. Used to confirm a recovered checkpoint batch still matches the batch currently being
+        built at that position - matching ids alone isn't enough, since the same id can carry
+        different content across runs (an updated row from the source, for example).
+
+        Args:
+            ids: ids for this batch
+            data: raw document content for this batch, prior to any model-specific preparation
+
+        Returns:
+            checksum identifying this batch's ids and content. Not a security use case, just a
+            change-detection check against the current batch, so a fast CRC32 is used in place of
+            a cryptographic hash.
+        """
+
+        try:
+            encoded = json.dumps([ids, data], sort_keys=True, default=str).encode("utf-8")
+        except TypeError:
+            encoded = str((ids, data)).encode("utf-8")
+
+        return format(zlib.crc32(encoded), "08x")
+
+    def batch(self, documents, output, checksums, recovery):
         """
         Builds a batch of embeddings.
 
         Args:
             documents: list of documents used to build embeddings
             output: output temp file to store embeddings
+            checksums: output file to store this batch's checksum, only used when recovery is enabled
             recovery: optional recovery instance
 
         Returns:
             (ids, dimensions) list of ids and number of dimensions in embeddings
         """
 
-        # Extract ids and prepare input documents for vectors model
         ids = [uid for uid, _, _ in documents]
-        documents = [self.prepare(data, "data") for _, data, _ in documents]
         dimensions = None
 
-        # Attempt to read embeddings from a recovery file
-        embeddings = recovery() if recovery else None
-        embeddings = self.vectorize(documents, "data") if embeddings is None else embeddings
+        # Only compute a checksum when recovery is enabled (checkpoint is set) - it's only ever read
+        # back in that case, so there's no reason to pay for it otherwise
+        checksum = self.checksum(ids, [data for _, data, _ in documents]) if recovery is not None else None
+
+        # Prepare input documents for vectors model
+        prepared = [self.prepare(data, "data") for _, data, _ in documents]
+
+        # Attempt to read embeddings from a recovery file, only trusting a batch whose recorded
+        # checksum matches this one
+        embeddings = recovery(checksum) if recovery else None
+        embeddings = self.vectorize(prepared, "data") if embeddings is None else embeddings
         if embeddings is not None:
             dimensions = embeddings.shape[1]
             self.saveembeddings(output, embeddings)
+
+            # Only record the checksum once its embeddings are fully written, so a checksum is
+            # never found without a matching batch on a later recovery attempt
+            if checksum is not None:
+                checksums.write(checksum + "\n")
 
         return (ids, dimensions)
 

@@ -64,7 +64,7 @@ class Entity(HFPipeline):
         # Extract entities if flatten set, otherwise extract (entity, entity type, score) tuples
         outputs = []
         for result in results:
-            if flatten:
+            if flatten is not None and flatten is not False:
                 output = [r["word"] for r in result if self.accept(r["entity_group"], labels) and r["score"] >= threshold]
                 outputs.append(" ".join(output) if join else output)
             else:

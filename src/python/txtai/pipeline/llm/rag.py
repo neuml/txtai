@@ -247,15 +247,13 @@ class RAG(Pipeline):
         # Tokenize text
         segments, tokenlist = [], []
         if texts:
-            for text in texts:
+            # Add index id to segments to preserve ordering after filters
+            for x, text in enumerate(texts):
                 # Run tokenizer method, if available, otherwise returns original text
                 tokens = self.tokenize(text)
                 if tokens:
-                    segments.append(text)
+                    segments.append((x, text))
                     tokenlist.append(tokens)
-
-            # Add index id to segments to preserve ordering after filters
-            segments = list(enumerate(segments))
 
         # Get list of (id, score) - sorted by highest score per query
         if isinstance(self.similarity, Similarity):

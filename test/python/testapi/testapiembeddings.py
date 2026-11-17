@@ -320,6 +320,19 @@ class TestEmbeddings(unittest.TestCase):
         uids = [result[0]["id"] for result in results]
         self.assertEqual(uids, [4, 1])
 
+    def testSearchBatchLimit(self):
+        """
+        Test batch search applies the same default and bounds to limit as search
+        """
+
+        api = API({"writable": True, "embeddings": {"keyword": True, "content": True}})
+        api.add([{"id": x, "text": f"apple {x}"} for x in range(300)])
+        api.index()
+
+        self.assertEqual(len(api.search("apple")), 10)
+        self.assertEqual([len(x) for x in api.batchsearch(["apple", "apple"])], [10, 10])
+        self.assertEqual([len(x) for x in api.batchsearch(["apple"], 1000)], [250])
+
     def testSimilarity(self):
         """
         Test similarity via API

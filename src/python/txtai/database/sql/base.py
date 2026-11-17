@@ -5,7 +5,9 @@ SQL module
 from io import StringIO
 from shlex import shlex
 
+from .error import SQLError
 from .expression import Expression
+from .token import Token
 
 
 class SQL:
@@ -42,8 +44,11 @@ class SQL:
 
         clauses = None
         if self.issql(query):
-            # Ignore multiple statements
-            query = query.split(";")[0]
+            # Multiple statements are not supported
+            components = [x for x in query.split(";") if x.strip()]
+            if len(components) > 1:
+                raise SQLError("Multiple SQL statements are not supported. Pass values that contain a semicolon as a bind parameter.")
+            query = components[0]
 
             # Tokenize query
             tokens, positions = self.tokenize(query)
@@ -101,7 +106,7 @@ class SQL:
 
         if isinstance(query, str):
             # Reduce query to a lower-cased single line stripped of leading/trailing whitespace
-            query = query.lower().strip(";").replace("\n", " ").replace("\t", " ").strip()
+            query = " ".join(query.lower().split()).strip(" ;")
 
             # Detect if this is a valid txtai SQL statement
             return query.startswith("select ") and (" from txtai " in query or query.endswith(" from txtai"))
@@ -134,13 +139,22 @@ class SQL:
         """
 
         # Build a simple SQL lexer
-        #   - Punctuation chars are parsed as standalone tokens which helps identify operators
+        #   - Runs of punctuation chars are grouped, which builds multi-character comparison operators (<=, !=, ||)
+        #   - Arithmetic operators are standalone tokens, so a sign never merges with an operator (a=-1 is a, =, -, 1).
+        #     shlex adds - * / to wordchars when punctuation_chars is set, remove them.
         #   - Add additional wordchars to prevent splitting on those values
         #   - Disable comments
-        tokens = shlex(StringIO(query), punctuation_chars="=!<>+-*/%|")
-        tokens.wordchars += ":@#"
+        tokens = shlex(StringIO(query), punctuation_chars="=!<>|")
+        tokens.wordchars = tokens.wordchars.translate(str.maketrans("", "", "-*/")) + ":@#"
         tokens.commenters = ""
         tokens = list(tokens)
+
+        # Rejoin signed exponents split on punctuation (1e-3 is tokenized as 1e, -, 3)
+        x = 0
+        while x < len(tokens) - 2:
+            if tokens[x][-1] in "eE" and tokens[x + 1] in ("+", "-") and Token.NUMERIC.fullmatch("".join(tokens[x : x + 3])):
+                tokens[x : x + 3] = ["".join(tokens[x : x + 3])]
+            x += 1
 
         # Identify sql clause token positions
         positions = {}
