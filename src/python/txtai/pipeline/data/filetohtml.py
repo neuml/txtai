@@ -5,7 +5,6 @@ FileToHTML module
 import os
 import re
 
-from html import escape
 from subprocess import Popen
 
 # Conditional import
@@ -150,10 +149,11 @@ class Tika(Backend):
         if mimetype in ("text/html", "text/xhtml"):
             return None
 
-        # Escape plain text, so text that looks like markup (e.g. <user@example.com>) isn't parsed as HTML tags
+        # Escape plain text, so text that looks like markup (e.g. <user@example.com>) isn't parsed as HTML tags.
+        # Numeric character references are used, since they don't require the HTML parser's named entity tables.
         if mimetype == "text/plain":
             with open(path, "rb") as f:
-                return escape(UnicodeDammit(f.read()).unicode_markup, quote=False)
+                return UnicodeDammit(f.read()).unicode_markup.translate({38: "&#38;", 60: "&#60;", 62: "&#62;"})
 
         # Parse content to HTML
         parsed = parser.from_file(path, xmlContent=True)
