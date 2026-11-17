@@ -8,7 +8,7 @@ from textwrap import indent
 
 # Conditional import
 try:
-    from bs4 import BeautifulSoup, NavigableString, UnicodeDammit
+    from bs4 import BeautifulSoup, NavigableString
 
     SOUP = True
 except ImportError:
@@ -66,13 +66,9 @@ class HTMLToMarkdown(Pipeline):
             markdown formatted text
         """
 
-        # Decode bytes input
-        if isinstance(html, bytes):
-            html = UnicodeDammit(html, is_html=True).unicode_markup
-
         # Skip HTML parsing when input isn't HTML
         if not self.ishtml(html):
-            return self.default(html)
+            return self.default(html.decode("utf-8", errors="ignore") if isinstance(html, bytes) else html)
 
         # HTML Parser
         soup = BeautifulSoup(html, features="html.parser")
@@ -113,6 +109,7 @@ class HTMLToMarkdown(Pipeline):
             True if text is HTML, False otherwise
         """
 
+        text = text.decode("ascii", errors="ignore") if isinstance(text, bytes) else text
         return any(tag.lower() in ELEMENTS for tag in re.findall(r"</?([a-zA-Z][a-zA-Z0-9]*)[\s/>]", text))
 
     def process(self, node, article):
