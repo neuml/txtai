@@ -150,8 +150,9 @@ class TestTextractor(unittest.TestCase):
             path = Path(directory) / "notes.txt"
             path.write_text("Contact <user@example.com>\n\nSee <https://example.com/rfc> and Vec<String>, a & b", encoding="utf-8")
 
-            textractor = Textractor(backend="tika", paragraphs=True)
-            self.assertEqual(textractor(str(path)), ["Contact <user@example.com>", "See <https://example.com/rfc> and Vec<String>, a & b"])
+            for backend in [None, "tika"]:
+                textractor = Textractor(backend=backend, paragraphs=True)
+                self.assertEqual(textractor(str(path)), ["Contact <user@example.com>", "See <https://example.com/rfc> and Vec<String>, a & b"])
 
     def testLiteParse(self):
         """

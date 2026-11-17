@@ -8,13 +8,26 @@ from textwrap import indent
 
 # Conditional import
 try:
-    from bs4 import BeautifulSoup, NavigableString
+    from bs4 import BeautifulSoup, NavigableString, UnicodeDammit
 
     SOUP = True
 except ImportError:
     SOUP = False
 
 from ..base import Pipeline
+
+# HTML element names, current and obsolete, from https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements
+ELEMENTS = frozenset(
+    (
+        "html base head link meta style title body address article aside footer header h1 h2 h3 h4 h5 h6 hgroup main nav section "
+        "search blockquote dd div dl dt figcaption figure hr li menu ol p pre ul a abbr b bdi bdo br cite code data dfn em i kbd mark "
+        "q rp rt ruby s samp small span strong sub sup time u var wbr area audio img map track video embed iframe object picture "
+        "source svg math canvas noscript script del ins caption col colgroup table tbody td tfoot th thead tr button datalist "
+        "fieldset form input label legend meter optgroup option output progress select selectedcontent textarea details dialog "
+        "geolocation summary slot template acronym big center content dir fencedframe font frame frameset image marquee menuitem "
+        "nobr noembed noframes param plaintext rb rtc shadow strike tt xmp"
+    ).split()
+)
 
 
 class HTMLToMarkdown(Pipeline):
@@ -53,6 +66,14 @@ class HTMLToMarkdown(Pipeline):
             markdown formatted text
         """
 
+        # Decode bytes input
+        if isinstance(html, bytes):
+            html = UnicodeDammit(html, is_html=True).unicode_markup
+
+        # Skip HTML parsing when input isn't HTML
+        if not self.ishtml(html):
+            return self.default(html)
+
         # HTML Parser
         soup = BeautifulSoup(html, features="html.parser")
 
@@ -79,7 +100,20 @@ class HTMLToMarkdown(Pipeline):
                 nodes.append(self.process(node, article))
 
         # Return extracted text, fallback to default text extraction if no nodes found
-        return "\n".join(self.metadata(soup) + nodes) if nodes else self.default(soup)
+        return "\n".join(self.metadata(soup) + nodes) if nodes else self.default(soup.get_text())
+
+    def ishtml(self, text):
+        """
+        Detects if text is HTML. Text is HTML when it has a tag of a known HTML element.
+
+        Args:
+            text: input text
+
+        Returns:
+            True if text is HTML, False otherwise
+        """
+
+        return any(tag.lower() in ELEMENTS for tag in re.findall(r"</?([a-zA-Z][a-zA-Z0-9]*)[\s/>]", text))
 
     def process(self, node, article):
         """
@@ -158,19 +192,19 @@ class HTMLToMarkdown(Pipeline):
 
         return metadata
 
-    def default(self, soup):
+    def default(self, text):
         """
         Default text handler when valid HTML isn't detected.
 
         Args:
-            soup: BeautifulSoup object
+            text: input text
 
         Returns:
             text
         """
 
         lines = []
-        for line in soup.get_text().split("\n"):
+        for line in text.split("\n"):
             # Detect markdown headings and add page breaks
             lines.append(f"\f{line}" if self.sections and re.search(r"^#+ ", line) else line)
 
