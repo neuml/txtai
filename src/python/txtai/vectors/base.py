@@ -267,8 +267,28 @@ class Vectors:
         config = {k: v for k, v in self.config.items() if k in select}
         config.update(self.config.get("vectors", {}))
 
+        # Include the transform identity, when this vectors instance has one. The transform
+        # determines the produced vectors but is not part of the configuration, so without this
+        # a changed external transform would silently reuse a stale checkpoint.
+        transform = self.transformid()
+        if transform is not None:
+            config["transform"] = transform
+
         # Generate a deterministic UUID
         return str(uuid.uuid5(uuid.NAMESPACE_DNS, json.dumps(config, sort_keys=True)))
+
+    def transformid(self):
+        """
+        Returns an identifier for the transform used by this vectors instance, or None when
+        there is no transform. Checkpoint recovery trusts a checkpoint only when the vectors
+        uid matches, so a transform that can change the produced vectors must be identified
+        here for recovery to invalidate stale checkpoints.
+
+        Returns:
+            transform identifier, or None
+        """
+
+        return None
 
     def spool(self, checkpoint, vectorsid):
         """
