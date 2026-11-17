@@ -380,7 +380,7 @@ class Expression:
         token = tokens[x]
 
         # If this is an alias token, get next token
-        if token in Token.ALIAS:
+        if token and token.lower() in Token.ALIAS:
             x, token = next(iterator, (None, None))
 
             # A trailing AS with no alias name exhausts the stream

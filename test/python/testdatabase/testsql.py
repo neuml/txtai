@@ -539,6 +539,12 @@ class TestSQL(unittest.TestCase):
         with self.assertRaises(SQLError):
             self.db.search("select a as from txtai")
 
+        # The alias keyword is matched in any case, so the parser catches the dangling AS however it
+        # is typed. Without this the statement still fails, but on the database's own syntax error.
+        for statement in ["select a AS from txtai", "select a As from txtai", "select a as b, c AS from txtai"]:
+            with self.assertRaisesRegex(SQLError, "Missing alias name"):
+                self.db.search(statement)
+
     def testUpper(self):
         """
         Test SQL statements are case insensitive.
