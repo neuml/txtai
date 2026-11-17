@@ -519,6 +519,14 @@ class Terms:
         # Get topn candidates, allows for score shifting when adding in common term scores
         matches = self.candidates(scores, topn)
 
+        if hasscores:
+            # Only keep candidates that match the less common terms. Other candidates have a zero score and are
+            # picked by their position in the index.
+            matches = matches[scores[matches] > 0]
+
+            # Score the common terms for all documents when there aren't enough candidates to fill the limit
+            hasscores = len(matches) >= limit
+
         # Merge in scores for more common terms
         self.merge(scores, matches, hasscores, skipped)
 

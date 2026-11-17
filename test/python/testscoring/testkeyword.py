@@ -207,6 +207,30 @@ class TestKeyword(unittest.TestCase):
 
             scoring.close()
 
+    def testMixedTermsOrder(self):
+        """
+        Test that mixed uncommon and common term queries don't depend on the order documents are indexed
+        """
+
+        # search occurs in one document; python occurs in six of twenty documents, above the common term cutoff
+        data = ["txtai semantic search", "python python python tutorial"]
+        data += [f"python notes {x}" for x in range(5)] + [f"misc filler {x}" for x in range(13)]
+
+        # Same documents, with the strongest common term match indexed last
+        reordered = [data[0]] + data[7:] + data[2:7] + [data[1]]
+
+        for method in ["bm25", "tfidf", "sif"]:
+            results = []
+            for documents in [data, reordered]:
+                scoring = ScoringFactory.create({"method": method, "terms": True, "content": True})
+                scoring.index([(uid, text, None) for uid, text in enumerate(documents)])
+                results.append([(result["text"], round(result["score"], 5)) for result in scoring.search("search python", 2)])
+                scoring.close()
+
+            with self.subTest(method=method):
+                self.assertEqual(len(results[0]), 2)
+                self.assertEqual(results[0], results[1])
+
     def testNotImplemented(self):
         """
         Test exceptions for non-implemented methods
