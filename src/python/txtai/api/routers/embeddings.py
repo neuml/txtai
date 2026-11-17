@@ -236,7 +236,7 @@ def batchexplain(queries: List[str] = Body(...), texts: List[str] = Body(default
     Explains the importance of each input token in text for a query.
 
     Args:
-        query: query text
+        queries: queries text
         texts: list of text
 
     Returns:

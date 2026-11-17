@@ -440,7 +440,7 @@ class DistillationTrainer(Trainer):
 
         Args:
             model: student model
-            input: model inputs
+            inputs: model inputs
 
         Returns:
             computed loss

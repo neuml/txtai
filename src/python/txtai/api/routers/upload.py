@@ -21,7 +21,7 @@ def upload(files: List[UploadFile] = File(), suffix: str = Form(default=None)):
     Uploads files for local server processing.
 
     Args:
-        data: list of files to upload
+        files: list of files to upload
 
     Returns:
         list of server paths

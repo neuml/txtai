@@ -583,9 +583,6 @@ class RDBMS(Database):
         """
         Returns current cursor row iterator for last executed query.
 
-        Args:
-            cursor: cursor
-
         Returns:
             iterable collection of rows
         """

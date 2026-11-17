@@ -673,7 +673,7 @@ class Application:
         Explains the importance of each input token in text for a list of queries.
 
         Args:
-            query: queries text
+            queries: queries text
             texts: optional list of text, otherwise runs search queries
             limit: optional limit if texts is None
 

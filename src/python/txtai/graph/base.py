@@ -312,7 +312,7 @@ class Graph:
         Searches graph for nodes matching query.
 
         Args:
-            query: graph query
+            queries: graph queries
             limit: maximum results
             graph: return graph results if True
 
@@ -639,7 +639,7 @@ class Graph:
         Args:
             nodes: list of nodes
             search: search function to use to identify edges
-            attribute: dictionary of attributes to add to each node
+            attributes: dictionary of attributes to add to each node
         """
 
         # Read graph parameters
