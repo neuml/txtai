@@ -10,7 +10,7 @@ import zlib
 
 import aiohttp
 
-from ..database.sql import Aggregate
+from ..database.sql import Aggregate, SQL
 
 
 class Cluster:
@@ -79,7 +79,7 @@ class Cluster:
         results = self.aggregate(query, results)
 
         # Limit results
-        return results[: (limit if limit else 10)]
+        return results[: self.limit(query, limit)]
 
     def batchsearch(self, queries, limit=None, weights=None, index=None, parameters=None, graph=False):
         """
@@ -122,9 +122,25 @@ class Cluster:
                 result.extend(section[x])
 
             # Aggregate, sort and limit results
-            results.append(self.aggregate(query, result)[: (limit if limit else 10)])
+            results.append(self.aggregate(query, result)[: self.limit(query, limit)])
 
         return results
+
+    def limit(self, query, limit):
+        """
+        Gets the maximum number of results for a query. A SQL LIMIT clause takes precedence over the
+        limit parameter, which matches how each shard runs the query.
+
+        Args:
+            query: input query
+            limit: maximum results
+
+        Returns:
+            maximum number of results
+        """
+
+        qlimit = SQL()(query).get("limit")
+        return int(qlimit) if qlimit and qlimit.isdigit() else (limit if limit else 10)
 
     def add(self, documents):
         """
