@@ -142,6 +142,22 @@ class TestEncoder(unittest.TestCase):
         finally:
             self.embeddings.config["objects"] = "image"
 
+    @patch.dict(os.environ, {"ALLOW_PICKLE": "True"})
+    def testSerializeNoObject(self):
+        """
+        Test serialize encoders with rows that have no object
+        """
+
+        for method in ["messagepack", "pickle"]:
+            embeddings = Embeddings(method="external", transform=lambda x: np.ones((len(x), 3), dtype=np.float32), content=True, objects=method)
+            embeddings.index([(0, {"object": [1, 2, 3], "text": "object row"}, None), (1, "text row")])
+
+            result = embeddings.search("select id, object from txtai order by id")
+
+            self.assertEqual(result, [{"id": "0", "object": [1, 2, 3]}, {"id": "1", "object": None}])
+
+            embeddings.close()
+
     def testReindex(self):
         """
         Test reindex with objects

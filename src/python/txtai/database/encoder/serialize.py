@@ -24,5 +24,5 @@ class SerializeEncoder(Encoder):
         return self.serializer.savebytes(obj)
 
     def decode(self, data):
-        # Unpickle to object
-        return self.serializer.loadbytes(data)
+        # Unpickle to object, rows without an object are NULL
+        return self.serializer.loadbytes(data) if data is not None else None
