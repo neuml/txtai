@@ -89,6 +89,21 @@ class Token:
         )
 
     @staticmethod
+    def isaliastoken(token):
+        """
+        Checks if token is the alias keyword.
+
+        Args:
+            token: token to test
+
+        Returns:
+            True if this token is an alias keyword, False otherwise
+        """
+
+        # Token is the alias keyword
+        return token and token.lower() in Token.ALIAS
+
+    @staticmethod
     def isattribute(tokens, x):
         """
         Checks if tokens[x] is an attribute.
@@ -118,6 +133,21 @@ class Token:
 
         # Token is a bracket
         return token == "["
+
+    @staticmethod
+    def iscast(token):
+        """
+        Checks if token is a cast function name.
+
+        Args:
+            token: token to test
+
+        Returns:
+            True if this token is a cast function, False otherwise
+        """
+
+        # Token is a cast function
+        return token and token.lower() in Token.CAST
 
     @staticmethod
     def iscolumn(token):
