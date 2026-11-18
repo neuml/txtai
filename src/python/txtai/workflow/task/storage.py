@@ -73,8 +73,8 @@ class StorageTask(Task):
         """
 
         # Only accept string URLs, leaving other workflow data unchanged.
-        element = self.upack(element, True)
-        return re.match(StorageTask.PREFIX, element.lower()) if isinstance(element, str) else None
+        element = self.upack(element, True).lower()
+        return re.match(StorageTask.PREFIX, element) if isinstance(element, str) else None
 
     def list(self, element):
         """
