@@ -79,7 +79,7 @@ class Summary(HFModel):
         Generates outputs.
 
         Args:
-            input: tokenized input
+            inputs: tokenized input
             kwargs: additional keyword arguments
 
         Returns:

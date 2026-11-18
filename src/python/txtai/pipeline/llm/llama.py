@@ -115,7 +115,7 @@ class LlamaCpp(Generation):
         Processes a prompt.
 
         Args:
-            prompt: prompt text
+            text: prompt text
             maxlength: maximum sequence length
             stream: stream response if True, defaults to False
             stop: list of stop strings
