@@ -71,7 +71,8 @@ class Topics:
         scoring = ScoringFactory.create({"method": self.config.get("labels", "bm25"), "terms": True})
         scoring.index(((node, self.tokenize(graph, node), None) for node in community))
 
-        # Check if scoring index has data
+        # Get topn terms, if scoring index has data
+        terms = None
         if scoring.idf:
             # Sort by most commonly occurring terms (i.e. lowest score)
             idf = sorted(scoring.idf, key=scoring.idf.get)
@@ -82,12 +83,14 @@ class Topics:
             # Get topn terms
             terms = self.topn(idf, topn)
 
+        # Check if any topic terms were found
+        if terms:
             # Sort community by score descending. Ensure both scored and unscored nodes are kept in community.
             ranked = [uid for uid, _ in scoring.search(terms, len(community))]
             unranked = sorted(set(community) - set(ranked), key=lambda x: centrality[x], reverse=True)
             community = ranked + unranked
         else:
-            # No text found for topic, generate topic name
+            # No text or only stopwords found for topic, generate topic name
             terms = ["topic", str(index)]
 
             # Sort community by centrality scores

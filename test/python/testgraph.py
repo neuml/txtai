@@ -123,6 +123,28 @@ class TestGraph(unittest.TestCase):
         # Scored nodes still rank ahead of unmatched ones
         self.assertEqual(members[-1], "unmatched")
 
+    def testCommunityStopwords(self):
+        """
+        Test communities where every term is a configured stopword get a generated topic name
+        """
+
+        graph = GraphFactory.create({"topics": {"resolution": 1, "stopwords": ["data"]}})
+        graph.initialize()
+
+        # Two separate communities that only contain the stopword
+        graph.addnodes([(0, {"text": "data data"}), (1, {"text": "data"}), (2, {"text": "data data data"}), (3, {"text": "data"})])
+        graph.addedges([(0, 1, {"weight": 1.0}), (2, 3, {"weight": 1.0})])
+
+        graph.addtopics()
+
+        # Communities aren't merged under an empty topic name
+        self.assertEqual(sorted(graph.topics), ["topic_0", "topic_1"])
+        self.assertEqual(sorted(sorted(x) for x in graph.topics.values()), [[0, 1], [2, 3]])
+
+        # Deleted nodes are removed from their topic
+        graph.delete([0])
+        self.assertEqual(sorted(sorted(x) for x in graph.topics.values()), [[1], [2, 3]])
+
     def testCustomBackend(self):
         """
         Test resolving a custom backend
