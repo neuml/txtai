@@ -367,7 +367,10 @@ class TestWorkflow(unittest.TestCase):
             path.write_text("research note", encoding="utf-8")
 
             workflow = Workflow([FileTask(lambda paths: [Path(p).read_text(encoding="utf-8") for p in paths])])
-            self.assertEqual(list(workflow([str(path), path.as_uri()])), ["research note", "research note"])
+            uri = path.as_uri()
+            upper = "FILE://" + uri[len("file://") :]
+            mixed = "File://" + uri[len("file://") :]
+            self.assertEqual(list(workflow([str(path), uri, upper, mixed])), ["research note"] * 4)
 
     def testFilteredPackingScales(self):
         """

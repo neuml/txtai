@@ -3,7 +3,6 @@ FileTask module
 """
 
 import os
-import re
 
 from urllib.request import url2pathname
 
@@ -14,9 +13,6 @@ class FileTask(Task):
     """
     Task that processes file paths
     """
-
-    # File prefix
-    FILE = r"file:\/\/"
 
     def accept(self, element):
         # Only process string elements
@@ -44,4 +40,4 @@ class FileTask(Task):
         """
 
         # Decode file URIs while preserving literal percent sequences in plain paths.
-        return url2pathname(re.sub(FileTask.FILE, "", element)) if element.startswith("file://") else element
+        return url2pathname(element[7:]) if element.lower().startswith("file://") else element

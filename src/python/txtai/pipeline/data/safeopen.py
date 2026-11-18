@@ -53,7 +53,7 @@ class SafeOpen:
         """
 
         # Decode file URIs while preserving literal percent sequences in plain paths.
-        path = url2pathname(path[7:]) if path.startswith("file://") else path
+        path = url2pathname(path[7:]) if path.lower().startswith("file://") else path
 
         # Check if this is a local file path or local file url
         exists = os.path.exists(path)
