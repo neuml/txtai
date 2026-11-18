@@ -110,7 +110,7 @@ Set the following environment parameters.
 - Disable PyTorch MPS device via `export PYTORCH_MPS_DISABLE=1`
 - Disable llama.cpp metal via `export LLAMA_NO_METAL=1`
 
-For more details, refer to [this issue on GitHub](https://github.com/kyamagu/faiss-wheels/issues/73).
+For more details, refer to [this issue on GitHub](https://github.com/faiss-wheels/faiss-wheels/issues/73).
 
 ----------
 
