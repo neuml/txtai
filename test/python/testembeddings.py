@@ -507,6 +507,15 @@ class TestEmbeddings(unittest.TestCase):
         # Omitting limit still uses the documented default and finds both apple matches
         self.assertEqual(len(embeddings.search("select id from txtai where similar('apple')")), 2)
 
+        # Dense and hybrid indexes also return no results for a limit of 0
+        for config in [{"path": "sentence-transformers/nli-mpnet-base-v2"}, {"path": "sentence-transformers/nli-mpnet-base-v2", "hybrid": True}]:
+            embeddings = Embeddings({**config, "content": True})
+            embeddings.index(data)
+
+            self.assertEqual(embeddings.search("apple", 0), [])
+            self.assertEqual(embeddings.search("select id from txtai where similar('apple')", 0), [])
+            self.assertEqual(embeddings.batchsearch(["apple", "banana"], 0), [[], []])
+
     def testNoneText(self):
         """
         Test dict documents where the text field is present but set to None

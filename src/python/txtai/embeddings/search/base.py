@@ -103,6 +103,10 @@ class Search:
         if index:
             return self.subindex(queries, limit, weights, index)
 
+        # A limit of 0 returns no results. ANN backends such as Faiss require at least 1 result.
+        if limit < 1:
+            return [[] for _ in queries]
+
         # Run against base indexes
         hybrid = self.ann and self.scoring
         dense = self.dense(queries, limit * 10 if hybrid else limit) if self.ann else None
