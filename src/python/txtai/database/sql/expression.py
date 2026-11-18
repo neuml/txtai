@@ -298,7 +298,7 @@ class Expression:
         """
 
         # Only cast functions take a type name after AS
-        cast = token.lower() in Token.CAST
+        cast = Token.iscast(token)
 
         # Paren counter (current token is the function name, open paren is read next)
         parens = 0
@@ -314,7 +314,7 @@ class Expression:
                 parens -= 1
 
             # Check if token starts a cast type, i.e. cast(a as integer)
-            if cast and token and token.lower() in Token.ALIAS:
+            if cast and Token.isaliastoken(token):
                 # Skip type name, it's not a column
                 self.casttype(iterator, tokens, x)
 
@@ -380,7 +380,7 @@ class Expression:
         token = tokens[x]
 
         # If this is an alias token, get next token
-        if token in Token.ALIAS:
+        if Token.isaliastoken(token):
             x, token = next(iterator, (None, None))
 
             # A trailing AS with no alias name exhausts the stream
