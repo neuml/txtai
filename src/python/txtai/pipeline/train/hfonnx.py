@@ -183,7 +183,9 @@ class ModelWrapper(Module):
         Runs inputs through model and returns outputs.
 
         Args:
-            inputs: model inputs
+            input_ids: token ids
+            attention_mask: attention mask
+            token_type_ids: token type ids, if the model takes them
 
         Returns:
             model outputs

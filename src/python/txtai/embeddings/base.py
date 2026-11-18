@@ -307,7 +307,7 @@ class Embeddings:
         Transforms document into an embeddings vector.
 
         Args:
-            documents: iterable of (id, data, tags), (id, data) or data
+            document: (id, data, tags), (id, data) or data
             category: category for instruction-based embeddings
             index: index name, if applicable
 

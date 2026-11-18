@@ -28,7 +28,7 @@ class Explain:
         Explains the importance of each input token in text for a list of queries.
 
         Args:
-            query: input queries
+            queries: input queries
             texts: optional list of (text|list of tokens), otherwise runs search queries
             limit: optional limit if texts is None
 

@@ -22,7 +22,7 @@ class PipelineFactory:
         Gets a new instance of pipeline class.
 
         Args:
-            pclass: Pipeline instance class
+            pipeline: Pipeline instance class
 
         Returns:
             Pipeline class

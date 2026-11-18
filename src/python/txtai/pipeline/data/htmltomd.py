@@ -390,7 +390,7 @@ class HTMLToMarkdown(Pipeline):
 
         Args:
             node: input node
-            nodes: input node's children
+            children: input node's children
 
         Returns:
             True if this is a container element, False otherwise

@@ -431,7 +431,7 @@ class RAG(Pipeline):
         Args:
             queries: list of input queries
             answers: list of answers
-            topn: top n context elements as (id, data, tag)
+            topns: top n context elements as (id, data, tag)
 
         Returns:
             list of (name, answer, reference)

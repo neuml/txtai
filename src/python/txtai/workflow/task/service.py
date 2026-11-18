@@ -68,9 +68,6 @@ class ServiceTask(Task):
         Execute service request.
 
         Args:
-            url: service url
-            method: method (get or post)
-            params: dict of constant parameters to pass to request
             data: dynamic data for this specific request
 
         Returns:
