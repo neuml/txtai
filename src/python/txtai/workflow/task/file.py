@@ -40,5 +40,4 @@ class FileTask(Task):
         """
 
         # Decode file URIs while preserving literal percent sequences in plain paths.
-        # Match the scheme case-insensitively (FILE:// / File://), same as UrlTask.
         return url2pathname(element[7:]) if element.lower().startswith("file://") else element
