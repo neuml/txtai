@@ -138,6 +138,10 @@ class Embeddings:
             if ids is not None and not reindex and not self.database:
                 self.ids = self.createids(ids)
 
+        # Open the database connection, which is otherwise only created when documents are inserted
+        if self.database:
+            self.database.initialize()
+
         # Index scoring, if necessary
         # This must occur before graph index in order to be available to the graph
         if self.issparse():

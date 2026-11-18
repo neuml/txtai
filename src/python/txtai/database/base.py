@@ -41,6 +41,11 @@ class Database:
 
         raise NotImplementedError
 
+    def initialize(self):
+        """
+        Creates connection and initial database schema if no connection exists. Does nothing by default.
+        """
+
     def insert(self, documents, index=0):
         """
         Inserts documents into the database.

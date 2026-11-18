@@ -230,6 +230,20 @@ class TestEmbeddings(unittest.TestCase):
             self.assertEqual(embeddings.count(), 0)
             self.assertEqual(embeddings.search("test"), [])
 
+    def testEmptyQuery(self):
+        """
+        Test querying an empty index before it is saved
+        """
+
+        for content in [False, True]:
+            embeddings = Embeddings({"keyword": True, "content": content})
+            embeddings.index([])
+
+            self.assertEqual(embeddings.count(), 0)
+            self.assertEqual(embeddings.search("test"), [])
+            self.assertEqual(embeddings.batchsearch(["test"]), [[]])
+            self.assertEqual(embeddings.delete([0]), [])
+
     def testEmptyString(self):
         """
         Test empty string indexing
