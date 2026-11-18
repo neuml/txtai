@@ -713,6 +713,27 @@ class Common:
             self.assertEqual(result["text"], self.data[4])
             self.assertEqual(result["title"], "Title 4")
 
+        def testReindexStoreText(self):
+            """
+            Test reindex when the JSON data doesn't store a custom text column
+            """
+
+            # Index documents with a custom text column and only store the title field in the JSON data
+            config = {"keyword": True, "columns": {"text": "body", "store": ["title"]}}
+            embeddings = Embeddings({**config, "content": self.backend})
+            embeddings.index([{"id": uid, "body": text, "title": f"Title {uid}"} for uid, text in enumerate(self.data)])
+
+            # Reindex
+            embeddings.reindex(config)
+
+            # Test all documents are indexed
+            self.assertEqual(embeddings.count(), len(self.data))
+
+            # Search for best match
+            result = embeddings.search("select id, text, title from txtai where similar('lottery ticket')", 1)[0]
+            self.assertEqual(result["text"], self.data[4])
+            self.assertEqual(result["title"], "Title 4")
+
         def testSave(self):
             """
             Test save
