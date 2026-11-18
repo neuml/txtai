@@ -478,6 +478,9 @@ class Graph:
             similarity: batch similarity function - takes a list of text and labels and returns best matches
         """
 
+        # Create graph backend, which is otherwise only created when nodes are inserted
+        self.initialize()
+
         # Add relationship edges
         self.resolverelations(ids)
 

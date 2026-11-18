@@ -252,6 +252,21 @@ class TestGraph(unittest.TestCase):
         self.assertTrue(graph.hasedge(0))
         self.assertTrue(graph.hasedge(0, 1))
 
+    def testEmpty(self):
+        """
+        Test indexing an empty document set with a graph
+        """
+
+        for graph in [{}, {"topics": {}}]:
+            embeddings = Embeddings({"keyword": True, "graph": graph})
+            embeddings.index([])
+
+            self.assertEqual(embeddings.graph.count(), 0)
+
+            # Graph is built when documents are added later
+            embeddings.upsert([(0, "first document", None), (1, "second document", None)])
+            self.assertEqual(embeddings.graph.count(), 2)
+
     def testFilter(self):
         """
         Test creating filtered subgraphs
