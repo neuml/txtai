@@ -42,14 +42,6 @@ class TestApp(unittest.TestCase):
         app.index()
         self.assertEqual(app.search("hello")[0]["text"], "hello world")
 
-    def testConfig(self):
-        """
-        Test a file not found config exception
-        """
-
-        with self.assertRaises(FileNotFoundError):
-            Application.read("No file here")
-
     def testBuiltinFunction(self):
         """
         Test zero-argument builtin SQL functions with direct and application configuration
@@ -75,6 +67,14 @@ class TestApp(unittest.TestCase):
                     self.assertEqual(embeddings.search("select processid() pid from txtai")[0]["pid"], os.getpid())
                 finally:
                     embeddings.close()
+
+    def testConfig(self):
+        """
+        Test a file not found config exception
+        """
+
+        with self.assertRaises(FileNotFoundError):
+            Application.read("No file here")
 
     def testParameter(self):
         """
