@@ -100,12 +100,8 @@ class Faiss(ANN):
         if hasattr(self.backend, "nflip"):
             self.backend.nflip = self.setting("nflip", self.nprobe())
 
-        # Faiss requires a limit of at least 1
-        if not limit:
-            return [[] for _ in queries]
-
         # Run the query
-        scores, ids = self.backend.search(queries, limit)
+        scores, ids = self.backend.search(queries, limit) if limit else ([], [])
 
         # Map results to [(id, score)]
         results = []
