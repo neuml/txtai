@@ -420,12 +420,22 @@ class Expression:
         """
 
         # Resolve left side (left side already had function processing applied through standard loop)
-        if Token.iscolumn(tokens[x - 1]):
+        if Token.iscolumn(tokens[x - 1]) and not Token.iscollate(Token.get(tokens, x - 2)):
             tokens[x - 1] = self.resolve(tokens[x - 1], aliases)
 
         # Consume operator(s), handle both single and compound operators, i.e. column NOT LIKE 1
+        token = tokens[x]
         while Token.isoperator(Token.get(tokens, x + 1)):
             x, token = next(iterator, (None, None))
+
+        # A collation name is not a column, i.e. a collate nocase
+        if Token.iscollate(token):
+            next(iterator, None)
+            return
+
+        # Postfix operators have no right side, i.e. a isnull
+        if Token.ispostfix(token):
+            return
 
         # Leave a parenthesized right side to the caller, which tracks paren depth
         if Token.isgroupstart(Token.get(tokens, x + 1)):
