@@ -195,6 +195,29 @@ class TestAgent(unittest.TestCase):
         self.assertIsInstance(agent.tools["today"](True), str)
         self.assertIsInstance(agent.tools["current"](True), str)
 
+    def testToolsConfig(self):
+        """
+        Test function tool name and description from a dictionary configuration
+        """
+
+        def search(query: str) -> str:
+            """
+            Runs a search
+
+            Args:
+                query: search query
+
+            Returns:
+                search results
+            """
+
+            return query
+
+        tool = ToolFactory.create({"tools": [{"name": "websearcher", "description": "Searches the web", "target": search}]})[0]
+        self.assertEqual(tool.name, "websearcher")
+        self.assertEqual(tool.description, "Searches the web")
+        self.assertEqual(tool("txtai"), "txtai")
+
     def testToolsDefaults(self):
         """
         Test default toolkit tools

@@ -116,11 +116,19 @@ class ToolFactory:
             Tool
         """
 
+        config = config if config else {}
+
         try:
             # Try to create using CreateTool function - this fails when no annotations are available
-            return CreateTool(target)
+            tool = CreateTool(target)
         except (TypeHintParsingException, TypeError):
-            return ToolFactory.fromdocs(target, config if config else {})
+            return ToolFactory.fromdocs(target, config)
+
+        # Apply name and description from tool configuration, if provided
+        tool.name = config.get("name", tool.name)
+        tool.description = config.get("description", tool.description)
+
+        return tool
 
     @staticmethod
     def default(name):
