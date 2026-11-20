@@ -223,6 +223,36 @@ class TestAgent(unittest.TestCase):
         self.assertEqual(tool.name, "bash")
         self.assertIsNot(tool, ToolFactory.default("bash"))
 
+    def testToolsDocstring(self):
+        """
+        Test function tools without complete type hints are created from documentation
+        """
+
+        def untyped(city):
+            """
+            Gets the weather for a city
+
+            Args:
+                city: city name
+            """
+
+            return f"sunny in {city}"
+
+        def noreturn(city: str):
+            """
+            Gets the weather for a city
+
+            Args:
+                city: city name
+            """
+
+            return f"sunny in {city}"
+
+        for function in [untyped, noreturn]:
+            tool = ToolFactory.create({"tools": [function]})[0]
+            self.assertEqual(tool.name, function.__name__)
+            self.assertEqual(tool("Paris"), "sunny in Paris")
+
     def testToolsBashStdin(self):
         """
         Test default bash tool doesn't block reading stdin
