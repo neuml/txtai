@@ -69,7 +69,7 @@ class HFLLM(HFPipeline):
             text: text|list
             prefix: optional prefix to prepend to text elements
             maxlength: maximum sequence length
-            workers: number of concurrent workers to use for processing data, defaults to None
+            workers: number of concurrent workers to use for processing data, defaults to 0
             stream: stream response if True, defaults to False
             stop: list of stop strings
             kwargs: additional generation keyword arguments
@@ -124,7 +124,7 @@ class HFLLM(HFPipeline):
         Args:
             texts: input texts
             maxlength: maximum sequence length
-            workers: number of concurrent workers to use for processing data, defaults to None
+            workers: number of concurrent workers to use for processing data, defaults to 0
             stop: list of stop strings
             kwargs: additional generation keyword arguments
 
