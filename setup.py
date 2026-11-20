@@ -61,6 +61,7 @@ extras["ann"] = [
     "ggml-python>=0.0.41",
     "hnswlib>=0.5.0",
     "milvus-lite>=3.2.2",
+    "mlxvs>=0.9.0; sys_platform == 'darwin' and platform_machine == 'arm64'",
     "pgvector>=0.4.1",
     "rabitqlib>=0.7.0",
     "scikit-learn>=0.23.1",

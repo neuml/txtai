@@ -10,6 +10,7 @@ from .faiss import Faiss, FAISS
 from .ggml import GGML
 from .hnsw import HNSW
 from .milvus import Milvus
+from .mlxvs import Mlxvs
 from .numpy import NumPy
 from .pgvector import PGVector
 from .rabitq import RabitQ
@@ -52,6 +53,8 @@ class ANNFactory:
             ann = HNSW(config)
         elif backend == "milvus":
             ann = Milvus(config)
+        elif backend == "mlxvs":
+            ann = Mlxvs(config)
         elif backend == "numpy":
             ann = NumPy(config)
         elif backend == "pgvector":

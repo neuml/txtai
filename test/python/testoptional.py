@@ -45,6 +45,7 @@ class TestOptional(unittest.TestCase):
             "litert_lm",
             "llama_cpp",
             "milvus_lite",
+            "mlxvs",
             "model2vec",
             "msgpack",
             "networkx",
