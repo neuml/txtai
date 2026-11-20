@@ -10,7 +10,8 @@ import mcpadapt.core
 
 from mcpadapt.smolagents_adapter import SmolAgentsAdapter
 from smolagents import PythonInterpreterTool, Tool, tool as CreateTool, UserInputTool, WebSearchTool
-from transformers.utils import chat_template_utils, TypeHintParsingException
+from smolagents.tools import TypeHintParsingException
+from transformers.utils import chat_template_utils
 
 from ...embeddings import Embeddings
 from .bash import BashTool
