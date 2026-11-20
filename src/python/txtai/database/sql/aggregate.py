@@ -7,6 +7,7 @@ import operator
 
 from .base import SQL
 from .error import SQLError
+from .token import Token
 
 
 class Aggregate(SQL):
@@ -38,24 +39,51 @@ class Aggregate(SQL):
         if "select" in query and results:
             # Get list of unique and aggregate columns. If no aggregate columns or order by found, skip
             columns = list(results[0].keys())
-            aggcolumns = self.aggcolumns(columns)
+            expressions = self.expressions(query, columns)
+            aggcolumns = self.aggcolumns(columns, expressions)
             if aggcolumns or query["orderby"]:
                 # Merge aggregate columns
                 if aggcolumns:
-                    results = self.aggregate(query, results, columns, aggcolumns)
+                    results = self.aggregate(query, results, columns, expressions, aggcolumns)
 
                 # Sort results and return
-                return self.orderby(query, results) if query["orderby"] else self.defaultsort(results)
+                return self.orderby(query, results, columns, expressions) if query["orderby"] else self.defaultsort(results)
 
         # Otherwise, run default sort
         return self.defaultsort(results)
 
-    def aggcolumns(self, columns):
+    def expressions(self, query, columns):
+        """
+        Maps each result column to the select expression it holds. Aliased columns are returned under the alias name,
+        so they are mapped to the expression before the alias. All other columns map to themselves.
+
+        Args:
+            query: parsed query
+            columns: list of result columns
+
+        Returns:
+            {column: expression}
+        """
+
+        aliases = {}
+        for alias, index in query.get("aliases", {}).items():
+            # Remove the alias name and the optional alias keyword from the select expression
+            tokens, _ = self.tokenize(query["select"][index])
+            tokens = tokens[:-1]
+            if tokens and Token.isaliastoken(tokens[-1]):
+                tokens = tokens[:-1]
+
+            aliases[alias] = self.expression.buildtext(tokens)
+
+        return {column: aliases.get(Token.normalize(column), column) for column in columns}
+
+    def aggcolumns(self, columns, expressions):
         """
         Filters columns for columns that have an aggregate function call.
 
         Args:
             columns: list of columns
+            expressions: {column: expression}
 
         Returns:
             list of aggregate columns
@@ -64,7 +92,7 @@ class Aggregate(SQL):
         aggregates = {}
         for column in columns:
             # Match function names case-insensitively but keep the column name as returned
-            name = column.lower()
+            name = expressions[column].lower()
             if name.startswith(("count(", "sum(", "total(")):
                 aggregates[column] = sum
             elif name.startswith("max("):
@@ -100,7 +128,7 @@ class Aggregate(SQL):
 
         return sum(value * count for value, count in zip(values, counts)) / sum(counts)
 
-    def aggregate(self, query, results, columns, aggcolumns):
+    def aggregate(self, query, results, columns, expressions, aggcolumns):
         """
         Merges aggregate columns in results.
 
@@ -108,6 +136,7 @@ class Aggregate(SQL):
             query: input query
             results: query results
             columns: list of select columns
+            expressions: {column: expression}
             aggcolumns: list of aggregate columns
 
         Returns:
@@ -116,13 +145,13 @@ class Aggregate(SQL):
 
         # Group data, if necessary
         if query["groupby"]:
-            results = self.groupby(query, results, columns)
+            results = self.groupby(query, results, columns, expressions)
         else:
             results = [results]
 
         # Map each avg(col) column to its count(col) column, the non-NULL row count used to weight it
-        countnames = {column[6:]: column for column in columns if column.lower().startswith("count(")}
-        countcolumns = {column: countnames.get(column[4:]) for column in aggcolumns if column.lower().startswith("avg(")}
+        countnames = {expressions[column][6:]: column for column in columns if expressions[column].lower().startswith("count(")}
+        countcolumns = {column: countnames.get(expressions[column][4:]) for column in aggcolumns if expressions[column].lower().startswith("avg(")}
 
         # Compute column values
         rows = []
@@ -135,7 +164,12 @@ class Aggregate(SQL):
                     matches = [r for r in result if r[column] is not None]
                     countcolumn = countcolumns.get(column)
                     values, counts = [r[column] for r in matches], [r[countcolumn] for r in matches] if countcolumn else None
-                    row[column] = (self.avg(column, values, counts) if column in countcolumns else aggcolumns[column](values)) if values else None
+                    if not values:
+                        row[column] = None
+                    elif column in countcolumns:
+                        row[column] = self.avg(expressions[column], values, counts)
+                    else:
+                        row[column] = aggcolumns[column](values)
                 else:
                     # Non aggregate column value repeat, use first value
                     row[column] = result[0][column]
@@ -145,7 +179,7 @@ class Aggregate(SQL):
 
         return rows
 
-    def groupby(self, query, results, columns):
+    def groupby(self, query, results, columns, expressions):
         """
         Groups results using query group by clause.
 
@@ -153,14 +187,15 @@ class Aggregate(SQL):
             query: input query
             results: query results
             columns: list of select columns
+            expressions: {column: expression}
 
         Returns:
             results grouped using group by clause
         """
 
-        # Group by columns are matched case-insensitively
+        # Group by columns are matched case-insensitively, either by column name or by the expression an alias names
         names = {name.lower() for name in query["groupby"]}
-        groupby = [column for column in columns if column.lower() in names]
+        groupby = [column for column in columns if column.lower() in names or expressions[column].lower() in names]
         if groupby:
             # NULLs sort first like in SQLite
             results = sorted(results, key=lambda row: [(row[column] is not None, row[column]) for column in groupby])
@@ -168,13 +203,15 @@ class Aggregate(SQL):
 
         return [results]
 
-    def orderby(self, query, results):
+    def orderby(self, query, results, columns, expressions):
         """
         Applies an order by clause to results.
 
         Args:
             query: input query
             results: query results
+            columns: list of select columns
+            expressions: {column: expression}
 
         Returns:
             results ordered using order by clause
@@ -190,12 +227,13 @@ class Aggregate(SQL):
                 clause = clause.rsplit(" ")[0]
                 reverse = True
 
-            # Match order by column case-insensitively
-            clause = next((name for name in query["select"] if name.lower() == clause.lower()), clause)
+            # Match order by column case-insensitively, either by column name or by the expression an alias names
+            clause = clause.lower()
+            column = next((column for column in columns if clause in (column.lower(), expressions[column].lower())), None)
 
             # Order by columns must be in select clause. NULLs sort first like in SQLite (last when descending).
-            if clause in query["select"]:
-                results = sorted(results, key=lambda row, column=clause: (row[column] is not None, row[column]), reverse=reverse)
+            if column:
+                results = sorted(results, key=lambda row, column=column: (row[column] is not None, row[column]), reverse=reverse)
 
         return results
 
