@@ -499,6 +499,9 @@ class TestSQL(unittest.TestCase):
         self.assertSql("similar", prefix + 'where similar("don\'t stop")', [["don't stop"]])
         self.assertSql("similar", prefix + "where similar('say \"hi\"')", [['say "hi"']])
 
+        # Escaped quotes in string literals are unescaped to a single quote
+        self.assertSql("similar", prefix + "where similar('it''s')", [["it's"]])
+
         self.assertSql("where", prefix + "where coalesce(similar('abc'), similar('abc'))", "coalesce(__SIMILAR__0, __SIMILAR__1)")
         self.assertSql("similar", prefix + "where coalesce(similar('abc'), similar('abc'))", [["abc"], ["abc"]])
 
@@ -567,6 +570,10 @@ class TestSQL(unittest.TestCase):
         self.assertSql("where", prefix + "WHERE 1 = a", "1 = json_extract(data, '$.a')")
         self.assertSql("where", prefix + "WHERE a LIKE 'abc'", "json_extract(data, '$.a') LIKE 'abc'")
         self.assertSql("where", prefix + "WHERE a NOT LIKE 'abc'", "json_extract(data, '$.a') NOT LIKE 'abc'")
+
+        # Escaped quotes in string literals stay a single literal
+        self.assertSql("where", prefix + "where text = 'it''s'", "text = 'it''s'")
+        self.assertSql("where", prefix + "WHERE text LIKE '%it''s%'", "text LIKE '%it''s%'")
         self.assertSql("where", prefix + "WHERE a IN (1, 2, 3, b)", "json_extract(data, '$.a') IN (1, 2, 3, json_extract(data, '$.b'))")
         self.assertSql("where", prefix + "WHERE a is not null", "json_extract(data, '$.a') is not null")
         self.assertSql("where", prefix + "where a = true", "json_extract(data, '$.a') = true")

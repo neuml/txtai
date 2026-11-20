@@ -272,7 +272,12 @@ class Expression:
             if token and token not in ["(", ",", ")"]:
                 # Strip enclosing quotes and accumulate tokens
                 if token.startswith(("'", '"')) and token.endswith(token[0]):
+                    quote = token[0]
                     token = token[1:-1]
+
+                    # Unescape doubled quotes in single-quoted literals ('' -> ')
+                    if quote == "'":
+                        token = token.replace("''", "'")
 
                 params.append(token)
 
