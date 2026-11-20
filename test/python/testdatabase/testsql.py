@@ -41,6 +41,37 @@ class TestSQL(unittest.TestCase):
         # SQL query with results still aggregates as before
         self.assertEqual(aggregate("select count(*) from txtai", [{"count(*)": 1}, {"count(*)": 2}]), [{"count(*)": 3}])
 
+    def testAggregateAlias(self):
+        """
+        Test Aggregate merges, groups and orders aliased columns
+        """
+
+        aggregate = Aggregate()
+
+        # Aliased aggregate columns are merged
+        self.assertEqual(aggregate("select count(*) as n from txtai", [{"n": 3}, {"n": 2}]), [{"n": 5}])
+        self.assertEqual(aggregate("select max(price) 'Max Price' from txtai", [{"Max Price": 3}, {"Max Price": 9}]), [{"Max Price": 9}])
+
+        # Aliased avg() is weighted by an aliased count() of the same column
+        query = "select count(price) as n, avg(price) as a from txtai"
+        self.assertEqual(aggregate(query, [{"n": 2, "a": 100.0}, {"n": 8, "a": 10.0}]), [{"n": 10, "a": 28.0}])
+
+        # Aliased aggregate columns are merged per group and ordered by alias
+        query = "select color, count(*) as total from txtai group by color order by total desc"
+        results = [{"color": "red", "total": 2}, {"color": "green", "total": 1}, {"color": "red", "total": 2}]
+        self.assertEqual(aggregate(query, results), [{"color": "red", "total": 4}, {"color": "green", "total": 1}])
+
+        # Group by the expression of an aliased column
+        query = "select text t, count(*) from txtai group by text"
+        results = [{"t": "x", "count(*)": 1}, {"t": "y", "count(*)": 2}, {"t": "x", "count(*)": 3}]
+        self.assertEqual(aggregate(query, results), [{"t": "x", "count(*)": 4}, {"t": "y", "count(*)": 2}])
+
+        # Order by an alias or by the expression of an aliased column
+        results = [{"id": 1, "s": 0.2}, {"id": 2, "s": 0.9}, {"id": 3, "s": 0.5}]
+        expected = [{"id": 2, "s": 0.9}, {"id": 3, "s": 0.5}, {"id": 1, "s": 0.2}]
+        self.assertEqual(aggregate("select id, score as s from txtai order by s desc", results), expected)
+        self.assertEqual(aggregate("select id, score as s from txtai order by score desc", results), expected)
+
     def testAggregateAvg(self):
         """
         Test Aggregate combines avg() results as a count()-weighted mean, not an unweighted
