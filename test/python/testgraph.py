@@ -274,6 +274,23 @@ class TestGraph(unittest.TestCase):
         self.assertTrue(graph.hasedge(0))
         self.assertTrue(graph.hasedge(0, 1))
 
+    def testEdgesNoWeight(self):
+        """
+        Test shortest path with edges that have no weight attribute
+        """
+
+        # Create graph
+        graph = GraphFactory.create({})
+        graph.initialize()
+
+        # Path 0 -> 1 -> 2 without weights and a weighted shortcut 0 -> 2
+        graph.addedge(0, 1)
+        graph.addedge(1, 2)
+        self.assertEqual(graph.showpath(0, 2), [0, 1, 2])
+
+        graph.addedge(0, 2, weight=0.5)
+        self.assertEqual(graph.showpath(0, 2), [0, 2])
+
     def testFilter(self):
         """
         Test creating filtered subgraphs
