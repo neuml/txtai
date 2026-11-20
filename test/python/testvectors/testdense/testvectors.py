@@ -3,12 +3,15 @@ Vectors module tests
 """
 
 import os
+import shutil
 import tempfile
 import unittest
 
+from unittest.mock import patch
+
 import numpy as np
 
-from txtai.vectors import Vectors, Recovery
+from txtai.vectors import Vectors, Recovery, VectorsFactory
 
 
 class TestVectors(unittest.TestCase):
@@ -160,6 +163,61 @@ class TestVectors(unittest.TestCase):
 
         recovery = Recovery(checkpoint, "id", np.load)
         self.assertIsNone(recovery("checksum-b"))
+
+    def testExternalCheckpointTransformChange(self):
+        """
+        Test that checkpoint recovery does not reuse stale vectors when the external
+        transform changes but document ids and raw content stay the same, while a
+        second run with the same transform is still served from the checkpoint
+        """
+
+        checkpoint = os.path.join(tempfile.gettempdir(), "external-checkpoint-transform")
+        shutil.rmtree(checkpoint, ignore_errors=True)
+
+        vectors = np.array(
+            [[1.0, 0.0], [0.8, 0.6], [0.5, 0.8660254], [-1.0, 0.0]],
+            dtype=np.float32,
+        )
+        permutation = [2, 1, 0, 3]
+        documents = [(f"id{index}", f"x{index}", None) for index in range(4)]
+
+        phase = {"mutant": False}
+
+        def transform(values):
+            return np.asarray(
+                [vectors[permutation[int(value[1:])]] if phase["mutant"] else vectors[int(value[1:])] for value in values],
+                dtype=np.float32,
+            )
+
+        model = VectorsFactory.create({"method": "external", "transform": transform}, None)
+        buffer = os.path.join(tempfile.gettempdir(), "external-checkpoint-transform.buffer")
+
+        # Patch vectorize to count recomputes without touching the transform's closed-over
+        # state, which is part of the transform fingerprint and must stay unchanged here
+        with patch.object(model, "vectorize", wraps=model.vectorize) as vectorize:
+            # Seed run builds the checkpoint
+            _, _, seed = model.vectors(documents, 4, checkpoint, buffer=buffer, dtype=np.float32)
+            seed = np.array(seed)
+            self.assertTrue(np.allclose(seed, vectors))
+            self.assertEqual(vectorize.call_count, 1)
+
+            # Same transform and same documents must be served from the checkpoint (no recompute)
+            _, _, cached = model.vectors(documents, 4, checkpoint, buffer=buffer, dtype=np.float32)
+            cached = np.array(cached)
+            self.assertTrue(np.allclose(cached, vectors))
+            self.assertEqual(vectorize.call_count, 1)
+
+            # Change the external transform - recovery must not reuse the stale vectors
+            phase["mutant"] = True
+            _, _, mutant = model.vectors(documents, 4, checkpoint, buffer=buffer, dtype=np.float32)
+            mutant = np.array(mutant)
+            self.assertTrue(np.allclose(mutant, vectors[permutation]))
+            self.assertEqual(vectorize.call_count, 2)
+
+        # Fresh build with the changed transform agrees
+        fresh = VectorsFactory.create({"method": "external", "transform": transform}, None)
+        _, _, expected = fresh.vectors(documents, 4, buffer=buffer, dtype=np.float32)
+        self.assertTrue(np.allclose(mutant, np.array(expected)))
 
     def write(self, path, checksums=None, embeddings=None):
         """
