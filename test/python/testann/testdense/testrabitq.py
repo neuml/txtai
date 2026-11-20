@@ -108,6 +108,24 @@ class TestRaBitQ(DenseTest):
         self.assertEqual(loaded.count(), 0)
         self.assertEqual(loaded.search(data[:1], 10), [[]])
 
+    def testRabitQUnfilled(self):
+        """
+        Test unfilled result slots are dropped
+        """
+
+        # Generate dummy data
+        data = np.random.rand(500, 240).astype(np.float32)
+        self.normalize(data)
+
+        # Probing one of ten clusters leaves part of each result list unfilled
+        ann = ANNFactory.create({"backend": "rabitq", "dimensions": 240, "rabitq": {"clusters": 10, "nprobe": 1}})
+        ann.index(data)
+
+        results = ann.search(data[:5], data.shape[0])
+        for result in results:
+            self.assertLess(len(result), data.shape[0])
+            self.assertTrue(all(uid >= 0 and np.isfinite(score) for uid, score in result))
+
     def testRabitQUpdate(self):
         """
         Test RaBitQ stores a single file and hnsw does not support append and delete
@@ -142,7 +160,7 @@ class TestRaBitQ(DenseTest):
 
             # File is the native index, readable without the wrapper
             native = IvfIndex.load(index) if mode == "ivf" else HnswIndex.load(index)
-            self.assertEqual(native.max_elements, 100)
+            self.assertEqual(native.num_stored_points, 100)
 
             expected = ann.search(data[:2], 10)
             ann.load(index)
@@ -160,12 +178,15 @@ class TestRaBitQ(DenseTest):
         clusterids = np.zeros(len(data), dtype=np.uint32)
 
         for mode in ["ivf", "hnsw"]:
-            native = (
-                IvfIndex(dim=64, max_elements=8, num_clusters=1, nbits=4, metric="ip")
-                if mode == "ivf"
-                else HnswIndex(dim=64, max_elements=16, nbits=4, metric="ip")
-            )
-            native.build(data, centroids, clusterids)
+            if mode == "ivf":
+                native = IvfIndex(64, 1, nbits=4, metric="ip")
+            else:
+                # Spare capacity beyond the stored rows
+                native = HnswIndex(64, nbits=4, num_clusters=1, metric="ip")
+                native.reserve(16)
+
+            native.set_centroids(centroids)
+            native.add(data, cluster_ids=clusterids)
             native.remove(np.array([0], dtype=np.int64))
 
             with tempfile.TemporaryDirectory() as directory:
