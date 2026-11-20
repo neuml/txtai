@@ -21,9 +21,6 @@ from ...util import Library
 library = Library()
 np = library.numpy()
 
-# Sentinel for unfilled top-k slots in native search results
-SENTINEL = 0xFFFFFFFF
-
 
 class RabitQ(ANN):
     """
@@ -68,17 +65,17 @@ class RabitQ(ANN):
 
         dim = self.config["dimensions"]
         if mode == "ivf":
-            backend = IvfIndex(dim=dim, max_elements=rows, num_clusters=clusters, nbits=nbits, metric="ip")
+            backend = IvfIndex(dim, clusters, nbits=nbits, metric="ip")
             settings = {"mode": mode, "nbits": nbits, "clusters": clusters, "nprobe": self.setting("nprobe", self.nprobe(clusters))}
         else:
             backend = HnswIndex(
-                dim=dim,
-                max_elements=rows,
+                dim,
+                nbits=nbits,
+                num_clusters=clusters,
                 M=self.setting("m", 16),
                 ef_construction=self.setting("efconstruction", 200),
-                nbits=nbits,
                 metric="ip",
-                random_seed=self.setting("randomseed", 100),
+                seed=self.setting("randomseed", 100),
             )
             settings = {
                 "mode": mode,
@@ -89,7 +86,9 @@ class RabitQ(ANN):
                 "randomseed": self.setting("randomseed", 100),
             }
 
-        backend.build(vectors, centroids, clusterids)
+        # Capacity grows on add, so no row count is passed up front
+        backend.set_centroids(centroids)
+        backend.add(vectors, cluster_ids=clusterids)
         self.backend = backend
 
         # Add id offset and index build metadata
@@ -130,11 +129,12 @@ class RabitQ(ANN):
             nprobe = self.setting("nprobe", self.nprobe(self.backend.num_clusters))
             ids, distances = self.backend.search(queries, k, nprobe)
         else:
-            ids, distances = self.backend.search(queries, k, self.setting("efsearch", None) or 0)
+            # None selects the native default search breadth
+            ids, distances = self.backend.search(queries, k, self.setting("efsearch", None))
 
-        # Map results to [(id, score)], dropping unfilled sentinel slots
+        # Map results to [(id, score)], dropping unfilled slots, which have an infinite distance
         return [
-            [(int(uid), float(1.0 - dist)) for uid, dist in zip(uids, dists) if uid != SENTINEL]
+            [(int(uid), float(1.0 - dist)) for uid, dist in zip(uids, dists) if math.isfinite(dist)]
             for uids, dists in zip(ids.tolist(), distances.tolist())
         ]
 
