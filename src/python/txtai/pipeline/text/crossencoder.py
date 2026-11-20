@@ -32,7 +32,7 @@ class CrossEncoder(Labels):
             query: query text|list
             texts: list of text
             multilabel: labels are independent if True, scores are normalized to sum to 1 per text item if False, raw scores returned if None
-            workers: number of concurrent workers to use for processing data, defaults to None
+            workers: number of concurrent workers to use for processing data, defaults to 0
             labels: optional list of labels to score by, resolved by name/id via the model config the same way
                     Labels.limit() does. Restricts ranking to a fixed label so multi-class models (e.g. NLI
                     cross-encoders) compare every candidate on the same class, instead of whichever one each

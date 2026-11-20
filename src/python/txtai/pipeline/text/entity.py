@@ -45,7 +45,7 @@ class Entity(HFPipeline):
             aggregate: method to combine multi token entities - options are "simple" (default), "first", "average" or "max"
             flatten: flatten output to a list of labels if present. Accepts a boolean or float value to only keep scores greater than that number.
             join: joins flattened output into a string if True, ignored if flatten not set
-            workers: number of concurrent workers to use for processing data, defaults to None
+            workers: number of concurrent workers to use for processing data, defaults to 0
 
         Returns:
             list of (entity, entity type, score) or list of entities depending on flatten parameter
@@ -101,7 +101,7 @@ class Entity(HFPipeline):
             text: text|list
             labels: list of entity type labels to accept, defaults to None which accepts all
             aggregate: method to combine multi token entities - options are "simple" (default), "first", "average" or "max"
-            workers: number of concurrent workers to use for processing data, defaults to None
+            workers: number of concurrent workers to use for processing data, defaults to 0
 
         Returns:
             list of entities and labels
