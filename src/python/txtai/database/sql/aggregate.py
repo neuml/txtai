@@ -250,6 +250,6 @@ class Aggregate(SQL):
 
         # Sort standard query using score column, if present
         if results and "score" in results[0]:
-            return sorted(results, key=lambda x: x["score"], reverse=True)
+            return sorted(results, key=lambda x: (x["score"] is not None, x["score"]), reverse=True)
 
         return results

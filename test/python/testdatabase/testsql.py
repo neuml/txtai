@@ -128,6 +128,29 @@ class TestSQL(unittest.TestCase):
         results = [{"COUNT(*)": 1, "Sum(price)": 1.0, "MAX(price)": 1.0}, {"COUNT(*)": 2, "Sum(price)": 5.0, "MAX(price)": 4.0}]
         self.assertEqual(aggregate(query, results), [{"COUNT(*)": 3, "Sum(price)": 6.0, "MAX(price)": 4.0}])
 
+    def testAggregateDefaultSortNull(self):
+        """
+        Test default score ordering keeps NULLs last and preserves equal-score order
+        """
+
+        aggregate = Aggregate()
+        query = "select id, score from txtai"
+
+        with self.subTest(scores="all NULL"):
+            results = [{"id": "a", "score": None}, {"id": "b", "score": None}]
+            self.assertEqual(aggregate(query, results), results)
+
+        with self.subTest(scores="mixed"):
+            results = [
+                {"id": "a", "score": None},
+                {"id": "b", "score": 0.0},
+                {"id": "c", "score": -0.25},
+                {"id": "d", "score": 0.5},
+                {"id": "e", "score": None},
+                {"id": "f", "score": 0.5},
+            ]
+            self.assertEqual([row["id"] for row in aggregate(query, results)], ["d", "f", "b", "c", "a", "e"])
+
     def testAggregateGroupby(self):
         """
         Test Aggregate groups results using mixed case and NULL group by columns
