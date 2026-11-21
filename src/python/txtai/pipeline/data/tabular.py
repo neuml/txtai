@@ -161,5 +161,5 @@ class Tabular(Pipeline):
             formatted value
         """
 
-        # Check for null - treat lists as not null
-        return None if not isinstance(value, list) and pd.isnull(value) else value
+        # Check for null - only scalars can be null, lists and arrays are kept as is
+        return None if pd.api.types.is_scalar(value) and pd.isnull(value) else value
