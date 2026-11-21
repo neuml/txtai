@@ -149,6 +149,20 @@ class SQL:
         tokens.commenters = ""
         tokens = list(tokens)
 
+        # shlex ends a quoted token at the first quote, so a literal with an escaped quote
+        # ('it''s') splits into adjacent tokens ('it', 's'). Rejoin them: adjacent
+        # single-quoted tokens can only come from an escaped quote, since SQLite has
+        # no implicit string concatenation.
+        merged = []
+        for token in tokens:
+            if merged and merged[-1].endswith("'") and token.startswith("'"):
+                # The closing quote of one token and the opening quote of the next
+                # are the escaped quote itself, so concatenate without adding one.
+                merged[-1] += token
+            else:
+                merged.append(token)
+        tokens = merged
+
         # Rejoin signed exponents split on punctuation (1e-3 is tokenized as 1e, -, 3)
         x = 0
         while x < len(tokens) - 2:
