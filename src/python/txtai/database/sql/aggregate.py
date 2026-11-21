@@ -222,9 +222,9 @@ class Aggregate(SQL):
             # Order by columns must be selected
             reverse = False
             if clause.lower().endswith(" asc"):
-                clause = clause.rsplit(" ")[0]
+                clause = clause.rsplit(None, 1)[0]
             elif clause.lower().endswith(" desc"):
-                clause = clause.rsplit(" ")[0]
+                clause = clause.rsplit(None, 1)[0]
                 reverse = True
 
             # Match order by column case-insensitively, either by column name or by the expression an alias names

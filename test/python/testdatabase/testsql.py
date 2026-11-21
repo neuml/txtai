@@ -211,6 +211,22 @@ class TestSQL(unittest.TestCase):
         self.assertEqual(aggregate("select id, score from txtai order by SCORE desc", results), expected)
         self.assertEqual(aggregate("select id, score from txtai order by Score asc", results), list(reversed(expected)))
 
+    def testAggregateOrderByExpression(self):
+        """
+        Test Aggregate orders by expressions that contain spaces
+        """
+
+        aggregate = Aggregate()
+
+        query = "select tag, sum(x + y) from txtai group by tag order by sum(x + y) %s"
+        results = [{"tag": "a", "sum(x + y)": 5}, {"tag": "b", "sum(x + y)": 1}, {"tag": "a", "sum(x + y)": 1}, {"tag": "b", "sum(x + y)": 1}]
+
+        # Ascending order, totals are a=6 and b=2
+        self.assertEqual(aggregate(query % "asc", results), [{"tag": "b", "sum(x + y)": 2}, {"tag": "a", "sum(x + y)": 6}])
+
+        # Descending order
+        self.assertEqual(aggregate(query % "desc", results), [{"tag": "a", "sum(x + y)": 6}, {"tag": "b", "sum(x + y)": 2}])
+
     def testAggregateOrderByNull(self):
         """
         Test Aggregate orders NULL values the same way as SQLite
