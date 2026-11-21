@@ -55,14 +55,15 @@ class Generation:
             texts = [formatter.format(self.template, text=x) if isinstance(x, str) else x for x in texts]
 
         # Run pipeline
-        results = self.execute(self.format(texts, defaultrole), maxlength, stream, stop, **kwargs)
+        inputs = self.format(texts, defaultrole)
+        results = self.execute(inputs, maxlength, stream, stop, **kwargs)
 
         # Streaming generation
         if stream:
             return self.cleanstream(results) if stripthink else results
 
-        # Clean generated content
-        results = [self.clean(texts[x], result, stripthink) for x, result in enumerate(results)]
+        # Clean generated content. Only raw prompts are echoed back in generated content, chat messages are not.
+        results = [self.clean(inputs[x] if isinstance(inputs[x], str) else None, result, stripthink) for x, result in enumerate(results)]
 
         # Extract results based on inputs
         return results[0] if isinstance(text, str) or isinstance(text[0], dict) else results
