@@ -239,8 +239,9 @@ class NetworkX(Graph):
             distance between source and target
         """
 
-        # Distance is 1 - score. Skip minimal distances as they are near duplicates.
-        distance = max(1.0 - attrs["weight"], 0.0)
+        # Distance is 1 - score. Edges without a weight use the default weight of 1.0.
+        # Skip minimal distances as they are near duplicates.
+        distance = max(1.0 - attrs.get("weight", 1.0), 0.0)
         return distance if distance >= 0.15 else 1.00
 
     def loadtar(self, path):
