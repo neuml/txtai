@@ -211,6 +211,17 @@ class TestSQL(unittest.TestCase):
         self.assertEqual(aggregate("select id, score from txtai order by SCORE desc", results), expected)
         self.assertEqual(aggregate("select id, score from txtai order by Score asc", results), list(reversed(expected)))
 
+    def testAggregateOrderByExpression(self):
+        """
+        Test Aggregate orders by a select expression that contains spaces
+        """
+
+        aggregate = Aggregate()
+
+        results = [{"id": "a", "score * 2": 2}, {"id": "b", "score * 2": 6}, {"id": "c", "score * 2": 4}]
+        self.assertEqual([x["id"] for x in aggregate("select id, score * 2 from txtai order by score * 2 desc", results)], ["b", "c", "a"])
+        self.assertEqual([x["id"] for x in aggregate("select id, score * 2 from txtai order by score * 2 asc", results)], ["a", "c", "b"])
+
     def testAggregateOrderByNull(self):
         """
         Test Aggregate orders NULL values the same way as SQLite
