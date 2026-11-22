@@ -175,6 +175,19 @@ class TestOpenAI(unittest.TestCase):
 
         self.assertEqual(response["choices"][0]["message"]["content"], self.data[4])
 
+    def testChatSearchStream(self):
+        """
+        Test a streaming chat completion with an embeddings search and a max completion tokens setting
+        """
+
+        messages = [{"role": "user", "content": "feel good story"}]
+        response = self.client.post(
+            "/v1/chat/completions", json={"messages": messages, "model": "embeddings", "max_completion_tokens": 50, "stream": True}
+        )
+
+        events = [json.loads(event[len("data: ") :]) for event in response.text.split("\n\n") if event and event != "data: [DONE]"]
+        self.assertEqual([event["choices"][0]["delta"] for event in events], [{"content": self.data[4]}, {}])
+
     def testChatStream(self):
         """
         Test a chat completion with a LLM
@@ -209,6 +222,17 @@ class TestOpenAI(unittest.TestCase):
         response = self.client.post("/v1/chat/completions", json={"messages": [{"role": "user", "content": "Hello"}], "model": "echo"}).json()
 
         self.assertEqual(response["choices"][0]["message"]["content"], "Hello")
+
+    def testChatWorkflowStream(self):
+        """
+        Test a streaming chat completion with a workflow and a max completion tokens setting
+        """
+
+        messages = [{"role": "user", "content": "Hello"}]
+        response = self.client.post("/v1/chat/completions", json={"messages": messages, "model": "echo", "max_completion_tokens": 50, "stream": True})
+
+        events = [json.loads(event[len("data: ") :]) for event in response.text.split("\n\n") if event and event != "data: [DONE]"]
+        self.assertEqual([event["choices"][0]["delta"] for event in events], [{"content": "Hello"}, {}])
 
     def testEmbeddings(self):
         """
