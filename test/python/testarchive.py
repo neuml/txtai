@@ -20,6 +20,34 @@ class TestArchive(unittest.TestCase):
     Archive tests.
     """
 
+    def testCompression(self):
+        """
+        Test compression format is used when provided
+        """
+
+        for compression, mode in [("tar.gz", "r:gz"), ("gz", "r:gz"), ("bz2", "r:bz2"), ("xz", "r:xz"), ("tar", "r:")]:
+            # Create archive instance
+            archive = ArchiveFactory.create()
+
+            # Create file in archive working path
+            with open(os.path.join(archive.path(), "test"), "w", encoding="utf-8") as f:
+                f.write("test")
+
+            # Save archive to a path without an extension
+            path = os.path.join(tempfile.gettempdir(), f"compression-{compression}")
+            archive.save(path, compression)
+
+            # Check that the file was written with the requested compression
+            with tarfile.open(path, mode) as tar:
+                self.assertEqual(tar.getnames(), [".", "./test"])
+
+            # Extract files from archive
+            archive = ArchiveFactory.create()
+            archive.load(path, compression)
+
+            # Check if file properly extracted
+            self.assertTrue(os.path.exists(os.path.join(archive.path(), "test")))
+
     def testDirectory(self):
         """
         Test directory included in compressed files

@@ -13,9 +13,19 @@ class Tar(Compress):
     Tar compression
     """
 
+    def __init__(self, compression=None):
+        """
+        Creates a new Tar instance.
+
+        Args:
+            compression: compression format to use when packing, infers using file extension if not provided
+        """
+
+        self.format = compression
+
     def pack(self, path, output):
-        # Infer compression type
-        compression = self.compression(output)
+        # Use compression format if provided, otherwise infer from output path
+        compression = self.compression(self.format if self.format else output)
 
         with tarfile.open(output, f"w:{compression}" if compression else "w") as tar:
             tar.add(path, arcname=".")
