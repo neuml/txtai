@@ -212,6 +212,20 @@ class TestPipeline(unittest.TestCase):
         response = self.client.post("batchllm", json={"texts": ["test", "test"]}).json()
         self.assertEqual(len(response), 2)
 
+    def testLLMStripThink(self):
+        """
+        Test LLM stripthink parameter via API
+        """
+
+        # pylint: disable=W0613
+        def execute(*args, **kwargs):
+            return ["<think>reasoning</think>answer"]
+
+        with patch.object(application.get().pipelines["llm"].generator, "execute", execute):
+            self.assertEqual(self.client.get("llm?text=test&stripthink=true").json(), "answer")
+            self.assertEqual(self.client.get("llm?text=test&stripthink=false").json(), "<think>reasoning</think>answer")
+            self.assertEqual(self.client.post("batchllm", json={"texts": ["test"], "stripthink": False}).json(), ["<think>reasoning</think>answer"])
+
     def testObjects(self):
         """
         Test objects via API

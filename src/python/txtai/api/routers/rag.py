@@ -30,7 +30,7 @@ def rag(query: str, maxlength: Optional[int] = None, stream: Optional[bool] = Fa
 
     # Build keyword arguments
     params = [("maxlength", maxlength), ("stream", stream), ("stripthink", stripthink)]
-    kwargs = {key: value for key, value in params if value}
+    kwargs = {key: value for key, value in params if value is not None}
 
     # Run pipeline
     result = application.get().pipeline("rag", query, **kwargs)
@@ -61,7 +61,7 @@ def batchrag(
 
     # Build keyword arguments
     params = [("maxlength", maxlength), ("stream", stream), ("stripthink", stripthink)]
-    kwargs = {key: value for key, value in params if value}
+    kwargs = {key: value for key, value in params if value is not None}
 
     # Run pipeline
     result = application.get().pipeline("rag", queries, **kwargs)
