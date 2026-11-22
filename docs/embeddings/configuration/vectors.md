@@ -12,13 +12,13 @@ Sets the path for a vectors model. When using a transformers/sentence-transforme
 
 ## method
 ```yaml
-method: transformers|sentence-transformers|llama.cpp|litellm|model2vec|external|
-        words
+method: transformers|sentence-transformers|llama.cpp|litellm|model2vec|openai|
+        external|words
 ```
 
 Embeddings method to use. If the method is not provided, it is inferred using the `path`.
 
-`sentence-transformers`, `llama.cpp`, `litellm`, `model2vec` and `words` require the [vectors](../../../install/#vectors) extras package to be installed.
+`sentence-transformers`, `llama.cpp`, `litellm`, `model2vec`, `openai` and `words` require the [vectors](../../../install/#vectors) extras package to be installed.
 
 ### transformers
 
@@ -46,6 +46,18 @@ Builds embeddings using a LiteLLM model. See the [LiteLLM documentation](https:/
 ### model2vec
 
 Builds embeddings using a [Model2Vec](https://github.com/MinishLab/model2vec) model. Model2Vec is a knowledge-distilled version of a transformers model with static vectors.
+
+### openai
+
+Builds embeddings using the [OpenAI client](https://github.com/openai/openai-python). Works with the OpenAI API and any OpenAI-compatible endpoint. Client parameters such as `api_key` and `base_url` (or `api_base`) are read from the `vectors` configuration, all other `vectors` parameters (e.g. `dimensions`) are passed to the embeddings call. An API key is required, set with `api_key` or the `OPENAI_API_KEY` environment variable. Any placeholder value works for local servers that don't check keys.
+
+```yaml
+path: nomic-embed-text
+method: openai
+vectors:
+  base_url: http://localhost:11434/v1
+  api_key: ollama
+```
 
 ### words
 

@@ -12,6 +12,7 @@ from .litert import LiteRT
 from .llama import LlamaCpp
 from .m2v import Model2Vec
 from .onnx import ONNX
+from .openai import OpenAI
 from .sbert import STVectors
 from .words import WordVectors
 
@@ -35,6 +36,7 @@ class VectorsFactory:
             Vectors
         """
 
+        # pylint: disable=R0911
         # Determine vector method
         method = VectorsFactory.method(config)
 
@@ -61,6 +63,10 @@ class VectorsFactory:
         # ONNX vectors
         if method == "onnx":
             return ONNX(config, scoring, models)
+
+        # OpenAI vectors
+        if method == "openai":
+            return OpenAI(config, scoring, models)
 
         # Sentence Transformers vectors
         if method == "sentence-transformers":
@@ -106,6 +112,8 @@ class VectorsFactory:
                     method = "model2vec"
                 elif ONNX.ismodel(path):
                     method = "onnx"
+                elif OpenAI.ismodel(path):
+                    method = "openai"
                 elif WordVectors.ismodel(path):
                     method = "words"
                 else:

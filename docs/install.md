@@ -191,7 +191,7 @@ pip install txtai_minimal
 pip install txtai_minimal[default]
 ```
 
-Note that in order to use the `Embeddings` or `LLM` interface without `torch` requires either `llama.cpp`, `litellm` or `litert`.
+Note that in order to use the `Embeddings` or `LLM` interface without `torch` requires either `llama.cpp`, `litellm`, `litert` or `openai`.
 
 ## Run with containers
 
