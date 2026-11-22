@@ -4,6 +4,8 @@ Tabular module tests
 
 import unittest
 
+import numpy as np
+
 from txtai.pipeline import Tabular
 
 # pylint: disable=C0411
@@ -22,6 +24,18 @@ class TestTabular(unittest.TestCase):
         """
 
         cls.tabular = Tabular("id", ["text"])
+
+    def testArrayColumns(self):
+        """
+        Test rows with NumPy array values, such as list columns read from a Parquet file
+        """
+
+        tabular = Tabular("id", ["text"], True)
+
+        rows = tabular([{"id": 0, "text": "This is a test", "vector": np.array([0.1, 0.2])}])
+        _, data, _ = rows[1]
+
+        self.assertEqual(data["vector"].tolist(), [0.1, 0.2])
 
     def testContent(self):
         """
