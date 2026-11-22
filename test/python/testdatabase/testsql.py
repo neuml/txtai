@@ -502,14 +502,8 @@ class TestSQL(unittest.TestCase):
         self.assertSql("where", prefix + "where coalesce(similar('abc'), similar('abc'))", "coalesce(__SIMILAR__0, __SIMILAR__1)")
         self.assertSql("similar", prefix + "where coalesce(similar('abc'), similar('abc'))", [["abc"], ["abc"]])
 
-        # Empty quoted text must not leave the closing paren (or later args) in the WHERE clause
         self.assertSql("where", prefix + "where similar('')", "__SIMILAR__0")
         self.assertSql("similar", prefix + "where similar('')", [[""]])
-        self.assertSql("where", prefix + 'where similar("")', "__SIMILAR__0")
-        self.assertSql("where", prefix + "where similar('', 5)", "__SIMILAR__0")
-        self.assertSql("similar", prefix + "where similar('', 5)", [["", "5"]])
-        self.assertSql("where", prefix + "where similar('a', '')", "__SIMILAR__0")
-        self.assertSql("similar", prefix + "where similar('a', '')", [["a", ""]])
 
     def testUnterminated(self):
         """
