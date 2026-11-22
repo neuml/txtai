@@ -556,6 +556,9 @@ class TestSQL(unittest.TestCase):
         self.assertSql("where", prefix + "where coalesce(similar('abc'), similar('abc'))", "coalesce(__SIMILAR__0, __SIMILAR__1)")
         self.assertSql("similar", prefix + "where coalesce(similar('abc'), similar('abc'))", [["abc"], ["abc"]])
 
+        self.assertSql("where", prefix + "where similar('')", "__SIMILAR__0")
+        self.assertSql("similar", prefix + "where similar('')", [[""]])
+
     def testUnterminated(self):
         """
         Test unterminated clauses

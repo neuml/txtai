@@ -271,10 +271,7 @@ class Expression:
             x, token = self.readtoken(iterator)
             if token and token not in ["(", ",", ")"]:
                 # Strip enclosing quotes and accumulate tokens
-                if token.startswith(("'", '"')) and token.endswith(token[0]):
-                    token = token[1:-1]
-
-                params.append(token)
+                params.append(token[1:-1] if token.startswith(("'", '"')) and token.endswith(token[0]) else token)
 
             # Clear token from stream
             tokens[x] = None
