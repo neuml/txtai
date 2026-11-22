@@ -30,7 +30,7 @@ def llm(text: str, maxlength: Optional[int] = None, stream: Optional[bool] = Fal
 
     # Build keyword arguments
     params = [("maxlength", maxlength), ("stream", stream), ("stripthink", stripthink)]
-    kwargs = {key: value for key, value in params if value}
+    kwargs = {key: value for key, value in params if value is not None}
 
     # Run pipeline
     result = application.get().pipeline("llm", text, **kwargs)
@@ -61,7 +61,7 @@ def batchllm(
 
     # Build keyword arguments
     params = [("maxlength", maxlength), ("stream", stream), ("stripthink", stripthink)]
-    kwargs = {key: value for key, value in params if value}
+    kwargs = {key: value for key, value in params if value is not None}
 
     # Run pipeline
     result = application.get().pipeline("llm", texts, **kwargs)

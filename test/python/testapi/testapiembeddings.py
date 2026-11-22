@@ -469,6 +469,15 @@ class TestEmbeddings(unittest.TestCase):
         response = self.client.post("batchrag", json={"queries": ["bear", "bear"]}).json()
         self.assertEqual(len(response), 2)
 
+        # pylint: disable=W0613
+        def execute(*args, **kwargs):
+            return ["<think>reasoning</think>answer"]
+
+        # Test stripthink parameter
+        with patch.object(application.get().pipelines["rag"].model.generator, "execute", execute):
+            self.assertEqual(self.client.get("rag?query=bear&stripthink=false").json(), "<think>reasoning</think>answer")
+            self.assertEqual(self.client.post("batchrag", json={"queries": ["bear"], "stripthink": False}).json(), ["<think>reasoning</think>answer"])
+
     def testXReindexDisabled(self):
         """
         Test reindexing is disabled
