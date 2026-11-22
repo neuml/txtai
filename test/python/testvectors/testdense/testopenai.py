@@ -79,11 +79,14 @@ class TestOpenAI(unittest.TestCase):
 
         cls.httpd.shutdown()
 
-    @patch("txtai.vectors.dense.openai.OpenAI.ishub", return_value=False)
-    def testFactory(self, _):
+    @patch("txtai.vectors.dense.openai.Download")
+    def testFactory(self, download):
         """
         Test OpenAI method is derived when LiteLLM is not installed
         """
+
+        # Emulate models not found on the HF Hub
+        download.return_value.side_effect = OSError
 
         config = {"path": "openai/text-embedding-3-small"}
 
@@ -102,6 +105,11 @@ class TestOpenAI(unittest.TestCase):
             # Emulate OpenAI not installed
             with patch("txtai.vectors.dense.openai.OPENAI", False):
                 self.assertEqual(VectorsFactory.method(config), "transformers")
+
+        # Models on the HF Hub are not OpenAI API models
+        download.return_value.side_effect = None
+        download.return_value.return_value = "config.json"
+        self.assertFalse(OpenAI.ismodel("openai/gpt-oss-embeddings"))
 
     def testIndex(self):
         """

@@ -96,11 +96,14 @@ class TestOpenAI(unittest.TestCase):
 
         cls.httpd.shutdown()
 
-    @patch("txtai.pipeline.llm.openai.OpenAI.ishub", return_value=False)
-    def testFactory(self, _):
+    @patch("txtai.pipeline.llm.openai.Download")
+    def testFactory(self, download):
         """
         Test OpenAI method is derived when LiteLLM is not installed
         """
+
+        # Emulate models not found on the HF Hub
+        download.return_value.side_effect = OSError
 
         # LiteLLM is checked first when installed
         with patch("txtai.pipeline.llm.litellm.LiteLLM.ismodel", return_value=True):
@@ -115,8 +118,9 @@ class TestOpenAI(unittest.TestCase):
             self.assertIsInstance(model.generator, OpenAI)
 
         # Models on the HF Hub are not OpenAI API models
-        with patch("txtai.pipeline.llm.openai.OpenAI.ishub", return_value=True):
-            self.assertFalse(OpenAI.ismodel("openai/gpt-oss-20b"))
+        download.return_value.side_effect = None
+        download.return_value.return_value = "config.json"
+        self.assertFalse(OpenAI.ismodel("openai/gpt-oss-20b"))
 
     def testGeneration(self):
         """
