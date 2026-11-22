@@ -145,6 +145,22 @@ class TestGraph(unittest.TestCase):
         graph.delete([0])
         self.assertEqual(sorted(sorted(x) for x in graph.topics.values()), [[1], [2, 3]])
 
+    def testCommunityStopwordsCase(self):
+        """
+        Test configured stopwords are matched case-insensitively
+        """
+
+        graph = GraphFactory.create({"topics": {"stopwords": ["Python"]}})
+        graph.initialize()
+
+        graph.addnodes([(0, {"text": "Python programming"}), (1, {"text": "Python code"})])
+        graph.addedges([(0, 1, {"weight": 1.0})])
+
+        graph.addtopics()
+
+        self.assertTrue(graph.topics)
+        self.assertFalse([name for name in graph.topics if "python" in name])
+
     def testCustomBackend(self):
         """
         Test resolving a custom backend

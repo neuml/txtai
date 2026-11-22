@@ -25,7 +25,7 @@ class Topics:
         # Additional stopwords to ignore when building topic names
         self.stopwords = set()
         if "stopwords" in self.config:
-            self.stopwords.update(self.config["stopwords"])
+            self.stopwords.update(x.lower() for x in self.config["stopwords"])
 
     def __call__(self, graph):
         """
