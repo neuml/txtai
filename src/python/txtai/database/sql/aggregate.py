@@ -199,7 +199,7 @@ class Aggregate(SQL):
         names = {name.lower() for name in query["groupby"]}
         groupby = [column for column in columns if column.lower() in names or expressions[column].lower() in names]
         if groupby:
-            # Order by SQLite storage class, keeping integer and real values comparable
+            # Order by storage class, keeping integer and real values comparable
             results = sorted(results, key=lambda row: [self.sortkey(row[column]) for column in groupby])
             return [list(value) for _, value in itertools.groupby(results, operator.itemgetter(*groupby))]
 
@@ -233,7 +233,7 @@ class Aggregate(SQL):
             clause = clause.lower()
             column = next((column for column in columns if clause in (column.lower(), expressions[column].lower())), None)
 
-            # Order by columns must be in select clause. NULLs sort first like in SQLite (last when descending).
+            # Order by columns must be in select clause. NULLs sort first like in some databases (last when descending).
             if column:
                 results = sorted(results, key=lambda row, column=column: self.sortkey(row[column]), reverse=reverse)
 
@@ -241,7 +241,7 @@ class Aggregate(SQL):
 
     def sortkey(self, value):
         """
-        Gets a comparison key using SQLite's NULL, number, text and blob storage order.
+        Gets a comparison key using NULL, number, text and blob storage order.
 
         Args:
             value: SQL value
