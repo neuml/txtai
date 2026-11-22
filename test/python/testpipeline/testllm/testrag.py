@@ -228,3 +228,49 @@ class TestRAG(unittest.TestCase):
         ]:
             rag = RAG(self.embeddings, model, task=task)
             self.assertIsNotNone(rag)
+
+
+class TestRAGQuery(unittest.TestCase):
+    """
+    RAG query tests that do not need a model.
+    """
+
+    class Similarity:
+        """
+        Minimal similarity stand-in that scores every text the same.
+        """
+
+        def batchsimilarity(self, queries, texts):
+            """
+            Scores each text with the same value, in order.
+            """
+
+            return [[(x, 1.0) for x in range(len(texts))] for _ in queries]
+
+    def query(self, query, texts):
+        """
+        Runs a RAG query and returns the matching texts.
+        """
+
+        # Model is not used by RAG.query, any non-string object is used as is
+        rag = RAG(self.Similarity(), object())
+        return [text for _, text, _ in rag.query([query], texts)[0]]
+
+    def testRequired(self):
+        """
+        Test only the leading + is removed from required terms
+        """
+
+        texts = ["C++ guide", "C guide", "Rust guide"]
+
+        self.assertEqual(self.query("+guide", texts), texts)
+        self.assertEqual(self.query("+C++", texts), ["C++ guide"])
+
+    def testProhibited(self):
+        """
+        Test only the leading - is removed from prohibited terms
+        """
+
+        texts = ["well-known fact", "well done", "-well- formed"]
+
+        self.assertEqual(self.query("-well-", texts), ["well done"])
