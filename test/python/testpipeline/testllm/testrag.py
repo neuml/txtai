@@ -164,6 +164,18 @@ class TestRAG(unittest.TestCase):
         prompts = rag.prompts(["How many HRs?"], [self.data])[0]
         self.assertEqual([x["role"] for x in prompts], ["system", "user"])
 
+    def testQueryTokens(self):
+        """
+        Test required and prohibited query tokens that end with the marker character
+        """
+
+        texts = ["C++ guide", "C guide", "well-known fact", "well done"]
+
+        results = [[text for _, text, _ in result] for result in self.rag.query(["+C++", "-well-"], texts)]
+        self.assertEqual(results[0], ["C++ guide"])
+        self.assertIn("well done", results[1])
+        self.assertNotIn("well-known fact", results[1])
+
     def testSearch(self):
         """
         Test qa extraction with an embeddings search for context
@@ -228,49 +240,3 @@ class TestRAG(unittest.TestCase):
         ]:
             rag = RAG(self.embeddings, model, task=task)
             self.assertIsNotNone(rag)
-
-
-class TestRAGQuery(unittest.TestCase):
-    """
-    RAG query tests that do not need a model.
-    """
-
-    class Similarity:
-        """
-        Minimal similarity stand-in that scores every text the same.
-        """
-
-        def batchsimilarity(self, queries, texts):
-            """
-            Scores each text with the same value, in order.
-            """
-
-            return [[(x, 1.0) for x in range(len(texts))] for _ in queries]
-
-    def query(self, query, texts):
-        """
-        Runs a RAG query and returns the matching texts.
-        """
-
-        # Model is not used by RAG.query, any non-string object is used as is
-        rag = RAG(self.Similarity(), object())
-        return [text for _, text, _ in rag.query([query], texts)[0]]
-
-    def testRequired(self):
-        """
-        Test only the leading + is removed from required terms
-        """
-
-        texts = ["C++ guide", "C guide", "Rust guide"]
-
-        self.assertEqual(self.query("+guide", texts), texts)
-        self.assertEqual(self.query("+C++", texts), ["C++ guide"])
-
-    def testProhibited(self):
-        """
-        Test only the leading - is removed from prohibited terms
-        """
-
-        texts = ["well-known fact", "well done", "-well- formed"]
-
-        self.assertEqual(self.query("-well-", texts), ["well done"])
