@@ -51,17 +51,17 @@ def chat(
     if model in application.get().agents:
         result = application.get().agent(model, message, **kwargs)
 
-    # Embeddings search
+    # Embeddings search, generation parameters don't apply
     elif model == "embeddings":
-        result = application.get().search(message, 1, **kwargs)[0]["text"]
+        result = application.get().search(message, 1)[0]["text"]
 
     # Pipeline
     elif model in application.get().pipelines and model != "llm":
         result = application.get().pipeline(model, message, **kwargs)
 
-    # Workflow
+    # Workflow, generation parameters don't apply
     elif model in application.get().workflows:
-        result = list(application.get().workflow(model, [message], **kwargs))[0]
+        result = list(application.get().workflow(model, [message]))[0]
 
     # Default to running all messages through default LLM
     else:
@@ -180,7 +180,8 @@ class StreamingChatResponse:
         # All chunks of a response share the same id and creation time
         uid, created = str(uuid.uuid4()), int(time.time())
 
-        for chunk in result:
+        # Send a string result as a single chunk
+        for chunk in [result] if isinstance(result, str) else result:
             yield self.chunk(uid, created, model, {"content": chunk}, None)
 
         # Final chunk signals the end of the response
