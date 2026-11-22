@@ -642,6 +642,15 @@ class TestSQL(unittest.TestCase):
         self.assertSql("where", prefix + "where a=--1", "json_extract(data, '$.a') = - - 1")
         self.assertSql("select", "select a*-1 as x from txtai", "json_extract(data, '$.a') * - 1 as x")
 
+        # SQLite operators and keywords
+        self.assertSql("where", prefix + "where a glob 'a*'", "json_extract(data, '$.a') glob 'a*'")
+        self.assertSql("where", prefix + "where a NOT GLOB 'a*'", "json_extract(data, '$.a') NOT GLOB 'a*'")
+        self.assertSql("where", prefix + "where a regexp 'a'", "json_extract(data, '$.a') regexp 'a'")
+        self.assertSql("where", prefix + "where a like 'a!%' escape '!'", "json_extract(data, '$.a') like 'a!%' escape '!'")
+        self.assertSql("where", prefix + "where a = 'A' collate nocase", "json_extract(data, '$.a') = 'A' collate nocase")
+        self.assertSql("where", prefix + "where a collate nocase = b", "json_extract(data, '$.a') collate nocase = json_extract(data, '$.b')")
+        self.assertSql("orderby", prefix + "order by a collate nocase desc", "json_extract(data, '$.a') collate nocase desc")
+
     def testWhereCompound(self):
         """
         Test compound where clauses

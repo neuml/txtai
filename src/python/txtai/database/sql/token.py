@@ -23,7 +23,32 @@ class Token:
     CAST = ["cast", "try_cast"]
 
     # Default list of comparison operators
-    OPERATORS = ["=", "!=", "<>", ">", ">=", "<", "<=", "+", "-", "*", "/", "%", "||", "not", "between", "like", "is"]
+    OPERATORS = [
+        "=",
+        "!=",
+        "<>",
+        ">",
+        ">=",
+        "<",
+        "<=",
+        "+",
+        "-",
+        "*",
+        "/",
+        "%",
+        "||",
+        "not",
+        "between",
+        "like",
+        "is",
+        "glob",
+        "regexp",
+        "escape",
+        "collate",
+    ]
+
+    # Operator followed by a collation name, which is not a column, i.e. a collate nocase
+    COLLATE = ["collate"]
 
     # Default list of logic separators
     LOGIC_SEPARATORS = ["and", "or"]
@@ -148,6 +173,21 @@ class Token:
 
         # Token is a cast function
         return token and token.lower() in Token.CAST
+
+    @staticmethod
+    def iscollate(token):
+        """
+        Checks if token is a collate operator.
+
+        Args:
+            token: token to test
+
+        Returns:
+            True if this token is a collate operator, False otherwise
+        """
+
+        # Token is a collate operator
+        return token and token.lower() in Token.COLLATE
 
     @staticmethod
     def iscolumn(token):
