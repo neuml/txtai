@@ -151,6 +151,25 @@ class TestLLM(unittest.TestCase):
         self.assertEqual(consumed, ["  blue"])
         self.assertEqual("".join(result), "lue sky")
 
+    def testPromptText(self):
+        """
+        Test that prompt text is only removed from generated text for raw prompts
+        """
+
+        # pylint: disable=W0613
+        def execute(texts, *args, **kwargs):
+            return ["Hello! How can I help you today?" if isinstance(text, list) else f"{text} there" for text in texts]
+
+        model = LLM("test", method="txtai.pipeline.Generation")
+        model.generator.execute = execute
+
+        # Chat messages aren't echoed back in generated text
+        self.assertEqual(model("Hello"), "Hello! How can I help you today?")
+        self.assertEqual(model(["Hello", "Hello"]), ["Hello! How can I help you today?"] * 2)
+
+        # Raw prompts are echoed back in generated text
+        self.assertEqual(model("Hello", defaultrole="prompt"), "there")
+
     def testStop(self):
         """
         Test stop strings
