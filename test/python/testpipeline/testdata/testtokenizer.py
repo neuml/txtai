@@ -69,3 +69,7 @@ class TestTokenizer(unittest.TestCase):
         tokenizer = Tokenizer(lowercase=False, ngrams=3)
         result = tokenizer("NGRAM TEST")
         self.assertIn("NGR", result)
+
+        # Unique ngrams keep the order they first appear in
+        tokenizer = Tokenizer(ngrams={"ngrams": 2, "unique": True})
+        self.assertEqual(tokenizer("hello hello"), ["he", "el", "ll", "lo"])
