@@ -101,4 +101,4 @@ class Archive:
         compression = compression if compression else path.lower().split(".")[-1]
 
         # Create compression instance
-        return Zip() if compression == "zip" else Tar()
+        return Zip() if compression == "zip" else Tar(compression)
