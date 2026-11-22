@@ -172,5 +172,5 @@ class Tokenizer(Pipeline):
                     if not edge or x == 0:
                         ngrams.append(word[x : x + n])
 
-        # Reduce to unique ngrams, if necessary and return
-        return list(set(ngrams)) if unique else ngrams
+        # Reduce to unique ngrams in the order they first appear, if necessary and return
+        return list(dict.fromkeys(ngrams)) if unique else ngrams
