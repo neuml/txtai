@@ -164,6 +164,18 @@ class TestRAG(unittest.TestCase):
         prompts = rag.prompts(["How many HRs?"], [self.data])[0]
         self.assertEqual([x["role"] for x in prompts], ["system", "user"])
 
+    def testQueryTokens(self):
+        """
+        Test required and prohibited query tokens that end with the marker character
+        """
+
+        texts = ["C++ guide", "C guide", "well-known fact", "well done"]
+
+        results = [[text for _, text, _ in result] for result in self.rag.query(["+C++", "-well-"], texts)]
+        self.assertEqual(results[0], ["C++ guide"])
+        self.assertIn("well done", results[1])
+        self.assertNotIn("well-known fact", results[1])
+
     def testSearch(self):
         """
         Test qa extraction with an embeddings search for context
