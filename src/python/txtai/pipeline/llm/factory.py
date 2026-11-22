@@ -9,6 +9,7 @@ from .huggingface import HFGeneration
 from .litellm import LiteLLM
 from .litert import LiteRT
 from .llama import LlamaCpp
+from .openai import OpenAI
 from .opencode import OpenCode
 
 
@@ -43,6 +44,10 @@ class GenerationFactory:
         if method == "llama.cpp":
             return LlamaCpp(path, **kwargs)
 
+        # OpenAI generation
+        if method == "openai":
+            return OpenAI(path, **kwargs)
+
         # OpenCode generation
         if method == "opencode":
             return OpenCode(path, **kwargs)
@@ -74,6 +79,8 @@ class GenerationFactory:
                 method = "litert"
             elif LlamaCpp.ismodel(path):
                 method = "llama.cpp"
+            elif OpenAI.ismodel(path):
+                method = "openai"
             elif OpenCode.ismodel(path):
                 method = "opencode"
             else:

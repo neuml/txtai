@@ -52,6 +52,7 @@ class TestOptional(unittest.TestCase):
             "onnxmltools",
             "onnxruntime",
             "onnxruntime.quantization",
+            "openai",
             "pandas",
             "peft",
             "pgvector",
@@ -264,6 +265,7 @@ class TestOptional(unittest.TestCase):
             Microphone,
             MLOnnx,
             Objects,
+            OpenAI,
             OpenCode,
             Segmentation,
             Tabular,
@@ -323,6 +325,9 @@ class TestOptional(unittest.TestCase):
 
         with self.assertRaises(ImportError):
             Objects()
+
+        with self.assertRaises(ImportError):
+            OpenAI("openai/gpt-4o")
 
         with self.assertRaises(ImportError):
             OpenCode("opencode")
@@ -391,6 +396,9 @@ class TestOptional(unittest.TestCase):
 
         with self.assertRaises(ImportError):
             VectorsFactory.create({"method": "onnx", "path": "sentence-transformers/all-MiniLM-L6-v2/onnx/model.onnx"}, None)
+
+        with self.assertRaises(ImportError):
+            VectorsFactory.create({"method": "openai", "path": "openai/text-embedding-3-small"}, None)
 
         with self.assertRaises(ImportError):
             VectorsFactory.create({"method": "sentence-transformers", "path": "sentence-transformers/nli-mpnet-base-v2"}, None)

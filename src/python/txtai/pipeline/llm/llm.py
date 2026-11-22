@@ -19,6 +19,7 @@ class LLM(Pipeline):
       - Local LLMs with Hugging Face Transformers
       - Local LLMs with llama.cpp
       - Remote API LLMs with LiteLLM
+      - Remote API LLMs with the OpenAI client
       - Custom generation implementations
     """
 
