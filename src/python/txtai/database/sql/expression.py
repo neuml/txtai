@@ -270,14 +270,8 @@ class Expression:
         while token and token != ")":
             x, token = self.readtoken(iterator)
             if token and token not in ["(", ",", ")"]:
-                # Strip enclosing quotes and accumulate tokens. Keep the loop
-                # variable as read so an empty quoted argument ('' / "") does not
-                # end the loop early and leave the closing paren in the clause.
-                value = token
-                if value.startswith(("'", '"')) and value.endswith(value[0]):
-                    value = value[1:-1]
-
-                params.append(value)
+                # Strip enclosing quotes and accumulate tokens
+                params.append(token[1:-1] if token.startswith(("'", '"')) and token.endswith(token[0]) else token)
 
             # Clear token from stream
             tokens[x] = None
