@@ -44,16 +44,11 @@ class Token:
         "glob",
         "regexp",
         "escape",
-        "isnull",
-        "notnull",
         "collate",
     ]
 
     # Operator followed by a collation name, which is not a column, i.e. a collate nocase
     COLLATE = ["collate"]
-
-    # Operators that take no right side, i.e. a isnull
-    POSTFIX = ["isnull", "notnull"]
 
     # Default list of logic separators
     LOGIC_SEPARATORS = ["and", "or"]
@@ -339,21 +334,6 @@ class Token:
         return token and token.lower() in Token.OPERATORS
 
     @staticmethod
-    def ispostfix(token):
-        """
-        Checks if token is an operator that takes no right side.
-
-        Args:
-            token: token to test
-
-        Returns:
-            True if this token is a postfix operator, False otherwise
-        """
-
-        # Token is a postfix operator
-        return token and token.lower() in Token.POSTFIX
-
-    @staticmethod
     def isquoted(token):
         """
         Checks if token is quoted.
@@ -448,10 +428,6 @@ class Token:
         # Wildcards have no whitespace. Need special case since * is also multiply which does have whitespace.
         if token in ["*"] and (not text or text.endswith((" ", "("))):
             return token
-
-        # Postfix operators have nothing after them, only add leading whitespace
-        if Token.ispostfix(token):
-            return f" {token}" if not text.endswith(" ") else token
 
         # Operator whitespace
         if Token.isoperator(token) or Token.islogicseparator(token) or token.lower() in ["in"]:

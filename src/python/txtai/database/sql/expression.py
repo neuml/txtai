@@ -433,10 +433,6 @@ class Expression:
             next(iterator, None)
             return
 
-        # Postfix operators have no right side, i.e. a isnull
-        if Token.ispostfix(token):
-            return
-
         # Leave a parenthesized right side to the caller, which tracks paren depth
         if Token.isgroupstart(Token.get(tokens, x + 1)):
             return
