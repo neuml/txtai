@@ -49,15 +49,7 @@ Builds embeddings using a [Model2Vec](https://github.com/MinishLab/model2vec) mo
 
 ### openai
 
-Builds embeddings using the [OpenAI client](https://github.com/openai/openai-python). Works with the OpenAI API and any OpenAI-compatible endpoint. Client parameters such as `api_key` and `base_url` (or `api_base`) are read from the `vectors` configuration, all other `vectors` parameters (e.g. `dimensions`) are passed to the embeddings call. An API key is required, set with `api_key` or the `OPENAI_API_KEY` environment variable. Any placeholder value works for local servers that don't check keys.
-
-```yaml
-path: nomic-embed-text
-method: openai
-vectors:
-  base_url: http://localhost:11434/v1
-  api_key: ollama
-```
+Builds embeddings using the [OpenAI client](https://github.com/openai/openai-python). Works with the OpenAI API and any OpenAI-compatible endpoint. Client parameters such as `api_key` and `base_url` are set in the `vectors` configuration.
 
 ### words
 

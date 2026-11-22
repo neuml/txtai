@@ -71,7 +71,7 @@ The LLM pipeline automatically detects the underlying LLM framework. This can al
 
 See the [LiteLLM documentation](https://litellm.vercel.app/docs/providers) for the options available with LiteLLM models.
 
-The OpenAI method works with the OpenAI API and any OpenAI-compatible endpoint. Client parameters such as `api_key` and `base_url` (or `api_base`) configure the client, all other parameters are passed to the API call. An API key is required, set with `api_key` or the `OPENAI_API_KEY` environment variable. Any placeholder value works for local servers that don't check keys. When the method isn't set, LiteLLM takes priority for `openai/` model paths if it's installed.
+The OpenAI method works with the OpenAI API and any OpenAI-compatible endpoint. Client parameters such as `api_key` and `base_url` configure the client, all other parameters are passed to the API call.
 
 See the [OpenCode documentation](https://opencode.ai/docs/server/) for more on how to integrate the LLM pipeline with a running OpenCode instance.
 
