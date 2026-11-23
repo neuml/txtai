@@ -206,6 +206,21 @@ class TestLLM(unittest.TestCase):
             self.assertEqual(model("Hello, how are", stripthink=True), "you")
             self.assertEqual(model("Hello, how are", stripthink=False), method()[0])
 
+    def testStripThinkPrompt(self):
+        """
+        Test stripthink parameter when the chat template adds the opening think tag to the prompt
+        """
+
+        # pylint: disable=W0613
+        def execute(*args, **kwargs):
+            return ["test</think>\n\nyou"]
+
+        model = LLM("hf-internal-testing/tiny-random-LlamaForCausalLM")
+        model.generator.execute = execute
+
+        self.assertEqual(model("Hello, how are", stripthink=True), "you")
+        self.assertEqual(model("Hello, how are", stripthink=False), execute()[0].strip())
+
     def testStripThinkStream(self):
         """
         Test stripthink parameter with streaming output

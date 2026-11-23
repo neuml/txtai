@@ -200,6 +200,11 @@ class Generation:
         """
 
         text = re.sub(r"(?s)<think>.+?</think>", "", text)
+
+        # Models with chat templates that add the opening think tag to the prompt only generate the closing tag
+        head, tag, tail = text.partition("</think>")
+        text = tail if tag and "<think>" not in head else text
+
         text = text.split("<|channel|>final<|message|>", 1)
         text = text[1] if len(text) > 1 else text[0]
         return text
