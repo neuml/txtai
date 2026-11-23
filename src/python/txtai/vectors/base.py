@@ -242,7 +242,8 @@ class Vectors:
     def dot(self, queries, data):
         """
         Calculates the dot product similarity between queries and documents. This method
-        assumes each of the inputs are normalized.
+        assumes each of the inputs are normalized. Quantized vectors are scored as
+        1.0 - (hamming distance / total number of bits), the same as ANN search.
 
         Args:
             queries: queries
@@ -251,6 +252,11 @@ class Vectors:
         Returns:
             dot product scores
         """
+
+        # Quantized vectors are packed bits. Mapping each bit to +/-1 makes the dot product a linear function of the hamming distance.
+        if queries.dtype == np.uint8:
+            queries, data = [np.unpackbits(x, axis=1).astype(np.float32) * 2 - 1 for x in (queries, data)]
+            return (0.5 + np.dot(queries, data.T).astype(np.float64) / (2 * queries.shape[1])).tolist()
 
         return np.dot(queries, data.T).tolist()
 

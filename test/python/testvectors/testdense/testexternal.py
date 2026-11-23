@@ -9,6 +9,7 @@ from unittest.mock import patch
 
 import numpy as np
 
+from txtai import Embeddings
 from txtai.vectors import External, VectorsFactory
 
 
@@ -63,6 +64,22 @@ class TestExternal(unittest.TestCase):
         # Test shape of serialized embeddings
         with open(stream, "rb") as queue:
             self.assertEqual(np.load(queue).shape, (500, 768))
+
+    def testQuantizeSimilarity(self):
+        """
+        Test similarity with quantized vectors scores the same as search
+        """
+
+        vectors = {str(x): row for x, row in enumerate(np.random.rand(10, 50) - 0.5)}
+        texts = list(vectors)
+
+        for bits in [1, 3, 8]:
+            embeddings = Embeddings({"transform": lambda data: [vectors[x] for x in data], "quantize": bits})
+            embeddings.index(texts)
+
+            results = dict(embeddings.search("0", len(texts)))
+            for uid, score in embeddings.similarity("0", texts):
+                self.assertAlmostEqual(score, results[uid], places=5)
 
     @patch.dict(os.environ, {"ALLOW_RESOLVE_TRANSFORM": "True"})
     def testResolution(self):
