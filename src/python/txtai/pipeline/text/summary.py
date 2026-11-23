@@ -47,8 +47,8 @@ class Summary(HFModel):
         texts = text if isinstance(text, list) else [text]
         params = [(x, text if len(text) >= check else None) for x, text in enumerate(texts)]
 
-        # Build keyword arguments
-        kwargs = self.args(minlength, maxlength)
+        # Build keyword arguments, call arguments take precedence over defaults
+        kwargs = {**self.args(minlength, maxlength), **kwargs}
 
         inputs = [text for _, text in params if text]
         if inputs:
