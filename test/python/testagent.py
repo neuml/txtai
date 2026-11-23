@@ -13,9 +13,11 @@ from unittest.mock import patch
 
 from datetime import datetime
 
-from smolagents import CodeAgent, PythonInterpreterTool
+from pydantic_ai.exceptions import UsageLimitExceeded
+from smolagents import CodeAgent, PythonInterpreterTool, ToolCallingAgent
 
 from txtai.agent import Agent
+from txtai.agent.pydanticai import PydanticProcess, PydanticTool
 from txtai.agent.tool import BashTool, ToolFactory
 from txtai.embeddings import Embeddings
 
@@ -137,6 +139,212 @@ class TestAgent(unittest.TestCase):
 
         agent = Agent(method="code", llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_iterations=1)
         self.assertIsInstance(agent.process, CodeAgent)
+
+    def testBackend(self):
+        """
+        Test agent backend selection
+        """
+
+        # Default backend is smolagents
+        agent = Agent(llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=1)
+        self.assertIsInstance(agent.process, ToolCallingAgent)
+
+        agent = Agent(backend="smolagents", llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=1)
+        self.assertIsInstance(agent.process, ToolCallingAgent)
+
+        agent = Agent(backend="pydantic", llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=1)
+        self.assertIsInstance(agent.process, PydanticProcess)
+
+        # Unknown backends raise an error
+        with self.assertRaises(ValueError):
+            Agent(backend="unknown", llm="hf-internal-testing/tiny-random-LlamaForCausalLM")
+
+    def testPydantic(self):
+        """
+        Test executing main agent loop with the pydantic backend
+        """
+
+        agent = Agent(backend="pydantic", llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=1)
+
+        # Test plain text answer
+        agent.process.model.llm = lambda *args, **kwargs: "Hi"
+        self.assertEqual(agent("Hello"), "Hi")
+
+        # Test final_answer action format
+        agent.process.model.llm = lambda *args, **kwargs: 'Action:\n{"name": "final_answer", "arguments": "Hi"}'
+        self.assertEqual(agent("Hello"), "Hi")
+
+        agent.process.model.llm = lambda *args, **kwargs: 'Action:\n{"name": "final_answer", "arguments": {"answer": "Hi"}}'
+        self.assertEqual(agent("Hello"), "Hi")
+
+        # Test streaming
+        self.assertEqual(list(agent("Hello", stream=True)), ["Hi"])
+
+    def testPydanticConfig(self):
+        """
+        Test pydantic backend configuration
+        """
+
+        # Test loading model from a dictionary and custom instructions
+        agent = Agent(
+            backend="pydantic", model={"path": "hf-internal-testing/tiny-random-LlamaForCausalLM"}, instructions="Be brief", max_iterations=1
+        )
+
+        messages = []
+        agent.process.model.llm = lambda inputs, **kwargs: messages.extend(inputs) or "Hi"
+
+        self.assertEqual(agent("Hello"), "Hi")
+        self.assertEqual(messages[0], {"role": "system", "content": "Be brief"})
+        self.assertEqual(messages[1]["role"], "user")
+
+        # Test maxlength is passed to the LLM
+        agent.process.model.llm = lambda inputs, **kwargs: str(kwargs["maxlength"])
+        self.assertEqual(agent("Hello", maxlength=1024), "1024")
+
+        # Code agents aren't supported
+        with self.assertRaises(ValueError):
+            Agent(backend="pydantic", method="code", llm="hf-internal-testing/tiny-random-LlamaForCausalLM")
+
+    def testPydanticImportError(self):
+        """
+        Test the pydantic backend raises an error when pydantic-ai-slim isn't installed
+        """
+
+        with patch.dict(sys.modules):
+            # Unload the pydantic backend and make pydantic_ai unavailable
+            for name in list(sys.modules):
+                if name.startswith(("pydantic_ai", "txtai.agent.pydanticai")):
+                    del sys.modules[name]
+
+            sys.modules["pydantic_ai"] = None
+
+            with self.assertRaises(ImportError) as error:
+                Agent(backend="pydantic", llm="hf-internal-testing/tiny-random-LlamaForCausalLM")
+
+            self.assertIn('install "agent" extra', str(error.exception))
+            self.assertTrue(error.exception.__cause__.name.startswith("pydantic_ai"))
+
+            # smolagents backend still works without pydantic_ai
+            self.assertIsNotNone(Agent(llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=1))
+
+    def testPydanticMemory(self):
+        """
+        Test agent memory with the pydantic backend
+        """
+
+        agent = Agent(backend="pydantic", llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=1, memory=5)
+
+        messages = []
+        agent.process.model.llm = lambda inputs, **kwargs: messages.append(inputs) or "Hi"
+
+        self.assertEqual(agent("Hello"), "Hi")
+        self.assertEqual(agent("Goodbye"), "Hi")
+        self.assertEqual(len(agent.memory.get(None)), 2)
+
+        # Prior requests are added to the prompt
+        self.assertIn("User: Hello\nAssistant: Hi", messages[-1][-1]["content"])
+
+    def testPydanticSteps(self):
+        """
+        Test the pydantic backend stops once max steps is reached
+        """
+
+        def search(query: str) -> str:
+            """
+            Runs a search
+
+            Args:
+                query: search query
+
+            Returns:
+                search results
+            """
+
+            return query
+
+        agent = Agent(backend="pydantic", tools=[search], llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=2)
+
+        # LLM that never stops calling tools
+        agent.process.model.llm = lambda *args, **kwargs: 'Action:\n{"name": "search", "arguments": {"query": "txtai"}}'
+
+        with self.assertRaises(UsageLimitExceeded):
+            agent("Hello")
+
+    def testPydanticTools(self):
+        """
+        Test tool calling with the pydantic backend
+        """
+
+        def weather(city: str) -> str:
+            """
+            Gets the weather for a city
+
+            Args:
+                city: city name
+
+            Returns:
+                weather
+            """
+
+            return f"sunny in {city}"
+
+        agent = Agent(backend="pydantic", tools=[weather, "defaults"], llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=5)
+
+        # Tools dictionary has the original tools
+        self.assertEqual(agent.tools["weather"]("Paris"), "sunny in Paris")
+        self.assertIn("bash", agent.tools)
+
+        # LLM that calls a tool, sends an invalid tool call, then answers with the tool result
+        responses = iter(
+            [
+                'Action:\n{"name": "weather", "arguments": {"city": "Paris"}}\nObservation: rainy',
+                "Action:\n{invalid",
+                "Done",
+            ]
+        )
+
+        messages = []
+        agent.process.model.llm = lambda inputs, **kwargs: messages.append(inputs) or next(responses)
+
+        self.assertEqual(agent("What is the weather in Paris?"), "Done")
+
+        # Tools are described in the system prompt
+        self.assertIn("- weather: Gets the weather for a city", messages[0][0]["content"])
+        self.assertIn('"city": {"type": "string", "description": "city name"}', messages[0][0]["content"])
+
+        # Tool call and result are sent back to the LLM, generated observations are ignored
+        self.assertEqual(messages[1][-2], {"role": "assistant", "content": 'Action:\n{"name": "weather", "arguments": {"city": "Paris"}}'})
+        self.assertEqual(messages[1][-1], {"role": "user", "content": "Observation: sunny in Paris"})
+
+        # Invalid tool calls are sent back to the LLM to retry
+        self.assertEqual(messages[2][-1]["role"], "user")
+        self.assertIn("Unknown tool name", messages[2][-1]["content"])
+
+    def testPydanticToolSchema(self):
+        """
+        Test building a JSON schema from tool inputs
+        """
+
+        schema = PydanticTool.schema(
+            {
+                "query": {"type": "string", "description": "search query"},
+                "limit": {"type": "integer", "description": "max results", "nullable": True},
+                "data": {"type": "any", "description": "any data"},
+            }
+        )
+
+        self.assertEqual(
+            schema,
+            {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "search query"},
+                    "limit": {"type": "integer", "description": "max results"},
+                    "data": {"description": "any data"},
+                },
+                "required": ["query", "data"],
+            },
+        )
 
     def testSkill(self):
         """

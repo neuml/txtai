@@ -2,7 +2,7 @@
 
 An agent takes two main arguments, an LLM and a list of tools.
 
-The txtai agent framework is built with [smolagents](https://github.com/huggingface/smolagents). Additional options can be passed in the `Agent` constructor.
+The txtai agent framework supports [smolagents](https://github.com/huggingface/smolagents) (default) and [Pydantic AI](https://github.com/pydantic/pydantic-ai) as backends. Additional options can be passed in the `Agent` constructor.
 
 ```python
 from datetime import datetime
@@ -38,6 +38,29 @@ agent = Agent(
     tools=[today, wikipedia, arxiv, "websearch"],
 )
 ```
+
+## backend
+
+```yaml
+backend: smolagents|pydantic
+```
+
+Sets the agent backend. Defaults to `smolagents`. Both backends use the txtai [LLM pipeline](../../pipeline/text/llm) and support the same tools.
+
+```python
+agent = Agent(
+    backend="pydantic",
+    model="Qwen/Qwen3-4B-Instruct-2507",
+    tools=["websearch"],
+)
+```
+
+The `pydantic` backend has the following differences.
+
+- Only the `tool` [method](#method) is supported
+- `max_steps` sets the maximum number of LLM calls. An error is raised when it's exceeded.
+- Streaming returns the final answer as a single chunk
+- Additional options are passed to the [Pydantic AI Agent](https://pydantic.dev/docs/ai/core-concepts/agent/)
 
 ## model
 
@@ -135,6 +158,8 @@ method: code|tool
 ```
 
 Sets the agent method. Supports either a `code` or `tool` (default) calling agent. A code agent generates Python code and executes that. A tool calling agent generates JSON blocks and calls the agents within those blocks.
+
+Code agents are only supported with the `smolagents` backend.
 
 Additional options can be directly passed. See [CodeAgent](https://huggingface.co/docs/smolagents/main/en/reference/agents#smolagents.CodeAgent) or [ToolCallingAgent](https://huggingface.co/docs/smolagents/main/en/reference/agents#smolagents.ToolCallingAgent) for a list of parameters.
 
