@@ -268,16 +268,18 @@ class TestSQL(unittest.TestCase):
         """
 
         results = [
+            {"id": "blob-two", "price": b"2"},
             {"id": "text-two", "price": "2"},
             {"id": "real", "price": 2.0},
             {"id": "null", "price": None},
             {"id": "one", "price": 1},
             {"id": "text-ten", "price": "10"},
+            {"id": "blob-ten", "price": b"10"},
             {"id": "integer", "price": 2},
         ]
         for direction, expected in [
-            ("asc", ["null", "one", "real", "integer", "text-ten", "text-two"]),
-            ("desc", ["text-two", "text-ten", "real", "integer", "one", "null"]),
+            ("asc", ["null", "one", "real", "integer", "text-ten", "text-two", "blob-ten", "blob-two"]),
+            ("desc", ["blob-two", "blob-ten", "text-two", "text-ten", "real", "integer", "one", "null"]),
         ]:
             with self.subTest(direction=direction):
                 self.assertEqual([row["id"] for row in Aggregate()(f"select id, price from txtai order by price {direction}", results)], expected)
