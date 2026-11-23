@@ -14,7 +14,7 @@ from ..graph import GraphFactory
 from ..scoring import ScoringFactory
 from ..vectors import VectorsFactory
 
-from .index import Action, Configuration, Functions, Indexes, IndexIds, Reducer, Stream, Transform
+from .index import Action, Configuration, Functions, Indexes, IndexIds, MultiVector, Reducer, Stream, Transform
 from .search import Explain, Ids, Query, Search, Terms
 
 
@@ -71,6 +71,9 @@ class Embeddings:
 
         # Subindexes for this embeddings instance
         self.indexes = None
+
+        # Optional stored multi-vectors
+        self.multivector = None
 
         # Models cache
         self.models = models
@@ -263,6 +266,10 @@ class Embeddings:
             # Delete ids from subindexes
             if self.indexes:
                 self.indexes.delete(indices)
+
+            # Delete stored multi-vector rows
+            if self.multivector:
+                self.multivector.delete(indices)
 
             # Delete ids from graph
             if self.graph:
@@ -611,6 +618,11 @@ class Embeddings:
         if self.graph:
             self.graph.load(f"{path}/graph")
 
+        # Stored multi-vectors
+        self.multivector = self.createmultivector()
+        if self.multivector:
+            self.multivector.load(f"{path}/multivector")
+
         # Dense vectors - transforms data to embeddings vectors
         self.model = self.loadvectors()
 
@@ -668,6 +680,10 @@ class Embeddings:
             if self.graph:
                 self.graph.save(f"{path}/graph")
 
+            # Save stored multi-vectors
+            if self.multivector:
+                self.multivector.save(f"{path}/multivector")
+
             # If this is an archive, save it
             if apath:
                 self.archive.save(apath)
@@ -710,6 +726,11 @@ class Embeddings:
         if self.indexes:
             self.indexes.close()
             self.indexes = None
+
+        # Close stored multi-vectors
+        if self.multivector:
+            self.multivector.close()
+            self.multivector = None
 
         # Close vectors model
         if self.model:
@@ -837,6 +858,9 @@ class Embeddings:
         # Create graph, if necessary
         self.graph = self.creategraph()
 
+        # Create stored multi-vectors, if necessary
+        self.multivector = self.createmultivector()
+
     def defaults(self):
         """
         Apply default parameters to current configuration.
@@ -854,6 +878,10 @@ class Embeddings:
         # Expand graph shortcuts
         if self.config.get("graph") is True:
             self.config["graph"] = {}
+
+        # Expand multi-vector shortcut
+        if self.config.get("multivector") is True:
+            self.config["multivector"] = {}
 
         # Check if default model should be loaded
         if not self.model and (self.defaultallowed() or self.config.get("dense")):
@@ -1030,6 +1058,22 @@ class Embeddings:
             return GraphFactory.create(config)
 
         return None
+
+    def createmultivector(self):
+        """
+        Creates the optional stored multi-vector component from configuration.
+
+        Returns:
+            new multi-vector component, if enabled in config
+        """
+
+        # Free existing resources
+        if self.multivector:
+            self.multivector.close()
+
+        # Empty dictionaries enable the encoder defaults; other falsy values disable it
+        config = self.config.get("multivector")
+        return MultiVector(self, config) if isinstance(config, dict) or config else None
 
     def createids(self, ids=None):
         """
