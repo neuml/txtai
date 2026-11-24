@@ -115,3 +115,50 @@ class TestLabels(unittest.TestCase):
         for label, uid in config.label2id.items():
             self.assertEqual(labels("This is the best sentence ever", labels=[label.lower()])[0][0], uid)
             self.assertEqual(labels("This is the best sentence ever", labels=[str(uid)])[0][0], uid)
+            self.assertEqual(labels("This is the best sentence ever", labels=[uid])[0][0], uid)
+
+    def testLabelFixedFlattenFilter(self):
+        """
+        Test labels with a fixed label text classification model, filtering flattened output
+        """
+
+        labels = Labels(dynamic=False)
+        text = "This is the best sentence ever"
+        config = labels.pipeline.model.config
+
+        for uid, name in config.id2label.items():
+            mixed = name[:1].lower() + name[1:].upper()
+
+            self.assertEqual(labels(text, labels=[name.upper()], flatten=True)[0], name)
+            self.assertEqual(labels(text, labels=[name.lower()], flatten=True)[0], name)
+            self.assertEqual(labels(text, labels=[mixed], flatten=True)[0], name)
+            self.assertEqual(labels(text, labels=[str(uid)], flatten=True)[0], name)
+            self.assertEqual(labels(text, labels=[uid], flatten=True)[0], name)
+
+            filtered = labels(text, labels=[uid], flatten=False)
+            self.assertEqual(len(filtered), 1)
+            self.assertEqual(filtered[0][0], uid)
+
+            self.assertEqual(labels(text, labels=[name], flatten=0.0), [name])
+            self.assertEqual(labels(text, labels=[name], flatten=1.1), [])
+
+        self.assertEqual(labels(text, labels=["unknown"], flatten=True), [])
+        self.assertEqual(labels(text, labels=[str(max(config.id2label) + 1)], flatten=True), [])
+        self.assertEqual(labels(text, labels=[str(max(config.id2label) + 1)], flatten=False), [])
+        self.assertEqual(labels(text, labels=[max(config.id2label) + 1], flatten=False), [])
+        self.assertEqual(labels(text, labels=[max(config.id2label) + 1], flatten=True), [])
+
+        self.assertEqual(labels(text, labels=["unknown"], flatten=False), [])
+        self.assertTrue(labels(text, labels=["unknown"], flatten=1.1) == [])
+
+    def testLabelFixedWithoutFilter(self):
+        """
+        Test fixed label behavior when no label filter is provided
+        """
+
+        labels = Labels(dynamic=False)
+        text = "This is the best sentence ever"
+
+        self.assertTrue(labels(text, flatten=True))
+        self.assertEqual(len(labels(text, flatten=False)), len(labels.labels()))
+        self.assertEqual(labels(text, labels=None, flatten=False), labels(text, flatten=False))

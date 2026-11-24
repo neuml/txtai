@@ -95,11 +95,50 @@ class Labels(HFPipeline):
                     yield [(labels.index(label), result["scores"][x]) for x, label in enumerate(result["labels"])]
             else:
                 if flatten is not None and flatten is not False:
-                    result = [x["label"] for x in result if x["score"] >= threshold and (not labels or x["label"] in labels)]
+                    matches = self.resolve(labels)
+                    config = self.pipeline.model.config
+                    result = [
+                        x["label"]
+                        for x in result
+                        if x["score"] >= threshold
+                        and (matches is None or config.label2id.get(x["label"]) in matches)
+                    ]
                     yield result[:1] if isinstance(flatten, bool) else result
                 else:
                     # Filter results using labels, if provided
                     yield self.limit(result, labels)
+
+    def resolve(self, labels):
+        """
+        Resolve label names and IDs into valid model label IDs.
+
+        Args:
+            labels: list of labels or None
+
+        Returns:
+            list of resolved label IDs or None when no filter is provided
+        """
+
+        if not labels:
+            return None
+
+        config = self.pipeline.model.config
+        names = {name.lower(): uid for name, uid in config.label2id.items()}
+        names.update({name.lower(): uid for uid, name in config.id2label.items()})
+
+        matches = []
+        for label in labels:
+            if isinstance(label, str):
+                uid = int(label) if label.isdigit() else names.get(label.lower())
+            elif isinstance(label, int) and not isinstance(label, bool):
+                uid = label
+            else:
+                uid = None
+
+            if uid in config.id2label and uid not in matches:
+                matches.append(uid)
+
+        return matches
 
     def limit(self, result, labels):
         """
@@ -120,17 +159,7 @@ class Labels(HFPipeline):
         result = [(config.label2id.get(x["label"], 0), x["score"]) for x in result]
 
         if labels:
-            # Map lowercase label names to label ids
-            names = {x.lower(): uid for x, uid in config.label2id.items()}
-
-            matches = []
-            for label in labels:
-                # Resolve label to a label id, by id or by name
-                uid = int(label) if label.isdigit() else names.get(label.lower())
-
-                # Add label match, if found
-                if uid in config.id2label:
-                    matches.append(uid)
+            matches = self.resolve(labels)
 
             return [(label, score) for label, score in result if label in matches]
 
