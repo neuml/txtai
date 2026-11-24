@@ -148,6 +148,26 @@ class TestTabular(unittest.TestCase):
         self.assertEqual(uid, 0)
         self.assertEqual(text, "This is a test")
 
+    def testMixedInputsKeepOrder(self):
+        """
+        Preserve dictionary positions among nested inputs and retain shared columns.
+        """
+
+        first = {"id": "a", "text": "first", "extra": "kept"}
+        last = {"id": "b", "text": "last"}
+        group = [{"id": "c", "text": "nested"}]
+
+        for content in (False, True, []):
+            with self.subTest(content=content):
+                rows = Tabular("id", ["text"], content)([first, group, last])
+                size = 2 if isinstance(content, list) or content else 1
+                self.assertEqual(rows[0][:2], ("a", "first"))
+                self.assertEqual(rows[size][0][:2], ("c", "nested"))
+                self.assertEqual(rows[size + 1][:2], ("b", "last"))
+                if content is True:
+                    self.assertEqual(rows[1][1]["extra"], "kept")
+                    self.assertIsNone(rows[-1][1]["extra"])
+
     def testMissingColumns(self):
         """
         Test rows with uneven or missing columns
