@@ -4,6 +4,8 @@ Summary module tests
 
 import unittest
 
+from unittest.mock import patch
+
 from txtai.pipeline import Summary
 
 
@@ -61,6 +63,17 @@ class TestSummary(unittest.TestCase):
             self.assertEqual(self.summary(texts, maxlength=15), summaries)
         finally:
             self.summary.batchsize = batchsize
+
+    def testSummaryKwargs(self):
+        """
+        Test that additional keyword arguments are passed to the model
+        """
+
+        with patch.object(self.summary.model, "generate", wraps=self.summary.model.generate) as generate:
+            self.summary(self.text, maxlength=15, num_beams=1, no_repeat_ngram_size=2)
+
+        self.assertEqual(generate.call_args.kwargs["num_beams"], 1)
+        self.assertEqual(generate.call_args.kwargs["no_repeat_ngram_size"], 2)
 
     def testSummaryNoLength(self):
         """
