@@ -199,7 +199,10 @@ class Generation:
             text with thinking tokens removed
         """
 
-        text = re.sub(r"(?s)<think>.+?</think>", "", text)
+        # Remove thinking blocks. The opening tag is optional since models with chat templates that add it
+        # to the prompt only generate the closing tag.
+        text = re.sub(r"(?s)(?:<think>)?.*?</think>", "", text)
+
         text = text.split("<|channel|>final<|message|>", 1)
         text = text[1] if len(text) > 1 else text[0]
         return text
