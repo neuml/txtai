@@ -36,13 +36,6 @@ class TestLabels(unittest.TestCase):
 
         self.assertEqual(self.labels("This is the best sentence ever", ["positive", "negative"])[0][0], 0)
 
-    def testLabelFlatten(self):
-        """
-        Test labels with single text input, flattened to top text labels
-        """
-
-        self.assertEqual(self.labels("This is the best sentence ever", ["positive", "negative"], flatten=True)[0], "positive")
-
     def testLabelBatch(self):
         """
         Test labels with multiple text inputs
@@ -59,20 +52,6 @@ class TestLabels(unittest.TestCase):
         results = [l[0] for l in self.labels(["This is the best sentence ever", "This is terrible"], ["positive", "negative"], flatten=True)]
         self.assertEqual(results, ["positive", "negative"])
 
-    def testLabelZeroThreshold(self):
-        """
-        Test numeric zero flattening thresholds with dynamic and fixed labels
-        """
-
-        text = "This is the best sentence ever"
-        for classifier, candidates in ((self.labels, ["positive", "negative"]), (Labels(dynamic=False), ["POSITIVE", "NEGATIVE"])):
-            with self.subTest(dynamic=classifier.dynamic):
-                self.assertCountEqual(classifier(text, candidates, flatten=0.0), candidates)
-                self.assertCountEqual(classifier([text], candidates, flatten=0.0)[0], candidates)
-
-                # Boolean False still requests the original score tuples.
-                self.assertEqual(classifier(text, candidates, flatten=False), classifier(text, candidates))
-
     def testLabelFixed(self):
         """
         Test labels with a fixed label text classification model
@@ -87,35 +66,24 @@ class TestLabels(unittest.TestCase):
         self.assertEqual(labels("This is the best sentence ever")[0][0], index)
         self.assertEqual(labels("This is the best sentence ever", multilabel=True)[0][0], index)
 
-    def testLabelFixedFlatten(self):
+    def testLabelFixedDefaultLabel2Id(self):
         """
-        Test labels with a fixed label text classification model, flattened to top text labels
-        """
-
-        labels = Labels(dynamic=False)
-
-        # Verify results
-        self.assertEqual(labels("This is the best sentence ever", flatten=True)[0], "POSITIVE")
-        self.assertEqual(labels("This is the best sentence ever", multilabel=True, flatten=True)[0], "POSITIVE")
-
-    def testLabelFixedLimit(self):
-        """
-        Test labels with a fixed label text classification model, limited to requested labels by name and by id
+        Test labels with a fixed label text classification model that has label names in id2label but a default label2id
         """
 
         labels = Labels(dynamic=False)
+        text = "This is the best sentence ever"
 
-        # Rotate the config label mappings so insertion order no longer matches label ids
+        # Reset label2id to default names, as found in some model configs
         config = labels.pipeline.model.config
-        ids = list(config.id2label)
-        config.id2label = {x: config.id2label[x] for x in ids[1:] + ids[:1]}
-        config.label2id = {label: x for x, label in config.id2label.items()}
+        config.label2id = {f"LABEL_{uid}": uid for uid in config.id2label}
 
-        # Verify requested labels resolve to label ids, not positions in the config label mappings
-        for label, uid in config.label2id.items():
-            self.assertEqual(labels("This is the best sentence ever", labels=[label.lower()])[0][0], uid)
-            self.assertEqual(labels("This is the best sentence ever", labels=[str(uid)])[0][0], uid)
-            self.assertEqual(labels("This is the best sentence ever", labels=[uid])[0][0], uid)
+        # Verify output label ids resolve using id2label
+        for uid, name in config.id2label.items():
+            self.assertEqual([x for x, _ in labels(text, labels=[name])], [uid])
+            self.assertEqual(labels(text, labels=[name], flatten=True), [name])
+
+        self.assertEqual(sorted(x for x, _ in labels(text)), sorted(config.id2label))
 
     def testLabelFixedFilter(self):
         """
@@ -156,22 +124,54 @@ class TestLabels(unittest.TestCase):
             with self.subTest(labels=value):
                 self.assertEqual(len(labels(text, labels=value)), len(labels.labels()))
                 self.assertEqual(labels(text, labels=value, flatten=True), labels(text, flatten=True))
-
-    def testLabelFixedDefaultLabel2Id(self):
+    
+    def testLabelFixedFlatten(self):
         """
-        Test labels with a fixed label text classification model that has label names in id2label but a default label2id
+        Test labels with a fixed label text classification model, flattened to top text labels
         """
 
         labels = Labels(dynamic=False)
-        text = "This is the best sentence ever"
 
-        # Reset label2id to default names, as found in some model configs
+        # Verify results
+        self.assertEqual(labels("This is the best sentence ever", flatten=True)[0], "POSITIVE")
+        self.assertEqual(labels("This is the best sentence ever", multilabel=True, flatten=True)[0], "POSITIVE")
+
+    def testLabelFixedLimit(self):
+        """
+        Test labels with a fixed label text classification model, limited to requested labels by name and by id
+        """
+
+        labels = Labels(dynamic=False)
+
+        # Rotate the config label mappings so insertion order no longer matches label ids
         config = labels.pipeline.model.config
-        config.label2id = {f"LABEL_{uid}": uid for uid in config.id2label}
+        ids = list(config.id2label)
+        config.id2label = {x: config.id2label[x] for x in ids[1:] + ids[:1]}
+        config.label2id = {label: x for x, label in config.id2label.items()}
 
-        # Verify output label ids resolve using id2label
-        for uid, name in config.id2label.items():
-            self.assertEqual([x for x, _ in labels(text, labels=[name])], [uid])
-            self.assertEqual(labels(text, labels=[name], flatten=True), [name])
+        # Verify requested labels resolve to label ids, not positions in the config label mappings
+        for label, uid in config.label2id.items():
+            self.assertEqual(labels("This is the best sentence ever", labels=[label.lower()])[0][0], uid)
+            self.assertEqual(labels("This is the best sentence ever", labels=[str(uid)])[0][0], uid)
+            self.assertEqual(labels("This is the best sentence ever", labels=[uid])[0][0], uid)
 
-        self.assertEqual(sorted(x for x, _ in labels(text)), sorted(config.id2label))
+    def testLabelFlatten(self):
+        """
+        Test labels with single text input, flattened to top text labels
+        """
+
+        self.assertEqual(self.labels("This is the best sentence ever", ["positive", "negative"], flatten=True)[0], "positive")
+    
+    def testLabelZeroThreshold(self):
+        """
+        Test numeric zero flattening thresholds with dynamic and fixed labels
+        """
+
+        text = "This is the best sentence ever"
+        for classifier, candidates in ((self.labels, ["positive", "negative"]), (Labels(dynamic=False), ["POSITIVE", "NEGATIVE"])):
+            with self.subTest(dynamic=classifier.dynamic):
+                self.assertCountEqual(classifier(text, candidates, flatten=0.0), candidates)
+                self.assertCountEqual(classifier([text], candidates, flatten=0.0)[0], candidates)
+
+                # Boolean False still requests the original score tuples.
+                self.assertEqual(classifier(text, candidates, flatten=False), classifier(text, candidates))
