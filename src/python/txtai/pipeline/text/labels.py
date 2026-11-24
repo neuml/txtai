@@ -92,8 +92,7 @@ class Labels(HFPipeline):
         threshold = 0.0 if isinstance(flatten, bool) else flatten
 
         # Resolve label filter and model label ids once for all results (fixed label models only)
-        matches, ids = (None, None) if self.dynamic else (self.resolve(labels), self.ids())
-
+        matches, ids = ([], {}) if self.dynamic else (self.resolve(labels), self.ids())
         for result in results:
             if self.dynamic:
                 if flatten is not None and flatten is not False:
@@ -104,7 +103,7 @@ class Labels(HFPipeline):
             else:
                 if flatten is not None and flatten is not False:
                     # Keep label names above threshold, filtered to requested labels if provided
-                    result = [x["label"] for x in result if x["score"] >= threshold and (matches is None or ids.get(x["label"]) in matches)]
+                    result = [x["label"] for x in result if x["score"] >= threshold and (not labels or ids.get(x["label"]) in matches)]
                     yield result[:1] if isinstance(flatten, bool) else result
                 else:
                     # Filter results using labels, if provided
@@ -122,11 +121,11 @@ class Labels(HFPipeline):
             labels: list of labels or None
 
         Returns:
-            list of resolved label ids or None when no filter is provided
+            list of resolved label ids
         """
 
         if not labels:
-            return None
+            return []
 
         # Get config
         config = self.pipeline.model.config
