@@ -88,8 +88,8 @@ class Cloud:
 
     def listfiles(self, path):
         """
-        Lists files in path. If path is a file, this method returns a single element list
-        containing path.
+        Lists files in path. If path is a directory, this method returns all files in path including
+        files in subdirectories. If path is a file, this method returns a single element list containing path.
 
         Args:
             path: path to list
@@ -98,9 +98,25 @@ class Cloud:
             List of files
         """
 
-        # List all files if path is a directory
+        # List all files if path is a directory, including files in subdirectories (e.g. subindexes)
         if os.path.isdir(path):
-            return [os.path.join(path, f) for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
+            return [os.path.join(root, f) for root, _, files in sorted(os.walk(path)) for f in sorted(files)]
 
         # Path is a file
         return [path]
+
+    def filename(self, path, f):
+        """
+        Gets the remote name for a file returned by listfiles. Files in a directory are named using
+        their path relative to that directory. Otherwise, the file name is used.
+
+        Args:
+            path: path passed to listfiles
+            f: file path
+
+        Returns:
+            remote file name
+        """
+
+        name = os.path.relpath(f, path) if os.path.isdir(path) else os.path.basename(f)
+        return name.replace(os.sep, "/")
