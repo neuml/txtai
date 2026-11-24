@@ -117,9 +117,9 @@ class TestLabels(unittest.TestCase):
             self.assertEqual(labels("This is the best sentence ever", labels=[str(uid)])[0][0], uid)
             self.assertEqual(labels("This is the best sentence ever", labels=[uid])[0][0], uid)
 
-    def testLabelFixedFlattenFilter(self):
+    def testLabelFixedFilter(self):
         """
-        Test labels with a fixed label text classification model, filtering flattened output
+        Test filtering labels with a fixed label text classification model. Covers every supported label form with every output format.
         """
 
         labels = Labels(dynamic=False)
@@ -127,38 +127,51 @@ class TestLabels(unittest.TestCase):
         config = labels.pipeline.model.config
 
         for uid, name in config.id2label.items():
-            mixed = name[:1].lower() + name[1:].upper()
+            # Supported label forms: name (any case), integer id, id as string
+            for label in [name, name.lower(), name.upper(), name[:1].lower() + name[1:].upper(), uid, str(uid)]:
+                with self.subTest(label=label):
+                    # (id, score) output
+                    self.assertEqual([x for x, _ in labels(text, labels=[label])], [uid])
+                    self.assertEqual([x for x, _ in labels(text, labels=[label], flatten=False)], [uid])
 
-            self.assertEqual(labels(text, labels=[name.upper()], flatten=True)[0], name)
-            self.assertEqual(labels(text, labels=[name.lower()], flatten=True)[0], name)
-            self.assertEqual(labels(text, labels=[mixed], flatten=True)[0], name)
-            self.assertEqual(labels(text, labels=[str(uid)], flatten=True)[0], name)
-            self.assertEqual(labels(text, labels=[uid], flatten=True)[0], name)
+                    # Flattened output, top label and thresholds
+                    self.assertEqual(labels(text, labels=[label], flatten=True), [name])
+                    self.assertEqual(labels(text, labels=[label], flatten=0.0), [name])
+                    self.assertEqual(labels(text, labels=[label], flatten=1.1), [])
 
-            filtered = labels(text, labels=[uid], flatten=False)
-            self.assertEqual(len(filtered), 1)
-            self.assertEqual(filtered[0][0], uid)
+                    # List input
+                    self.assertEqual([[x for x, _ in row] for row in labels([text, text], labels=[label])], [[uid], [uid]])
+                    self.assertEqual(labels([text, text], labels=[label], flatten=True), [[name], [name]])
 
-            self.assertEqual(labels(text, labels=[name], flatten=0.0), [name])
-            self.assertEqual(labels(text, labels=[name], flatten=1.1), [])
+        # Labels that don't match a model label are ignored
+        unknown = max(config.id2label) + 1
+        for label in ["unknown", unknown, str(unknown), True]:
+            with self.subTest(label=label):
+                self.assertEqual(labels(text, labels=[label]), [])
+                self.assertEqual(labels(text, labels=[label], flatten=True), [])
+                self.assertEqual(labels(text, labels=[label], flatten=0.0), [])
 
-        self.assertEqual(labels(text, labels=["unknown"], flatten=True), [])
-        self.assertEqual(labels(text, labels=[str(max(config.id2label) + 1)], flatten=True), [])
-        self.assertEqual(labels(text, labels=[str(max(config.id2label) + 1)], flatten=False), [])
-        self.assertEqual(labels(text, labels=[max(config.id2label) + 1], flatten=False), [])
-        self.assertEqual(labels(text, labels=[max(config.id2label) + 1], flatten=True), [])
+        # No filter returns all labels
+        for value in [None, []]:
+            with self.subTest(labels=value):
+                self.assertEqual(len(labels(text, labels=value)), len(labels.labels()))
+                self.assertEqual(labels(text, labels=value, flatten=True), labels(text, flatten=True))
 
-        self.assertEqual(labels(text, labels=["unknown"], flatten=False), [])
-        self.assertTrue(labels(text, labels=["unknown"], flatten=1.1) == [])
-
-    def testLabelFixedWithoutFilter(self):
+    def testLabelFixedDefaultLabel2Id(self):
         """
-        Test fixed label behavior when no label filter is provided
+        Test labels with a fixed label text classification model that has label names in id2label but a default label2id
         """
 
         labels = Labels(dynamic=False)
         text = "This is the best sentence ever"
 
-        self.assertTrue(labels(text, flatten=True))
-        self.assertEqual(len(labels(text, flatten=False)), len(labels.labels()))
-        self.assertEqual(labels(text, labels=None, flatten=False), labels(text, flatten=False))
+        # Reset label2id to default names, as found in some model configs
+        config = labels.pipeline.model.config
+        config.label2id = {f"LABEL_{uid}": uid for uid in config.id2label}
+
+        # Verify output label ids resolve using id2label
+        for uid, name in config.id2label.items():
+            self.assertEqual([x for x, _ in labels(text, labels=[name])], [uid])
+            self.assertEqual(labels(text, labels=[name], flatten=True), [name])
+
+        self.assertEqual(sorted(x for x, _ in labels(text)), sorted(config.id2label))
