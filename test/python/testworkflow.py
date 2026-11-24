@@ -614,6 +614,27 @@ class TestWorkflow(unittest.TestCase):
                         with open(path, encoding="utf-8") as result:
                             self.assertEqual(result.read(), name)
 
+    def testRetrieveAbsoluteLocalPaths(self):
+        """
+        Test preserved local directory structures stay under the output directory.
+        """
+
+        with tempfile.TemporaryDirectory(dir=".") as directory:
+            root = Path(directory).resolve()
+            source = root / "input" / "document.txt"
+            source.parent.mkdir()
+            source.write_bytes(b"source data")
+            output = root / "output"
+
+            for element, safeopen in product((str(source), source.as_uri()), (False, str(root))):
+                with self.subTest(element=element, safeopen=safeopen):
+                    task = RetrieveTask(directory=str(output), flatten=False, safeopen=safeopen)
+                    result = Path(task.prepare(element))
+                    self.assertTrue(result.is_relative_to(output))
+                    self.assertNotEqual(result, source)
+                    self.assertEqual(result.read_bytes(), b"source data")
+                    self.assertEqual(source.read_bytes(), b"source data")
+
     def testScheduleWorkflow(self):
         """
         Test workflow schedules

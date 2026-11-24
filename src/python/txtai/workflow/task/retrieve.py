@@ -57,7 +57,9 @@ class RetrieveTask(Task):
                 directory = None
             else:
                 # Derive output path, a URL with no path falls back to its hostname, then to "download"
-                path = os.path.join(self.directory, os.path.normpath(path.lstrip("/") or urlparse(element).hostname or "download"))
+                # Remove any local drive before joining, so Windows absolute paths stay beneath the output directory
+                path = os.path.splitdrive(path)[1].lstrip("/" + os.sep)
+                path = os.path.join(self.directory, os.path.normpath(path or urlparse(element).hostname or "download"))
                 directory = os.path.dirname(path)
 
             # Validate output path
