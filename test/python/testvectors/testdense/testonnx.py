@@ -29,7 +29,7 @@ class TestONNX(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """
-        Export a model to ONNX and create an ONNX vectors instance.
+        Export a model to ONNX, create an ONNX vectors instance and create a small tokenizer.
         """
 
         path = "sentence-transformers/paraphrase-MiniLM-L3-v2"
@@ -40,6 +40,19 @@ class TestONNX(unittest.TestCase):
         HFOnnx()(path, "pooling", cls.path)
 
         cls.model = VectorsFactory.create({"path": cls.path, "tokenizer": path, "gpu": False}, None)
+
+        # Create a working directory and a small tokenizer for locally built ONNX models
+        cls.directory = os.path.join(tempfile.gettempdir(), "onnxvectors")
+        os.makedirs(cls.directory, exist_ok=True)
+
+        vocab = {"[PAD]": 0, "[UNK]": 1, "dog": 2, "puppy": 3, "quantum": 4, "physics": 5}
+        tokenizer = Tokenizer(models.WordLevel(vocab=vocab, unk_token="[UNK]"))
+        tokenizer.pre_tokenizer = pre_tokenizers.Whitespace()
+
+        cls.tokenizer = os.path.join(cls.directory, "tokenizer.json")
+        tokenizer.save(cls.tokenizer)
+
+        cls.vocab = len(vocab)
 
     def testMethod(self):
         """
@@ -96,31 +109,6 @@ class TestONNX(unittest.TestCase):
 
         self.assertGreater(float(embeddings[0] @ embeddings[1]), float(embeddings[0] @ embeddings[2]))
 
-
-class TestONNXModels(unittest.TestCase):
-    """
-    ONNX vectors tests covering model shapes and configuration a single exported model doesn't reach.
-    These build small ONNX graphs locally, no model download required.
-    """
-
-    @classmethod
-    def setUpClass(cls):
-        """
-        Create a working directory and a small tokenizer.
-        """
-
-        cls.directory = os.path.join(tempfile.gettempdir(), "onnxvectors")
-        os.makedirs(cls.directory, exist_ok=True)
-
-        vocab = {"[PAD]": 0, "[UNK]": 1, "dog": 2, "puppy": 3, "quantum": 4, "physics": 5}
-        tokenizer = Tokenizer(models.WordLevel(vocab=vocab, unk_token="[UNK]"))
-        tokenizer.pre_tokenizer = pre_tokenizers.Whitespace()
-
-        cls.tokenizer = os.path.join(cls.directory, "tokenizer.json")
-        tokenizer.save(cls.tokenizer)
-
-        cls.vocab = len(vocab)
-
     def build(self, name, pooled=False, types=False):
         """
         Builds a small ONNX model that maps input ids to hidden states.
@@ -163,7 +151,7 @@ class TestONNXModels(unittest.TestCase):
 
         return path
 
-    def model(self, path, **config):
+    def create(self, path, **config):
         """
         Creates an ONNX vectors instance.
 
@@ -182,7 +170,7 @@ class TestONNXModels(unittest.TestCase):
         Test that token level output is pooled into a single vector per input
         """
 
-        model = self.model(self.build("tokens.onnx"))
+        model = self.create(self.build("tokens.onnx"))
         self.assertEqual(model.encode(["dog puppy", "quantum"]).shape, (2, 4))
 
     def testPooledOutput(self):
@@ -190,7 +178,7 @@ class TestONNXModels(unittest.TestCase):
         Test that output which is already pooled passes through
         """
 
-        model = self.model(self.build("pooled.onnx", pooled=True))
+        model = self.create(self.build("pooled.onnx", pooled=True))
         self.assertEqual(model.encode(["dog puppy"]).shape, (1, 4))
 
     def testTokenTypeIds(self):
@@ -198,15 +186,15 @@ class TestONNXModels(unittest.TestCase):
         Test that token_type_ids is set only when the model declares it
         """
 
-        self.assertEqual(self.model(self.build("types.onnx", types=True)).encode(["dog", "quantum physics"]).shape, (2, 4))
-        self.assertEqual(self.model(self.build("notypes.onnx")).encode(["dog", "quantum physics"]).shape, (2, 4))
+        self.assertEqual(self.create(self.build("types.onnx", types=True)).encode(["dog", "quantum physics"]).shape, (2, 4))
+        self.assertEqual(self.create(self.build("notypes.onnx")).encode(["dog", "quantum physics"]).shape, (2, 4))
 
     def testPadding(self):
         """
         Test that padding is excluded when pooling
         """
 
-        model = self.model(self.build("padding.onnx"))
+        model = self.create(self.build("padding.onnx"))
 
         # An input padded to a longer sequence must produce the same vector as that input alone
         self.assertTrue(np.allclose(model.encode(["dog"])[0], model.encode(["dog", "quantum physics"])[0], atol=1e-6))
@@ -216,7 +204,7 @@ class TestONNXModels(unittest.TestCase):
         Test that maxlength truncates long inputs
         """
 
-        model = self.model(self.build("maxlength.onnx"), maxlength=1)
+        model = self.create(self.build("maxlength.onnx"), maxlength=1)
         self.assertTrue(np.allclose(model.encode(["dog quantum physics"])[0], model.encode(["dog"])[0], atol=1e-6))
 
     def testTokenizerPath(self):
@@ -269,7 +257,7 @@ class TestONNXModels(unittest.TestCase):
         Test provider selection
         """
 
-        model = self.model(self.build("providers.onnx"))
+        model = self.create(self.build("providers.onnx"))
 
         with patch("txtai.vectors.dense.onnx.ort.get_available_providers") as providers:
             providers.return_value = ["CUDAExecutionProvider", "CPUExecutionProvider"]
