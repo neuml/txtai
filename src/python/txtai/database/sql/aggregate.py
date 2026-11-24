@@ -5,6 +5,8 @@ Aggregate module
 import itertools
 import operator
 
+from functools import partial
+
 from .base import SQL
 from .error import SQLError
 from .token import Token
@@ -96,9 +98,9 @@ class Aggregate(SQL):
             if name.startswith(("count(", "sum(", "total(")):
                 aggregates[column] = sum
             elif name.startswith("max("):
-                aggregates[column] = max
+                aggregates[column] = partial(max, key=self.sortkey)
             elif name.startswith("min("):
-                aggregates[column] = min
+                aggregates[column] = partial(min, key=self.sortkey)
             elif name.startswith("avg("):
                 aggregates[column] = self.avg
 
@@ -197,8 +199,8 @@ class Aggregate(SQL):
         names = {name.lower() for name in query["groupby"]}
         groupby = [column for column in columns if column.lower() in names or expressions[column].lower() in names]
         if groupby:
-            # NULLs sort first like in SQLite
-            results = sorted(results, key=lambda row: [(row[column] is not None, row[column]) for column in groupby])
+            # Order by storage class, keeping integer and real values comparable
+            results = sorted(results, key=lambda row: [self.sortkey(row[column]) for column in groupby])
             return [list(value) for _, value in itertools.groupby(results, operator.itemgetter(*groupby))]
 
         return [results]
@@ -231,11 +233,30 @@ class Aggregate(SQL):
             clause = clause.lower()
             column = next((column for column in columns if clause in (column.lower(), expressions[column].lower())), None)
 
-            # Order by columns must be in select clause. NULLs sort first like in SQLite (last when descending).
+            # Order by columns must be in select clause. NULLs sort first like in some databases (last when descending).
             if column:
-                results = sorted(results, key=lambda row, column=column: (row[column] is not None, row[column]), reverse=reverse)
+                results = sorted(results, key=lambda row, column=column: self.sortkey(row[column]), reverse=reverse)
 
         return results
+
+    def sortkey(self, value):
+        """
+        Gets a comparison key using NULL, number, text and blob storage order.
+
+        Args:
+            value: SQL value
+
+        Returns:
+            storage class and original value
+        """
+
+        if value is None:
+            return (0, value)
+        if isinstance(value, str):
+            return (2, value)
+        if isinstance(value, bytes):
+            return (3, value)
+        return (1, value)
 
     def defaultsort(self, results):
         """
@@ -250,6 +271,6 @@ class Aggregate(SQL):
 
         # Sort standard query using score column, if present
         if results and "score" in results[0]:
-            return sorted(results, key=lambda x: (x["score"] is not None, x["score"]), reverse=True)
+            return sorted(results, key=lambda x: self.sortkey(x["score"]), reverse=True)
 
         return results

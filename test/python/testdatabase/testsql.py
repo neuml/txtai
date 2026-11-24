@@ -151,6 +151,10 @@ class TestSQL(unittest.TestCase):
             ]
             self.assertEqual([row["id"] for row in aggregate(query, results)], ["d", "f", "b", "c", "a", "e"])
 
+        with self.subTest(scores="mixed SQL types"):
+            results = [{"id": "number", "score": 1}, {"id": "text", "score": "2"}, {"id": "null", "score": None}]
+            self.assertEqual([row["id"] for row in aggregate("select id, price as score from txtai", results)], ["text", "number", "null"])
+
     def testAggregateGroupby(self):
         """
         Test Aggregate groups results using mixed case and NULL group by columns
@@ -179,6 +183,31 @@ class TestSQL(unittest.TestCase):
         query = "select a, B, count(*) from txtai group by A, b"
         results = [{"a": 1, "B": None, "count(*)": 1}, {"a": 1, "B": "x", "count(*)": 2}, {"a": 1, "B": None, "count(*)": 3}]
         self.assertEqual(aggregate(query, results), [{"a": 1, "B": None, "count(*)": 4}, {"a": 1, "B": "x", "count(*)": 2}])
+
+    def testAggregateGroupbyTypes(self):
+        """
+        Test mixed SQL types group separately while integer and real values can share a group
+        """
+
+        results = [
+            {"price": "2", "count(*)": 1},
+            {"price": 2, "count(*)": 2},
+            {"price": None, "count(*)": 1},
+            {"price": 2.0, "count(*)": 3},
+            {"price": "10", "count(*)": 1},
+        ]
+        self.assertEqual(
+            Aggregate()("select price, count(*) from txtai group by price", results),
+            [{"price": None, "count(*)": 1}, {"price": 2, "count(*)": 5}, {"price": "10", "count(*)": 1}, {"price": "2", "count(*)": 1}],
+        )
+
+    def testAggregateMinMaxTypes(self):
+        """
+        Test mixed SQL types in partial MIN and MAX results with an empty shard
+        """
+
+        results = [{"min(price)": 1, "max(price)": 1}, {"min(price)": "2", "max(price)": "2"}, {"min(price)": None, "max(price)": None}]
+        self.assertEqual(Aggregate()("select min(price), max(price) from txtai", results), [{"min(price)": 1, "max(price)": "2"}])
 
     def testAggregateNull(self):
         """
@@ -232,6 +261,28 @@ class TestSQL(unittest.TestCase):
         results = [{"id": "a", "price": 3.0}, {"id": "b", "price": None}, {"id": "c", "price": 1.0}]
         self.assertEqual([x["id"] for x in aggregate("select id, price from txtai order by price", results)], ["b", "c", "a"])
         self.assertEqual([x["id"] for x in aggregate("select id, price from txtai order by price desc", results)], ["a", "c", "b"])
+
+    def testAggregateOrderByTypes(self):
+        """
+        Test mixed SQL types order by storage class while numeric ties stay stable
+        """
+
+        results = [
+            {"id": "blob-two", "price": b"2"},
+            {"id": "text-two", "price": "2"},
+            {"id": "real", "price": 2.0},
+            {"id": "null", "price": None},
+            {"id": "one", "price": 1},
+            {"id": "text-ten", "price": "10"},
+            {"id": "blob-ten", "price": b"10"},
+            {"id": "integer", "price": 2},
+        ]
+        for direction, expected in [
+            ("asc", ["null", "one", "real", "integer", "text-ten", "text-two", "blob-ten", "blob-two"]),
+            ("desc", ["blob-two", "blob-ten", "text-two", "text-ten", "real", "integer", "one", "null"]),
+        ]:
+            with self.subTest(direction=direction):
+                self.assertEqual([row["id"] for row in Aggregate()(f"select id, price from txtai order by price {direction}", results)], expected)
 
     def testAlias(self):
         """
