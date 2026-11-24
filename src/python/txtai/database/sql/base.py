@@ -156,14 +156,35 @@ class SQL:
                 tokens[x : x + 3] = ["".join(tokens[x : x + 3])]
             x += 1
 
-        # Identify sql clause token positions
-        positions = {}
-
-        # Get position of clause keywords. For multi-term clauses, validate next token matches as well
+        # Identify top-level SQL clauses
+        positions, brackets, parens, start = {}, 0, 0, 0
         for x, token in enumerate(tokens):
+            if token in ("[", "]"):
+                brackets += 1 if token == "[" else -1
+            elif not brackets and token in ("(", ")"):
+                parens += 1 if token == "(" else -1
+
             t = token.lower()
-            if t not in positions and t in SQL.CLAUSES and (t not in ["group", "order"] or (x + 1 < len(tokens) and tokens[x + 1].lower() == "by")):
-                positions[t] = x
+            if brackets or parens or t not in SQL.CLAUSES or t in positions:
+                continue
+
+            # For multi-term clauses, validate the next token
+            multi = t in ("group", "order")
+            if multi and (Token.get(tokens, x + 1) or "").lower() != "by":
+                continue
+
+            # These keywords can be field names in SELECT or where an operand is expected.
+            if t in ("having", "limit", "offset"):
+                if "from" not in positions or x == start:
+                    continue
+
+                prior = Token.get(tokens, x - 1)
+                conditional = Token.isconditional(prior) and prior.lower() != "end"
+                if Token.isseparator(prior) or Token.isoperator(prior) or Token.islogicseparator(prior) or conditional:
+                    continue
+
+            positions[t] = x
+            start = x + (2 if multi else 1)
 
         return (tokens, positions)
 

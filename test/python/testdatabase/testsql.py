@@ -21,6 +21,7 @@ class TestSQL(unittest.TestCase):
 
         # Create SQL parser for SQLite
         cls.db = DatabaseFactory.create({"content": True})
+        cls.addClassCleanup(cls.db.close)
         cls.db.initialize()
 
         cls.sql = SQL(cls.db)
@@ -522,6 +523,54 @@ class TestSQL(unittest.TestCase):
         prefix = "select count(*) from txtai "
 
         self.assertSql("limit", prefix + "limit 100", "100")
+
+    def testMetadataClauseKeywords(self):
+        """
+        Test SQL clause keywords as metadata field names
+        """
+
+        for clause, query, expected in [
+            ("where", "select id from txtai where limit = 5", "json_extract(data, '$.limit') = 5"),
+            ("where", "select id from txtai where offset = 2", "json_extract(data, '$.offset') = 2"),
+            ("where", "select id from txtai where having = 'h'", "json_extract(data, '$.having') = 'h'"),
+            ("select", "select id, limit from txtai", "s.id, json_extract(data, '$.limit') as \"limit\""),
+            (
+                "where",
+                "select id from txtai where (offset = 2) and 7 = limit and having = 'other'",
+                "(json_extract(data, '$.offset') = 2) and 7 = json_extract(data, '$.limit') and json_extract(data, '$.having') = 'other'",
+            ),
+        ]:
+            with self.subTest(query=query):
+                self.assertSql(clause, query, expected)
+
+    def testMetadataKeywordsSQLite(self):
+        """
+        Test filtering and selecting metadata fields named after SQL clauses in SQLite
+        """
+
+        db = DatabaseFactory.create({"content": True})
+        self.addCleanup(db.close)
+        db.insert(
+            [
+                ("a", {"text": "first", "limit": 5, "offset": 1, "having": "h"}, None),
+                ("b", {"text": "second", "limit": 7, "offset": 2, "having": "other"}, None),
+            ]
+        )
+
+        for query, expected in [
+            ("select id from txtai where limit = 5", [{"id": "a"}]),
+            ("select id from txtai where offset = 2", [{"id": "b"}]),
+            ("select id from txtai where having = 'h'", [{"id": "a"}]),
+            ("select id, limit from txtai", [{"id": "a", "limit": 5}, {"id": "b", "limit": 7}]),
+            ("select id, limit from txtai where limit >= 5 order by id limit 1 offset 1", [{"id": "b", "limit": 7}]),
+            (
+                "select [limit], count(*) as n from txtai where [offset] = 2 and [having] = 'other' "
+                "group by [limit] having count(*) > 0 order by [limit] limit 1",
+                [{"limit": 7, "n": 1}],
+            ),
+        ]:
+            with self.subTest(query=query):
+                self.assertCountEqual(db.search(query), expected)
 
     def testOffset(self):
         """
