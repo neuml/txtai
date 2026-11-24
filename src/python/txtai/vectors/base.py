@@ -235,7 +235,11 @@ class Vectors:
 
         # Skip encoding data if it's already an array
         if documents and isinstance(documents[0], np.ndarray):
-            return np.array(documents, dtype=np.float32)
+            embeddings = np.array(documents, dtype=np.float32)
+
+            # Single vectors per document get the same truncation, normalization and quantization as
+            # encoded data, so precomputed vectors are scored the same way. Other shapes are returned as-is.
+            return self.postprocess(embeddings) if embeddings.ndim == 2 else embeddings
 
         return self.vectorize(documents, category)
 
@@ -448,20 +452,32 @@ class Vectors:
         # Transform data into vectors
         embeddings = self.encode(data, category)
 
-        if embeddings is not None:
-            if embeddings.ndim != 2:
-                raise ValueError(f"Expected 2 dimensional vectors, produced {embeddings.ndim} dimensions")
+        return self.postprocess(embeddings) if embeddings is not None else embeddings
 
-            # Truncate embeddings, if necessary
-            if self.dimensionality and self.dimensionality < embeddings.shape[1]:
-                embeddings = self.truncate(embeddings)
+    def postprocess(self, embeddings):
+        """
+        Applies the steps that run after encoding: truncation, normalization and quantization.
 
-            # Normalize data
-            embeddings = self.normalize(embeddings)
+        Args:
+            embeddings: 2 dimensional embeddings array
 
-            # Apply quantization, if necessary
-            if self.qbits:
-                embeddings = self.quantize(embeddings)
+        Returns:
+            embeddings vectors
+        """
+
+        if embeddings.ndim != 2:
+            raise ValueError(f"Expected 2 dimensional vectors, produced {embeddings.ndim} dimensions")
+
+        # Truncate embeddings, if necessary
+        if self.dimensionality and self.dimensionality < embeddings.shape[1]:
+            embeddings = self.truncate(embeddings)
+
+        # Normalize data
+        embeddings = self.normalize(embeddings)
+
+        # Apply quantization, if necessary
+        if self.qbits:
+            embeddings = self.quantize(embeddings)
 
         return embeddings
 
