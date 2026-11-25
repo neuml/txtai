@@ -672,7 +672,7 @@ class TestAgent(unittest.TestCase):
 
         self.assertIsNotNone(agent)
         self.assertIsInstance(agent.tools["embeddings1"]("test"), list)
-    
+
     def testToolsGrepUnreadable(self):
         """
         Test the grep tool skips a file it is not allowed to read
@@ -715,7 +715,7 @@ class TestAgent(unittest.TestCase):
 
         agent = Agent(tools=["http://localhost:8000/mcp"], llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=1)
         self.assertEqual(len(agent.tools), 2)
-    
+
     def testToolsReadNonexistent(self):
         """
         Test the read tool raises FileNotFoundError when a file does not exist
