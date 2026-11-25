@@ -73,3 +73,12 @@ class TestTokenizer(unittest.TestCase):
         # Unique ngrams keep the order they first appear in
         tokenizer = Tokenizer(ngrams={"ngrams": 2, "unique": True})
         self.assertEqual(tokenizer("hello hello"), ["he", "el", "ll", "lo"])
+
+    def testNgramCombiningMarks(self):
+        """
+        Test that vowel signs and accents stay within ngram words
+        """
+
+        tokenizer = Tokenizer(ngrams=3)
+        self.assertEqual(tokenizer("किताब"), ["कित", "िता", "ताब"])
+        self.assertEqual(tokenizer("\u0301-cafe\u0301,tea"), ["caf", "afe", "fe\u0301", "tea"])

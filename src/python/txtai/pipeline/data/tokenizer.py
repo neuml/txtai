@@ -4,6 +4,7 @@ Tokenizer module
 
 import re
 import string
+import unicodedata
 
 from ..base import Pipeline
 
@@ -161,12 +162,10 @@ class Tokenizer(Pipeline):
         unique = self.ngrams.get("unique", False)
         edge = self.ngrams.get("edge", False)
 
-        # Split on non-whitespace and apply optional word padding
-        words = [f"{lpad}{x}{rpad}" for x in re.split(r"\W+", text) if x.strip()]
-
         # Generate ngrams
         ngrams = []
-        for word in words:
+        for word in self.ngramwords(text):
+            word = f"{lpad}{word}{rpad}"
             for n in range(nmin, min(nmax, len(word)) + 1):
                 for x in range(0, len(word) - n + 1):
                     if not edge or x == 0:
@@ -174,3 +173,25 @@ class Tokenizer(Pipeline):
 
         # Reduce to unique ngrams in the order they first appear, if necessary and return
         return list(dict.fromkeys(ngrams)) if unique else ngrams
+
+    @staticmethod
+    def ngramwords(text):
+        """
+        Yields words for ngram tokenization, retaining marks attached to a word.
+        """
+
+        if text.isascii():
+            yield from re.findall(r"\w+", text)
+            return
+
+        start = None
+        for index, char in enumerate(text):
+            if char.isalnum() or char == "_":
+                if start is None:
+                    start = index
+            elif start is not None and not unicodedata.category(char).startswith("M"):
+                yield text[start:index]
+                start = None
+
+        if start is not None:
+            yield text[start:]
