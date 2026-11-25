@@ -105,6 +105,18 @@ class TestIVFSparse(SparseTest):
         # Close ANN
         ann.close()
 
+    def testIVFSparseProbeCount(self):
+        """The default probe count must still search a block above the exact-search threshold."""
+        data = csr_matrix(np.eye(2, dtype=np.float32)[np.arange(5001) % 2])
+        ann = SparseANNFactory.create({"backend": "ivfsparse", "ivfsparse": {"nlist": 2, "minpoints": 512}})
+        ann.index(data)
+
+        matches = ann.search(data[:1], 1)[0]
+        self.assertEqual(len(matches), 1)
+        uid, score = matches[0]
+        self.assertEqual(uid % 2, 0)
+        self.assertEqual(score, 1.0)
+
     def testIVFSparseSortOrder(self):
         """
         Test IVFSparse returns results sorted by score descending
