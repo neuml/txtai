@@ -5,6 +5,7 @@ Factory module
 from smolagents import CodeAgent, ToolCallingAgent
 
 from .model import PipelineModel
+from .pydanticai import PydanticProcess
 from .tool import ToolFactory
 
 
@@ -26,6 +27,27 @@ class ProcessFactory:
             agent process runner
         """
 
+        backend = config.pop("backend", "smolagents")
+        if backend == "pydantic":
+            return ProcessFactory.pydantic(config)
+
+        if backend != "smolagents":
+            raise ValueError(f"Unsupported agent backend: {backend}")
+
+        return ProcessFactory.smolagents(config)
+
+    @staticmethod
+    def smolagents(config):
+        """
+        Create a smolagents process runner.
+
+        Args:
+            config: agent configuration
+
+        Returns:
+            agent process runner
+        """
+
         constructor = ToolCallingAgent
         method = config.pop("method", None)
         if method == "code":
@@ -37,3 +59,21 @@ class ProcessFactory:
 
         # Create the agent process
         return constructor(tools=ToolFactory.create(config), model=model, **config)
+
+    @staticmethod
+    def pydantic(config):
+        """
+        Create a Pydantic AI process runner.
+
+        Args:
+            config: agent configuration
+
+        Returns:
+            agent process runner
+        """
+
+        # LLM model path, configuration or instance
+        model = config.pop("model", config.pop("llm", None))
+
+        # Create the agent process
+        return PydanticProcess(model, ToolFactory.create(config), **config)
