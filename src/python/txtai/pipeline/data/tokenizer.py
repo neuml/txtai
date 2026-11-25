@@ -174,14 +174,13 @@ class Tokenizer(Pipeline):
         # Reduce to unique ngrams in the order they first appear, if necessary and return
         return list(dict.fromkeys(ngrams)) if unique else ngrams
 
-    @staticmethod
-    def ngramwords(text):
+    def ngramwords(self, text):
         """
         Yields words for ngram tokenization, retaining marks attached to a word.
         """
 
         if text.isascii():
-            yield from re.findall(r"\w+", text)
+            yield from (word for word in re.split(r"\W+", text) if word)
             return
 
         start = None
