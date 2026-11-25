@@ -337,6 +337,14 @@ class Vectors:
             a cryptographic hash.
         """
 
+        # NumPy's string representation omits the middle of long vectors and rounds small differences.
+        # Read numeric arrays in logical row order, including non-contiguous views.
+        data = [
+            {"dtype": x.dtype.str, "shape": x.shape, "crc32": zlib.crc32(np.ascontiguousarray(x))}
+            if isinstance(x, np.ndarray) and x.dtype.kind in "buifc"
+            else x
+            for x in data
+        ]
         try:
             encoded = json.dumps([ids, data], sort_keys=True, default=str).encode("utf-8")
         except TypeError:
