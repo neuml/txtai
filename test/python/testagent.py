@@ -54,6 +54,25 @@ class TestAgent(unittest.TestCase):
     Agent tests.
     """
 
+    def testBackend(self):
+        """
+        Test agent backend selection
+        """
+
+        # Default backend is smolagents
+        agent = Agent(llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=1)
+        self.assertIsInstance(agent.process, ToolCallingAgent)
+
+        agent = Agent(backend="smolagents", llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=1)
+        self.assertIsInstance(agent.process, ToolCallingAgent)
+
+        agent = Agent(backend="pydantic", llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=1)
+        self.assertIsInstance(agent.process, PydanticProcess)
+
+        # Unknown backends raise an error
+        with self.assertRaises(ValueError):
+            Agent(backend="unknown", llm="hf-internal-testing/tiny-random-LlamaForCausalLM")
+
     def testExecute(self):
         """
         Test executing main agent loop
@@ -152,25 +171,6 @@ class TestAgent(unittest.TestCase):
 
         agent = Agent(method="code", llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_iterations=1)
         self.assertIsInstance(agent.process, CodeAgent)
-
-    def testBackend(self):
-        """
-        Test agent backend selection
-        """
-
-        # Default backend is smolagents
-        agent = Agent(llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=1)
-        self.assertIsInstance(agent.process, ToolCallingAgent)
-
-        agent = Agent(backend="smolagents", llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=1)
-        self.assertIsInstance(agent.process, ToolCallingAgent)
-
-        agent = Agent(backend="pydantic", llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=1)
-        self.assertIsInstance(agent.process, PydanticProcess)
-
-        # Unknown backends raise an error
-        with self.assertRaises(ValueError):
-            Agent(backend="unknown", llm="hf-internal-testing/tiny-random-LlamaForCausalLM")
 
     def testPydantic(self):
         """
@@ -437,6 +437,77 @@ class TestAgent(unittest.TestCase):
 
         self.assertIsInstance(agent.tools["hello"]("say hello"), str)
 
+    def testToolsBashAllowedEmpty(self):
+        """
+        Test an empty allowed commands list permits no commands
+        """
+
+        # An empty allow list is an explicit choice and must be honored, not replaced by the defaults
+        self.assertEqual(BashTool(allowed=[]).allowed, [])
+
+        # No command runs when nothing is allowed
+        self.assertIsNone(BashTool(allowed=[])(["cat", "file.txt"]))
+
+        # The defaults still apply when allowed isn't set, including an explicit None
+        self.assertEqual(BashTool().allowed, ["cat", "cut", "diff", "grep", "head", "ls", "tail"])
+        self.assertEqual(BashTool(allowed=None).allowed, ["cat", "cut", "diff", "grep", "head", "ls", "tail"])
+
+    @patch("subprocess.run")
+    def testToolsBashEncoding(self, run):
+        """
+        Test bash tool decodes subprocess output as UTF-8 instead of the locale encoding
+        """
+
+        run.return_value.stdout = "output"
+
+        tool = BashTool(allowed=["cat"])
+        tool(["cat", "file.txt"])
+
+        # Subprocess output must be decoded as UTF-8, not left to the locale's default encoding
+        self.assertEqual(run.call_args.kwargs.get("encoding"), "utf-8")
+
+    def testToolsBashStdin(self):
+        """
+        Test default bash tool doesn't block reading stdin
+        """
+
+        tool = ToolFactory.default("bash")
+
+        # Replace stdin with a pipe that never reaches EOF, simulating a long-lived
+        # parent process (i.e. an API service) that keeps stdin open
+        read, write = os.pipe()
+        stdin = os.dup(0)
+
+        result = {}
+
+        try:
+            os.dup2(read, 0)
+
+            # `cat` with no file arguments reads stdin - run in a thread to avoid blocking the test suite
+            thread = Thread(target=lambda: result.update(output=tool(["cat"])), daemon=True)
+            thread.start()
+            thread.join(timeout=30)
+        finally:
+            os.dup2(stdin, 0)
+            for descriptor in (stdin, read, write):
+                os.close(descriptor)
+
+        # Command must return and not block forever reading stdin
+        self.assertFalse(thread.is_alive())
+        self.assertEqual(result["output"], "")
+
+    def testToolsBashTimeout(self):
+        """
+        Test bash tool commands are stopped once they exceed the timeout
+        """
+
+        tool = BashTool(allowed=["sleep"], timeout=1)
+
+        self.assertIn("timed out", tool(["sleep", "30"]))
+
+        # Timeout is disabled when set to None
+        self.assertIsNone(BashTool(timeout=None).timeout)
+
     def testToolsBasic(self):
         """
         Test adding basic function tools
@@ -562,57 +633,6 @@ class TestAgent(unittest.TestCase):
             self.assertEqual(tool.name, function.__name__)
             self.assertEqual(tool("Paris"), "sunny in Paris")
 
-    def testToolsBashStdin(self):
-        """
-        Test default bash tool doesn't block reading stdin
-        """
-
-        tool = ToolFactory.default("bash")
-
-        # Replace stdin with a pipe that never reaches EOF, simulating a long-lived
-        # parent process (i.e. an API service) that keeps stdin open
-        read, write = os.pipe()
-        stdin = os.dup(0)
-
-        result = {}
-
-        try:
-            os.dup2(read, 0)
-
-            # `cat` with no file arguments reads stdin - run in a thread to avoid blocking the test suite
-            thread = Thread(target=lambda: result.update(output=tool(["cat"])), daemon=True)
-            thread.start()
-            thread.join(timeout=30)
-        finally:
-            os.dup2(stdin, 0)
-            for descriptor in (stdin, read, write):
-                os.close(descriptor)
-
-        # Command must return and not block forever reading stdin
-        self.assertFalse(thread.is_alive())
-        self.assertEqual(result["output"], "")
-
-    def testToolsBashTimeout(self):
-        """
-        Test bash tool commands are stopped once they exceed the timeout
-        """
-
-        tool = BashTool(allowed=["sleep"], timeout=1)
-
-        self.assertIn("timed out", tool(["sleep", "30"]))
-
-        # Timeout is disabled when set to None
-        self.assertIsNone(BashTool(timeout=None).timeout)
-
-    def testToolsReadNonexistent(self):
-        """
-        Test the read tool raises FileNotFoundError when a file does not exist
-        """
-
-        # Reading a non-existent file must raise FileNotFoundError
-        with self.assertRaises(FileNotFoundError):
-            ToolFactory.default("read")(os.path.join(tempfile.gettempdir(), "does_not_exist_file.txt"))
-
     def testToolsEditCRLF(self):
         """
         Test the edit tool preserves CRLF line endings
@@ -627,58 +647,6 @@ class TestAgent(unittest.TestCase):
         ToolFactory.default("edit")(path, "hello", "bye")
         with open(path, "rb") as f:
             self.assertEqual(f.read(), b"bye\r\nworld\r\n")
-
-    def testToolsGrepUnreadable(self):
-        """
-        Test the grep tool skips a file it is not allowed to read
-        """
-
-        with tempfile.TemporaryDirectory() as work:
-            for name in ("a.txt", "b.txt"):
-                with open(os.path.join(work, name), "w", encoding="utf-8") as f:
-                    f.write("hello world\n")
-
-            # Matches found in readable files must survive an unreadable file
-            unreadable = os.path.join(work, "b.txt")
-            os.chmod(unreadable, 0o000)
-
-            try:
-                if os.access(unreadable, os.R_OK):
-                    self.skipTest("File permissions are not enforced for this user")
-
-                result = ToolFactory.default("grep")("world", work)
-                self.assertEqual(result, {os.path.join(work, "a.txt"): ["hello world\n"]})
-            finally:
-                os.chmod(unreadable, 0o644)
-
-    def testToolsBashAllowedEmpty(self):
-        """
-        Test an empty allowed commands list permits no commands
-        """
-
-        # An empty allow list is an explicit choice and must be honored, not replaced by the defaults
-        self.assertEqual(BashTool(allowed=[]).allowed, [])
-
-        # No command runs when nothing is allowed
-        self.assertIsNone(BashTool(allowed=[])(["cat", "file.txt"]))
-
-        # The defaults still apply when allowed isn't set, including an explicit None
-        self.assertEqual(BashTool().allowed, ["cat", "cut", "diff", "grep", "head", "ls", "tail"])
-        self.assertEqual(BashTool(allowed=None).allowed, ["cat", "cut", "diff", "grep", "head", "ls", "tail"])
-
-    @patch("subprocess.run")
-    def testToolsBashEncoding(self, run):
-        """
-        Test bash tool decodes subprocess output as UTF-8 instead of the locale encoding
-        """
-
-        run.return_value.stdout = "output"
-
-        tool = BashTool(allowed=["cat"])
-        tool(["cat", "file.txt"])
-
-        # Subprocess output must be decoded as UTF-8, not left to the locale's default encoding
-        self.assertEqual(run.call_args.kwargs.get("encoding"), "utf-8")
 
     def testToolsEmbeddings(self):
         """
@@ -704,6 +672,29 @@ class TestAgent(unittest.TestCase):
 
         self.assertIsNotNone(agent)
         self.assertIsInstance(agent.tools["embeddings1"]("test"), list)
+    
+    def testToolsGrepUnreadable(self):
+        """
+        Test the grep tool skips a file it is not allowed to read
+        """
+
+        with tempfile.TemporaryDirectory() as work:
+            for name in ("a.txt", "b.txt"):
+                with open(os.path.join(work, name), "w", encoding="utf-8") as f:
+                    f.write("hello world\n")
+
+            # Matches found in readable files must survive an unreadable file
+            unreadable = os.path.join(work, "b.txt")
+            os.chmod(unreadable, 0o000)
+
+            try:
+                if os.access(unreadable, os.R_OK):
+                    self.skipTest("File permissions are not enforced for this user")
+
+                result = ToolFactory.default("grep")("world", work)
+                self.assertEqual(result, {os.path.join(work, "a.txt"): ["hello world\n"]})
+            finally:
+                os.chmod(unreadable, 0o644)
 
     # pylint: disable=C0115,C0116
     @patch("mcpadapt.core.MCPAdapt")
@@ -724,3 +715,12 @@ class TestAgent(unittest.TestCase):
 
         agent = Agent(tools=["http://localhost:8000/mcp"], llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=1)
         self.assertEqual(len(agent.tools), 2)
+    
+    def testToolsReadNonexistent(self):
+        """
+        Test the read tool raises FileNotFoundError when a file does not exist
+        """
+
+        # Reading a non-existent file must raise FileNotFoundError
+        with self.assertRaises(FileNotFoundError):
+            ToolFactory.default("read")(os.path.join(tempfile.gettempdir(), "does_not_exist_file.txt"))
