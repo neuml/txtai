@@ -677,6 +677,25 @@ class TestWorkflow(unittest.TestCase):
 
         self.assertIn("FileNotFoundError", " ".join(logs.output))
 
+    def testServiceFilteredBatch(self):
+        """
+        Test that filtered batches only send matching inputs
+        """
+
+        task = ServiceTask(url="http://example", select=r"\.pdf$")
+
+        response = Mock()
+        response.content = b'["processed"]'
+        response.headers = {"Content-Type": "application/json"}
+        response.json.return_value = ["processed"]
+
+        with patch("txtai.workflow.task.service.requests.post", return_value=response) as post:
+            self.assertEqual(task(["notes.txt"]), ["notes.txt"])
+            post.assert_not_called()
+
+            self.assertEqual(task(["notes.txt", "report.pdf"]), ["notes.txt", "processed"])
+            post.assert_called_once_with("http://example", json=["report.pdf"], timeout=30)
+
     def testServiceParamsFalsy(self):
         """
         Test ServiceTask preserves explicit falsy values and only replaces placeholders
@@ -736,25 +755,6 @@ class TestWorkflow(unittest.TestCase):
         # Non-storage inputs pass through unmodified
         results = list(workflow([("id2", "test string", "tag2")]))
         self.assertEqual(results, [("id2", "test string", "tag2")])
-
-    def testServiceFilteredBatch(self):
-        """
-        Test that filtered batches only send matching inputs
-        """
-
-        task = ServiceTask(url="http://example", select=r"\.pdf$")
-
-        response = Mock()
-        response.content = b'["processed"]'
-        response.headers = {"Content-Type": "application/json"}
-        response.json.return_value = ["processed"]
-
-        with patch("txtai.workflow.task.service.requests.post", return_value=response) as post:
-            self.assertEqual(task(["notes.txt"]), ["notes.txt"])
-            post.assert_not_called()
-
-            self.assertEqual(task(["notes.txt", "report.pdf"]), ["notes.txt", "processed"])
-            post.assert_called_once_with("http://example", json=["report.pdf"], timeout=30)
 
     def testTemplateInput(self):
         """
