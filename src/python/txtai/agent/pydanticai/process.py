@@ -2,11 +2,17 @@
 Process module
 """
 
-from pydantic_ai import Agent
-from pydantic_ai.usage import UsageLimits
+# Conditional import
+try:
+    from pydantic_ai import Agent
+    from pydantic_ai.usage import UsageLimits
 
-from .model import PydanticModel
-from .tool import PydanticTool
+    from .model import PydanticModel
+    from .tool import PydanticTool
+
+    PYDANTIC_AI = True
+except ImportError:
+    PYDANTIC_AI = False
 
 
 class PydanticProcess:
@@ -19,7 +25,7 @@ class PydanticProcess:
         Creates a new PydanticProcess.
 
         Args:
-            model: PydanticModel
+            model: model path, model configuration dictionary, LLM pipeline or PydanticModel
             tools: list of txtai agent tools
             instructions: optional custom instructions
             max_steps: maximum number of LLM calls per run
@@ -27,10 +33,17 @@ class PydanticProcess:
             kwargs: additional keyword arguments to pass to the Pydantic AI Agent
         """
 
+        if not PYDANTIC_AI:
+            raise ImportError('Pydantic AI is not available - install "agent" extra to enable')
+
         if method and method != "tool":
             raise ValueError(f'Agent method "{method}" is not supported by the pydantic backend')
 
-        self.model = model if isinstance(model, PydanticModel) else PydanticModel(model)
+        # Create model backed by LLM pipeline
+        if not isinstance(model, PydanticModel):
+            model = PydanticModel(**model) if isinstance(model, dict) else PydanticModel(model)
+
+        self.model = model
         self.tools = {tool.name: tool for tool in tools}
         self.maxsteps = max_steps
 

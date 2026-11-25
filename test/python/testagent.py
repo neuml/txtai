@@ -7,6 +7,7 @@ import sys
 import tempfile
 import traceback
 import unittest
+import warnings
 
 from threading import Thread
 from unittest.mock import patch
@@ -14,10 +15,22 @@ from unittest.mock import patch
 from datetime import datetime
 
 from pydantic_ai.exceptions import UsageLimitExceeded
+from pydantic_ai.messages import (
+    ModelRequest,
+    ModelResponse,
+    RetryPromptPart,
+    SystemPromptPart,
+    TextPart,
+    ToolCallPart,
+    ToolReturnPart,
+    UserPromptPart,
+)
+from pydantic_ai.models import ModelRequestParameters
 from smolagents import CodeAgent, PythonInterpreterTool, ToolCallingAgent
 
 from txtai.agent import Agent
-from txtai.agent.pydanticai import PydanticProcess, PydanticTool
+from txtai.agent.pydanticai import PydanticProcess
+from txtai.agent.pydanticai.tool import PydanticTool
 from txtai.agent.tool import BashTool, ToolFactory
 from txtai.embeddings import Embeddings
 
@@ -207,25 +220,30 @@ class TestAgent(unittest.TestCase):
 
     def testPydanticImportError(self):
         """
-        Test the pydantic backend raises an error when pydantic-ai-slim isn't installed
+        Test the pydantic backend raises an error when Pydantic AI isn't installed
         """
 
-        with patch.dict(sys.modules):
-            # Unload the pydantic backend and make pydantic_ai unavailable
+        # pylint: disable=C0415
+        with patch.dict(sys.modules, {"pydantic_ai": None}):
+            # Reload txtai with pydantic_ai unavailable, as in testoptional
             for name in list(sys.modules):
-                if name.startswith(("pydantic_ai", "txtai.agent.pydanticai")):
+                if name == "txtai" or name.startswith("txtai."):
                     del sys.modules[name]
 
-            sys.modules["pydantic_ai"] = None
+            from txtai import Agent as UnavailableAgent
 
             with self.assertRaises(ImportError) as error:
-                Agent(backend="pydantic", llm="hf-internal-testing/tiny-random-LlamaForCausalLM")
+                UnavailableAgent(backend="pydantic", llm="hf-internal-testing/tiny-random-LlamaForCausalLM")
 
             self.assertIn('install "agent" extra', str(error.exception))
-            self.assertTrue(error.exception.__cause__.name.startswith("pydantic_ai"))
 
             # smolagents backend still works without pydantic_ai
-            self.assertIsNotNone(Agent(llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=1))
+            self.assertIsNotNone(UnavailableAgent(llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=1))
+
+        # Module restoration must keep the real Agent available to other tests
+        from txtai import Agent as RestoredAgent
+
+        self.assertIs(RestoredAgent, Agent)
 
     def testPydanticMemory(self):
         """
@@ -243,6 +261,66 @@ class TestAgent(unittest.TestCase):
 
         # Prior requests are added to the prompt
         self.assertIn("User: Hello\nAssistant: Hi", messages[-1][-1]["content"])
+
+    def testPydanticMessages(self):
+        """
+        Test converting Pydantic AI messages to chat messages and parsing LLM responses
+        """
+
+        agent = Agent(backend="pydantic", llm="hf-internal-testing/tiny-random-LlamaForCausalLM")
+        model = agent.process.model
+
+        # RetryPromptPart is deprecated in newer versions of Pydantic AI but still supported
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            retry = RetryPromptPart(content="Invalid arguments", tool_name="search")
+
+        messages = model.messages(
+            [
+                ModelRequest(parts=[SystemPromptPart("Be brief"), SystemPromptPart("Use tools"), UserPromptPart(["Hello", "World"])]),
+                ModelResponse(parts=[TextPart("Hi")]),
+                ModelRequest(parts=[retry]),
+                ModelResponse(parts=[ToolCallPart(tool_name="search", args={"query": "txtai"}, tool_call_id="1")]),
+                ModelRequest(parts=[ToolReturnPart(tool_name="search", content="results", tool_call_id="1")]),
+            ],
+            ModelRequestParameters(),
+        )
+
+        # Consecutive messages with the same role are merged
+        self.assertEqual(messages[0], {"role": "system", "content": "Be brief\n\nUse tools"})
+        self.assertEqual(messages[1], {"role": "user", "content": "Hello\nWorld"})
+        self.assertEqual(messages[2], {"role": "assistant", "content": "Hi"})
+        self.assertEqual(messages[3]["role"], "user")
+        self.assertIn("Invalid arguments", messages[3]["content"])
+        self.assertEqual(messages[4], {"role": "assistant", "content": 'Action:\n{"name": "search", "arguments": {"query": "txtai"}}'})
+        self.assertEqual(messages[5], {"role": "user", "content": "Observation: results"})
+
+        # Tool calls that aren't JSON objects are sent back to the model to retry
+        part = model.parse('Action:\n["search"]')
+        self.assertEqual((part.tool_name, part.args), ("", '["search"]'))
+
+    def testPydanticOutput(self):
+        """
+        Test structured output with the pydantic backend
+        """
+
+        agent = Agent(backend="pydantic", llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=5, output_type=int)
+
+        # LLM that answers with plain text, then calls the final result tool
+        responses = iter(["Five", 'Action:\n{"name": "final_result", "arguments": {"response": 5}}'])
+
+        messages = []
+        agent.process.model.llm = lambda inputs, **kwargs: messages.append(inputs) or next(responses)
+
+        self.assertEqual(agent("Pick a number"), 5)
+
+        # Final result tools are described in the system prompt
+        self.assertIn("call one of the final result tools", messages[0][0]["content"])
+        self.assertIn("- final_result:", messages[0][0]["content"])
+
+        # Plain text answers are sent back to the LLM with validation feedback
+        self.assertEqual(messages[1][2], {"role": "assistant", "content": "Five"})
+        self.assertEqual(messages[1][3]["role"], "user")
 
     def testPydanticSteps(self):
         """

@@ -5,6 +5,7 @@ Factory module
 from smolagents import CodeAgent, ToolCallingAgent
 
 from .model import PipelineModel
+from .pydanticai import PydanticProcess
 from .tool import ToolFactory
 
 
@@ -71,16 +72,8 @@ class ProcessFactory:
             agent process runner
         """
 
-        # Only import Pydantic AI when this backend is used
-        try:
-            # pylint: disable=C0415
-            from .pydanticai import PydanticModel, PydanticProcess
-        except ImportError as missing:
-            raise ImportError('pydantic-ai-slim is not available - install "agent" extra to enable') from missing
-
-        # Create model backed by LLM pipeline
+        # LLM model path, configuration or instance
         model = config.pop("model", config.pop("llm", None))
-        model = PydanticModel(**model) if isinstance(model, dict) else PydanticModel(model)
 
         # Create the agent process
         return PydanticProcess(model, ToolFactory.create(config), **config)

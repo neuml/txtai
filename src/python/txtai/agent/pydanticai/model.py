@@ -41,10 +41,24 @@ class PydanticModel(Model):
 
     @property
     def model_name(self):
+        """
+        Returns the model name. This property is required by the Pydantic AI specification.
+
+        Returns:
+            model name
+        """
+
         return self.llm.generator.path if isinstance(self.llm, LLM) else "txtai"
 
     @property
     def system(self):
+        """
+        Returns the model provider name. This property is required by the Pydantic AI specification.
+
+        Returns:
+            model provider name
+        """
+
         return "txtai"
 
     async def request(self, messages, model_settings, model_request_parameters):
@@ -104,7 +118,7 @@ class PydanticModel(Model):
                     content = part.content if isinstance(part.content, str) else "\n".join(str(x) for x in part.content)
                     chat.append({"role": "user", "content": content})
                 elif isinstance(part, ToolReturnPart):
-                    chat.append({"role": "user", "content": f"Observation: {self.observation(part)}"})
+                    chat.append({"role": "user", "content": f"Observation: {part.model_response_str()}"})
                 elif isinstance(part, RetryPromptPart):
                     chat.append({"role": "user", "content": part.model_response()})
                 elif isinstance(part, TextPart):
@@ -157,23 +171,6 @@ class PydanticModel(Model):
             lines.append(f"  arguments: {json.dumps(tool.parameters_json_schema.get('properties', {}))}")
 
         return "\n".join(lines)
-
-    def observation(self, part):
-        """
-        Formats a tool result as text.
-
-        Args:
-            part: ToolReturnPart
-
-        Returns:
-            tool result text
-        """
-
-        # pylint: disable=W0718
-        try:
-            return part.model_response_str()
-        except Exception:
-            return str(part.content)
 
     def parse(self, response):
         """
