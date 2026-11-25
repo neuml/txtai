@@ -369,7 +369,7 @@ class IVFSparse(ANN):
         # Get size of embeddings index
         size = self.size()
 
-        default = 6 if size <= 5000 else self.cells(size) // 16
+        default = 6 if size <= 5000 else max(1, self.cells(size) // 16)
         return self.setting("nprobe", default)
 
     def cells(self, count):
