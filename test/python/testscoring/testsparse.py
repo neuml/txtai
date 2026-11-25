@@ -10,6 +10,9 @@ import unittest
 from threading import Event
 from unittest.mock import MagicMock, patch
 
+import numpy as np
+from scipy.sparse import csr_matrix
+
 from txtai.scoring import ScoringFactory
 
 
@@ -264,6 +267,27 @@ class TestSparse(unittest.TestCase):
             scoring.stop()
 
         scoring.close()
+
+    @patch("txtai.scoring.sparse.SparseVectorsFactory.create")
+    def testNormalizeBatch(self, create):
+        """
+        Test linear score normalization on a batch of sparse queries
+        """
+
+        scoring = ScoringFactory.create({"method": "sparse", "normalize": 2.0})
+        model = create.return_value
+        model.isnormalize = False
+        values = np.arange(1, 130, dtype=np.float32)
+        model.batchtransform.return_value = csr_matrix(values[:, None])
+        model.dot.side_effect = lambda a, b: (a @ b.T).toarray().tolist()
+        hits = [[(i, 4.0)] if i % 3 else [] for i in range(len(values))]
+        scoring.ann = MagicMock()
+        scoring.ann.search.return_value = hits
+
+        results = scoring.batchsearch([str(i) for i in range(len(values))])
+        expected = [[(i, 4.0 / max(value**2 / 2.0, 4.0))] if hits[i] else [] for i, value in enumerate(values.tolist())]
+        self.assertEqual(results, expected)
+        self.assertLess(max(args[0].shape[0] for args, _ in model.dot.call_args_list), len(values))
 
     def testZvecSparse(self):
         """

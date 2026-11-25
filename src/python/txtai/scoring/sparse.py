@@ -256,15 +256,16 @@ class Sparse(Scoring):
         # Default linear normalization
         scale = 30.0 if isinstance(self.isnormalize, bool) else self.isnormalize
 
-        # Normalize scores using max scores
-        maxscores = self.model.dot(queries, queries)
+        # Only the diagonal is needed. Bound the pairwise output of the vector model,
+        # including for custom models that implement their own dot product.
+        results, batchsize = [], 32
+        for start in range(0, len(scores), batchsize):
+            batch = queries[start : start + batchsize]
+            maxscores = self.model.dot(batch, batch)
+            for x, result in enumerate(scores[start : start + batchsize]):
+                maxscore = max(maxscores[x][x] / scale, scale)
+                maxscore = max(maxscore, result[0][1]) if result else maxscore
 
-        # Normalize results and return
-        results = []
-        for x, result in enumerate(scores):
-            maxscore = max(maxscores[x][x] / scale, scale)
-            maxscore = max(maxscore, result[0][1]) if result else maxscore
-
-            results.append([(uid, score / maxscore) for uid, score in result])
+                results.append([(uid, score / maxscore) for uid, score in result])
 
         return results
