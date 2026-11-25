@@ -36,13 +36,6 @@ class TestLabels(unittest.TestCase):
 
         self.assertEqual(self.labels("This is the best sentence ever", ["positive", "negative"])[0][0], 0)
 
-    def testLabelFlatten(self):
-        """
-        Test labels with single text input, flattened to top text labels
-        """
-
-        self.assertEqual(self.labels("This is the best sentence ever", ["positive", "negative"], flatten=True)[0], "positive")
-
     def testLabelBatch(self):
         """
         Test labels with multiple text inputs
@@ -59,20 +52,6 @@ class TestLabels(unittest.TestCase):
         results = [l[0] for l in self.labels(["This is the best sentence ever", "This is terrible"], ["positive", "negative"], flatten=True)]
         self.assertEqual(results, ["positive", "negative"])
 
-    def testLabelZeroThreshold(self):
-        """
-        Test numeric zero flattening thresholds with dynamic and fixed labels
-        """
-
-        text = "This is the best sentence ever"
-        for classifier, candidates in ((self.labels, ["positive", "negative"]), (Labels(dynamic=False), ["POSITIVE", "NEGATIVE"])):
-            with self.subTest(dynamic=classifier.dynamic):
-                self.assertCountEqual(classifier(text, candidates, flatten=0.0), candidates)
-                self.assertCountEqual(classifier([text], candidates, flatten=0.0)[0], candidates)
-
-                # Boolean False still requests the original score tuples.
-                self.assertEqual(classifier(text, candidates, flatten=False), classifier(text, candidates))
-
     def testLabelFixed(self):
         """
         Test labels with a fixed label text classification model
@@ -86,6 +65,65 @@ class TestLabels(unittest.TestCase):
         # Verify results
         self.assertEqual(labels("This is the best sentence ever")[0][0], index)
         self.assertEqual(labels("This is the best sentence ever", multilabel=True)[0][0], index)
+
+    def testLabelFixedDefaultLabel2Id(self):
+        """
+        Test labels with a fixed label text classification model that has label names in id2label but a default label2id
+        """
+
+        labels = Labels(dynamic=False)
+        text = "This is the best sentence ever"
+
+        # Reset label2id to default names, as found in some model configs
+        config = labels.pipeline.model.config
+        config.label2id = {f"LABEL_{uid}": uid for uid in config.id2label}
+
+        # Verify output label ids resolve using id2label
+        for uid, name in config.id2label.items():
+            self.assertEqual([x for x, _ in labels(text, labels=[name])], [uid])
+            self.assertEqual(labels(text, labels=[name], flatten=True), [name])
+
+        self.assertEqual(sorted(x for x, _ in labels(text)), sorted(config.id2label))
+
+    def testLabelFixedFilter(self):
+        """
+        Test filtering labels with a fixed label text classification model. Covers every supported label form with every output format.
+        """
+
+        labels = Labels(dynamic=False)
+        text = "This is the best sentence ever"
+        config = labels.pipeline.model.config
+
+        for uid, name in config.id2label.items():
+            # Supported label forms: name (any case), integer id, id as string
+            for label in [name, name.lower(), name.upper(), name[:1].lower() + name[1:].upper(), uid, str(uid)]:
+                with self.subTest(label=label):
+                    # (id, score) output
+                    self.assertEqual([x for x, _ in labels(text, labels=[label])], [uid])
+                    self.assertEqual([x for x, _ in labels(text, labels=[label], flatten=False)], [uid])
+
+                    # Flattened output, top label and thresholds
+                    self.assertEqual(labels(text, labels=[label], flatten=True), [name])
+                    self.assertEqual(labels(text, labels=[label], flatten=0.0), [name])
+                    self.assertEqual(labels(text, labels=[label], flatten=1.1), [])
+
+                    # List input
+                    self.assertEqual([[x for x, _ in row] for row in labels([text, text], labels=[label])], [[uid], [uid]])
+                    self.assertEqual(labels([text, text], labels=[label], flatten=True), [[name], [name]])
+
+        # Labels that don't match a model label are ignored
+        unknown = max(config.id2label) + 1
+        for label in ["unknown", unknown, str(unknown), True]:
+            with self.subTest(label=label):
+                self.assertEqual(labels(text, labels=[label]), [])
+                self.assertEqual(labels(text, labels=[label], flatten=True), [])
+                self.assertEqual(labels(text, labels=[label], flatten=0.0), [])
+
+        # No filter returns all labels
+        for value in [None, []]:
+            with self.subTest(labels=value):
+                self.assertEqual(len(labels(text, labels=value)), len(labels.labels()))
+                self.assertEqual(labels(text, labels=value, flatten=True), labels(text, flatten=True))
 
     def testLabelFixedFlatten(self):
         """
@@ -115,3 +153,25 @@ class TestLabels(unittest.TestCase):
         for label, uid in config.label2id.items():
             self.assertEqual(labels("This is the best sentence ever", labels=[label.lower()])[0][0], uid)
             self.assertEqual(labels("This is the best sentence ever", labels=[str(uid)])[0][0], uid)
+            self.assertEqual(labels("This is the best sentence ever", labels=[uid])[0][0], uid)
+
+    def testLabelFlatten(self):
+        """
+        Test labels with single text input, flattened to top text labels
+        """
+
+        self.assertEqual(self.labels("This is the best sentence ever", ["positive", "negative"], flatten=True)[0], "positive")
+
+    def testLabelZeroThreshold(self):
+        """
+        Test numeric zero flattening thresholds with dynamic and fixed labels
+        """
+
+        text = "This is the best sentence ever"
+        for classifier, candidates in ((self.labels, ["positive", "negative"]), (Labels(dynamic=False), ["POSITIVE", "NEGATIVE"])):
+            with self.subTest(dynamic=classifier.dynamic):
+                self.assertCountEqual(classifier(text, candidates, flatten=0.0), candidates)
+                self.assertCountEqual(classifier([text], candidates, flatten=0.0)[0], candidates)
+
+                # Boolean False still requests the original score tuples.
+                self.assertEqual(classifier(text, candidates, flatten=False), classifier(text, candidates))
