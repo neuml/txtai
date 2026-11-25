@@ -124,7 +124,7 @@ class TestLabels(unittest.TestCase):
             with self.subTest(labels=value):
                 self.assertEqual(len(labels(text, labels=value)), len(labels.labels()))
                 self.assertEqual(labels(text, labels=value, flatten=True), labels(text, flatten=True))
-    
+
     def testLabelFixedFlatten(self):
         """
         Test labels with a fixed label text classification model, flattened to top text labels
@@ -161,7 +161,7 @@ class TestLabels(unittest.TestCase):
         """
 
         self.assertEqual(self.labels("This is the best sentence ever", ["positive", "negative"], flatten=True)[0], "positive")
-    
+
     def testLabelZeroThreshold(self):
         """
         Test numeric zero flattening thresholds with dynamic and fixed labels
