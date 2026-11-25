@@ -67,10 +67,10 @@ class Reducer:
 
         # Normalize embeddings, removing principal components changes the vector lengths.
         # Dot product on normalized vectors is equal to cosine similarity.
-        if len(embeddings.shape) > 1:
-            embeddings /= np.linalg.norm(embeddings, axis=1)[:, np.newaxis]
-        else:
-            embeddings /= np.linalg.norm(embeddings)
+        # Vectors with a zero norm (fully removed by the model) are kept as zero vectors.
+        norms = np.linalg.norm(embeddings, axis=-1, keepdims=True)
+        norms[norms == 0] = 1
+        embeddings /= norms
 
     def build(self, embeddings, components):
         """

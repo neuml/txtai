@@ -704,6 +704,18 @@ class TestEmbeddings(unittest.TestCase):
         reducer(batch)
         self.assertTrue(np.allclose(np.linalg.norm(batch, axis=1), 1.0))
 
+        # Test that a zero vector stays a zero vector
+        query = np.zeros(5, dtype=np.float32)
+        reducer(query)
+        self.assertTrue(np.array_equal(query, np.zeros(5, dtype=np.float32)))
+
+        # Test that vectors fully removed by the model stay zero vectors
+        reducer = Reducer(np.array([[1, 0], [1, 0], [1, 0]], dtype=np.float32), 1)
+
+        batch = np.array([[1, 0], [0, 1], [0, 0]], dtype=np.float32)
+        reducer(batch)
+        self.assertTrue(np.array_equal(batch, np.array([[0, 0], [0, 1], [0, 0]], dtype=np.float32)))
+
     def testReducerSearch(self):
         """
         Test that search scores are cosine similarities when principal components are removed
