@@ -16,6 +16,11 @@ except ImportError:
 
 from ...serialize import SerializeFactory
 
+# Core library imports
+from ...util import Library
+
+np = Library().numpy()
+
 
 class Reducer:
     """
@@ -38,8 +43,8 @@ class Reducer:
 
     def __call__(self, embeddings):
         """
-        Applies a dimensionality reduction model to embeddings, removed the top n principal components. Operation applied
-        directly on array.
+        Applies a dimensionality reduction model to embeddings, removes the top n principal components and normalizes the
+        results. Operation applied directly on array.
 
         Args:
             embeddings: input embeddings matrix
@@ -59,6 +64,13 @@ class Reducer:
         else:
             # Single embedding
             embeddings -= factor.dot(pc)
+
+        # Normalize embeddings, removing principal components changes the vector lengths.
+        # Dot product on normalized vectors is equal to cosine similarity.
+        if len(embeddings.shape) > 1:
+            embeddings /= np.linalg.norm(embeddings, axis=1)[:, np.newaxis]
+        else:
+            embeddings /= np.linalg.norm(embeddings)
 
     def build(self, embeddings, components):
         """
