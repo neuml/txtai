@@ -614,6 +614,17 @@ class TestWorkflow(unittest.TestCase):
                         with open(path, encoding="utf-8") as result:
                             self.assertEqual(result.read(), name)
 
+    def testSelectCase(self):
+        """
+        Test select patterns match case insensitively
+        """
+
+        task = Task(lambda values: [value.upper() for value in values], select=r"\.WAV$")
+        self.assertEqual(task(["a.wav", "b.WAV", "c.txt"]), ["A.WAV", "B.WAV", "c.txt"])
+
+        task = Task(lambda values: [value.upper() for value in values], select=r"\.wav$")
+        self.assertEqual(task(["a.wav", "b.WAV", "c.txt"]), ["A.WAV", "B.WAV", "c.txt"])
+
     def testScheduleWorkflow(self):
         """
         Test workflow schedules
