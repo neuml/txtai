@@ -10,7 +10,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 from huggingface_hub import hf_hub_download
-from txtai.cloud import Cloud, ObjectStorage
+from txtai.cloud import Cloud, HuggingFaceHub, ObjectStorage
 from txtai.embeddings import Embeddings
 
 
@@ -61,6 +61,28 @@ class TestCloud(unittest.TestCase):
 
         # pylint: disable=E1120
         self.runHub("huggingface-hub")
+
+    @patch("huggingface_hub.hf_hub_download")
+    @patch("huggingface_hub.upload_file")
+    @patch("huggingface_hub.create_repo")
+    def testHubRevision(self, _, upload, download):
+        """
+        Test huggingface-hub lfs-tracking uses the configured revision
+        """
+
+        with tempfile.TemporaryDirectory() as directory:
+            attributes = os.path.join(directory, ".gitattributes")
+            with open(attributes, "w", encoding="utf-8") as f:
+                f.write("*.bin filter=lfs diff=lfs merge=lfs -text\n")
+
+            download.return_value = attributes
+
+            HuggingFaceHub({"container": "neuml/txtai-intro", "revision": "dev"}).save(attributes)
+
+            # Read and update .gitattributes on the configured revision
+            self.assertEqual(download.call_args.kwargs.get("revision"), "dev")
+            for call in upload.call_args_list:
+                self.assertEqual(call.kwargs.get("revision"), "dev")
 
     def testInvalidLoadPaths(self):
         """
