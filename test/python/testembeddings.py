@@ -758,7 +758,7 @@ class TestEmbeddings(unittest.TestCase):
         uid, score = embeddings.search("feel good story", 1)[0]
         query, document = embeddings.transform("feel good story"), embeddings.transform(self.data[uid])
         self.assertAlmostEqual(score, float(query.dot(document) / (np.linalg.norm(query) * np.linalg.norm(document))), places=5)
-    
+
     def testSave(self):
         """
         Test save
