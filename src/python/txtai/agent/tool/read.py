@@ -4,7 +4,7 @@ Read imports
 
 import re
 
-from smolagents import Tool
+from .base import Tool
 
 from ...pipeline import Textractor
 

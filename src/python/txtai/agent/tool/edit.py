@@ -4,7 +4,7 @@ Edit imports
 
 import difflib
 
-from smolagents import Tool
+from .base import Tool
 
 
 class EditTool(Tool):

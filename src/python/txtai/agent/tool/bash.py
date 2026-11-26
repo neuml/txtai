@@ -4,7 +4,7 @@ Bash imports
 
 import subprocess
 
-from smolagents import Tool
+from .base import Tool
 
 
 class BashTool(Tool):

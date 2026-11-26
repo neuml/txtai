@@ -2,7 +2,7 @@
 Write imports
 """
 
-from smolagents import Tool
+from .base import Tool
 
 
 class WriteTool(Tool):

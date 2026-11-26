@@ -2,7 +2,7 @@
 Embeddings module
 """
 
-from smolagents import Tool
+from .base import Tool
 
 from ...embeddings import Embeddings
 

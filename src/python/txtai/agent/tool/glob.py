@@ -5,7 +5,7 @@ Glob imports
 import glob as g
 import os
 
-from smolagents import Tool
+from .base import Tool
 
 
 class GlobTool(Tool):

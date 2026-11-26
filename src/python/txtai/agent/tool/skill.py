@@ -2,7 +2,7 @@
 Skill imports
 """
 
-from smolagents import Tool
+from .base import Tool
 
 # Core library imports
 from ...util import Library

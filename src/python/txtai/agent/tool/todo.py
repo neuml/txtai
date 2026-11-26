@@ -2,7 +2,7 @@
 Todo imports
 """
 
-from smolagents import Tool
+from .base import Tool
 
 
 class TodoWriteTool(Tool):

@@ -6,7 +6,7 @@ import glob
 import os
 import re
 
-from smolagents import Tool
+from .base import Tool
 
 
 class GrepTool(Tool):

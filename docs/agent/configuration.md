@@ -62,6 +62,8 @@ The `pydantic` backend has the following differences.
 - Streaming returns the final answer as a single chunk
 - Additional options are passed to the [Pydantic AI Agent](https://pydantic.dev/docs/ai/core-concepts/agent/)
 
+The `smolagents` package is only required by the `smolagents` backend. The `pydantic` backend runs the built-in txtai tools without it. The `python`, `question` and `websearch` tools and MCP tool collections come from smolagents, so they still need it installed.
+
 ## model
 
 ```yaml
@@ -104,7 +106,7 @@ Embeddings indexes have built-in support. Provide the following dictionary confi
 
 ### tool
 
-The following shortcut strings load tools directly. Passing a Tool instance is also supported.
+The following shortcut strings load tools directly. Passing a Tool instance is also supported, either a subclass of `txtai.agent.Tool` or a smolagents Tool.
 
 | Tool        | Description                                               |
 |:------------|:----------------------------------------------------------|

@@ -13,6 +13,7 @@ from threading import Thread
 from unittest.mock import patch
 
 from datetime import datetime
+from typing import Any, Optional
 
 from pydantic_ai.exceptions import UsageLimitExceeded
 from pydantic_ai.messages import (
@@ -26,12 +27,13 @@ from pydantic_ai.messages import (
     UserPromptPart,
 )
 from pydantic_ai.models import ModelRequestParameters
-from smolagents import CodeAgent, PythonInterpreterTool, ToolCallingAgent
+from smolagents import CodeAgent, PythonInterpreterTool, ToolCallingAgent, tool as smoltool
 
 from txtai.agent import Agent
 from txtai.agent.pydanticai import PydanticProcess
 from txtai.agent.pydanticai.tool import PydanticTool
-from txtai.agent.tool import BashTool, ToolFactory
+from txtai.agent.smolagents import SmolagentsTool
+from txtai.agent.tool import BashTool, Tool, ToolFactory
 from txtai.embeddings import Embeddings
 
 # agents.md content
@@ -91,7 +93,7 @@ class TestAgent(unittest.TestCase):
         """
 
         # pylint: disable=C0415
-        for module in ("smolagents", "mcpadapt.core"):
+        for module in ("mcpadapt.core",):
             with self.subTest(module=module), patch.dict(sys.modules, {module: None}):
                 # Reload txtai with one dependency unavailable, as in testoptional.
                 for name in list(sys.modules):
@@ -115,6 +117,73 @@ class TestAgent(unittest.TestCase):
             from txtai import Agent as RestoredAgent
 
             self.assertIs(RestoredAgent, Agent)
+
+    def testOptionalSmolagents(self):
+        """
+        Test agent tools and the pydantic backend work without smolagents installed
+        """
+
+        def weather(city: str) -> str:
+            """
+            Gets the weather for a city
+
+            Args:
+                city: city name
+
+            Returns:
+                weather
+            """
+
+            return f"sunny in {city}"
+
+        # pylint: disable=C0415
+        with patch.dict(sys.modules, {"smolagents": None}):
+            # Reload txtai with smolagents unavailable, as in testoptional
+            for name in list(sys.modules):
+                if name == "txtai" or name.startswith("txtai."):
+                    del sys.modules[name]
+
+            from txtai import agent as optional
+
+            # Agent and tools import without smolagents
+            OptionalAgent, OptionalToolFactory = optional.Agent, optional.ToolFactory
+            self.assertIsNone(getattr(OptionalAgent, "ERROR", None))
+            self.assertFalse(hasattr(optional, "PipelineModel"))
+            self.assertIsNotNone(optional.BashTool(allowed=["ls"])({"command": ["ls", tempfile.gettempdir()]}))
+
+            # smolagents only tools raise an error
+            self.assertNotIn("websearch", OptionalToolFactory.DEFAULTS)
+            for tool in ["python", "question", "websearch", "http://localhost:8000/mcp"]:
+                with self.subTest(tool=tool), self.assertRaises(ImportError) as error:
+                    OptionalToolFactory.create({"tools": [tool]})
+
+                self.assertIn('install "agent" extra', str(error.exception))
+
+            # The smolagents backend raises an error with the original cause
+            with self.assertRaises(ImportError) as error:
+                OptionalAgent(llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=1)
+
+            self.assertIn('install "agent" extra', str(error.exception))
+            self.assertIsInstance(error.exception.__cause__, ModuleNotFoundError)
+            self.assertEqual(error.exception.__cause__.name, "smolagents")
+
+            # The pydantic backend runs default and function tools
+            agent = OptionalAgent(
+                backend="pydantic", tools=[weather, "defaults"], llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=5
+            )
+            self.assertEqual(sorted(agent.tools), ["bash", "edit", "glob", "grep", "read", "todowrite", "weather", "write"])
+
+            responses = iter(['Action:\n{"name": "weather", "arguments": {"city": "Paris"}}', "Done"])
+            messages = []
+            agent.process.model.llm = lambda inputs, **kwargs: messages.append(inputs) or next(responses)
+
+            self.assertEqual(agent("What is the weather in Paris?"), "Done")
+            self.assertEqual(messages[1][-1], {"role": "user", "content": "Observation: sunny in Paris"})
+
+        # Module restoration must keep the real Agent available to other tests
+        from txtai import Agent as RestoredAgent
+
+        self.assertIs(RestoredAgent, Agent)
 
     def testInstructions(self):
         """
@@ -437,6 +506,57 @@ class TestAgent(unittest.TestCase):
 
         self.assertIsInstance(agent.tools["hello"]("say hello"), str)
 
+    def testToolsBase(self):
+        """
+        Test the txtai tool base class
+        """
+
+        class Echo(Tool):
+            """
+            Echo tool
+            """
+
+            def __init__(self):
+                self.name = "echo"
+                self.description = "Echoes text"
+                self.inputs = {"text": {"type": "string", "description": "text"}}
+                self.output_type = "string"
+                super().__init__()
+
+            # pylint: disable=W0221
+            def forward(self, text):
+                return text
+
+        # Inputs can be passed as positional, keyword or a single dictionary of named inputs
+        tool = Echo()
+        self.assertEqual(tool("a"), "a")
+        self.assertEqual(tool(text="b"), "b")
+        self.assertEqual(tool({"text": "c"}), "c")
+
+        # Dictionaries that aren't named inputs are passed through
+        self.assertEqual(tool({"other": 1}), {"other": 1})
+
+        # Tools must set all parameters
+        # pylint: disable=W0223
+        class Missing(Tool):
+            """
+            Tool missing a description
+            """
+
+            def __init__(self):
+                self.name = "missing"
+                self.inputs = {}
+                self.output_type = "any"
+                super().__init__()
+
+        with self.assertRaises(TypeError):
+            Missing()
+
+        # Forward must be implemented
+        tool = Tool.__new__(Tool)
+        with self.assertRaises(NotImplementedError):
+            tool.forward()
+
     def testToolsBashAllowedEmpty(self):
         """
         Test an empty allowed commands list permits no commands
@@ -632,6 +752,99 @@ class TestAgent(unittest.TestCase):
             tool = ToolFactory.create({"tools": [function]})[0]
             self.assertEqual(tool.name, function.__name__)
             self.assertEqual(tool("Paris"), "sunny in Paris")
+
+    def testToolsHints(self):
+        """
+        Test tools created from type hints match the inputs smolagents creates
+        """
+
+        # pylint: disable=W0613
+        def search(query: str, limit: int = 5, tags: list[str] = None, data=None, scale: Optional[float] = None) -> list:
+            """
+            Runs a search
+
+            Args:
+                query: search query
+                limit: maximum results
+                tags: tags to filter on
+                data: extra data
+                scale: optional score scale
+
+            Returns:
+                search results
+            """
+
+            return [query]
+
+        # pylint: disable=W0613
+        def anydata(query: str, data: Any = None, limit: int = 5, scale: Optional[float] = None) -> str:
+            """
+            Runs a search
+
+            Args:
+                query: search query
+                data: extra data
+                limit: maximum results
+                scale: optional score scale
+
+            Returns:
+                search results
+            """
+
+            return query
+
+        def noinputs() -> int:
+            """
+            Returns a number
+            """
+
+            return 1
+
+        for function in [anydata, noinputs]:
+            with self.subTest(function=function.__name__):
+                tool, expected = ToolFactory.create({"tools": [function]})[0], smoltool(function)
+                self.assertIsInstance(tool, Tool)
+                self.assertEqual(
+                    (tool.name, tool.description, tool.output_type),
+                    (expected.name, expected.description, expected.output_type),
+                )
+
+                # Input keys are compared in order since they are rendered into prompts
+                self.assertEqual([list(x.items()) for x in tool.inputs.values()], [list(x.items()) for x in expected.inputs.values()])
+                self.assertEqual(list(tool.inputs), list(expected.inputs))
+
+        # Inputs missing a type hint fall back to the docstring
+        tool = ToolFactory.create({"tools": [search]})[0]
+        self.assertEqual(tool.inputs, {"query": {"type": "any", "description": "search query"}})
+        self.assertEqual(tool("txtai"), ["txtai"])
+
+    def testToolsSmolagents(self):
+        """
+        Test txtai tools are converted to smolagents tools with the smolagents backend
+        """
+
+        agent = Agent(tools=["bash", PythonInterpreterTool()], llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=1)
+
+        # txtai tools are wrapped, smolagents tools are used as is
+        self.assertIsInstance(agent.tools["bash"], SmolagentsTool)
+        self.assertIsInstance(agent.tools["bash"].tool, BashTool)
+        self.assertIsInstance(agent.tools["python_interpreter"], PythonInterpreterTool)
+
+        # Wrapped tools keep the txtai tool attributes and run it
+        self.assertEqual(agent.tools["bash"].allowed, ["cat", "cut", "diff", "grep", "head", "ls", "tail"])
+        self.assertEqual(agent.tools["bash"].inputs, BashTool().inputs)
+        self.assertEqual(agent.tools["bash"]({"command": ["ls", tempfile.gettempdir()]}), BashTool()(["ls", tempfile.gettempdir()]))
+
+        # Agent runs a tool call through the wrapped tool
+        responses = iter(
+            ['Action:\n{"name": "bash", "arguments": {"command": ["ls", "/"]}}', 'Action:\n{"name": "final_answer", "arguments": "Done"}']
+        )
+        agent = Agent(tools=["bash"], llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=2)
+        agent.process.model.llm = lambda *args, **kwargs: next(responses)
+
+        with patch.object(BashTool, "forward", return_value="listing") as forward:
+            self.assertEqual(agent("List files"), "Done")
+            forward.assert_called_once_with(command=["ls", "/"])
 
     def testToolsEditCRLF(self):
         """
