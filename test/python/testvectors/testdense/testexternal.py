@@ -3,6 +3,7 @@ External module tests
 """
 
 import os
+import tempfile
 import unittest
 
 from unittest.mock import patch
@@ -64,6 +65,22 @@ class TestExternal(unittest.TestCase):
         # Test shape of serialized embeddings
         with open(stream, "rb") as queue:
             self.assertEqual(np.load(queue).shape, (500, 768))
+
+    def testIndexCheckpoint(self):
+        """
+        Test a changed precomputed vector is reindexed when resuming a checkpoint
+        """
+
+        original = np.zeros(1536, dtype=np.float32)
+        original[759] = 1
+        updated = np.zeros_like(original)
+        updated[761] = 1
+
+        with tempfile.TemporaryDirectory() as checkpoint:
+            for vector in (original, updated):
+                embeddings = Embeddings({"method": "external", "backend": "numpy"})
+                embeddings.index([("doc", vector, None)], checkpoint=checkpoint)
+                self.assertEqual(embeddings.search(vector, 1), [("doc", 1.0)])
 
     def testPrecomputed(self):
         """
