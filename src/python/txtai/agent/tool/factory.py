@@ -6,10 +6,6 @@ import inspect
 
 from types import FunctionType, MethodType
 
-import mcpadapt.core
-
-from transformers.utils import chat_template_utils
-
 from ...embeddings import Embeddings
 from .base import Tool
 from .bash import BashTool
@@ -18,19 +14,13 @@ from .embeddings import EmbeddingsTool
 from .function import FunctionTool
 from .glob import GlobTool
 from .grep import GrepTool
+from .question import QuestionTool
 from .read import ReadTool
+from .schema import ToolSchema, TypeHintError
 from .skill import SkillTool
 from .todo import TodoWriteTool
+from .websearch import WebSearchTool
 from .write import WriteTool
-
-# Conditional import
-try:
-    from mcpadapt.smolagents_adapter import SmolAgentsAdapter
-    from smolagents import PythonInterpreterTool, Tool as SmolagentsTool, UserInputTool, WebSearchTool
-
-    SMOLAGENTS = True
-except ImportError:
-    SMOLAGENTS = False
 
 
 class ToolFactory:
@@ -38,27 +28,24 @@ class ToolFactory:
     Methods to create tools.
     """
 
-    # Default toolkit
+    # Default toolkit, in name order
     DEFAULTS = {
         "bash": BashTool,
         "edit": EditTool,
         "glob": GlobTool,
         "grep": GrepTool,
+        "question": QuestionTool,
         "read": ReadTool,
         "todowrite": TodoWriteTool,
+        "websearch": WebSearchTool,
         "write": WriteTool,
     }
-
-    # Default tools provided by smolagents, only available when smolagents is installed. Defaults stay in name order.
-    SMOLAGENTS_DEFAULTS = ["python", "question", "websearch"]
-    if SMOLAGENTS:
-        DEFAULTS = dict(sorted({**DEFAULTS, "python": PythonInterpreterTool, "question": UserInputTool, "websearch": WebSearchTool}.items()))
 
     # Backwards compatible mappings
     DEFAULTS["webview"] = DEFAULTS["read"]
 
     @staticmethod
-    def create(config):
+    def create(config, defaults=None, mcp=None):
         """
         Creates a new list of tools. This method iterates of the `tools` configuration option and creates a Tool instance
         for each entry. This supports the following:
@@ -67,9 +54,17 @@ class ToolFactory:
           - Dictionary with `name`, `description`, `inputs`, `output` and `target` function configuration
           - String with a tool alias name
 
+        Args:
+            config: agent configuration
+            defaults: additional default tools provided by the agent backend, {alias name: tool class}
+            mcp: function that loads the tools of an MCP server url, provided by the agent backend
+
         Returns:
             list of tools
         """
+
+        # Default tools, in name order
+        defaults = dict(sorted({**ToolFactory.DEFAULTS, **(defaults if defaults else {})}.items()))
 
         tools = []
         for tool in config.pop("tools", []):
@@ -90,25 +85,28 @@ class ToolFactory:
                 )
 
             # Get default tool, if applicable
-            elif isinstance(tool, str) and (tool in ToolFactory.DEFAULTS or tool in ToolFactory.SMOLAGENTS_DEFAULTS):
-                tool = ToolFactory.default(tool)
+            elif isinstance(tool, str) and tool in defaults:
+                tool = defaults[tool]()
 
             # Get ALL default tools, if applicable
             elif isinstance(tool, str) and tool == "defaults":
-                tools.extend(ToolFactory.default(name) for name in ToolFactory.DEFAULTS if name != "webview")
+                tools.extend(default() for name, default in defaults.items() if name != "webview")
                 tool = None
 
             # Support importing MCP tool collections
             elif isinstance(tool, str) and tool.startswith("http"):
-                if not SMOLAGENTS:
-                    raise ImportError('MCP tools require smolagents - install "agent" extra to enable')
+                if not mcp:
+                    raise ValueError("MCP tools are only supported by the smolagents backend")
 
-                tools.extend(mcpadapt.core.MCPAdapt({"url": tool}, SmolAgentsAdapter()).tools())
+                tools.extend(mcp(tool))
                 tool = None
 
             # Load skill.md files
             elif isinstance(tool, str) and tool.endswith(".md"):
                 tool = SkillTool(tool)
+
+            elif isinstance(tool, str):
+                raise ValueError(f"Unknown tool: {tool}")
 
             # Add tool
             if tool:
@@ -134,13 +132,14 @@ class ToolFactory:
         try:
             # Try to create using type hints - this fails when no annotations are available
             return ToolFactory.fromhints(target, config)
-        except (chat_template_utils.TypeHintParsingException, TypeError):
+        except TypeError:
             return ToolFactory.fromdocs(target, config)
 
     @staticmethod
     def istool(tool):
         """
-        Checks if tool is a txtai or smolagents tool instance.
+        Checks if tool is a tool instance. This is a txtai tool or an object with the same tool attributes, such as a tool
+        from an agent framework.
 
         Args:
             tool: object to check
@@ -149,7 +148,7 @@ class ToolFactory:
             True if tool is a tool instance
         """
 
-        return isinstance(tool, Tool) or (SMOLAGENTS and isinstance(tool, SmolagentsTool))
+        return isinstance(tool, Tool) or all(hasattr(tool, name) for name in ("name", "description", "inputs", "output_type", "forward"))
 
     @staticmethod
     def default(name):
@@ -162,9 +161,6 @@ class ToolFactory:
         Returns:
             Tool
         """
-
-        if name not in ToolFactory.DEFAULTS and name in ToolFactory.SMOLAGENTS_DEFAULTS:
-            raise ImportError(f'The {name} tool requires smolagents - install "agent" extra to enable')
 
         return ToolFactory.DEFAULTS[name]()
 
@@ -181,12 +177,12 @@ class ToolFactory:
             Tool
         """
 
-        schema = ToolFactory.unions(chat_template_utils.get_json_schema(target)["function"])
+        schema = ToolFactory.unions(ToolSchema.create(target))
 
         # Functions with inputs must have a return type hint
         if "return" not in schema:
             if schema["parameters"]["properties"]:
-                raise chat_template_utils.TypeHintParsingException("Tool return type not found: make sure your function has a return type hint!")
+                raise TypeHintError("Tool return type not found: make sure your function has a return type hint!")
 
             schema["return"] = {"type": "null"}
 
@@ -258,7 +254,7 @@ class ToolFactory:
 
         # Extract target documentation
         doc = inspect.getdoc(target)
-        description, parameters, _ = chat_template_utils.parse_google_format_docstring(doc.strip()) if doc else (None, {}, None)
+        description, parameters, _ = ToolSchema.docstring(doc.strip()) if doc else (None, {}, None)
 
         # Get list of required parameters
         signature = inspect.signature(target)

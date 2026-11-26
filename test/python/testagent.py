@@ -13,7 +13,8 @@ from threading import Thread
 from unittest.mock import patch
 
 from datetime import datetime
-from typing import Any, Optional, Union
+from enum import Enum
+from typing import Any, Literal, Optional, Union
 
 from pydantic_ai.exceptions import UsageLimitExceeded
 from pydantic_ai.messages import (
@@ -33,7 +34,7 @@ from txtai.agent import Agent
 from txtai.agent.pydanticai import PydanticProcess
 from txtai.agent.pydanticai.tool import PydanticTool
 from txtai.agent.smolagents import SmolagentsTool
-from txtai.agent.tool import BashTool, Tool, ToolFactory
+from txtai.agent.tool import BashTool, DocstringError, QuestionTool, Tool, ToolFactory, ToolSchema, TypeHintError, WebSearchTool
 from txtai.embeddings import Embeddings
 
 # agents.md content
@@ -93,7 +94,7 @@ class TestAgent(unittest.TestCase):
         """
 
         # pylint: disable=C0415
-        for module in ("mcpadapt.core",):
+        for module in ("jinja2.sandbox",):
             with self.subTest(module=module), patch.dict(sys.modules, {module: None}):
                 # Reload txtai with one dependency unavailable, as in testoptional.
                 for name in list(sys.modules):
@@ -151,13 +152,11 @@ class TestAgent(unittest.TestCase):
             self.assertFalse(hasattr(optional, "PipelineModel"))
             self.assertIsNotNone(optional.BashTool(allowed=["ls"])({"command": ["ls", tempfile.gettempdir()]}))
 
-            # smolagents only tools raise an error
-            self.assertNotIn("websearch", OptionalToolFactory.DEFAULTS)
-            for tool in ["python", "question", "websearch", "http://localhost:8000/mcp"]:
-                with self.subTest(tool=tool), self.assertRaises(ImportError) as error:
+            # Tools only available with the smolagents backend raise an error
+            self.assertNotIn("python", OptionalToolFactory.DEFAULTS)
+            for tool in ["python", "http://localhost:8000/mcp"]:
+                with self.subTest(tool=tool), self.assertRaises(ValueError):
                     OptionalToolFactory.create({"tools": [tool]})
-
-                self.assertIn('install "agent" extra', str(error.exception))
 
             # The smolagents backend raises an error with the original cause
             with self.assertRaises(ImportError) as error:
@@ -171,7 +170,9 @@ class TestAgent(unittest.TestCase):
             agent = OptionalAgent(
                 backend="pydantic", tools=[weather, "defaults"], llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=5
             )
-            self.assertEqual(sorted(agent.tools), ["bash", "edit", "glob", "grep", "read", "todowrite", "weather", "write"])
+            self.assertEqual(
+                sorted(agent.tools), ["bash", "edit", "glob", "grep", "read", "todowrite", "user_input", "weather", "web_search", "write"]
+            )
 
             responses = iter(['Action:\n{"name": "weather", "arguments": {"city": "Paris"}}', "Done"])
             messages = []
@@ -845,6 +846,177 @@ class TestAgent(unittest.TestCase):
         self.assertEqual(tool.inputs, {"query": {"type": "any", "description": "search query"}})
         self.assertEqual(tool("txtai"), ["txtai"])
 
+    def testToolsQuestion(self):
+        """
+        Test the question tool asks the user
+        """
+
+        tool = ToolFactory.create({"tools": ["question"]})[0]
+        self.assertIsInstance(tool, QuestionTool)
+        self.assertEqual(tool.name, "user_input")
+
+        with patch("builtins.input", return_value="Paris") as prompt:
+            self.assertEqual(tool("Which city?"), "Paris")
+            prompt.assert_called_once_with("Which city? => Type your answer here:")
+
+    def testToolsSchema(self):
+        """
+        Test JSON schemas built from type hints and docstrings
+        """
+
+        class Color(Enum):
+            """
+            Colors
+            """
+
+            RED = "red"
+            BLUE = "blue"
+
+        # pylint: disable=W0613,R0917
+        def search(
+            query: str,
+            mode: Literal["fast", 1],
+            color: Color,
+            pair: tuple[int, str],
+            scores: dict[str, float],
+            kind: str = "web",
+            limit: int | None = None,
+        ) -> list[str]:
+            """
+            Runs a search
+
+            Args:
+                query: search query
+                    spanning two lines
+                mode: search mode
+                color: color filter
+                pair: id and label
+                scores: scores by id
+                kind (str): search kind (choices: ["web", "news"])
+                limit: maximum results
+
+            Returns:
+                search results
+            """
+
+            return [query]
+
+        self.assertEqual(
+            ToolSchema.create(search),
+            {
+                "name": "search",
+                "description": "Runs a search",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {"type": "string", "description": "search query spanning two lines"},
+                        "mode": {"type": ["string", "integer"], "enum": ["fast", 1], "description": "search mode"},
+                        "color": {"type": "string", "enum": ["red", "blue"], "description": "color filter"},
+                        "pair": {"type": "array", "prefixItems": [{"type": "integer"}, {"type": "string"}], "description": "id and label"},
+                        "scores": {"type": "object", "additionalProperties": {"type": "number"}, "description": "scores by id"},
+                        "kind": {"type": "string", "enum": ["web", "news"], "description": "search kind"},
+                        "limit": {"type": "integer", "nullable": True, "description": "maximum results"},
+                    },
+                    "required": ["query", "mode", "color", "pair", "scores"],
+                },
+                "return": {"type": "array", "items": {"type": "string"}, "description": "search results"},
+            },
+        )
+
+        class Search:
+            """
+            Search instance
+            """
+
+            def run(self, query: str) -> object:
+                """
+                Runs a search
+
+                Args:
+                    query: search query
+                """
+
+                return query
+
+        # The receiver is skipped and a return type that doesn't convert is left out
+        self.assertEqual(
+            ToolSchema.create(Search().run)["parameters"],
+            {"type": "object", "properties": {"query": {"type": "string", "description": "search query"}}, "required": ["query"]},
+        )
+
+        # pylint: disable=W0613
+        def nodoc(query: str) -> str:
+            return query
+
+        def undescribed(query: str, limit: int) -> str:
+            """
+            Runs a search
+
+            Args:
+                query: search query
+            """
+
+            return query
+
+        class Custom:
+            """
+            Custom class
+            """
+
+        def custom(query: Custom) -> str:
+            """
+            Runs a search
+
+            Args:
+                query: search query
+            """
+
+            return query
+
+        def single(query: tuple[str]) -> str:
+            """
+            Runs a search
+
+            Args:
+                query: search query
+            """
+
+            return query
+
+        for function, error in [(nodoc, DocstringError), (undescribed, DocstringError), (custom, TypeHintError), (single, TypeHintError)]:
+            with self.subTest(function=function.__name__), self.assertRaises(error):
+                ToolSchema.create(function)
+
+    def testToolsWebSearch(self):
+        """
+        Test the web search tool parses search results
+        """
+
+        page = """
+        <table>
+          <tr><td><a class="result-link" href="#">txtai</a></td></tr>
+          <tr><td class="result-snippet">All-in-one AI framework</td></tr>
+          <tr><td><span class="link-text">github.com/neuml/txtai</span></td></tr>
+          <tr><td><a class="result-link" href="#">txtai docs</a></td></tr>
+          <tr><td><span class="link-text">neuml.github.io/txtai</span></td></tr>
+        </table>
+        """
+
+        tool = ToolFactory.create({"tools": ["websearch"]})[0]
+        self.assertIsInstance(tool, WebSearchTool)
+        self.assertEqual(tool.name, "web_search")
+
+        with patch.object(tool, "fetch", return_value=page.encode()) as fetch:
+            self.assertEqual(
+                tool("txtai framework"),
+                "## Search Results\n\n[txtai](https://github.com/neuml/txtai)\nAll-in-one AI framework\n\n"
+                "[txtai docs](https://neuml.github.io/txtai)\n",
+            )
+            fetch.assert_called_once_with("https://lite.duckduckgo.com/lite/?q=txtai+framework")
+
+        with patch.object(tool, "fetch", return_value=b"<html></html>"), self.assertRaises(ValueError):
+            tool("nothing")
+
     def testToolsSmolagents(self):
         """
         Test txtai tools are converted to smolagents tools with the smolagents backend
@@ -955,6 +1127,10 @@ class TestAgent(unittest.TestCase):
 
         agent = Agent(tools=["http://localhost:8000/mcp"], llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=1)
         self.assertEqual(len(agent.tools), 2)
+
+        # MCP tools require the smolagents backend
+        with self.assertRaises(ValueError):
+            Agent(backend="pydantic", tools=["http://localhost:8000/mcp"], llm="hf-internal-testing/tiny-random-LlamaForCausalLM")
 
     def testToolsReadNonexistent(self):
         """

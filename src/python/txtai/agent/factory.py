@@ -48,26 +48,11 @@ class ProcessFactory:
         # pylint: disable=C0415
         # smolagents is optional, only this backend requires it
         try:
-            from smolagents import CodeAgent, ToolCallingAgent
-
-            from .smolagents import PipelineModel, SmolagentsTool
+            from .smolagents import SmolagentsProcess
         except ImportError as missing:
             raise ImportError('smolagents is not available - install "agent" extra to enable') from missing
 
-        constructor = ToolCallingAgent
-        method = config.pop("method", None)
-        if method == "code":
-            constructor = CodeAgent
-
-        # Create model backed by LLM pipeline
-        model = config.pop("model", config.pop("llm", None))
-        model = PipelineModel(**model) if isinstance(model, dict) else PipelineModel(model)
-
-        # Convert txtai tools to smolagents tools
-        tools = [SmolagentsTool.create(tool) for tool in ToolFactory.create(config)]
-
-        # Create the agent process
-        return constructor(tools=tools, model=model, **config)
+        return SmolagentsProcess.create(config)
 
     @staticmethod
     def pydantic(config):

@@ -2,7 +2,7 @@
 Tool module
 """
 
-from smolagents import Tool
+from smolagents import PythonInterpreterTool, Tool
 
 
 class SmolagentsTool(Tool):
@@ -12,6 +12,9 @@ class SmolagentsTool(Tool):
 
     # Inputs are passed through to the txtai tool, which validates them
     skip_forward_signature_validation = True
+
+    # Default tools only available with smolagents
+    DEFAULTS = {"python": PythonInterpreterTool}
 
     # pylint: disable=W0231
     def __init__(self, tool):
@@ -78,3 +81,22 @@ class SmolagentsTool(Tool):
         """
 
         return tool if isinstance(tool, Tool) else SmolagentsTool(tool)
+
+    @staticmethod
+    def mcp(url):
+        """
+        Loads the tools of an MCP server.
+
+        Args:
+            url: MCP server url
+
+        Returns:
+            list of smolagents tools
+        """
+
+        # pylint: disable=C0415
+        import mcpadapt.core
+
+        from mcpadapt.smolagents_adapter import SmolAgentsAdapter
+
+        return mcpadapt.core.MCPAdapt({"url": url}, SmolAgentsAdapter()).tools()
