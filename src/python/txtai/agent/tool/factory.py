@@ -181,7 +181,7 @@ class ToolFactory:
             Tool
         """
 
-        schema = chat_template_utils.get_json_schema(target)["function"]
+        schema = ToolFactory.unions(chat_template_utils.get_json_schema(target)["function"])
 
         # Functions with inputs must have a return type hint
         if "return" not in schema:
@@ -189,6 +189,10 @@ class ToolFactory:
                 raise chat_template_utils.TypeHintParsingException("Tool return type not found: make sure your function has a return type hint!")
 
             schema["return"] = {"type": "null"}
+
+        # Return types that aren't a single type (i.e. Any or Union) are any
+        output = schema["return"].get("type")
+        output = output if isinstance(output, str) else "any"
 
         # Inputs without a type accept any value and optional inputs are nullable. Keys are ordered as smolagents orders them.
         inputs = {}
@@ -208,10 +212,32 @@ class ToolFactory:
                 "name": config.get("name", schema["name"]),
                 "description": config.get("description", schema["description"]),
                 "inputs": inputs,
-                "output": schema["return"]["type"],
+                "output": output,
                 "target": target,
             }
         )
+
+    @staticmethod
+    def unions(schema):
+        """
+        Converts `anyOf` unions of basic types to a list of types, as smolagents does.
+
+        Args:
+            schema: JSON schema
+
+        Returns:
+            JSON schema
+        """
+
+        if isinstance(schema, list):
+            return [ToolFactory.unions(x) for x in schema]
+
+        if isinstance(schema, dict):
+            schema = {key: ToolFactory.unions(value) for key, value in schema.items()}
+            if "anyOf" in schema and all(isinstance(x.get("type"), str) for x in schema["anyOf"]):
+                schema = {"type": sorted(x["type"] for x in schema.pop("anyOf")), **schema}
+
+        return schema
 
     @staticmethod
     def fromdocs(target, config):

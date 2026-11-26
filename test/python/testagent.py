@@ -13,7 +13,7 @@ from threading import Thread
 from unittest.mock import patch
 
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 from pydantic_ai.exceptions import UsageLimitExceeded
 from pydantic_ai.messages import (
@@ -777,7 +777,7 @@ class TestAgent(unittest.TestCase):
             return [query]
 
         # pylint: disable=W0613
-        def anydata(query: str, data: Any = None, limit: int = 5, scale: Optional[float] = None) -> str:
+        def anydata(query: str, data: Any = None, limit: int = 5, scale: Optional[float] = None, ids: Union[list[int], dict] = None) -> str:
             """
             Runs a search
 
@@ -786,6 +786,7 @@ class TestAgent(unittest.TestCase):
                 data: extra data
                 limit: maximum results
                 scale: optional score scale
+                ids: ids to filter on
 
             Returns:
                 search results
@@ -800,7 +801,33 @@ class TestAgent(unittest.TestCase):
 
             return 1
 
-        for function in [anydata, noinputs]:
+        def anyoutput(query: str) -> Any:
+            """
+            Runs a search
+
+            Args:
+                query: search query
+
+            Returns:
+                search results
+            """
+
+            return query
+
+        def unionoutput(query: str) -> Union[int, str]:
+            """
+            Runs a search
+
+            Args:
+                query: search query
+
+            Returns:
+                search results
+            """
+
+            return query
+
+        for function in [anydata, noinputs, anyoutput, unionoutput]:
             with self.subTest(function=function.__name__):
                 tool, expected = ToolFactory.create({"tools": [function]})[0], smoltool(function)
                 self.assertIsInstance(tool, Tool)
