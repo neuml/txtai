@@ -191,6 +191,32 @@ class TestEncoder(unittest.TestCase):
             self.embeddings.config["objects"] = "image"
 
     @patch.dict(os.environ, {"ALLOW_PICKLE": "True"})
+    def testSerializeFalsyObject(self):
+        """
+        Test serialize encoders with text rows that have an empty or array object
+        """
+
+        for method in ["messagepack", "pickle"]:
+            embeddings = Embeddings(method="external", transform=lambda x: np.ones((len(x), 3), dtype=np.float32), content=True, objects=method)
+            embeddings.index([(0, {"object": [], "text": "empty list"}, None), (1, {"object": 0, "text": "zero"}, None)])
+
+            result = embeddings.search("select id, object from txtai order by id")
+
+            self.assertEqual(result, [{"id": "0", "object": []}, {"id": "1", "object": 0}])
+
+            embeddings.close()
+
+        # NumPy arrays don't have a single truth value
+        embeddings = Embeddings(method="external", transform=lambda x: np.ones((len(x), 3), dtype=np.float32), content=True, objects="pickle")
+        embeddings.index([(0, {"object": np.array([1, 2, 3]), "text": "array"}, None)])
+
+        result = embeddings.search("select object from txtai limit 1")[0]
+
+        self.assertEqual(result["object"].tolist(), [1, 2, 3])
+
+        embeddings.close()
+
+    @patch.dict(os.environ, {"ALLOW_PICKLE": "True"})
     def testSerializeNoObject(self):
         """
         Test serialize encoders with rows that have no object
