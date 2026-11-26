@@ -416,6 +416,17 @@ class TestWorkflow(unittest.TestCase):
         workflow = Workflow([Task(lambda values: [None for _ in values], select="keep")])
         self.assertEqual(list(workflow(["keep", "skip"])), [None, "skip"])
 
+    def testSelectCase(self):
+        """
+        Test select patterns match regardless of case
+        """
+
+        task = Task(lambda values: [value.upper() for value in values], select=r"\.WAV$")
+        self.assertEqual(task(["a.wav", "b.WAV", "c.txt"]), ["A.WAV", "B.WAV", "c.txt"])
+
+        task = Task(lambda values: [value.upper() for value in values], select=r"\.wav$")
+        self.assertEqual(task(["a.wav", "b.WAV", "c.txt"]), ["A.WAV", "B.WAV", "c.txt"])
+
     def testImageWorkflow(self):
         """
         Test an image task
