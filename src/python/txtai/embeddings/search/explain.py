@@ -106,11 +106,13 @@ class Explain:
                 data.pop(i)
                 permutations.append([" ".join(data)])
 
-            # Calculate similarity for each input text permutation and get score delta as importance
-            scores = [(i, result["score"] - abs(s)) for i, s in self.embeddings.similarity(query, permutations)]
+            # Calculate similarity for the full text and each input text permutation. The full text similarity is the
+            # baseline, since the result score can come from a different scoring method (e.g. hybrid or keyword scores).
+            scores = dict(self.embeddings.similarity(query, [text] + permutations))
+            baseline = scores.pop(0)
 
-            # Append tokens to result
-            result["tokens"] = [(tokens[i], score) for i, score in sorted(scores, key=lambda x: x[0])]
+            # Append tokens to result, score delta is the importance
+            result["tokens"] = [(token, baseline - abs(scores[i + 1])) for i, token in enumerate(tokens)]
 
             # Add data sorted in index order
             results.append(result)
