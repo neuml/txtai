@@ -210,6 +210,16 @@ class TestTextractor(unittest.TestCase):
             "|Header1|Header2|\n|---|---|\n|Test1 \\| Test2|`a\\|b`|",
         )
 
+        # Table cells with multiple blocks stay on a single row
+        self.assertMarkdown(
+            "<table><tr><th>Name</th><th>Notes</th></tr><tr><td>x</td><td><p>first</p><p>second</p></td></tr></table>",
+            "|Name|Notes|\n|---|---|\n|x|first second|",
+        )
+        self.assertMarkdown(
+            "<table><tr><th>Name</th><th>Notes</th></tr><tr><td>x</td><td><ul><li>a</li><li>b</li></ul></td></tr></table>",
+            "|Name|Notes|\n|---|---|\n|x|- a - b|",
+        )
+
         # Ignore list
         self.assertMarkdown("<aside>This is a test</aside>", "")
 
