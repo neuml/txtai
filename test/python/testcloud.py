@@ -10,7 +10,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 from huggingface_hub import hf_hub_download
-from txtai.cloud import Cloud, ObjectStorage
+from txtai.cloud import Cloud, HuggingFaceHub, ObjectStorage
 from txtai.embeddings import Embeddings
 
 
@@ -82,6 +82,61 @@ class TestObjectStorage(unittest.TestCase):
             with self.assertRaises(IOError):
                 cloud.load(path)
             obj.download.assert_not_called()
+
+    def testSaveNested(self):
+        """
+        Test saving and loading an index with files in subdirectories
+        """
+
+        with tempfile.TemporaryDirectory() as directory:
+            cloud = {"provider": "local", "container": "nested", "key": directory}
+
+            # Subindexes are stored in subdirectories of the index directory
+            embeddings = Embeddings(keyword=True, content=True, indexes={"keyword": {"keyword": True}})
+            embeddings.index(["first text", "second text"])
+            embeddings.save(os.path.join(directory, "local"), cloud)
+
+            # Load index from object storage into a new directory
+            embeddings.load(os.path.join(directory, "remote"), cloud)
+            result = embeddings.search("second", 1, index="keyword")
+            embeddings.close()
+
+            self.assertEqual([row["text"] for row in result], ["second text"])
+
+
+class TestHuggingFaceHub(unittest.TestCase):
+    """
+    Hugging Face Hub path tests.
+    """
+
+    @patch("huggingface_hub.hf_hub_download")
+    @patch("huggingface_hub.upload_file")
+    @patch("huggingface_hub.create_repo")
+    def testSaveNested(self, create, upload, download):
+        """
+        Test files in subdirectories are uploaded with their relative paths
+        """
+
+        with tempfile.TemporaryDirectory() as directory:
+            # Attributes file with index files already tracked
+            attributes = os.path.join(directory, ".gitattributes")
+            with open(attributes, "w", encoding="utf-8") as f:
+                f.write("embeddings filter=lfs diff=lfs merge=lfs -text\n")
+
+            create.return_value = None
+            download.return_value = attributes
+
+            # Create index directory with a subindex
+            path = os.path.join(directory, "index")
+            os.makedirs(os.path.join(path, "indexes", "keyword"))
+            for name in ["config.json", os.path.join("indexes", "keyword", "config.json")]:
+                with open(os.path.join(path, name), "w", encoding="utf-8") as f:
+                    f.write("{}")
+
+            HuggingFaceHub({"container": "neuml/test"}).save(path)
+
+            paths = sorted(args.kwargs["path_in_repo"] for args in upload.call_args_list)
+            self.assertEqual(paths, ["config.json", "indexes/keyword/config.json"])
 
 
 class TestCloud(unittest.TestCase):

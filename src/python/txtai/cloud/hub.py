@@ -66,7 +66,7 @@ class HuggingFaceHub(Cloud):
                 revision=self.config.get("revision"),
                 token=self.config.get("token"),
                 path_or_fileobj=f,
-                path_in_repo=os.path.basename(f),
+                path_in_repo=self.filename(path, f),
             )
 
     def lfstrack(self):

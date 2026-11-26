@@ -58,7 +58,7 @@ class ObjectStorage(Cloud):
         try:
             # If this is an archive path, check if file exists
             if self.isarchive(path):
-                return self.client.get_object(self.config["container"], self.objectname(path))
+                return self.client.get_object(self.config["container"], self.objectname(os.path.basename(path)))
 
             # Otherwise check if container exists
             return self.client.get_container(self.config["container"])
@@ -68,7 +68,7 @@ class ObjectStorage(Cloud):
     def load(self, path=None):
         # Download archive file
         if self.isarchive(path):
-            obj = self.client.get_object(self.config["container"], self.objectname(path))
+            obj = self.client.get_object(self.config["container"], self.objectname(os.path.basename(path)))
 
             # Create local directory, if necessary
             directory = os.path.dirname(path)
@@ -105,7 +105,7 @@ class ObjectStorage(Cloud):
         # Upload files
         for f in self.listfiles(path):
             with open(f, "rb") as iterator:
-                self.client.upload_object_via_stream(iterator=iterator, container=container, object_name=self.objectname(f))
+                self.client.upload_object_via_stream(iterator=iterator, container=container, object_name=self.objectname(self.filename(path, f)))
 
     def objectname(self, name):
         """
@@ -118,9 +118,6 @@ class ObjectStorage(Cloud):
         Returns:
             object name
         """
-
-        # Get base name
-        name = os.path.basename(name)
 
         # Get optional prefix/folder
         prefix = self.config.get("prefix")
