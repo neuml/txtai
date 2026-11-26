@@ -120,7 +120,7 @@ The following shortcut strings load tools directly. Passing a Tool instance is a
 | question    | Asks the user a question and returns the answer           |
 | read        | Reads file or url content, supports text extraction       |
 | todowrite   | Generates a task list to organize complex tasks           |
-| websearch   | Runs a DuckDuckGo web search and returns the top results  |
+| websearch   | Runs a web search and returns the top results             |
 | webview     | Extracts content from a web page. Alias for `read` tool   |
 | write       | Writes content to file                                    |
 | *.md        | Loads a [`skill.md`](https://agentskills.io/specification) file |
