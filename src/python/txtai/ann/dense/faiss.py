@@ -18,6 +18,7 @@ if platform.system() == "Darwin" or os.name == "nt":
 try:
     from faiss import index_factory, IO_FLAG_MMAP, METRIC_INNER_PRODUCT, read_index, write_index
     from faiss import index_binary_factory, read_index_binary, write_index_binary, IndexBinaryIDMap
+    from faiss import downcast_index, IndexIDMap, IndexPreTransform
 
     FAISS = True
 except ImportError:
@@ -94,8 +95,9 @@ class Faiss(ANN):
 
     def search(self, queries, limit):
         # Set nprobe and nflip search parameters, if available
-        if hasattr(self.backend, "nprobe"):
-            self.backend.nprobe = self.nprobe()
+        index = self.probeindex()
+        if hasattr(index, "nprobe"):
+            index.nprobe = self.nprobe(index)
 
         if hasattr(self.backend, "nflip"):
             self.backend.nflip = self.setting("nflip", self.nprobe())
@@ -221,7 +223,18 @@ class Faiss(ANN):
         # Return components string
         return ",".join(components)
 
-    def nprobe(self):
+    def probeindex(self):
+        """
+        Gets the index that owns the probe count for a dense Faiss search.
+        """
+
+        index = self.backend
+        while isinstance(index, (IndexPreTransform, IndexIDMap)):
+            index = downcast_index(index.index)
+
+        return index
+
+    def nprobe(self, index=None):
         """
         Gets or derives the nprobe search parameter.
 
@@ -233,7 +246,8 @@ class Faiss(ANN):
         count = self.count()
 
         default = 6 if count <= 5000 else round(self.cells(count) / 16)
-        default = min(default, getattr(self.backend, "nlist", default))
+        index = self.probeindex() if index is None else index
+        default = min(default, getattr(index, "nlist", default))
         return self.setting("nprobe", default)
 
     def scores(self, scores):
