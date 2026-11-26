@@ -251,3 +251,21 @@ class TestIVFSparse(SparseTest):
             self.assertGreater(len(result), 0)
 
         ann.close()
+
+    def testIVFSparseZeroProbeCount(self):
+        """
+        Test IVFSparse with an explicit nprobe setting of zero
+        """
+
+        # Two populated clusters with orthogonal rows
+        data = csr_matrix(np.eye(4, 8, dtype=np.float32))
+
+        ann = SparseANNFactory.create({"backend": "ivfsparse", "ivfsparse": {"nlist": 2, "nprobe": 0}})
+        ann.index(data)
+
+        # A zero probe count scans no blocks, force at least one block to be searched
+        self.assertEqual(ann.nprobe(), 1)
+        matches = ann.search(data[:1], 1)[0]
+        self.assertEqual(matches, [(0, 1.0)])
+
+        ann.close()
