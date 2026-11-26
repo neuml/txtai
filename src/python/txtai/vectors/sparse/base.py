@@ -50,13 +50,11 @@ class SparseVectors(Vectors):
         # Run indexing
         ids, dimensions, batches, stream = self.index(documents, batchsize, checkpoint)
 
-        # Rebuild sparse array
-        embeddings = None
+        # Stack once so each batch's CSR data is copied only into the final matrix.
         with open(stream, "rb") as queue:
-            for _ in range(batches):
-                # Read in array batch
-                data = self.loadembeddings(queue)
-                embeddings = vstack((embeddings, data)) if embeddings is not None else data
+            blocks = [self.loadembeddings(queue) for _ in range(batches)]
+
+        embeddings = vstack(blocks, format="csr") if batches > 1 else next(iter(blocks), None)
 
         # Remove temporary file (if checkpointing is disabled)
         if not checkpoint:
