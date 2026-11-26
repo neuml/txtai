@@ -616,7 +616,7 @@ class TestWorkflow(unittest.TestCase):
 
     def testSelectCase(self):
         """
-        Test select patterns match regardless of case
+        Test select patterns match case insensitively
         """
 
         task = Task(lambda values: [value.upper() for value in values], select=r"\.WAV$")
