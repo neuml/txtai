@@ -270,6 +270,27 @@ class Common:
                 self.assertEqual(result["text"], self.data[4])
                 self.assertEqual(result["tokens"], expected["tokens"])
 
+        def testExplainHybrid(self):
+            """
+            Test query explain with a hybrid index
+            """
+
+            embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2", "hybrid": True, "content": self.backend})
+            embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+            # Hybrid search score combines dense and keyword scores
+            result = embeddings.explain("lottery ticket", limit=1)[0]
+            self.assertEqual(result["text"], self.data[4])
+            self.assertNotAlmostEqual(result["score"], embeddings.similarity("lottery ticket", [self.data[4]])[0][1], places=3)
+
+            # Token importance is the same as when explaining the text with the dense vector model
+            expected = [row for row in embeddings.explain("lottery ticket", self.data) if row["id"] == 4][0]
+            for (token, score), (etoken, escore) in zip(result["tokens"], expected["tokens"]):
+                self.assertEqual(token, etoken)
+                self.assertAlmostEqual(score, escore, places=5)
+
+            embeddings.close()
+
         def testExplainEmpty(self):
             """
             Test query explain with no filtering criteria
