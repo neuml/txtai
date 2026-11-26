@@ -209,7 +209,17 @@ class Task:
             True if this task can process this data element, False otherwise
         """
 
-        return (isinstance(element, str) and re.search(self.select, element, re.IGNORECASE)) if element is not None and self.select else True
+        if element is None or not self.select:
+            return True
+
+        if not isinstance(element, str):
+            return False
+
+        # Compiled patterns carry their own flags and don't accept new ones
+        if isinstance(self.select, re.Pattern):
+            return self.select.search(element.lower())
+
+        return re.search(self.select, element, re.IGNORECASE)
 
     def upack(self, element, force=False):
         """

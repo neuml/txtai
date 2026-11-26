@@ -7,6 +7,7 @@ import copy
 import glob
 import io
 import os
+import re
 import tempfile
 import sys
 import unittest
@@ -623,6 +624,9 @@ class TestWorkflow(unittest.TestCase):
         self.assertEqual(task(["a.wav", "b.WAV", "c.txt"]), ["A.WAV", "B.WAV", "c.txt"])
 
         task = Task(lambda values: [value.upper() for value in values], select=r"\.wav$")
+        self.assertEqual(task(["a.wav", "b.WAV", "c.txt"]), ["A.WAV", "B.WAV", "c.txt"])
+
+        task = Task(lambda values: [value.upper() for value in values], select=re.compile(r"\.wav$"))
         self.assertEqual(task(["a.wav", "b.WAV", "c.txt"]), ["A.WAV", "B.WAV", "c.txt"])
 
     def testScheduleWorkflow(self):
