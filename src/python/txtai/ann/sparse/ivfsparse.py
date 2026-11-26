@@ -342,7 +342,8 @@ class IVFSparse(ANN):
     def nlist(self, count, train):
         """
         Calculates the number of clusters for this IVFSparse index. Note that the final number of clusters
-        could be lower as duplicate cluster centroids are filtered out.
+        could be lower as duplicate cluster centroids are filtered out and the count is capped at the
+        number of training rows.
 
         Args:
             count: initial dataset size
@@ -355,8 +356,8 @@ class IVFSparse(ANN):
         # Get data size
         default = 1 if count <= 5000 else self.cells(train)
 
-        # Number of clusters to create
-        return self.setting("nlist", default)
+        # Number of clusters to create, capped at the number of training rows
+        return min(self.setting("nlist", default), max(train, 1))
 
     def nprobe(self):
         """
