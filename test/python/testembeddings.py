@@ -716,22 +716,6 @@ class TestEmbeddings(unittest.TestCase):
         reducer(batch)
         self.assertTrue(np.array_equal(batch, np.array([[0, 0], [0, 1], [0, 0]], dtype=np.float32)))
 
-    def testReducerSearch(self):
-        """
-        Test that search scores are cosine similarities when principal components are removed
-        """
-
-        embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2", "pca": 1, "backend": "numpy"})
-        embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
-
-        # Stored vectors are normalized
-        self.assertTrue(np.allclose(np.linalg.norm(embeddings.ann.backend, axis=1), 1.0))
-
-        # Search score for a document is equal to the cosine similarity of the query and document vectors
-        uid, score = embeddings.search("feel good story", 1)[0]
-        query, document = embeddings.transform("feel good story"), embeddings.transform(self.data[uid])
-        self.assertAlmostEqual(score, float(query.dot(document) / (np.linalg.norm(query) * np.linalg.norm(document))), places=5)
-
     @patch.dict(os.environ, {"ALLOW_PICKLE": "True"})
     def testReducerLegacy(self):
         """
@@ -759,6 +743,22 @@ class TestEmbeddings(unittest.TestCase):
         reducer(query)
         self.assertFalse(np.array_equal(query, original))
 
+    def testReducerSearch(self):
+        """
+        Test that search scores are cosine similarities when principal components are removed
+        """
+
+        embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2", "pca": 1, "backend": "numpy"})
+        embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        # Stored vectors are normalized
+        self.assertTrue(np.allclose(np.linalg.norm(embeddings.ann.backend, axis=1), 1.0))
+
+        # Search score for a document is equal to the cosine similarity of the query and document vectors
+        uid, score = embeddings.search("feel good story", 1)[0]
+        query, document = embeddings.transform("feel good story"), embeddings.transform(self.data[uid])
+        self.assertAlmostEqual(score, float(query.dot(document) / (np.linalg.norm(query) * np.linalg.norm(document))), places=5)
+    
     def testSave(self):
         """
         Test save
