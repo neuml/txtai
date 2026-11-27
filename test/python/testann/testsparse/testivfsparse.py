@@ -147,6 +147,24 @@ class TestIVFSparse(SparseTest):
 
         ann.close()
 
+    def testIVFSparseMultiWorker(self):
+        """
+        Check that pooled batch searches preserve single-worker scores and query order.
+        """
+
+        ann = SparseANNFactory.create({"backend": "ivfsparse"})
+        ann.index(csr_matrix([[1, 0], [0, 1]], dtype=np.float32))
+        queries = csr_matrix([[1, 0], [0, 1]] * 32, dtype=np.float32)
+
+        with patch("os.cpu_count", return_value=1), patch("txtai.ann.sparse.ivfsparse.ThreadPool", side_effect=AssertionError("unexpected pool")):
+            expected = ann.search(queries, 1)
+
+        with patch("os.cpu_count", return_value=2):
+            self.assertEqual(ann.search(queries, 1), expected)
+
+        self.assertEqual(expected, [[(0, 1.0)], [(1, 1.0)]] * 32)
+        ann.close()
+
     def testIVFSparseNFeatures(self):
         """
         Test IVFSparse nfeatures setting limits model training to the top n features
