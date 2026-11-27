@@ -82,6 +82,14 @@ class TestExternal(unittest.TestCase):
                 embeddings.index([("doc", vector, None)], checkpoint=checkpoint)
                 self.assertEqual(embeddings.search(vector, 1), [("doc", 1.0)])
 
+    def testMethod(self):
+        """
+        Test method is derived when transform function passed
+        """
+
+        model = VectorsFactory.create({"transform": lambda _: [[0.0, 1.0]]}, None)
+        self.assertTrue(isinstance(model, External))
+
     def testPrecomputed(self):
         """
         Test precomputed vectors are normalized the same way as encoded vectors
@@ -132,11 +140,3 @@ class TestExternal(unittest.TestCase):
 
         transform = VectorsFactory.create({"transform": "testvectors.testdense.testexternal.Transform"}, None)
         self.assertTrue(np.array_equal(transform.encode(["test"]), np.array([[0.0, 1.0]])))
-
-    def testMethod(self):
-        """
-        Test method is derived when transform function passed
-        """
-
-        model = VectorsFactory.create({"transform": lambda _: [[0.0, 1.0]]}, None)
-        self.assertTrue(isinstance(model, External))

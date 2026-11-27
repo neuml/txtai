@@ -53,6 +53,14 @@ class TestSparseVectors(unittest.TestCase):
         with self.assertRaises(ImportError):
             SparseVectorsFactory.create({"method": "testvectors.testsparse.testvectors.InvalidVectors"})
 
+    def testNotFound(self):
+        """
+        Test unresolvable vector backend
+        """
+
+        with self.assertRaises(ImportError):
+            SparseVectorsFactory.create({"method": "notfound.vectors"})
+
     def testNotSupported(self):
         """
         Test exceptions for unsupported methods
@@ -62,14 +70,6 @@ class TestSparseVectors(unittest.TestCase):
 
         self.assertRaises(ValueError, vectors.truncate, None)
         self.assertRaises(ValueError, vectors.quantize, None)
-
-    def testNotFound(self):
-        """
-        Test unresolvable vector backend
-        """
-
-        with self.assertRaises(ImportError):
-            SparseVectorsFactory.create({"method": "notfound.vectors"})
 
     def testVectors(self):
         """

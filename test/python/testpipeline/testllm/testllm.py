@@ -206,6 +206,14 @@ class TestLLM(unittest.TestCase):
             self.assertEqual(model("Hello, how are", stripthink=True), "you")
             self.assertEqual(model("Hello, how are", stripthink=False), method()[0])
 
+    def testStripthinkDisabled(self):
+        """Preserve chunks and consume them on demand when stripping is disabled."""
+        model, consumed = self.streammodel(["<think>reason</think>", "answer"])
+        result = model("question", stream=True, stripthink=False)
+        self.assertEqual(next(result), "<think>reason</think>")
+        self.assertEqual(consumed, ["<think>reason</think>"])
+        self.assertEqual(list(result), ["answer"])
+
     def testStripThinkPrompt(self):
         """
         Test stripthink parameter when the chat template adds the opening think tag to the prompt
@@ -240,14 +248,6 @@ class TestLLM(unittest.TestCase):
             model.generator.execute = method
             self.assertEqual("".join(model("Hello, how are", stripthink=True, stream=True)), "you")
             self.assertEqual("".join(model("Hello, how are", stripthink=False, stream=True)), "".join(list(method())))
-
-    def testStripthinkDisabled(self):
-        """Preserve chunks and consume them on demand when stripping is disabled."""
-        model, consumed = self.streammodel(["<think>reason</think>", "answer"])
-        result = model("question", stream=True, stripthink=False)
-        self.assertEqual(next(result), "<think>reason</think>")
-        self.assertEqual(consumed, ["<think>reason</think>"])
-        self.assertEqual(list(result), ["answer"])
 
     def testVision(self):
         """

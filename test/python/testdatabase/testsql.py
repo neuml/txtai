@@ -25,22 +25,6 @@ class TestSQL(unittest.TestCase):
 
         cls.sql = SQL(cls.db)
 
-    def testAggregateEmptyResults(self):
-        """
-        Test Aggregate returns empty results for a SQL query with no results
-        """
-
-        aggregate = Aggregate()
-
-        # SQL query, no results across shards - must not raise IndexError
-        self.assertEqual(aggregate("select id, text, score from txtai where similar('x')", []), [])
-
-        # Non-SQL query with no results stays consistent
-        self.assertEqual(aggregate("plain text query", []), [])
-
-        # SQL query with results still aggregates as before
-        self.assertEqual(aggregate("select count(*) from txtai", [{"count(*)": 1}, {"count(*)": 2}]), [{"count(*)": 3}])
-
     def testAggregateAlias(self):
         """
         Test Aggregate merges, groups and orders aliased columns
@@ -154,6 +138,22 @@ class TestSQL(unittest.TestCase):
         with self.subTest(scores="mixed SQL types"):
             results = [{"id": "number", "score": 1}, {"id": "text", "score": "2"}, {"id": "null", "score": None}]
             self.assertEqual([row["id"] for row in aggregate("select id, price as score from txtai", results)], ["text", "number", "null"])
+
+    def testAggregateEmptyResults(self):
+        """
+        Test Aggregate returns empty results for a SQL query with no results
+        """
+
+        aggregate = Aggregate()
+
+        # SQL query, no results across shards - must not raise IndexError
+        self.assertEqual(aggregate("select id, text, score from txtai where similar('x')", []), [])
+
+        # Non-SQL query with no results stays consistent
+        self.assertEqual(aggregate("plain text query", []), [])
+
+        # SQL query with results still aggregates as before
+        self.assertEqual(aggregate("select count(*) from txtai", [{"count(*)": 1}, {"count(*)": 2}]), [{"count(*)": 3}])
 
     def testAggregateGroupby(self):
         """
@@ -336,27 +336,6 @@ class TestSQL(unittest.TestCase):
         with self.assertRaises(SQLError):
             self.db.search("select a b c from txtai where id match id")
 
-    def testMultipleStatements(self):
-        """
-        Test only the first statement is run
-        """
-
-        with self.assertRaises(SQLError):
-            self.db.search("select * from txtai ; delete from sections")
-
-        self.assertSql("select", ";select id from txtai", "s.id")
-        self.assertSql("select", "select id from txtai;", "s.id")
-
-    def testStatementWhitespace(self):
-        """
-        Test insignificant whitespace around SQL tokens and a trailing semicolon is accepted.
-        """
-
-        self.assertSql("select", "select id from  txtai", "s.id")
-        self.assertSql("select", "select id from txtai; ", "s.id")
-        self.assertSql("select", "select id from txtai;\n", "s.id")
-        self.assertSql("select", " ; select id from txtai", "s.id")
-
     def testBracket(self):
         """
         Test bracket expressions
@@ -523,6 +502,17 @@ class TestSQL(unittest.TestCase):
 
         self.assertSql("limit", prefix + "limit 100", "100")
 
+    def testMultipleStatements(self):
+        """
+        Test only the first statement is run
+        """
+
+        with self.assertRaises(SQLError):
+            self.db.search("select * from txtai ; delete from sections")
+
+        self.assertSql("select", ";select id from txtai", "s.id")
+        self.assertSql("select", "select id from txtai;", "s.id")
+
     def testOffset(self):
         """
         Test offset clauses
@@ -620,6 +610,16 @@ class TestSQL(unittest.TestCase):
 
         self.assertSql("where", prefix + "where similar('')", "__SIMILAR__0")
         self.assertSql("similar", prefix + "where similar('')", [[""]])
+
+    def testStatementWhitespace(self):
+        """
+        Test insignificant whitespace around SQL tokens and a trailing semicolon is accepted.
+        """
+
+        self.assertSql("select", "select id from  txtai", "s.id")
+        self.assertSql("select", "select id from txtai; ", "s.id")
+        self.assertSql("select", "select id from txtai;\n", "s.id")
+        self.assertSql("select", " ; select id from txtai", "s.id")
 
     def testUnterminated(self):
         """

@@ -30,21 +30,6 @@ class TestOnnx(unittest.TestCase):
 
         cls.data = [{"text": "Dogs", "label": 0}, {"text": "dog", "label": 0}, {"text": "Cats", "label": 1}, {"text": "cat", "label": 1}] * 100
 
-    def testDefault(self):
-        """
-        Test exporting an ONNX model with default parameters
-        """
-
-        # Export model to ONNX, use default parameters
-        onnx = HFOnnx()
-        model = onnx("google/bert_uncased_L-2_H-128_A-2")
-
-        # Validate model has data
-        self.assertGreater(len(model), 0)
-
-        # Validate model device properly works
-        self.assertEqual(OnnxModel(model).device, -1)
-
     def testClassification(self):
         """
         Test exporting a classification model to ONNX and running inference
@@ -65,6 +50,21 @@ class TestOnnx(unittest.TestCase):
         # Test classification
         labels = Labels((model, path), dynamic=False)
         self.assertEqual(labels("cat")[0][0], 1)
+
+    def testDefault(self):
+        """
+        Test exporting an ONNX model with default parameters
+        """
+
+        # Export model to ONNX, use default parameters
+        onnx = HFOnnx()
+        model = onnx("google/bert_uncased_L-2_H-128_A-2")
+
+        # Validate model has data
+        self.assertGreater(len(model), 0)
+
+        # Validate model device properly works
+        self.assertEqual(OnnxModel(model).device, -1)
 
     @patch("onnxruntime.get_available_providers")
     @patch("torch.cuda.is_available")

@@ -20,14 +20,6 @@ class TestCustom(unittest.TestCase):
         database = DatabaseFactory.create({"content": "txtai.database.SQLite"})
         self.assertIsNotNone(database)
 
-    def testCustomInvalid(self):
-        """
-        Test resolving an invalid backend
-        """
-
-        with self.assertRaises(ImportError):
-            DatabaseFactory.create({"content": "pprint.pprint"})
-
     def testCustomBackendNotFound(self):
         """
         Test resolving an unresolvable backend
@@ -35,3 +27,11 @@ class TestCustom(unittest.TestCase):
 
         with self.assertRaises(ImportError):
             DatabaseFactory.create({"content": "notfound.database"})
+
+    def testCustomInvalid(self):
+        """
+        Test resolving an invalid backend
+        """
+
+        with self.assertRaises(ImportError):
+            DatabaseFactory.create({"content": "pprint.pprint"})

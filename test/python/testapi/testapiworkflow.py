@@ -246,6 +246,25 @@ class TestWorkflow(unittest.TestCase):
 
         self.assertIsNone(api.pool)
 
+    def testServiceEmpty(self):
+        """
+        Test workflow with ServiceTask POST via API and an empty response
+        """
+
+        text = "This is a test sentence. And another sentence to split."
+        results = self.client.post("workflow", json={"name": "empty", "elements": [text]}).json()
+
+        self.assertEqual(results, [None])
+
+    def testServiceError(self):
+        """
+        Test workflow with ServiceTask GET that raises an error for an HTTP error response
+        """
+
+        text = "This is a test sentence. And another sentence to split."
+        with self.assertRaises(requests.exceptions.HTTPError):
+            self.client.post("workflow", json={"name": "error", "elements": [text]})
+
     def testServiceGet(self):
         """
         Test workflow with ServiceTask GET via API
@@ -268,15 +287,14 @@ class TestWorkflow(unittest.TestCase):
         self.assertEqual(len(results), 1)
         self.assertEqual(len(results[0]), 2)
 
-    def testServiceEmpty(self):
+    def testServiceTimeout(self):
         """
-        Test workflow with ServiceTask POST via API and an empty response
+        Test workflow with ServiceTask GET that bounds a slow endpoint via a timeout
         """
 
         text = "This is a test sentence. And another sentence to split."
-        results = self.client.post("workflow", json={"name": "empty", "elements": [text]}).json()
-
-        self.assertEqual(results, [None])
+        with self.assertRaises(requests.exceptions.Timeout):
+            self.client.post("workflow", json={"name": "slow", "elements": [text]})
 
     def testServiceXml(self):
         """
@@ -288,24 +306,6 @@ class TestWorkflow(unittest.TestCase):
 
         self.assertEqual(len(results), 1)
         self.assertEqual(len(results[0]), 1)
-
-    def testServiceError(self):
-        """
-        Test workflow with ServiceTask GET that raises an error for an HTTP error response
-        """
-
-        text = "This is a test sentence. And another sentence to split."
-        with self.assertRaises(requests.exceptions.HTTPError):
-            self.client.post("workflow", json={"name": "error", "elements": [text]})
-
-    def testServiceTimeout(self):
-        """
-        Test workflow with ServiceTask GET that bounds a slow endpoint via a timeout
-        """
-
-        text = "This is a test sentence. And another sentence to split."
-        with self.assertRaises(requests.exceptions.Timeout):
-            self.client.post("workflow", json={"name": "slow", "elements": [text]})
 
     def testWorkflowLabels(self):
         """

@@ -16,6 +16,15 @@ class TestModels(unittest.TestCase):
     Models tests.
     """
 
+    def testDevice(self):
+        """
+        Test the device method
+        """
+
+        # pylint: disable=E1101
+        self.assertEqual(Models.device("cpu"), torch.device("cpu"))
+        self.assertEqual(Models.device(torch.device("cpu")), torch.device("cpu"))
+
     @patch("torch.cuda.is_available")
     def testDeviceid(self, cuda):
         """
@@ -37,12 +46,3 @@ class TestModels(unittest.TestCase):
         self.assertEqual(Models.deviceid(False), -1)
         self.assertEqual(Models.deviceid(0), -1)
         self.assertEqual(Models.deviceid(1), -1)
-
-    def testDevice(self):
-        """
-        Test the device method
-        """
-
-        # pylint: disable=E1101
-        self.assertEqual(Models.device("cpu"), torch.device("cpu"))
-        self.assertEqual(Models.device(torch.device("cpu")), torch.device("cpu"))
