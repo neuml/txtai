@@ -130,6 +130,18 @@ class TestIVFSparse(SparseTest):
         # Close ANN
         ann.close()
 
+    def testIVFSparseDeletedResults(self):
+        """Search only returns live IDs, even for zero or negative matches."""
+        data = csr_matrix([[1, 0], [0, 1], [-1, 0]], dtype=np.float32)
+        ann = SparseANNFactory.create({"backend": "ivfsparse"})
+        ann.index(data)
+        ann.delete([0])
+
+        self.assertEqual(ann.search(data[:1], 3), [[(1, 0.0), (2, -1.0)]])
+        ann.delete([1, 2])
+        self.assertEqual(ann.search(data[:1], 3), [[]])
+        ann.close()
+
     def testIVFSparseMixedDtypes(self):
         """
         Test float32 and float64 queries after appending float64 rows
