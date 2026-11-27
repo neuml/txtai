@@ -6,7 +6,9 @@ import os
 import unittest
 import types
 
-from unittest.mock import patch
+from concurrent.futures import ThreadPoolExecutor
+from threading import Event
+from unittest.mock import MagicMock, patch
 
 from txtai.app import Application
 from txtai.embeddings import Documents, Embeddings
@@ -67,6 +69,36 @@ class TestApp(unittest.TestCase):
                     self.assertEqual(embeddings.search("select processid() pid from txtai")[0]["pid"], os.getpid())
                 finally:
                     embeddings.close()
+
+    def testConcurrentFlush(self):
+        """
+        A caller waiting for the lock can find its document queue already flushed.
+        """
+
+        for operation in ("index", "upsert"):
+            with self.subTest(operation=operation):
+                app = Application({"writable": True, "embeddings": {"keyword": True, "content": True}})
+                app.add([{"id": "doc", "text": "apple"}])
+                waiting = Event()
+                lock = app.lock
+
+                def acquire():
+                    waiting.set()
+                    return lock.acquire()
+
+                # Hold the real lock until the second caller is ready to flush.
+                with ThreadPoolExecutor(max_workers=1) as pool, patch.object(app, "lock", MagicMock()) as gate:
+                    gate.__enter__.side_effect = acquire
+                    gate.__exit__.side_effect = lambda *_: lock.release()
+                    with lock:
+                        flush = getattr(app, operation)
+                        future = pool.submit(flush)
+                        self.assertTrue(waiting.wait(5))
+                        flush()
+                    future.result(timeout=5)
+
+                self.assertEqual(app.search("apple")[0]["id"], "doc")
+                app.embeddings.close()
 
     def testConfig(self):
         """
