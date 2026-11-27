@@ -91,6 +91,23 @@ class TestApp(unittest.TestCase):
         # Check that application instance is not None
         self.assertIsNotNone(app.pipelines["testapp.TestPipeline"].application)
 
+    def testReindexAutoId(self):
+        """
+        Rebuilding a content index must not reuse a surviving document's ID.
+        """
+
+        app = Application({"writable": True, "reindex": True, "embeddings": {"keyword": True, "content": True}})
+        with app.embeddings:
+            app.add(["alpha", "beta", "gamma"])
+            app.index()
+            app.delete(["1"])
+            app.reindex({"keyword": True})
+            app.add(["delta"])
+            app.upsert()
+
+            rows = app.search("select id, text from txtai order by id")
+            self.assertEqual([(row["id"], row["text"]) for row in rows], [("0", "alpha"), ("2", "gamma"), ("3", "delta")])
+
     def testStream(self):
         """
         Test workflow streams
