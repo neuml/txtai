@@ -63,6 +63,20 @@ class RDBMS(NetworkX):
         if self.hasnode(node):
             self.graph.backend.add_node(node, {field: value})
 
+    def removeattribute(self, node, field):
+        attributes = dict(self.node(node)) if self.hasnode(node) else {}
+        if field not in attributes:
+            return None
+
+        value = attributes.pop(field)
+
+        # Replace the stored attributes, add_node only merges them. Then clear cached reads.
+        # pylint: disable=W0212
+        self.graph.backend.backend._upsert_node(node, attributes)
+        self.graph.backend.clear_cache()
+
+        return value
+
     def load(self, path):
         # Create graph instance
         self.graph, self.database = self.connect()
