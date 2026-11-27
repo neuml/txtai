@@ -23,7 +23,7 @@ class FunctionTool(Tool):
         self.name = config["name"]
         self.description = config["description"]
         self.inputs = config["inputs"]
-        self.output_type = config.get("output", config.get("output_type", "any"))
+        self.output = config.get("output", config.get("output_type", "any"))
         self.target = config["target"]
 
         # Validate parameters and initialize tool

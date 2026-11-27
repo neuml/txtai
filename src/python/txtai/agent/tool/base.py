@@ -14,14 +14,14 @@ class Tool:
     name: str
     description: str
     inputs: dict
-    output_type: str
+    output: str
 
     def __init__(self):
         """
-        Validates tool parameters. Subclasses set the `name`, `description`, `inputs` and `output_type` attributes before calling this method.
+        Validates tool parameters. Subclasses set the `name`, `description`, `inputs` and `output` attributes before calling this method.
         """
 
-        for name, types in [("name", str), ("description", str), ("inputs", dict), ("output_type", str)]:
+        for name, types in [("name", str), ("description", str), ("inputs", dict), ("output", str)]:
             value = getattr(self, name, None)
             if not isinstance(value, types):
                 raise TypeError(f"Attribute {name} should have type {types.__name__}, got {type(value).__name__} instead.")

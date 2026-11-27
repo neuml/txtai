@@ -73,8 +73,34 @@ class TestAgent(unittest.TestCase):
         self.assertIsInstance(agent.process, PydanticProcess)
 
         # Unknown backends raise an error
-        with self.assertRaises(ValueError):
+        with self.assertRaises(ImportError):
             Agent(backend="unknown", llm="hf-internal-testing/tiny-random-LlamaForCausalLM")
+
+    def testCustomBackend(self):
+        """
+        Test resolving a custom backend
+        """
+
+        # Built-in process runner resolved by class path
+        agent = Agent(backend="txtai.agent.pydanticai.PydanticProcess", llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=1)
+        self.assertIsInstance(agent.process, PydanticProcess)
+
+        # Custom backends are created with the model, txtai tools and remaining options
+        agent = Agent(backend="testagent.CustomProcess", llm="hf-internal-testing/tiny-random-LlamaForCausalLM", tools=["read"], option=1)
+        self.assertIsInstance(agent.process, CustomProcess)
+        self.assertEqual(agent.process.llm, "hf-internal-testing/tiny-random-LlamaForCausalLM")
+        self.assertIsInstance(agent.tools["read"], Tool)
+        self.assertEqual(agent.process.config, {"option": 1})
+        self.assertEqual(agent("Hello"), "Hello")
+
+    def testCustomBackendInvalid(self):
+        """
+        Test resolving an invalid backend
+        """
+
+        for backend in ["pprint.pprint", "txtai.agent.Missing"]:
+            with self.subTest(backend=backend), self.assertRaises(ImportError):
+                Agent(backend=backend, llm="hf-internal-testing/tiny-random-LlamaForCausalLM")
 
     def testExecute(self):
         """
@@ -118,73 +144,6 @@ class TestAgent(unittest.TestCase):
             from txtai import Agent as RestoredAgent
 
             self.assertIs(RestoredAgent, Agent)
-
-    def testOptionalSmolagents(self):
-        """
-        Test agent tools and the pydantic backend work without smolagents installed
-        """
-
-        def weather(city: str) -> str:
-            """
-            Gets the weather for a city
-
-            Args:
-                city: city name
-
-            Returns:
-                weather
-            """
-
-            return f"sunny in {city}"
-
-        # pylint: disable=C0415
-        with patch.dict(sys.modules, {"smolagents": None}):
-            # Reload txtai with smolagents unavailable, as in testoptional
-            for name in list(sys.modules):
-                if name == "txtai" or name.startswith("txtai."):
-                    del sys.modules[name]
-
-            from txtai import agent as optional
-
-            # Agent and tools import without smolagents
-            OptionalAgent, OptionalToolFactory = optional.Agent, optional.ToolFactory
-            self.assertIsNone(getattr(OptionalAgent, "ERROR", None))
-            self.assertFalse(hasattr(optional, "PipelineModel"))
-            self.assertIsNotNone(optional.BashTool(allowed=["ls"])({"command": ["ls", tempfile.gettempdir()]}))
-
-            # Tools only available with the smolagents backend raise an error
-            self.assertNotIn("python", OptionalToolFactory.DEFAULTS)
-            for tool in ["python", "http://localhost:8000/mcp"]:
-                with self.subTest(tool=tool), self.assertRaises(ValueError):
-                    OptionalToolFactory.create({"tools": [tool]})
-
-            # The smolagents backend raises an error with the original cause
-            with self.assertRaises(ImportError) as error:
-                OptionalAgent(llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=1)
-
-            self.assertIn('install "agent" extra', str(error.exception))
-            self.assertIsInstance(error.exception.__cause__, ModuleNotFoundError)
-            self.assertEqual(error.exception.__cause__.name, "smolagents")
-
-            # The pydantic backend runs default and function tools
-            agent = OptionalAgent(
-                backend="pydantic", tools=[weather, "defaults"], llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=5
-            )
-            self.assertEqual(
-                sorted(agent.tools), ["bash", "edit", "glob", "grep", "read", "todowrite", "user_input", "weather", "web_search", "write"]
-            )
-
-            responses = iter(['Action:\n{"name": "weather", "arguments": {"city": "Paris"}}', "Done"])
-            messages = []
-            agent.process.model.llm = lambda inputs, **kwargs: messages.append(inputs) or next(responses)
-
-            self.assertEqual(agent("What is the weather in Paris?"), "Done")
-            self.assertEqual(messages[1][-1], {"role": "user", "content": "Observation: sunny in Paris"})
-
-        # Module restoration must keep the real Agent available to other tests
-        from txtai import Agent as RestoredAgent
-
-        self.assertIs(RestoredAgent, Agent)
 
     def testInstructions(self):
         """
@@ -241,6 +200,71 @@ class TestAgent(unittest.TestCase):
 
         agent = Agent(method="code", llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_iterations=1)
         self.assertIsInstance(agent.process, CodeAgent)
+
+    def testOptionalSmolagents(self):
+        """
+        Test agent tools and the pydantic backend work without smolagents installed
+        """
+
+        def weather(city: str) -> str:
+            """
+            Gets the weather for a city
+
+            Args:
+                city: city name
+
+            Returns:
+                weather
+            """
+
+            return f"sunny in {city}"
+
+        # pylint: disable=C0415
+        with patch.dict(sys.modules, {"smolagents": None}):
+            # Reload txtai with smolagents unavailable, as in testoptional
+            for name in list(sys.modules):
+                if name == "txtai" or name.startswith("txtai."):
+                    del sys.modules[name]
+
+            from txtai import agent as optional
+
+            # Agent and tools import without smolagents
+            OptionalAgent, OptionalToolFactory = optional.Agent, optional.ToolFactory
+            self.assertIsNone(getattr(OptionalAgent, "ERROR", None))
+            self.assertFalse(hasattr(optional, "PipelineModel"))
+            self.assertIsNotNone(optional.BashTool(allowed=["ls"])({"command": ["ls", tempfile.gettempdir()]}))
+
+            # Tools only available with the smolagents backend raise an error
+            self.assertNotIn("python", OptionalToolFactory.DEFAULTS)
+            for tool in ["python", "http://localhost:8000/mcp"]:
+                with self.subTest(tool=tool), self.assertRaises(ValueError):
+                    OptionalToolFactory.create({"tools": [tool]})
+
+            # The smolagents backend raises an error
+            with self.assertRaises(ImportError) as error:
+                OptionalAgent(llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=1)
+
+            self.assertIn('install "agent" extra', str(error.exception))
+
+            # The pydantic backend runs default and function tools
+            agent = OptionalAgent(
+                backend="pydantic", tools=[weather, "defaults"], llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=5
+            )
+            self.assertEqual(
+                sorted(agent.tools), ["bash", "edit", "glob", "grep", "read", "todowrite", "user_input", "weather", "web_search", "write"]
+            )
+
+            responses = iter(['Action:\n{"name": "weather", "arguments": {"city": "Paris"}}', "Done"])
+            messages = []
+            agent.process.model.llm = lambda inputs, **kwargs: messages.append(inputs) or next(responses)
+
+            self.assertEqual(agent("What is the weather in Paris?"), "Done")
+            self.assertEqual(messages[1][-1], {"role": "user", "content": "Observation: sunny in Paris"})
+
+        # Module restoration must keep the real Agent available to other tests
+        from txtai import Agent as RestoredAgent
+
+        self.assertIs(RestoredAgent, Agent)
 
     def testPydantic(self):
         """
@@ -521,7 +545,7 @@ class TestAgent(unittest.TestCase):
                 self.name = "echo"
                 self.description = "Echoes text"
                 self.inputs = {"text": {"type": "string", "description": "text"}}
-                self.output_type = "string"
+                self.output = "string"
                 super().__init__()
 
             # pylint: disable=W0221
@@ -547,7 +571,7 @@ class TestAgent(unittest.TestCase):
             def __init__(self):
                 self.name = "missing"
                 self.inputs = {}
-                self.output_type = "any"
+                self.output = "any"
                 super().__init__()
 
         with self.assertRaises(TypeError):
@@ -754,6 +778,69 @@ class TestAgent(unittest.TestCase):
             self.assertEqual(tool.name, function.__name__)
             self.assertEqual(tool("Paris"), "sunny in Paris")
 
+    def testToolsEditCRLF(self):
+        """
+        Test the edit tool preserves CRLF line endings
+        """
+
+        # Test file with CRLF line endings
+        path = os.path.join(tempfile.gettempdir(), "agent_tools_crlf.txt")
+        with open(path, "wb") as f:
+            f.write(b"hello\r\nworld\r\n")
+
+        # Editing a word must not rewrite the line endings of untouched lines
+        ToolFactory.default("edit")(path, "hello", "bye")
+        with open(path, "rb") as f:
+            self.assertEqual(f.read(), b"bye\r\nworld\r\n")
+
+    def testToolsEmbeddings(self):
+        """
+        Test adding Embeddings as a tool
+        """
+
+        embeddings = Embeddings()
+        embeddings.index(["test"])
+
+        # Generate temp file path and save
+        index = os.path.join(tempfile.gettempdir(), "embeddings.agent")
+        embeddings.save(index)
+
+        embeddings1 = {
+            "name": "embeddings1",
+            "description": "Searches a test database",
+            "target": embeddings,
+        }
+
+        embeddings2 = {"name": "embeddings2", "description": "Searches a test database", "path": index}
+
+        agent = Agent(tools=[embeddings1, embeddings2], llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=1)
+
+        self.assertIsNotNone(agent)
+        self.assertIsInstance(agent.tools["embeddings1"]("test"), list)
+
+    def testToolsGrepUnreadable(self):
+        """
+        Test the grep tool skips a file it is not allowed to read
+        """
+
+        with tempfile.TemporaryDirectory() as work:
+            for name in ("a.txt", "b.txt"):
+                with open(os.path.join(work, name), "w", encoding="utf-8") as f:
+                    f.write("hello world\n")
+
+            # Matches found in readable files must survive an unreadable file
+            unreadable = os.path.join(work, "b.txt")
+            os.chmod(unreadable, 0o000)
+
+            try:
+                if os.access(unreadable, os.R_OK):
+                    self.skipTest("File permissions are not enforced for this user")
+
+                result = ToolFactory.default("grep")("world", work)
+                self.assertEqual(result, {os.path.join(work, "a.txt"): ["hello world\n"]})
+            finally:
+                os.chmod(unreadable, 0o644)
+
     def testToolsHints(self):
         """
         Test tools created from type hints match the inputs smolagents creates
@@ -833,7 +920,7 @@ class TestAgent(unittest.TestCase):
                 tool, expected = ToolFactory.create({"tools": [function]})[0], smoltool(function)
                 self.assertIsInstance(tool, Tool)
                 self.assertEqual(
-                    (tool.name, tool.description, tool.output_type),
+                    (tool.name, tool.description, tool.output),
                     (expected.name, expected.description, expected.output_type),
                 )
 
@@ -845,6 +932,30 @@ class TestAgent(unittest.TestCase):
         tool = ToolFactory.create({"tools": [search]})[0]
         self.assertEqual(tool.inputs, {"query": {"type": "any", "description": "search query"}})
         self.assertEqual(tool("txtai"), ["txtai"])
+
+    @patch("mcpadapt.core.MCPAdapt")
+    def testToolsMCP(self, mcp):
+        """
+        Test adding a MCP tool collection
+        """
+
+        # pylint: disable=C0115,C0116
+        class MCPAdapt:
+            def __init__(self, *args):
+                self.args = args
+
+            def tools(self):
+                return [PythonInterpreterTool()]
+
+        # Patch MCP adapter for testing
+        mcp.side_effect = MCPAdapt
+
+        agent = Agent(tools=["http://localhost:8000/mcp"], llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=1)
+        self.assertEqual(len(agent.tools), 2)
+
+        # MCP tools require the smolagents backend
+        with self.assertRaises(ValueError):
+            Agent(backend="pydantic", tools=["http://localhost:8000/mcp"], llm="hf-internal-testing/tiny-random-LlamaForCausalLM")
 
     def testToolsQuestion(self):
         """
@@ -858,6 +969,15 @@ class TestAgent(unittest.TestCase):
         with patch("builtins.input", return_value="Paris") as prompt:
             self.assertEqual(tool("Which city?"), "Paris")
             prompt.assert_called_once_with("Which city? => Type your answer here:")
+
+    def testToolsReadNonexistent(self):
+        """
+        Test the read tool raises FileNotFoundError when a file does not exist
+        """
+
+        # Reading a non-existent file must raise FileNotFoundError
+        with self.assertRaises(FileNotFoundError):
+            ToolFactory.default("read")(os.path.join(tempfile.gettempdir(), "does_not_exist_file.txt"))
 
     def testToolsSchema(self):
         """
@@ -987,6 +1107,34 @@ class TestAgent(unittest.TestCase):
             with self.subTest(function=function.__name__), self.assertRaises(error):
                 ToolSchema.create(function)
 
+    def testToolsSmolagents(self):
+        """
+        Test txtai tools are converted to smolagents tools with the smolagents backend
+        """
+
+        agent = Agent(tools=["bash", PythonInterpreterTool()], llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=1)
+
+        # txtai tools are wrapped, smolagents tools are used as is
+        self.assertIsInstance(agent.tools["bash"], SmolagentsTool)
+        self.assertIsInstance(agent.tools["bash"].tool, BashTool)
+        self.assertIsInstance(agent.tools["python_interpreter"], PythonInterpreterTool)
+
+        # Wrapped tools keep the txtai tool attributes and run it
+        self.assertEqual(agent.tools["bash"].allowed, ["cat", "cut", "diff", "grep", "head", "ls", "tail"])
+        self.assertEqual(agent.tools["bash"].inputs, BashTool().inputs)
+        self.assertEqual(agent.tools["bash"]({"command": ["ls", tempfile.gettempdir()]}), BashTool()(["ls", tempfile.gettempdir()]))
+
+        # Agent runs a tool call through the wrapped tool
+        responses = iter(
+            ['Action:\n{"name": "bash", "arguments": {"command": ["ls", "/"]}}', 'Action:\n{"name": "final_answer", "arguments": "Done"}']
+        )
+        agent = Agent(tools=["bash"], llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=2)
+        agent.process.model.llm = lambda *args, **kwargs: next(responses)
+
+        with patch.object(BashTool, "forward", return_value="listing") as forward:
+            self.assertEqual(agent("List files"), "Done")
+            forward.assert_called_once_with(command=["ls", "/"])
+
     def testToolsWebSearch(self):
         """
         Test the web search tool parses search results
@@ -1017,126 +1165,41 @@ class TestAgent(unittest.TestCase):
         with patch.object(tool, "fetch", return_value=b"<html></html>"), self.assertRaises(ValueError):
             tool("nothing")
 
-    def testToolsSmolagents(self):
+
+class CustomProcess:
+    """
+    Custom agent process runner.
+    """
+
+    def __init__(self, model, tools, **kwargs):
+        self.llm = model
+        self.model = self
+        self.tools = {tool.name: tool for tool in tools}
+        self.config = kwargs
+        self.maxlength = None
+
+    def parameters(self, maxlength):
         """
-        Test txtai tools are converted to smolagents tools with the smolagents backend
-        """
+        Sets LLM inference parameters.
 
-        agent = Agent(tools=["bash", PythonInterpreterTool()], llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=1)
-
-        # txtai tools are wrapped, smolagents tools are used as is
-        self.assertIsInstance(agent.tools["bash"], SmolagentsTool)
-        self.assertIsInstance(agent.tools["bash"].tool, BashTool)
-        self.assertIsInstance(agent.tools["python_interpreter"], PythonInterpreterTool)
-
-        # Wrapped tools keep the txtai tool attributes and run it
-        self.assertEqual(agent.tools["bash"].allowed, ["cat", "cut", "diff", "grep", "head", "ls", "tail"])
-        self.assertEqual(agent.tools["bash"].inputs, BashTool().inputs)
-        self.assertEqual(agent.tools["bash"]({"command": ["ls", tempfile.gettempdir()]}), BashTool()(["ls", tempfile.gettempdir()]))
-
-        # Agent runs a tool call through the wrapped tool
-        responses = iter(
-            ['Action:\n{"name": "bash", "arguments": {"command": ["ls", "/"]}}', 'Action:\n{"name": "final_answer", "arguments": "Done"}']
-        )
-        agent = Agent(tools=["bash"], llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=2)
-        agent.process.model.llm = lambda *args, **kwargs: next(responses)
-
-        with patch.object(BashTool, "forward", return_value="listing") as forward:
-            self.assertEqual(agent("List files"), "Done")
-            forward.assert_called_once_with(command=["ls", "/"])
-
-    def testToolsEditCRLF(self):
-        """
-        Test the edit tool preserves CRLF line endings
+        Args:
+            maxlength: maximum sequence length
         """
 
-        # Test file with CRLF line endings
-        path = os.path.join(tempfile.gettempdir(), "agent_tools_crlf.txt")
-        with open(path, "wb") as f:
-            f.write(b"hello\r\nworld\r\n")
+        self.maxlength = maxlength
 
-        # Editing a word must not rewrite the line endings of untouched lines
-        ToolFactory.default("edit")(path, "hello", "bye")
-        with open(path, "rb") as f:
-            self.assertEqual(f.read(), b"bye\r\nworld\r\n")
-
-    def testToolsEmbeddings(self):
+    # pylint: disable=W0613
+    def run(self, text, stream=False, **kwargs):
         """
-        Test adding Embeddings as a tool
-        """
+        Runs an agent loop.
 
-        embeddings = Embeddings()
-        embeddings.index(["test"])
+        Args:
+            text: instructions to run
+            stream: stream response if True
+            kwargs: additional keyword arguments
 
-        # Generate temp file path and save
-        index = os.path.join(tempfile.gettempdir(), "embeddings.agent")
-        embeddings.save(index)
-
-        embeddings1 = {
-            "name": "embeddings1",
-            "description": "Searches a test database",
-            "target": embeddings,
-        }
-
-        embeddings2 = {"name": "embeddings2", "description": "Searches a test database", "path": index}
-
-        agent = Agent(tools=[embeddings1, embeddings2], llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=1)
-
-        self.assertIsNotNone(agent)
-        self.assertIsInstance(agent.tools["embeddings1"]("test"), list)
-
-    def testToolsGrepUnreadable(self):
-        """
-        Test the grep tool skips a file it is not allowed to read
+        Returns:
+            result
         """
 
-        with tempfile.TemporaryDirectory() as work:
-            for name in ("a.txt", "b.txt"):
-                with open(os.path.join(work, name), "w", encoding="utf-8") as f:
-                    f.write("hello world\n")
-
-            # Matches found in readable files must survive an unreadable file
-            unreadable = os.path.join(work, "b.txt")
-            os.chmod(unreadable, 0o000)
-
-            try:
-                if os.access(unreadable, os.R_OK):
-                    self.skipTest("File permissions are not enforced for this user")
-
-                result = ToolFactory.default("grep")("world", work)
-                self.assertEqual(result, {os.path.join(work, "a.txt"): ["hello world\n"]})
-            finally:
-                os.chmod(unreadable, 0o644)
-
-    # pylint: disable=C0115,C0116
-    @patch("mcpadapt.core.MCPAdapt")
-    def testToolsMCP(self, mcp):
-        """
-        Test adding a MCP tool collection
-        """
-
-        class MCPAdapt:
-            def __init__(self, *args):
-                self.args = args
-
-            def tools(self):
-                return [PythonInterpreterTool()]
-
-        # Patch MCP adapter for testing
-        mcp.side_effect = MCPAdapt
-
-        agent = Agent(tools=["http://localhost:8000/mcp"], llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=1)
-        self.assertEqual(len(agent.tools), 2)
-
-        # MCP tools require the smolagents backend
-        with self.assertRaises(ValueError):
-            Agent(backend="pydantic", tools=["http://localhost:8000/mcp"], llm="hf-internal-testing/tiny-random-LlamaForCausalLM")
-
-    def testToolsReadNonexistent(self):
-        """
-        Test the read tool raises FileNotFoundError when a file does not exist
-        """
-
-        # Reading a non-existent file must raise FileNotFoundError
-        with self.assertRaises(FileNotFoundError):
-            ToolFactory.default("read")(os.path.join(tempfile.gettempdir(), "does_not_exist_file.txt"))
+        return text.strip()

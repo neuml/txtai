@@ -26,7 +26,7 @@ class EditTool(Tool):
             "search": {"type": "string", "description": "String to replace"},
             "replace": {"type": "string", "description": "Replacement string"},
         }
-        self.output_type = "any"
+        self.output = "any"
 
         # Validate parameters and initialize tool
         super().__init__()

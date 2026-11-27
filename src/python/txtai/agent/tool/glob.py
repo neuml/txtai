@@ -25,7 +25,7 @@ class GlobTool(Tool):
         self.inputs = {
             "files": {"type": "string", "description": "File or file glob pattern to search"},
         }
-        self.output_type = "any"
+        self.output = "any"
 
         # Validate parameters and initialize tool
         super().__init__()

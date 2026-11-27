@@ -31,7 +31,7 @@ class SmolagentsTool(Tool):
         self.name = tool.name
         self.description = tool.description
         self.inputs = tool.inputs
-        self.output_type = tool.output_type
+        self.output_type = tool.output
 
         # Validate parameters and initialize tool
         super().__init__()

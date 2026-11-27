@@ -42,7 +42,7 @@ agent = Agent(
 ## backend
 
 ```yaml
-backend: smolagents|pydantic
+backend: smolagents|pydantic|custom class path
 ```
 
 Sets the agent backend. Defaults to `smolagents`. Both backends use the txtai [LLM pipeline](../../pipeline/text/llm) and support the same tools.
@@ -61,6 +61,8 @@ The `pydantic` backend has the following differences.
 - `max_steps` sets the maximum number of LLM calls. An error is raised when it's exceeded.
 - Streaming returns the final answer as a single chunk
 - Additional options are passed to the [Pydantic AI Agent](https://pydantic.dev/docs/ai/core-concepts/agent/)
+
+A custom backend can be set with a full class path, for example `backend="mymodule.MyProcess"`. The class is created with the model, the list of txtai tools and the remaining options, `MyProcess(model, tools, **kwargs)`. It needs a `tools` dictionary, a `model` with a `parameters(maxlength)` method and a `run(text, stream=False, **kwargs)` method. `PydanticProcess` follows the same interface.
 
 The `smolagents` package is only required by the `smolagents` backend. The `pydantic` backend runs the built-in txtai tools without it. The `python` tool and MCP tool collections come from smolagents, so they are only available with the `smolagents` backend.
 

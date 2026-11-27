@@ -2,6 +2,11 @@
 smolagents imports
 """
 
-from .model import PipelineModel
 from .process import SmolagentsProcess
-from .tool import SmolagentsTool
+
+# Conditional import, these classes extend smolagents classes
+try:
+    from .model import PipelineModel
+    from .tool import SmolagentsTool
+except ImportError:
+    pass

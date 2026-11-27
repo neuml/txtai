@@ -23,7 +23,7 @@ class TodoWriteTool(Tool):
             "Only use this tool for complex tasks with multiple steps. Skip for simple tasks that can be done easily."
         )
         self.inputs = {"plan": {"type": "string", "description": "The task plan"}}
-        self.output_type = "any"
+        self.output = "any"
 
         # Validate parameters and initialize tool
         super().__init__()

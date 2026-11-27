@@ -30,7 +30,7 @@ class GrepTool(Tool):
             "search": {"type": "string", "description": "Search grep pattern"},
             "files": {"type": "string", "description": "File or file glob pattern to search"},
         }
-        self.output_type = "any"
+        self.output = "any"
 
         # Validate parameters and initialize tool
         super().__init__()

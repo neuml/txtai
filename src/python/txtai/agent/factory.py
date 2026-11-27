@@ -2,7 +2,10 @@
 Factory module
 """
 
+from ..util import Resolver
+
 from .pydanticai import PydanticProcess
+from .smolagents import SmolagentsProcess
 from .tool import ToolFactory
 
 
@@ -24,50 +27,42 @@ class ProcessFactory:
             agent process runner
         """
 
+        # Get agent backend
         backend = config.pop("backend", "smolagents")
-        if backend == "pydantic":
-            return ProcessFactory.pydantic(config)
 
-        if backend != "smolagents":
-            raise ValueError(f"Unsupported agent backend: {backend}")
-
-        return ProcessFactory.smolagents(config)
-
-    @staticmethod
-    def smolagents(config):
-        """
-        Create a smolagents process runner.
-
-        Args:
-            config: agent configuration
-
-        Returns:
-            agent process runner
-        """
-
-        # pylint: disable=C0415
-        # smolagents is optional, only this backend requires it
-        try:
-            from .smolagents import SmolagentsProcess
-        except ImportError as missing:
-            raise ImportError('smolagents is not available - install "agent" extra to enable') from missing
-
-        return SmolagentsProcess.create(config)
-
-    @staticmethod
-    def pydantic(config):
-        """
-        Create a Pydantic AI process runner.
-
-        Args:
-            config: agent configuration
-
-        Returns:
-            agent process runner
-        """
+        # smolagents converts tools to its own format
+        if backend == "smolagents":
+            return SmolagentsProcess.create(config)
 
         # LLM model path, configuration or instance
         model = config.pop("model", config.pop("llm", None))
 
-        # Create the agent process
-        return PydanticProcess(model, ToolFactory.create(config), **config)
+        # txtai tools
+        tools = ToolFactory.create(config)
+
+        # Pydantic AI
+        if backend == "pydantic":
+            return PydanticProcess(model, tools, **config)
+
+        # Resolve custom backend
+        return ProcessFactory.resolve(backend, model, tools, config)
+
+    @staticmethod
+    def resolve(backend, model, tools, config):
+        """
+        Attempt to resolve a custom backend.
+
+        Args:
+            backend: backend class
+            model: LLM model path, configuration or instance
+            tools: list of txtai tools
+            config: agent configuration
+
+        Returns:
+            agent process runner
+        """
+
+        try:
+            return Resolver()(backend)(model, tools, **config)
+        except Exception as e:
+            raise ImportError(f"Unable to resolve agent backend: '{backend}'") from e

@@ -41,7 +41,7 @@ class WebSearchTool(Tool):
             "with titles, links, and descriptions."
         )
         self.inputs = {"query": {"type": "string", "description": "The search query to perform."}}
-        self.output_type = "string"
+        self.output = "string"
 
         # URL retrieval pipeline
         self.fetch = URLRetrieve(headers={"User-Agent": "Mozilla/5.0"}, safeopen=True)

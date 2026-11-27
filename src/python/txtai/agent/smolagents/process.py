@@ -2,11 +2,18 @@
 Process module
 """
 
-from smolagents import CodeAgent, ToolCallingAgent
+# Conditional import
+try:
+    from smolagents import CodeAgent, ToolCallingAgent
+
+    from .model import PipelineModel
+    from .tool import SmolagentsTool
+
+    SMOLAGENTS = True
+except ImportError:
+    SMOLAGENTS = False
 
 from ..tool import ToolFactory
-from .model import PipelineModel
-from .tool import SmolagentsTool
 
 
 class SmolagentsProcess:
@@ -25,6 +32,9 @@ class SmolagentsProcess:
         Returns:
             agent process runner
         """
+
+        if not SMOLAGENTS:
+            raise ImportError('smolagents is not available - install "agent" extra to enable')
 
         constructor = ToolCallingAgent
         method = config.pop("method", None)

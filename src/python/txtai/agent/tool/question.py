@@ -20,7 +20,7 @@ class QuestionTool(Tool):
         self.name = "user_input"
         self.description = "Asks for user's input on a specific question"
         self.inputs = {"question": {"type": "string", "description": "The question to ask the user"}}
-        self.output_type = "string"
+        self.output = "string"
 
         # Validate parameters and initialize tool
         super().__init__()

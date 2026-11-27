@@ -29,7 +29,7 @@ class BashTool(Tool):
         self.inputs = {
             "command": {"type": "array", "description": "Command to run. Follows Python subprocess.open pattern for command as a list of arguments."}
         }
-        self.output_type = "any"
+        self.output = "any"
 
         # Default list of allowed commands
         self.allowed = allowed if allowed is not None else ["cat", "cut", "diff", "grep", "head", "ls", "tail"]

@@ -31,7 +31,7 @@ class ReadTool(Tool):
             "Use this tool to browse webpages in addition to reading files."
         )
         self.inputs = {"path": {"type": "string", "description": "File path or url"}}
-        self.output_type = "any"
+        self.output = "any"
 
         # Create textractor instance
         self.textractor = Textractor()
