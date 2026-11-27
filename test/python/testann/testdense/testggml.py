@@ -54,53 +54,6 @@ class TestGGML(DenseTest):
         ann.load(index)
         self.assertEqual(ann.count(), 99)
 
-    def testGGMLTopn(self):
-        """
-        Test that GGML searches return the same top scores as a full sort for all limit sizes
-        """
-
-        rng = np.random.default_rng(0)
-        data = rng.random((50, 8), dtype=np.float32)
-        data /= np.linalg.norm(data, axis=1, keepdims=True)
-        queries = data[:3] + 0.01
-
-        ann = ANNFactory.create({"backend": "ggml", "ggml": {"gpu": False}})
-        ann.index(data.copy())
-
-        scores = np.dot(queries, data.T)
-
-        # Limits that are zero, smaller than, equal to and larger than the number of rows
-        for limit in (0, 1, 5, 49, 50, 80):
-            with self.subTest(limit=limit):
-                results = ann.search(queries, limit)
-
-                for x, result in enumerate(results):
-                    expected = np.sort(scores[x])[::-1][:limit]
-
-                    self.assertEqual(len(result), len(expected))
-                    np.testing.assert_allclose([score for _, score in result], expected, rtol=1e-5)
-
-                    # Ids are unique and each id maps to its own score
-                    ids = [uid for uid, _ in result]
-                    self.assertEqual(len(set(ids)), len(ids))
-                    np.testing.assert_allclose([scores[x][uid] for uid in ids], [score for _, score in result], rtol=1e-5)
-
-        # Deleted rows are not returned
-        best = ann.search(queries[:1], 1)[0][0][0]
-        ann.delete([best])
-        self.assertNotIn(best, [uid for uid, _ in ann.search(queries[:1], 5)[0]])
-
-    def testGGMLQuantizeDisabled(self):
-        """
-        Test that quantize: false disables GGML tensor quantization
-        """
-
-        data = np.random.rand(4, 256).astype(np.float32)
-        for quantize, expected in [(False, ggml.GGML_TYPE_F32), (True, ggml.GGML_TYPE_Q8_0), (4, ggml.GGML_TYPE_Q4_0)]:
-            with self.subTest(quantize=quantize):
-                tensors = GGMLTensors(False, 64, quantize)
-                self.assertEqual(tensors.tensortype(data), expected)
-
     def testGGMLEmpty(self):
         """
         Test GGML backend with an empty index
@@ -128,6 +81,21 @@ class TestGGML(DenseTest):
         query = np.random.rand(240).astype(np.float32)
         self.normalize(query)
         self.assertGreater(ann.search(np.array([query]), 1)[0][0][1], 0)
+
+    def testGGMLInvalid(self):
+        """
+        Test invalid GGML configurations
+        """
+
+        data = np.random.rand(100, 240).astype(np.float32)
+
+        with self.assertRaises(ValueError):
+            ann = ANNFactory.create({"backend": "ggml", "ggml": {"quantize": "NOEXIST", "gpu": False}})
+            ann.index(data)
+
+        with self.assertRaises(ValueError):
+            ann = ANNFactory.create({"backend": "ggml", "ggml": {"quantize": "Q4_K"}})
+            ann.index(data)
 
     def testGGMLQuantization(self):
         """
@@ -163,20 +131,16 @@ class TestGGML(DenseTest):
         ann.load(index)
         ann.index(data)
 
-    def testGGMLInvalid(self):
+    def testGGMLQuantizeDisabled(self):
         """
-        Test invalid GGML configurations
+        Test that quantize: false disables GGML tensor quantization
         """
 
-        data = np.random.rand(100, 240).astype(np.float32)
-
-        with self.assertRaises(ValueError):
-            ann = ANNFactory.create({"backend": "ggml", "ggml": {"quantize": "NOEXIST", "gpu": False}})
-            ann.index(data)
-
-        with self.assertRaises(ValueError):
-            ann = ANNFactory.create({"backend": "ggml", "ggml": {"quantize": "Q4_K"}})
-            ann.index(data)
+        data = np.random.rand(4, 256).astype(np.float32)
+        for quantize, expected in [(False, ggml.GGML_TYPE_F32), (True, ggml.GGML_TYPE_Q8_0), (4, ggml.GGML_TYPE_Q4_0)]:
+            with self.subTest(quantize=quantize):
+                tensors = GGMLTensors(False, 64, quantize)
+                self.assertEqual(tensors.tensortype(data), expected)
 
     def testGGMLSingleRow(self):
         """
@@ -205,3 +169,39 @@ class TestGGML(DenseTest):
         # Test delete, including an out of range id
         ann.delete([0, 5])
         self.assertEqual(ann.count(), 1)
+
+    def testGGMLTopn(self):
+        """
+        Test that GGML searches return the same top scores as a full sort for all limit sizes
+        """
+
+        rng = np.random.default_rng(0)
+        data = rng.random((50, 8), dtype=np.float32)
+        data /= np.linalg.norm(data, axis=1, keepdims=True)
+        queries = data[:3] + 0.01
+
+        ann = ANNFactory.create({"backend": "ggml", "ggml": {"gpu": False}})
+        ann.index(data.copy())
+
+        scores = np.dot(queries, data.T)
+
+        # Limits that are zero, smaller than, equal to and larger than the number of rows
+        for limit in (0, 1, 5, 49, 50, 80):
+            with self.subTest(limit=limit):
+                results = ann.search(queries, limit)
+
+                for x, result in enumerate(results):
+                    expected = np.sort(scores[x])[::-1][:limit]
+
+                    self.assertEqual(len(result), len(expected))
+                    np.testing.assert_allclose([score for _, score in result], expected, rtol=1e-5)
+
+                    # Ids are unique and each id maps to its own score
+                    ids = [uid for uid, _ in result]
+                    self.assertEqual(len(set(ids)), len(ids))
+                    np.testing.assert_allclose([scores[x][uid] for uid in ids], [score for _, score in result], rtol=1e-5)
+
+        # Deleted rows are not returned
+        best = ann.search(queries[:1], 1)[0][0][0]
+        ann.delete([best])
+        self.assertNotIn(best, [uid for uid, _ in ann.search(queries[:1], 5)[0]])

@@ -3,6 +3,7 @@ External module tests
 """
 
 import os
+import tempfile
 import unittest
 
 from unittest.mock import patch
@@ -65,6 +66,30 @@ class TestExternal(unittest.TestCase):
         with open(stream, "rb") as queue:
             self.assertEqual(np.load(queue).shape, (500, 768))
 
+    def testIndexCheckpoint(self):
+        """
+        Test a changed precomputed vector is reindexed when resuming a checkpoint
+        """
+
+        original = np.zeros(1536, dtype=np.float32)
+        original[759] = 1
+        updated = np.zeros_like(original)
+        updated[761] = 1
+
+        with tempfile.TemporaryDirectory() as checkpoint:
+            for vector in (original, updated):
+                embeddings = Embeddings({"method": "external", "backend": "numpy"})
+                embeddings.index([("doc", vector, None)], checkpoint=checkpoint)
+                self.assertEqual(embeddings.search(vector, 1), [("doc", 1.0)])
+
+    def testMethod(self):
+        """
+        Test method is derived when transform function passed
+        """
+
+        model = VectorsFactory.create({"transform": lambda _: [[0.0, 1.0]]}, None)
+        self.assertTrue(isinstance(model, External))
+
     def testPrecomputed(self):
         """
         Test precomputed vectors are normalized the same way as encoded vectors
@@ -115,11 +140,3 @@ class TestExternal(unittest.TestCase):
 
         transform = VectorsFactory.create({"transform": "testvectors.testdense.testexternal.Transform"}, None)
         self.assertTrue(np.array_equal(transform.encode(["test"]), np.array([[0.0, 1.0]])))
-
-    def testMethod(self):
-        """
-        Test method is derived when transform function passed
-        """
-
-        model = VectorsFactory.create({"transform": lambda _: [[0.0, 1.0]]}, None)
-        self.assertTrue(isinstance(model, External))

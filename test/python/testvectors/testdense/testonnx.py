@@ -29,7 +29,7 @@ class TestONNX(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """
-        Export a model to ONNX and create an ONNX vectors instance.
+        Export a model to ONNX, create an ONNX vectors instance and create a small tokenizer.
         """
 
         path = "sentence-transformers/paraphrase-MiniLM-L3-v2"
@@ -41,29 +41,18 @@ class TestONNX(unittest.TestCase):
 
         cls.model = VectorsFactory.create({"path": cls.path, "tokenizer": path, "gpu": False}, None)
 
-    def testMethod(self):
-        """
-        Test that an .onnx path resolves to the onnx method
-        """
+        # Create a working directory and a small tokenizer for locally built ONNX models
+        cls.directory = os.path.join(tempfile.gettempdir(), "onnxvectors")
+        os.makedirs(cls.directory, exist_ok=True)
 
-        self.assertEqual(VectorsFactory.method({"path": self.path}), "onnx")
-        self.assertEqual(VectorsFactory.method({"path": "model.tflite"}), "litert")
+        vocab = {"[PAD]": 0, "[UNK]": 1, "dog": 2, "puppy": 3, "quantum": 4, "physics": 5}
+        tokenizer = Tokenizer(models.WordLevel(vocab=vocab, unk_token="[UNK]"))
+        tokenizer.pre_tokenizer = pre_tokenizers.Whitespace()
 
-    def testIndex(self):
-        """
-        Test indexing with ONNX vectors
-        """
+        cls.tokenizer = os.path.join(cls.directory, "tokenizer.json")
+        tokenizer.save(cls.tokenizer)
 
-        ids, dimension, batches, stream = self.model.index([(0, "test", None)])
-
-        self.assertEqual(len(ids), 1)
-        self.assertEqual(dimension, 384)
-        self.assertEqual(batches, 1)
-        self.assertIsNotNone(os.path.exists(stream))
-
-        # Test shape of serialized embeddings
-        with open(stream, "rb") as queue:
-            self.assertEqual(np.load(queue).shape, (1, 384))
+        cls.vocab = len(vocab)
 
     def testEncodeBatch(self):
         """
@@ -86,40 +75,37 @@ class TestONNX(unittest.TestCase):
         batched = batched / np.linalg.norm(batched, axis=1, keepdims=True)
         self.assertTrue(np.all(np.sum(single * batched, axis=1) > 0.99))
 
-    def testSimilarity(self):
+    def testIndex(self):
         """
-        Test that pooled embeddings carry semantics
-        """
-
-        embeddings = self.model.encode(["dog", "puppy", "quantum chromodynamics"])
-        embeddings = embeddings / np.linalg.norm(embeddings, axis=1, keepdims=True)
-
-        self.assertGreater(float(embeddings[0] @ embeddings[1]), float(embeddings[0] @ embeddings[2]))
-
-
-class TestONNXModels(unittest.TestCase):
-    """
-    ONNX vectors tests covering model shapes and configuration a single exported model doesn't reach.
-    These build small ONNX graphs locally, no model download required.
-    """
-
-    @classmethod
-    def setUpClass(cls):
-        """
-        Create a working directory and a small tokenizer.
+        Test indexing with ONNX vectors
         """
 
-        cls.directory = os.path.join(tempfile.gettempdir(), "onnxvectors")
-        os.makedirs(cls.directory, exist_ok=True)
+        ids, dimension, batches, stream = self.model.index([(0, "test", None)])
 
-        vocab = {"[PAD]": 0, "[UNK]": 1, "dog": 2, "puppy": 3, "quantum": 4, "physics": 5}
-        tokenizer = Tokenizer(models.WordLevel(vocab=vocab, unk_token="[UNK]"))
-        tokenizer.pre_tokenizer = pre_tokenizers.Whitespace()
+        self.assertEqual(len(ids), 1)
+        self.assertEqual(dimension, 384)
+        self.assertEqual(batches, 1)
+        self.assertIsNotNone(os.path.exists(stream))
 
-        cls.tokenizer = os.path.join(cls.directory, "tokenizer.json")
-        tokenizer.save(cls.tokenizer)
+        # Test shape of serialized embeddings
+        with open(stream, "rb") as queue:
+            self.assertEqual(np.load(queue).shape, (1, 384))
 
-        cls.vocab = len(vocab)
+    def testMaxLength(self):
+        """
+        Test that maxlength truncates long inputs
+        """
+
+        model = self.create(self.build("maxlength.onnx"), maxlength=1)
+        self.assertTrue(np.allclose(model.encode(["dog quantum physics"])[0], model.encode(["dog"])[0], atol=1e-6))
+
+    def testMethod(self):
+        """
+        Test that an .onnx path resolves to the onnx method
+        """
+
+        self.assertEqual(VectorsFactory.method({"path": self.path}), "onnx")
+        self.assertEqual(VectorsFactory.method({"path": "model.tflite"}), "litert")
 
     def build(self, name, pooled=False, types=False):
         """
@@ -163,7 +149,7 @@ class TestONNXModels(unittest.TestCase):
 
         return path
 
-    def model(self, path, **config):
+    def create(self, path, **config):
         """
         Creates an ONNX vectors instance.
 
@@ -177,47 +163,64 @@ class TestONNXModels(unittest.TestCase):
 
         return ONNX({"path": path, "tokenizer": self.tokenizer, "gpu": False, **config}, None, None)
 
-    def testTokenOutput(self):
+    def testPadding(self):
         """
-        Test that token level output is pooled into a single vector per input
+        Test that padding is excluded when pooling
         """
 
-        model = self.model(self.build("tokens.onnx"))
-        self.assertEqual(model.encode(["dog puppy", "quantum"]).shape, (2, 4))
+        model = self.create(self.build("padding.onnx"))
+
+        # An input padded to a longer sequence must produce the same vector as that input alone
+        self.assertTrue(np.allclose(model.encode(["dog"])[0], model.encode(["dog", "quantum physics"])[0], atol=1e-6))
 
     def testPooledOutput(self):
         """
         Test that output which is already pooled passes through
         """
 
-        model = self.model(self.build("pooled.onnx", pooled=True))
+        model = self.create(self.build("pooled.onnx", pooled=True))
         self.assertEqual(model.encode(["dog puppy"]).shape, (1, 4))
 
-    def testTokenTypeIds(self):
+    def testProviders(self):
         """
-        Test that token_type_ids is set only when the model declares it
-        """
-
-        self.assertEqual(self.model(self.build("types.onnx", types=True)).encode(["dog", "quantum physics"]).shape, (2, 4))
-        self.assertEqual(self.model(self.build("notypes.onnx")).encode(["dog", "quantum physics"]).shape, (2, 4))
-
-    def testPadding(self):
-        """
-        Test that padding is excluded when pooling
+        Test provider selection
         """
 
-        model = self.model(self.build("padding.onnx"))
+        model = self.create(self.build("providers.onnx"))
 
-        # An input padded to a longer sequence must produce the same vector as that input alone
-        self.assertTrue(np.allclose(model.encode(["dog"])[0], model.encode(["dog", "quantum physics"])[0], atol=1e-6))
+        with patch("txtai.vectors.dense.onnx.ort.get_available_providers") as providers:
+            providers.return_value = ["CUDAExecutionProvider", "CPUExecutionProvider"]
 
-    def testMaxLength(self):
+            model.config["gpu"] = True
+            self.assertEqual(model.providers(), ["CUDAExecutionProvider", "CPUExecutionProvider"])
+
+            model.config["gpu"] = False
+            self.assertEqual(model.providers(), ["CPUExecutionProvider"])
+
+            providers.return_value = ["CPUExecutionProvider"]
+            model.config["gpu"] = True
+            self.assertEqual(model.providers(), ["CPUExecutionProvider"])
+
+    def testSimilarity(self):
         """
-        Test that maxlength truncates long inputs
+        Test that pooled embeddings carry semantics
         """
 
-        model = self.model(self.build("maxlength.onnx"), maxlength=1)
-        self.assertTrue(np.allclose(model.encode(["dog quantum physics"])[0], model.encode(["dog"])[0], atol=1e-6))
+        embeddings = self.model.encode(["dog", "puppy", "quantum chromodynamics"])
+        embeddings = embeddings / np.linalg.norm(embeddings, axis=1, keepdims=True)
+
+        self.assertGreater(float(embeddings[0] @ embeddings[1]), float(embeddings[0] @ embeddings[2]))
+
+    def testTokenizerMissing(self):
+        """
+        Test that a local model without a tokenizer raises DownloadError
+        """
+
+        os.makedirs(os.path.join(self.directory, "missing-tokenizer"), exist_ok=True)
+        path = self.build(os.path.join("missing-tokenizer", "model.onnx"))
+
+        with self.assertRaises(DownloadError):
+            ONNX({"path": path, "gpu": False}, None, None)
 
     def testTokenizerPath(self):
         """
@@ -232,17 +235,6 @@ class TestONNXModels(unittest.TestCase):
         model = ONNX({"path": path, "gpu": False}, None, None)
 
         self.assertEqual(model.encode(["dog"]).shape, (1, 4))
-
-    def testTokenizerMissing(self):
-        """
-        Test that a local model without a tokenizer raises DownloadError
-        """
-
-        os.makedirs(os.path.join(self.directory, "missing-tokenizer"), exist_ok=True)
-        path = self.build(os.path.join("missing-tokenizer", "model.onnx"))
-
-        with self.assertRaises(DownloadError):
-            ONNX({"path": path, "gpu": False}, None, None)
 
     @patch("huggingface_hub.hf_hub_download")
     def testTokenizerRepo(self, download):
@@ -264,22 +256,18 @@ class TestONNXModels(unittest.TestCase):
         model = ONNX({"path": "org/repo/onnx/model.onnx", "gpu": False}, None, None)
         self.assertEqual(model.encode(["dog"]).shape, (1, 4))
 
-    def testProviders(self):
+    def testTokenOutput(self):
         """
-        Test provider selection
+        Test that token level output is pooled into a single vector per input
         """
 
-        model = self.model(self.build("providers.onnx"))
+        model = self.create(self.build("tokens.onnx"))
+        self.assertEqual(model.encode(["dog puppy", "quantum"]).shape, (2, 4))
 
-        with patch("txtai.vectors.dense.onnx.ort.get_available_providers") as providers:
-            providers.return_value = ["CUDAExecutionProvider", "CPUExecutionProvider"]
+    def testTokenTypeIds(self):
+        """
+        Test that token_type_ids is set only when the model declares it
+        """
 
-            model.config["gpu"] = True
-            self.assertEqual(model.providers(), ["CUDAExecutionProvider", "CPUExecutionProvider"])
-
-            model.config["gpu"] = False
-            self.assertEqual(model.providers(), ["CPUExecutionProvider"])
-
-            providers.return_value = ["CPUExecutionProvider"]
-            model.config["gpu"] = True
-            self.assertEqual(model.providers(), ["CPUExecutionProvider"])
+        self.assertEqual(self.create(self.build("types.onnx", types=True)).encode(["dog", "quantum physics"]).shape, (2, 4))
+        self.assertEqual(self.create(self.build("notypes.onnx")).encode(["dog", "quantum physics"]).shape, (2, 4))

@@ -33,6 +33,25 @@ class TestTokenizer(unittest.TestCase):
         self.assertEqual(Tokenizer.tokenize(""), [])
         self.assertEqual(Tokenizer.tokenize(None), None)
 
+    def testNgramTokenize(self):
+        """
+        Test ngram tokenization
+        """
+
+        # Standard ngram tokenization
+        tokenizer = Tokenizer(lowercase=True, ngrams=3)
+        result = tokenizer("NGRAM TEST")
+        self.assertIn("ngr", result)
+
+        # Case sensitive ngram tokenization
+        tokenizer = Tokenizer(lowercase=False, ngrams=3)
+        result = tokenizer("NGRAM TEST")
+        self.assertIn("NGR", result)
+
+        # Unique ngrams keep the order they first appear in
+        tokenizer = Tokenizer(ngrams={"ngrams": 2, "unique": True})
+        self.assertEqual(tokenizer("hello hello"), ["he", "el", "ll", "lo"])
+
     def testStandardTokenize(self):
         """
         Test standard tokenization
@@ -54,22 +73,3 @@ class TestTokenizer(unittest.TestCase):
         for test, result in tests:
             # Unicode Text Segmentation per Unicode Annex #29
             self.assertEqual(tokenizer(test), result)
-
-    def testNgramTokenize(self):
-        """
-        Test ngram tokenization
-        """
-
-        # Standard ngram tokenization
-        tokenizer = Tokenizer(lowercase=True, ngrams=3)
-        result = tokenizer("NGRAM TEST")
-        self.assertIn("ngr", result)
-
-        # Case sensitive ngram tokenization
-        tokenizer = Tokenizer(lowercase=False, ngrams=3)
-        result = tokenizer("NGRAM TEST")
-        self.assertIn("NGR", result)
-
-        # Unique ngrams keep the order they first appear in
-        tokenizer = Tokenizer(ngrams={"ngrams": 2, "unique": True})
-        self.assertEqual(tokenizer("hello hello"), ["he", "el", "ll", "lo"])

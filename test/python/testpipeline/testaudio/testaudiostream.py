@@ -24,6 +24,23 @@ class TestAudioStream(unittest.TestCase):
     """
 
     @patch("sounddevice.play")
+    def testAudioStream(self, play):
+        """
+        Test playing audio
+        """
+
+        play.return_value = True
+
+        # Read audio data
+        audio, rate = sf.read(Utils.PATH + "/Make_huge_profits.wav")
+
+        stream = AudioStream()
+        self.assertIsNotNone(stream([(audio, rate), AudioStream.COMPLETE]))
+
+        # Wait for completion
+        stream.wait()
+
+    @patch("sounddevice.play")
     def testStereoResampling(self, play):
         """
         Test resampling preserves stereo channels and adjusts frame count
@@ -44,20 +61,3 @@ class TestAudioStream(unittest.TestCase):
                 self.assertEqual(outputrate, target)
                 self.assertEqual(played.shape, (frames, 2))
                 np.testing.assert_allclose(played, np.tile([0.25, -0.5], (frames, 1)))
-
-    @patch("sounddevice.play")
-    def testAudioStream(self, play):
-        """
-        Test playing audio
-        """
-
-        play.return_value = True
-
-        # Read audio data
-        audio, rate = sf.read(Utils.PATH + "/Make_huge_profits.wav")
-
-        stream = AudioStream()
-        self.assertIsNotNone(stream([(audio, rate), AudioStream.COMPLETE]))
-
-        # Wait for completion
-        stream.wait()

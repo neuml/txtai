@@ -76,6 +76,7 @@ extras["api"] = [
     "fastapi>=0.94.0",
     "fastapi-mcp>=0.4.0",
     "httpx>=0.28.1",
+    "mcp<2.0",
     "pillow>=7.1.2",
     "python-multipart>=0.0.7",
     "uvicorn>=0.12.1",

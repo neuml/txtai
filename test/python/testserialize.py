@@ -15,6 +15,14 @@ class TestSerialize(unittest.TestCase):
     Serialize tests.
     """
 
+    def testMessagePack(self):
+        """
+        Test MessagePack encoder
+        """
+
+        serializer = SerializeFactory.create()
+        self.assertEqual(serializer.loadbytes(serializer.savebytes("test")), "test")
+
     def testNotImplemented(self):
         """
         Test exceptions for non-implemented methods
@@ -26,14 +34,6 @@ class TestSerialize(unittest.TestCase):
         self.assertRaises(NotImplementedError, serialize.savestream, None, None)
         self.assertRaises(NotImplementedError, serialize.loadbytes, None)
         self.assertRaises(NotImplementedError, serialize.savebytes, None)
-
-    def testMessagePack(self):
-        """
-        Test MessagePack encoder
-        """
-
-        serializer = SerializeFactory.create()
-        self.assertEqual(serializer.loadbytes(serializer.savebytes("test")), "test")
 
     def testPickleDisabled(self):
         """

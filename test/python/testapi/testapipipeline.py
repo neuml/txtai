@@ -149,6 +149,16 @@ class TestPipeline(unittest.TestCase):
         captions = self.client.post("batchcaption", json=[path, path]).json()
         self.assertEqual(captions, ["a book shelf filled with books and a stack of books"] * 2)
 
+    def testEmpty(self):
+        """
+        Test empty API configuration
+        """
+
+        api = API({})
+
+        self.assertIsNone(api.label("test", ["test"]))
+        self.assertIsNone(api.pipeline("junk", "test"))
+
     def testEntity(self):
         """
         Test entity extraction via API
@@ -164,16 +174,6 @@ class TestPipeline(unittest.TestCase):
 
         entities = self.client.post("batchentity", json=[self.data[1]]).json()
         self.assertEqual([e[0] for e in entities[0]], ["Canada", "Manhattan"])
-
-    def testEmpty(self):
-        """
-        Test empty API configuration
-        """
-
-        api = API({})
-
-        self.assertIsNone(api.label("test", ["test"]))
-        self.assertIsNone(api.pipeline("junk", "test"))
 
     def testLabel(self):
         """

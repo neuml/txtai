@@ -243,6 +243,20 @@ class TestEmbeddings(unittest.TestCase):
         self.embeddings.index([(0, {"text": ""}, None)])
         self.assertTrue(self.embeddings.search("test"))
 
+    @patch("txtai.embeddings.index.indexes.Documents", wraps=Documents)
+    def testEmptySubindexBatch(self, documents):
+        """
+        Test a first batch with no subindex documents followed by a batch with data
+        """
+
+        with Embeddings({"keyword": True, "content": True, "batch": 1, "indexes": {"terms": {"keyword": True}}}) as embeddings:
+            # First batch has no text, so nothing is queued for the subindexes
+            embeddings.index([{"id": 0, "title": "no text"}, {"id": 1, "text": "apple"}])
+
+            # Both batches share one documents queue, no temporary file is left behind
+            self.assertEqual(documents.call_count, 1)
+            self.assertEqual(embeddings.search("select id from txtai where similar('apple', 'terms')")[0]["id"], "1")
+
     def testEmptySubindexes(self):
         """
         Test empty index and upsert with subindexes
@@ -262,20 +276,6 @@ class TestEmbeddings(unittest.TestCase):
             embeddings.index([])
             self.assertEqual(embeddings.indexes.terms.count(), 0)
             self.assertEqual(embeddings.search("apple", index="terms"), [])
-
-    @patch("txtai.embeddings.index.indexes.Documents", wraps=Documents)
-    def testEmptySubindexBatch(self, documents):
-        """
-        Test a first batch with no subindex documents followed by a batch with data
-        """
-
-        with Embeddings({"keyword": True, "content": True, "batch": 1, "indexes": {"terms": {"keyword": True}}}) as embeddings:
-            # First batch has no text, so nothing is queued for the subindexes
-            embeddings.index([{"id": 0, "title": "no text"}, {"id": 1, "text": "apple"}])
-
-            # Both batches share one documents queue, no temporary file is left behind
-            self.assertEqual(documents.call_count, 1)
-            self.assertEqual(embeddings.search("select id from txtai where similar('apple', 'terms')")[0]["id"], "1")
 
     def testExternal(self):
         """
@@ -684,6 +684,9 @@ class TestEmbeddings(unittest.TestCase):
         reducer(query)
         self.assertFalse(np.array_equal(query, original))
 
+        # Test that reduced vectors are normalized
+        self.assertTrue(np.allclose(np.linalg.norm(query, axis=1), 1.0))
+
         # Test model with multiple PCA components
         reducer = Reducer(data, 3)
 
@@ -694,6 +697,24 @@ class TestEmbeddings(unittest.TestCase):
         # Run test
         reducer(query)
         self.assertFalse(np.array_equal(query, original))
+        self.assertAlmostEqual(np.linalg.norm(query), 1.0, places=5)
+
+        # Test that a batch of reduced vectors is normalized
+        batch = np.random.rand(3, 5).astype(np.float32)
+        reducer(batch)
+        self.assertTrue(np.allclose(np.linalg.norm(batch, axis=1), 1.0))
+
+        # Test that a zero vector stays a zero vector
+        query = np.zeros(5, dtype=np.float32)
+        reducer(query)
+        self.assertTrue(np.array_equal(query, np.zeros(5, dtype=np.float32)))
+
+        # Test that vectors fully removed by the model stay zero vectors
+        reducer = Reducer(np.array([[1, 0], [1, 0], [1, 0]], dtype=np.float32), 1)
+
+        batch = np.array([[1, 0], [0, 1], [0, 0]], dtype=np.float32)
+        reducer(batch)
+        self.assertTrue(np.array_equal(batch, np.array([[0, 0], [0, 1], [0, 0]], dtype=np.float32)))
 
     @patch.dict(os.environ, {"ALLOW_PICKLE": "True"})
     def testReducerLegacy(self):
@@ -721,6 +742,22 @@ class TestEmbeddings(unittest.TestCase):
         # Run test
         reducer(query)
         self.assertFalse(np.array_equal(query, original))
+
+    def testReducerSearch(self):
+        """
+        Test that search scores are cosine similarities when principal components are removed
+        """
+
+        embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2", "pca": 1, "backend": "numpy"})
+        embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        # Stored vectors are normalized
+        self.assertTrue(np.allclose(np.linalg.norm(embeddings.ann.backend, axis=1), 1.0))
+
+        # Search score for a document is equal to the cosine similarity of the query and document vectors
+        uid, score = embeddings.search("feel good story", 1)[0]
+        query, document = embeddings.transform("feel good story"), embeddings.transform(self.data[uid])
+        self.assertAlmostEqual(score, float(query.dot(document) / (np.linalg.norm(query) * np.linalg.norm(document))), places=5)
 
     def testSave(self):
         """
