@@ -3,6 +3,7 @@ DuckDB module tests
 """
 
 import os
+import tempfile
 import unittest
 
 from txtai.database import SQLError
@@ -90,6 +91,29 @@ class TestDuckDB(Common.TestRDBMS):
         result = embeddings.search("select textlength(text) length from txtai where id = 0", 1)[0]
 
         self.assertEqual(int(result["length"]), 39)
+
+    def testSaveTransaction(self):
+        """
+        Test changes made after a save are only persisted by the next save
+        """
+
+        index = os.path.join(tempfile.gettempdir(), f"embeddings.{self.backend}.transaction")
+
+        embeddings = Embeddings(keyword=True, content=self.backend)
+        embeddings.index([(0, "apple pie", None)])
+
+        # The second save commits to the current path
+        embeddings.save(index)
+        embeddings.save(index)
+
+        embeddings.upsert([(1, "banana bread", None)])
+        embeddings.close()
+
+        embeddings = Embeddings()
+        embeddings.load(index)
+
+        self.assertEqual(embeddings.search("select id from txtai"), [{"id": "0"}])
+        embeddings.close()
 
 
 def length(text):

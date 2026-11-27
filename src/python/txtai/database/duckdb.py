@@ -41,6 +41,17 @@ class DuckDB(Embedded):
         if not DUCKDB:
             raise ImportError('DuckDB is not available - install "database" extra to enable')
 
+    def save(self, path):
+        # Saving to the current path commits, which ends the transaction
+        committed = self.path == path
+
+        # Call parent method
+        super().save(path)
+
+        # Start a new transaction, so that later changes are only persisted by the next save
+        if committed:
+            self.connection.begin()
+
     def execute(self, function, *args):
         try:
             # Call parent method with DuckDB compatible arguments
