@@ -146,8 +146,6 @@ class IVFSparse(ANN):
         # Search with float32 queries
         queries = queries.astype(np.float32, copy=False)
 
-        results = []
-
         # Calculate number of threads using a thread batch size of 32
         threads = queries.shape[0] // 32
         threads = min(max(threads, 1), os.cpu_count())
@@ -155,13 +153,12 @@ class IVFSparse(ANN):
         # Approximate search
         blockids = self.topn(queries, self.centroids, self.nprobe())[0] if self.centroids is not None else None
 
-        # This method is able to run as multiple threads due to a number of numpy/scipy method calls that drop the GIL.
-        results = []
-        with ThreadPool(threads) as pool:
-            for result in pool.starmap(self.scan, [(x, limit, blockids[i] if blockids is not None else None) for i, x in enumerate(queries)]):
-                results.append(result)
+        scans = [(query, limit, blockids[i] if blockids is not None else None) for i, query in enumerate(queries)]
+        if threads == 1:
+            return [self.scan(*args) for args in scans]
 
-        return results
+        with ThreadPool(threads) as pool:
+            return pool.starmap(self.scan, scans)
 
     def count(self):
         return self.size() - len(self.deletes)
