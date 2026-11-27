@@ -1,8 +1,17 @@
 # Multi-vector
 
-Enable stored token vectors via the `multivector` parameter. `Embeddings` owns this optional component alongside ANN, scoring, indexes and graph. Search does not call it.
+Enable stored token vectors via the `multivector` parameter. `Embeddings` owns this optional component alongside ANN, scoring, indexes and graph. `Embeddings.search` does not call it.
 
 A dictionary or `true` enables the component. `false`, `null` and `0` disable it. `true` and `{}` use `LateEncoder` defaults.
+
+## backend
+```yaml
+backend: numpy|custom
+```
+
+Sets the multi-vector backend. Defaults to `numpy`.
+
+Add custom multi-vector storage engines via setting this parameter to the fully resolvable class string, such as `txtai.multivector.NumPy`. Custom stores extend `txtai.multivector.MultiVector`.
 
 ## path
 ```yaml
@@ -61,6 +70,16 @@ scores = embeddings.multivector.score("lottery ticket", ids, limit=5)
 ```
 
 With content disabled, use `ids = [uid for uid, _ in results]`. `score` returns `(id, score)` pairs in descending order. Unknown, deleted and non-text ids are omitted. Scoring delegates to `LateEncoder.score`, using mean MaxSim over true query tokens.
+
+## Search
+
+`embeddings.multivector.search(query, limit=None)` computes exact MaxSim over every document with stored rows. Its cost grows with the number of stored documents. Documents are scored in fixed-size batches, with the top results merged after each batch.
+
+It returns `(id, score)` pairs in descending order and omits deleted and non-text documents. `limit=None` returns all results. This works with content enabled or disabled.
+
+```python
+scores = embeddings.multivector.search("lottery ticket", limit=5)
+```
 
 ## Storage
 

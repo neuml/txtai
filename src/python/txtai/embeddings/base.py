@@ -11,10 +11,11 @@ from ..archive import ArchiveFactory
 from ..cloud import CloudFactory
 from ..database import DatabaseFactory
 from ..graph import GraphFactory
+from ..multivector import MultiVectorFactory
 from ..scoring import ScoringFactory
 from ..vectors import VectorsFactory
 
-from .index import Action, Configuration, Functions, Indexes, IndexIds, MultiVector, Reducer, Stream, Transform
+from .index import Action, Configuration, Functions, Indexes, IndexIds, Reducer, Stream, Transform
 from .search import Explain, Ids, Query, Search, Terms
 
 
@@ -1073,7 +1074,7 @@ class Embeddings:
 
         # Empty dictionaries enable the encoder defaults; other falsy values disable it
         config = self.config.get("multivector")
-        return MultiVector(self, config) if isinstance(config, dict) or config else None
+        return MultiVectorFactory.create(self, self.columns(config)) if isinstance(config, dict) or config else None
 
     def createids(self, ids=None):
         """

@@ -1,19 +1,24 @@
 """
-Multi-vector index module
+NumPy multi-vector module
 """
 
-from ...pipeline import LateEncoder
-from ...util import Library
+from ..pipeline import LateEncoder
+from ..util import Library
+
+from .base import MultiVector
 
 library = Library()
 np, torch, safetensors = library.numpy(), library.torch(), library.safetensors()
 
 
-class MultiVector:
+class NumPy(MultiVector):
     """
     Stores token rows as per-row symmetric int8 with one fp16 scale per row.
     Int64 offsets mark where each document's token rows start and end.
     """
+
+    # Maximum documents scored in one search batch
+    batchsize = 128
 
     def __init__(self, embeddings, config):
         """
@@ -24,12 +29,10 @@ class MultiVector:
             config: late encoder configuration
         """
 
-        # Create encoder and resolve document columns
-        self.embeddings = embeddings
-        self.encoder = LateEncoder(**config)
-        columns = embeddings.config.get("columns", {})
-        self.text = columns.get("text", "text")
-        self.object = columns.get("object", "object")
+        super().__init__(embeddings, config)
+
+        # Component settings are not late encoder arguments
+        self.encoder = LateEncoder(**{key: value for key, value in config.items() if key not in ("backend", "columns")})
 
         # Initialize token arrays and document row boundaries
         self.tokens = np.empty((0, 0), dtype=np.int8)
@@ -183,6 +186,50 @@ class MultiVector:
         # Score stored candidates through the shipped late encoder
         scores = self.encoder.score(queries, data, limit)[0]
         return [(candidates[index][1], score) for index, score in scores]
+
+    def search(self, query, limit=None):
+        """
+        Computes exact MaxSim over all documents with stored rows.
+        Scores fixed-size batches and merges their top results.
+
+        Args:
+            query: query text
+            limit: maximum results to return, defaults to all
+
+        Returns:
+            list of (id, score) sorted descending
+        """
+
+        if not self.tokens.size:
+            return []
+
+        embeddings = self.embeddings
+        queries = self.encoder.encode([query], "query")
+        results = []
+        for offset in range(0, len(self.offsets) - 1, self.batchsize):
+            indices = [
+                index for index in range(offset, min(offset + self.batchsize, len(self.offsets) - 1)) if self.offsets[index + 1] > self.offsets[index]
+            ]
+            if indices:
+                counts = [self.offsets[index + 1] - self.offsets[index] for index in indices]
+                data = np.zeros((len(indices), max(counts), self.tokens.shape[1]), dtype=np.float32)
+                for position, index in enumerate(indices):
+                    start, end = self.offsets[index : index + 2]
+                    rows = self.tokens[start:end].astype(np.float32)
+                    scales = self.scales[start:end].astype(np.float32)
+                    data[position, : end - start] = rows * (scales[:, None] / 127)
+                data = torch.from_numpy(data).to(queries)
+                scores = [(indices[index], score) for index, score in self.encoder.score(queries, data, None)[0]]
+
+                # Resolve internal slots through the embeddings search paths
+                if embeddings.database:
+                    scores = [(row["id"], row["score"]) for row in embeddings.database.search("", [scores])]
+                else:
+                    scores = [(embeddings.ids[index], score) for index, score in scores if embeddings.ids[index] is not None]
+
+                results = sorted(results + scores, key=lambda row: -row[1])[:limit]
+
+        return results
 
     def save(self, path):
         """

@@ -44,7 +44,7 @@ An accomplying graph index can be created with an embeddings database. This enab
 
 ## [Multi-vector](./multivector)
 
-Optionally persist token rows and score supplied candidate ids with a late interaction model.
+Optionally persist token rows, score supplied candidate ids or search all stored documents with a late interaction model.
 
 ## [Scoring](./scoring)
 

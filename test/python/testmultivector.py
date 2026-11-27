@@ -14,6 +14,7 @@ import numpy as np
 import torch
 
 from txtai.embeddings import Embeddings
+from txtai.multivector import MultiVector, MultiVectorFactory, NumPy
 from txtai.pipeline import LateEncoder
 
 
@@ -36,6 +37,37 @@ class TestMultiVector(unittest.TestCase):
             "Maine man wins $1M from $25 lottery ticket",
             "Make huge profits without work, earn up to $100,000 a day",
         ]
+
+    def testFactoryCustom(self):
+        """
+        Test resolving a custom multi-vector backend
+        """
+
+        config = {"backend": "txtai.multivector.NumPy", "path": "neuml/colbert-bert-tiny", "gpu": False}
+        with Embeddings(keyword=True, multivector=config) as embeddings:
+            embeddings.index(self.data[:2])
+            self.assertIsInstance(embeddings.multivector, NumPy)
+            self.assertEqual(embeddings.config["multivector"]["backend"], "txtai.multivector.NumPy")
+            self.assertEqual(embeddings.multivector.search("ice shelf")[0][0], 1)
+
+    def testFactoryDefault(self):
+        """
+        Test the default multi-vector backend and stored configuration
+        """
+
+        with self.multivector() as embeddings:
+            embeddings.index(self.data[:1])
+            self.assertIsInstance(embeddings.multivector, NumPy)
+            self.assertEqual(embeddings.config["multivector"]["backend"], "numpy")
+            self.assertEqual(embeddings.multivector.search("virus cases")[0][0], "0")
+
+    def testFactoryUnresolvable(self):
+        """
+        Test resolving an unresolvable multi-vector backend
+        """
+
+        with self.assertRaisesRegex(ImportError, "Unable to resolve multivector backend: 'notfound.multivector'"):
+            MultiVectorFactory.create(None, {"backend": "notfound.multivector"})
 
     def testMultiVectorArchive(self):
         """
@@ -381,6 +413,25 @@ class TestMultiVector(unittest.TestCase):
                         self.assertEqual(uid, expectedid)
                         self.assertLessEqual(abs(score - expected), 0.02)
 
+    def testMultiVectorSettings(self):
+        """
+        Test component settings are not passed to LateEncoder
+        """
+
+        # Backend and custom columns configure the component, not the encoder
+        with tempfile.TemporaryDirectory() as directory, patch("txtai.multivector.numpy.LateEncoder") as encoder:
+            encoder.return_value = LateEncoder("neuml/colbert-bert-tiny", gpu=False)
+            with Embeddings(keyword=True, columns={"text": "body"}, multivector={"backend": "numpy"}) as embeddings:
+                embeddings.index([{"body": self.data[0]}])
+                encoder.assert_called_once_with()
+                self.assertEqual(len(embeddings.multivector.offsets), 2)
+
+                # Settings stored with the index are filtered again on load
+                embeddings.save(directory)
+                embeddings.load(directory)
+                self.assertEqual(encoder.call_count, 2)
+                encoder.assert_called_with()
+
     def testMultiVectorShortcut(self):
         """
         Test shortcut configuration uses LateEncoder defaults
@@ -388,12 +439,12 @@ class TestMultiVector(unittest.TestCase):
 
         # True and an empty dict create the encoder with no arguments
         for config in [True, {}]:
-            with patch("txtai.embeddings.index.multivector.LateEncoder") as encoder:
+            with patch("txtai.multivector.numpy.LateEncoder") as encoder:
                 encoder.return_value = LateEncoder("neuml/colbert-bert-tiny", gpu=False)
                 with Embeddings(keyword=True, multivector=config) as embeddings:
                     embeddings.index(self.data[:1])
                     encoder.assert_called_once_with()
-                    self.assertEqual(embeddings.config["multivector"], {})
+                    self.assertEqual(embeddings.config["multivector"], {"backend": "numpy"})
                     self.assertEqual(len(embeddings.multivector.offsets), 2)
 
     def testMultiVectorStorage(self):
@@ -403,7 +454,7 @@ class TestMultiVector(unittest.TestCase):
 
         # Index two rows with fixed encoded values
         rows = torch.tensor([[[1.0, 0.5, -1.0], [0.0, 0.0, 0.0]], [[0.25, -0.5, 0.125], [0.0, 0.0, 0.0]]], dtype=torch.float32)
-        with self.multivector() as embeddings, patch("txtai.embeddings.index.multivector.LateEncoder.encode", return_value=rows):
+        with self.multivector() as embeddings, patch("txtai.multivector.numpy.LateEncoder.encode", return_value=rows):
             embeddings.index(self.data[:2])
             store = embeddings.multivector
 
@@ -439,6 +490,106 @@ class TestMultiVector(unittest.TestCase):
                 embeddings.delete(["b", "missing"])
                 self.assertEqual(store.offsets[1], store.offsets[2])
                 self.assertEqual({uid for uid, _ in store.score("lottery ticket", ["a", "b", "c"])}, {"a", "c"})
+
+    def testNotImplemented(self):
+        """
+        Test exceptions for non-implemented multi-vector methods
+        """
+
+        store = MultiVector(None, {})
+        self.assertRaises(NotImplementedError, store.insert, None, None)
+        self.assertRaises(NotImplementedError, store.delete, None)
+        self.assertRaises(NotImplementedError, store.score, None, None)
+        self.assertRaises(NotImplementedError, store.search, None)
+        self.assertRaises(NotImplementedError, store.save, None)
+        self.assertRaises(NotImplementedError, store.load, None)
+        self.assertRaises(NotImplementedError, store.close)
+
+    def testSearchBatches(self):
+        """
+        Test search scores and limits across multiple batches
+        """
+
+        for content in [True, False]:
+            with self.multivector(content) as embeddings:
+                embeddings.index(self.data)
+                store = embeddings.multivector
+                with patch.object(store, "batchsize", len(self.data)):
+                    expected = store.search("lottery ticket")
+                with patch.object(store, "batchsize", 2), patch.object(store.encoder, "score", wraps=store.encoder.score) as score:
+                    actual = store.search("lottery ticket")
+                    self.assertEqual(score.call_count, 3)
+                    self.assertTrue(all(call.args[1].shape[0] <= 2 for call in score.call_args_list))
+                    self.assertEqual([uid for uid, _ in actual], [uid for uid, _ in expected])
+                    np.testing.assert_allclose([value for _, value in actual], [value for _, value in expected], rtol=0, atol=1e-5)
+                    for limit in [1, 3, 6, 10]:
+                        limited = store.search("lottery ticket", limit)
+                        self.assertEqual([uid for uid, _ in limited], [uid for uid, _ in expected[:limit]])
+                        np.testing.assert_allclose([value for _, value in limited], [value for _, value in expected[:limit]], rtol=0, atol=1e-5)
+                    self.assertEqual(store.search("lottery ticket", 0), [])
+
+    def testSearchEmpty(self):
+        """
+        Test search with no stored rows and empty batches
+        """
+
+        with self.multivector() as embeddings:
+            embeddings.index(self.data[:2])
+            store = embeddings.multivector
+            embeddings.delete(["0"])
+            with patch.object(store, "batchsize", 1):
+                self.assertEqual(store.search("ice shelf"), store.score("ice shelf", ["1"]))
+            embeddings.delete(["1"])
+            self.assertEqual(store.search("virus cases"), [])
+
+    def testSearchOmissions(self):
+        """
+        Test search omits deleted and non-text documents
+        """
+
+        def transform(data):
+            return np.array([[len(value), 1] for value in data], dtype=np.float32)
+
+        for content in [True, False]:
+            with Embeddings(
+                method="external",
+                transform=transform,
+                backend="numpy",
+                content=content,
+                multivector={"path": "neuml/colbert-bert-tiny", "gpu": False},
+            ) as embeddings:
+                embeddings.index([("object", {"object": b"bytes"}), ("deleted", self.data[0]), ("text", self.data[4])])
+                embeddings.delete(["deleted"])
+                store = embeddings.multivector
+                expected = store.score("lottery ticket", ["object", "deleted", "text"])
+                self.assertEqual([uid for uid, _ in expected], ["text"])
+                self.assertEqual(store.search("lottery ticket"), expected)
+
+    def testSearchOracle(self):
+        """
+        Test search values against independent MaxSim and supplied-id scoring
+        """
+
+        for content in [True, False]:
+            with self.multivector(content) as embeddings:
+                embeddings.index(self.data)
+                store = embeddings.multivector
+                ids = [str(x) if content else x for x in range(len(self.data))]
+                for query in ["lottery ticket", "ice shelf", "bear attack"]:
+                    queries = store.encoder.encode([query], "query").detach().cpu().numpy()[0]
+                    queries = queries[np.abs(queries).sum(axis=-1) > 0]
+                    expected = []
+                    for index, uid in enumerate(ids):
+                        start, end = store.offsets[index : index + 2]
+                        rows = store.tokens[start:end].astype(np.float32) * (store.scales[start:end].astype(np.float32)[:, None] / 127)
+                        expected.append((uid, float((queries @ rows.T).max(axis=1).mean())))
+                    expected.sort(key=lambda row: -row[1])
+                    actual = store.search(query, None)
+                    self.assertEqual([uid for uid, _ in actual], [uid for uid, _ in expected])
+                    np.testing.assert_allclose([value for _, value in actual], [value for _, value in expected], rtol=0, atol=1e-5)
+                    scored = store.score(query, ids)
+                    self.assertEqual([uid for uid, _ in actual], [uid for uid, _ in scored])
+                    np.testing.assert_allclose([value for _, value in actual], [value for _, value in scored], rtol=0, atol=1e-5)
 
     def multivector(self, content=True, **kwargs):
         """
