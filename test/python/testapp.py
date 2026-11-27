@@ -77,28 +77,33 @@ class TestApp(unittest.TestCase):
 
         for operation in ("index", "upsert"):
             with self.subTest(operation=operation):
-                app = Application({"writable": True, "embeddings": {"keyword": True, "content": True}})
-                app.add([{"id": "doc", "text": "apple"}])
-                waiting = Event()
-                lock = app.lock
+                self.checkConcurrentFlush(operation)
 
-                def acquire():
-                    waiting.set()
-                    return lock.acquire()
+    def checkConcurrentFlush(self, operation):
+        """Check two callers flushing the same queue."""
 
-                # Hold the real lock until the second caller is ready to flush.
-                with ThreadPoolExecutor(max_workers=1) as pool, patch.object(app, "lock", MagicMock()) as gate:
-                    gate.__enter__.side_effect = acquire
-                    gate.__exit__.side_effect = lambda *_: lock.release()
-                    with lock:
-                        flush = getattr(app, operation)
-                        future = pool.submit(flush)
-                        self.assertTrue(waiting.wait(5))
-                        flush()
-                    future.result(timeout=5)
+        app = Application({"writable": True, "embeddings": {"keyword": True, "content": True}})
+        app.add([{"id": "doc", "text": "apple"}])
+        waiting = Event()
+        lock = app.lock
 
-                self.assertEqual(app.search("apple")[0]["id"], "doc")
-                app.embeddings.close()
+        def acquire():
+            waiting.set()
+            return lock.acquire()
+
+        # Hold the real lock until the second caller is ready to flush.
+        with ThreadPoolExecutor(max_workers=1) as pool, patch.object(app, "lock", MagicMock()) as gate:
+            gate.__enter__.side_effect = acquire
+            gate.__exit__.side_effect = lambda *_: lock.release()
+            with lock:
+                flush = getattr(app, operation)
+                future = pool.submit(flush)
+                self.assertTrue(waiting.wait(5))
+                flush()
+            future.result(timeout=5)
+
+        self.assertEqual(app.search("apple")[0]["id"], "doc")
+        app.embeddings.close()
 
     def testConfig(self):
         """
