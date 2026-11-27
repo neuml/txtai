@@ -292,9 +292,10 @@ class IVFSparse(ANN):
         # Dot product similarity
         scores = safe_sparse_dot(queries, data.T, dense_output=True)
 
-        # Clear deletes
-        if deletes is not None:
-            scores[:, deletes] = 0
+        # Exclude deleted rows from both ranking and the result limit
+        if deletes is not None and len(deletes):
+            scores[:, deletes] = -np.inf
+            limit = min(limit, scores.shape[1] - len(deletes))
 
         # Get top n matching indices and scores
         indices = np.argpartition(-scores, limit if limit < scores.shape[1] else scores.shape[1] - 1)[:, :limit]
