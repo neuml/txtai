@@ -10,6 +10,8 @@ from txtai.embeddings.index.configuration import Configuration
 
 
 class TestConfiguration(unittest.TestCase):
+    """Tests for persisting index configuration."""
+
     @patch.dict(os.environ, {"ALLOW_PICKLE": "True"})
     def testInterruptedSave(self):
         """An incomplete write leaves the last saved configuration readable."""
