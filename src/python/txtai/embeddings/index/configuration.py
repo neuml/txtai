@@ -4,6 +4,9 @@ Configuration module
 
 import json
 import os
+import shutil
+
+from tempfile import TemporaryDirectory
 
 from ...serialize import SerializeFactory
 
@@ -61,11 +64,16 @@ class Configuration:
         # Set config file name
         name = "config.json" if jsonconfig else "config"
 
-        # Write configuration
-        with open(f"{path}/{name}", "w" if jsonconfig else "wb", encoding="utf-8" if jsonconfig else None) as handle:
-            if jsonconfig:
-                # Write config as JSON
-                json.dump(config, handle, default=str, indent=2)
-            else:
-                # Backwards compatible method to save pickle configuration
-                SerializeFactory.create("pickle").savestream(config, handle)
+        # Keep the last complete configuration readable until the new file is closed.
+        destination = os.path.join(path, name)
+        with TemporaryDirectory(dir=path) as directory:
+            staged = os.path.join(directory, name)
+            with open(staged, "w" if jsonconfig else "wb", encoding="utf-8" if jsonconfig else None) as handle:
+                if jsonconfig:
+                    json.dump(config, handle, default=str, indent=2)
+                else:
+                    SerializeFactory.create("pickle").savestream(config, handle)
+
+            if os.path.exists(destination):
+                shutil.copymode(destination, staged)
+            os.replace(staged, destination)
