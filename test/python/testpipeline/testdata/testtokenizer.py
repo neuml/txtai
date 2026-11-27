@@ -33,6 +33,15 @@ class TestTokenizer(unittest.TestCase):
         self.assertEqual(Tokenizer.tokenize(""), [])
         self.assertEqual(Tokenizer.tokenize(None), None)
 
+    def testNgramCombiningMarks(self):
+        """
+        Test that vowel signs and accents stay within ngram words
+        """
+
+        tokenizer = Tokenizer(ngrams=3)
+        self.assertEqual(tokenizer("किताब"), ["कित", "िता", "ताब"])
+        self.assertEqual(tokenizer("\u0301-cafe\u0301,tea"), ["caf", "afe", "fe\u0301", "tea"])
+
     def testNgramTokenize(self):
         """
         Test ngram tokenization
