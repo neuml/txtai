@@ -145,7 +145,7 @@ class API(Application):
         """
 
         # Return between 1 and 250 results, defaults to 10
-        return max(1, min(250, int(limit) if limit else 10))
+        return max(1, min(250, int(limit) if limit not in (None, "") else 10))
 
     def weights(self, weights):
         """

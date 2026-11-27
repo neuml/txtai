@@ -331,6 +331,8 @@ class TestEmbeddings(unittest.TestCase):
 
         self.assertEqual(len(api.search("apple")), 10)
         self.assertEqual([len(x) for x in api.batchsearch(["apple", "apple"])], [10, 10])
+        self.assertEqual(len(api.search("apple", 0)), 1)
+        self.assertEqual([len(x) for x in api.batchsearch(["apple"], 0)], [1])
         self.assertEqual([len(x) for x in api.batchsearch(["apple"], 1000)], [250])
 
     def testSimilarity(self):
