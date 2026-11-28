@@ -166,6 +166,7 @@ class Topics:
         results = {}
         for k, v in sorted(merge.items(), key=lambda x: len(x[1]), reverse=True):
             # Create composite string key using topic terms and store ids
-            results["_".join(termslist[k])] = v
+            results.setdefault("_".join(termslist[k]), []).extend(v)
 
-        return results
+        # A combined label can be shared by different term sets. Sort after merging those collisions.
+        return dict(sorted(results.items(), key=lambda x: len(x[1]), reverse=True))
