@@ -63,6 +63,23 @@ class TestSQLite(Common.TestRDBMS):
 
         self.assertEqual(int(result["length"]), 39)
 
+    def testReindexExpressions(self):
+        """
+        Test expression indexes are kept after a reindex
+        """
+
+        expressions = [{"name": "textlength", "expression": "length(text)", "index": True}]
+
+        embeddings = Embeddings(keyword=True, content=self.backend, expressions=expressions)
+        embeddings.index(self.data)
+        embeddings.reindex(keyword=True, expressions=expressions)
+
+        # Check that the expression index still exists
+        result = embeddings.database.connection.execute("SELECT name FROM sqlite_master WHERE type='index' AND name='expression_textlength'")
+        self.assertIsNotNone(result.fetchone())
+
+        embeddings.close()
+
 
 def length(text):
     """
