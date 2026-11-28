@@ -214,6 +214,109 @@ class TestGraph(unittest.TestCase):
         # Close graph
         graph.close()
 
+    def testDatabaseTopics(self):
+        """
+        Test topic modeling and save/load on a Graph backed by a relational database
+        """
+
+        def similarity(texts, _labels):
+            # Dummy similarity - every topic maps to the first category
+            return [[(0, 0.9)] for _ in texts]
+
+        # Two-triangle graph with weighted edges
+        texts = {
+            0: "apple fruit orchard harvest",
+            1: "apple banana fruit salad",
+            2: "fruit juice apple pie",
+            3: "car engine vehicle road",
+            4: "car truck vehicle highway",
+            5: "vehicle bus car driver",
+        }
+        edges = [(0, 1, 0.9), (0, 2, 0.8), (1, 2, 0.85), (3, 4, 0.9), (3, 5, 0.7), (4, 5, 0.8)]
+
+        # Generate graph database
+        path = os.path.join(tempfile.gettempdir(), "graph-topics.sqlite")
+        if os.path.exists(path):
+            os.remove(path)
+
+        graph = GraphFactory.create({"backend": "rdbms", "url": f"sqlite:///{path}"})
+        graph.initialize()
+
+        for uid, text in texts.items():
+            graph.addnode(uid, text=text)
+
+        for source, target, weight in edges:
+            graph.addedge(source, target, weight=weight)
+
+        # Integer ids work for edge lookups
+        self.assertTrue(graph.hasedge(0, 1))
+        self.assertTrue(graph.hasedge("0", "1"))
+
+        # Adding each edge in the reverse direction must not double-count
+        for source, target, weight in edges:
+            graph.addedge(target, source, weight=weight)
+        self.assertEqual(graph.edgecount(), 6)
+
+        # Same graph on the NetworkX backend, for comparison
+        networkx = GraphFactory.create({"backend": "networkx"})
+        networkx.initialize()
+
+        for uid, text in texts.items():
+            networkx.addnode(uid, text=text)
+
+        for source, target, weight in edges:
+            networkx.addedge(source, target, weight=weight)
+
+        # Weighted degree and centrality match the NetworkX backend
+        degrees = {int(node): degree for node, degree in dict(graph.backend.degree(weight="weight")).items()}
+        self.assertEqual(degrees, dict(networkx.backend.degree(weight="weight")))
+
+        centrality = {int(node): score for node, score in graph.centrality().items()}
+        self.assertEqual(centrality, networkx.centrality())
+
+        # Topic modeling works for each algorithm and matches NetworkX communities
+        for algorithm in ["louvain", "greedy", "lpa"]:
+            config = {"topics": {"algorithm": algorithm, "categories": ["News"]}} if algorithm != "louvain" else {"topics": {"categories": ["News"]}}
+            graph.config = config
+            graph.addtopics(similarity)
+            self.assertTrue(graph.topics)
+            self.assertEqual(graph.categories, ["News"] * len(graph.topics))
+
+            networkx.config = config
+            networkx.addtopics(similarity)
+            self.assertEqual(
+                sorted([sorted(map(str, community)) for community in graph.topics.values()]),
+                sorted([sorted(map(str, community)) for community in networkx.topics.values()]),
+            )
+
+        # Topics and categories survive a save/load round-trip
+        graph.topics = {"apple_fruit": [0, 1, 2], "car_vehicle": [3, 4, 5]}
+        graph.categories = ["food", "transport"]
+
+        sidecar = os.path.join(tempfile.gettempdir(), "graph-topics")
+        if os.path.exists(sidecar):
+            os.remove(sidecar)
+
+        graph.save(sidecar)
+        graph.close()
+
+        graph = GraphFactory.create({"backend": "rdbms", "url": f"sqlite:///{path}"})
+        graph.load(sidecar)
+        self.assertEqual(graph.topics, {"apple_fruit": [0, 1, 2], "car_vehicle": [3, 4, 5]})
+        self.assertEqual(graph.categories, ["food", "transport"])
+        self.assertEqual(graph.edgecount(), 6)
+        self.assertTrue(graph.hasedge(0, 1))
+
+        # Legacy save/load without a path still works
+        graph.save(None)
+        graph.load(None)
+        self.assertEqual(graph.topics, {"apple_fruit": [0, 1, 2], "car_vehicle": [3, 4, 5]})
+        self.assertEqual(graph.categories, ["food", "transport"])
+
+        # Close graphs
+        graph.close()
+        networkx.close()
+
     def testDefault(self):
         """
         Test embeddings default graph setting
