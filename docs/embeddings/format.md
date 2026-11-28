@@ -49,6 +49,14 @@ Graph nodes and edges for an embeddings index
 | [NetworkX](https://github.com/networkx/networkx)              | Nodes and edges exported to local file serialized with MessagePack            |
 | [Postgres](https://github.com/aplbrain/grand)                 | Nodes and edges stored in a Postgres database. Supports additional databases. |
 
+## Multi-vector
+
+Token vectors for late interaction scoring
+
+| Component                                                     | Storage Format                                                                |
+| ------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| [Safetensors](https://github.com/huggingface/safetensors)     | Int8 token vectors with fp16 scales and int64 document offsets                |
+
 ## Scoring
 
 Sparse/keyword indexing

@@ -8,6 +8,7 @@
             - "!createcloud"
             - "!createdatabase"
             - "!creategraph"
+            - "!createmultivector"
             - "!createids"
             - "!createindexes"
             - "!createscoring"
