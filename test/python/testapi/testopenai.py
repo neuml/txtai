@@ -8,7 +8,7 @@ import tempfile
 import time
 import unittest
 
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from fastapi.testclient import TestClient
 
@@ -140,6 +140,23 @@ class TestOpenAI(unittest.TestCase):
         response = self.client.post("/v1/chat/completions", json={"messages": [{"role": "user", "content": "Hello"}], "model": "llm"}).json()
 
         self.assertIsNotNone(response["choices"][0]["message"]["content"])
+
+    def testChatMaxTokens(self):
+        """
+        Test a chat completion with the deprecated max_tokens parameter
+        """
+
+        messages = [{"role": "user", "content": "Hello"}]
+
+        llm = MagicMock(return_value="Hi")
+        with patch.dict(application.get().pipelines, {"llm": llm}):
+            # max_tokens sets the max length when max_completion_tokens isn't set
+            self.client.post("/v1/chat/completions", json={"messages": messages, "model": "llm", "max_tokens": 50})
+            self.assertEqual(llm.call_args.kwargs["maxlength"], 50)
+
+            # max_completion_tokens takes precedence over max_tokens
+            self.client.post("/v1/chat/completions", json={"messages": messages, "model": "llm", "max_completion_tokens": 100, "max_tokens": 50})
+            self.assertEqual(llm.call_args.kwargs["maxlength"], 100)
 
     def testChatPipeline(self):
         """

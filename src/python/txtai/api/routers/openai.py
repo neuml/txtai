@@ -26,6 +26,7 @@ def chat(
     messages: List[dict] = Body(...),
     model: str = Body(...),
     max_completion_tokens: Optional[int] = Body(default=None),
+    max_tokens: Optional[int] = Body(default=None),
     stream: Optional[bool] = Body(default=False),
 ):
     """
@@ -35,14 +36,16 @@ def chat(
         messages: list of messages [{"role": role, "content": content}]
         model: agent name, workflow name, pipeline name or embeddings
         max_completion_tokens: sets the max length to generate
+        max_tokens: deprecated alias for max_completion_tokens, only used when max_completion_tokens isn't set
         stream: streams response if True
 
     Returns:
         chat completion
     """
 
-    # Build keyword arguments
-    kwargs = {key: value for key, value in [("stream", stream), ("maxlength", max_completion_tokens)] if value}
+    # Build keyword arguments. Many OpenAI clients still send the deprecated max_tokens parameter.
+    maxlength = max_completion_tokens if max_completion_tokens else max_tokens
+    kwargs = {key: value for key, value in [("stream", stream), ("maxlength", maxlength)] if value}
 
     # Get latest message
     message = messages[-1]["content"]
