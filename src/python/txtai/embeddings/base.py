@@ -282,12 +282,15 @@ class Embeddings:
 
         if self.database:
             # Merge configuration into single dictionary
-            config = {**config, **kwargs} if config and kwargs else config if config else kwargs
+            config = {**(config or {}), **kwargs}
 
             # Keep content and objects parameters to ensure database is preserved
             config["content"] = self.config["content"]
             if "objects" in self.config:
                 config["objects"] = self.config["objects"]
+
+            # Reindex compacts internal offsets but keeps the original document IDs.
+            config.setdefault("autoid", self.config.get("autoid", self.config.get("offset", 0)))
 
             # Reset configuration
             self.configure(config)
