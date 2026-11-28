@@ -163,34 +163,6 @@ class RDBMS(NetworkX):
         if self.hasnode(node):
             self.graph.backend.add_node(node, {field: value})
 
-    def addedge(self, source, target, **attrs):
-        # Store each undirected edge once in a canonical orientation so
-        # (source, target) and (target, source) share one database row.
-        source, target = self._canonical(source, target)
-        super().addedge(source, target, **attrs)
-
-    def addedges(self, edges):
-        # Canonicalize orientation, then drop in-batch duplicates (last write
-        # wins, like NetworkX) before the bulk insert.
-        canonical = {}
-        for edge in edges:
-            source, target = edge[0], edge[1]
-            attrs = edge[2] if len(edge) > 2 else {}
-            source, target = self._canonical(source, target)
-            canonical[(str(source), str(target))] = (source, target, attrs)
-
-        if canonical:
-            # Add edges in bulk (same as NetworkX.addedges)
-            self.backend.add_edges_from(list(canonical.values()))
-
-    def _canonical(self, source, target):
-        # Undirected edges have no direction - store each pair once in a
-        # canonical orientation so (u, v) and (v, u) share one database row
-        # and edge counts match NetworkX.
-        if not self.backend.is_directed() and str(source) > str(target):
-            return target, source
-        return source, target
-
     def load(self, path):
         # Create graph instance
         self.graph, self.database = self.connect()
@@ -222,6 +194,34 @@ class RDBMS(NetworkX):
 
         # Close database connection
         self.database.close()
+
+    def addedge(self, source, target, **attrs):
+        # Store each undirected edge once in a canonical orientation so
+        # (source, target) and (target, source) share one database row.
+        source, target = self._canonical(source, target)
+        super().addedge(source, target, **attrs)
+
+    def addedges(self, edges):
+        # Canonicalize orientation, then drop in-batch duplicates (last write
+        # wins, like NetworkX) before the bulk insert.
+        canonical = {}
+        for edge in edges:
+            source, target = edge[0], edge[1]
+            attrs = edge[2] if len(edge) > 2 else {}
+            source, target = self._canonical(source, target)
+            canonical[(str(source), str(target))] = (source, target, attrs)
+
+        if canonical:
+            # Add edges in bulk (same as NetworkX.addedges)
+            self.backend.add_edges_from(list(canonical.values()))
+
+    def _canonical(self, source, target):
+        # Undirected edges have no direction - store each pair once in a
+        # canonical orientation so (u, v) and (v, u) share one database row
+        # and edge counts match NetworkX.
+        if not self.backend.is_directed() and str(source) > str(target):
+            return target, source
+        return source, target
 
     def filter(self, nodes, graph=None):
         return super().filter(nodes, graph if graph else NetworkX(self.config))
