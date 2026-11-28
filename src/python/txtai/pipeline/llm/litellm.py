@@ -86,5 +86,5 @@ class LiteLLM(Generation):
                 **{**self.kwargs, **kwargs}
             )
 
-            # Stream response
-            yield from self.response(result if stream else [result])
+            # Stream response. Skip chunks without choices (i.e. usage chunks).
+            yield from self.response(x for x in (result if stream else [result]) if x["choices"])

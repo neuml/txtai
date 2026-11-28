@@ -33,19 +33,22 @@ class RequestHandler(BaseHTTPRequestHandler):
         if data.get("stream"):
             # Mock streaming response
             content = "application/octet-stream"
-            response = (
-                "data: "
-                + json.dumps(
-                    {
-                        "id": str(uuid.uuid4()),
-                        "object": "chat.completion.chunk",
-                        "created": int(time.time()),
-                        "model": "test",
-                        "choices": [{"index": 0, "delta": {"content": "blue"}, "finish_reason": "stop"}],
-                    }
-                )
-                + "\n\ndata: [DONE]\n\n"
-            )
+            chunk = {
+                "id": str(uuid.uuid4()),
+                "object": "chat.completion.chunk",
+                "created": int(time.time()),
+                "model": "test",
+                "choices": [{"index": 0, "delta": {"content": "blue"}, "finish_reason": "stop"}],
+            }
+
+            response = f"data: {json.dumps(chunk)}\n\n"
+
+            # Trailing usage chunk without choices, sent when requested with stream_options
+            if data.get("stream_options", {}).get("include_usage"):
+                usage = {**chunk, "choices": [], "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2}}
+                response += f"data: {json.dumps(usage)}\n\n"
+
+            response += "data: [DONE]\n\n"
         else:
             # Mock standard response
             content = "application/json"
@@ -110,6 +113,9 @@ class TestLiteLLM(unittest.TestCase):
 
         # Test streaming
         self.assertEqual(" ".join(x for x in model("The sky is", stream=True)), "blue")
+
+        # Test streaming with a trailing usage chunk that has no choices
+        self.assertEqual(" ".join(x for x in model("The sky is", stream=True, stream_options={"include_usage": True})), "blue")
 
         # Test vision
         self.assertEqual(model.isvision(), False)
