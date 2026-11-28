@@ -45,6 +45,10 @@ class EditTool(Tool):
             diff
         """
 
+        # An empty search string matches between every character, which would insert replace throughout the file
+        if not search:
+            raise ValueError("search must be a non-empty string")
+
         content = None
         with open(path, "r", encoding="utf-8", newline="") as f:
             content = f.read()
