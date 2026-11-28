@@ -792,6 +792,11 @@ class Embeddings:
         # Dimensionality reduction model
         self.reducer = None
 
+        # Always close existing scoring since it has two paths for creation: sparse and word vectors term weighting
+        if self.scoring:
+            self.scoring.close()
+            self.scoring = None
+
         # Create scoring instance for word vectors term weighting
         scoring = self.config.get("scoring") if self.config else None
         self.scoring = self.createscoring() if scoring and not self.hassparse() else None

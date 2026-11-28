@@ -693,6 +693,31 @@ class Common:
             result = embeddings.search("lottery ticket", 1)[0]
             self.assertEqual(result["text"], self.data[4])
 
+        def testReindexSave(self):
+            """
+            Test save to the same path after a reindex
+            """
+
+            # Generate temp file path
+            index = os.path.join(tempfile.gettempdir(), f"embeddings.{self.category()}.reindex")
+
+            # Create and save a keyword index
+            embeddings = Embeddings({"keyword": True, "content": self.backend})
+            embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+            embeddings.save(index)
+
+            # Saving over the previous terms database requires it to be closed
+            embeddings.reindex({"keyword": True})
+            embeddings.save(index)
+            embeddings.close()
+
+            # Search for best match
+            embeddings = Embeddings()
+            embeddings.load(index)
+            result = embeddings.search("lottery ticket", 1)[0]
+            self.assertEqual(result["text"], self.data[4])
+            embeddings.close()
+
         def testReindexStore(self):
             """
             Test reindex when the JSON data doesn't store the text column
