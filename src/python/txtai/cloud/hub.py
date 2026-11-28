@@ -31,7 +31,7 @@ class HuggingFaceHub(Cloud):
             # Otherwise return repository metadata
             return huggingface_hub.model_info(repo_id=self.config["container"], revision=self.config.get("revision"), token=self.config.get("token"))
 
-        except huggingface_hub.utils.RepositoryNotFoundError:
+        except (huggingface_hub.utils.RepositoryNotFoundError, huggingface_hub.utils.RevisionNotFoundError, huggingface_hub.utils.EntryNotFoundError):
             return None
 
     def load(self, path=None):
