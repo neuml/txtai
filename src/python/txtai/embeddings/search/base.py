@@ -230,10 +230,10 @@ class Search:
         queries = self.parse(queries)
 
         # Override limit with query limit, if applicable
-        limit = max(limit, self.limit(queries))
+        limit = max(limit, self.limit(queries, parameters))
 
         # Bulk index scan. The database query skips OFFSET rows, so add them to the number of candidates.
-        scan = Scan(self.search, limit + self.offset(queries), weights, index)(queries, parameters)
+        scan = Scan(self.search, limit + self.offset(queries, parameters), weights, index)(queries, parameters)
 
         # Combine index search results with database search results
         results = []
@@ -277,12 +277,13 @@ class Search:
 
         return parsed
 
-    def limit(self, queries):
+    def limit(self, queries, parameters=None):
         """
         Parses the largest LIMIT clause from queries.
 
         Args:
             queries: list of queries
+            parameters: list of dicts of named parameters to bind to placeholders
 
         Returns:
             largest limit number or 0 if not found
@@ -290,32 +291,28 @@ class Search:
 
         # Override limit with largest limit from database queries
         qlimit = 0
-        for query in queries:
-            # Parse out qlimit; a non-numeric limit (e.g. a ":n" bind parameter) isn't a
-            # candidate-count override and must not be compared as a str against an int.
-            l = query.get("limit")
-            l = int(l) if l and l.isdigit() else 0
+        for x, query in enumerate(queries):
+            l = self.number(query.get("limit"), parameters[x] if parameters else None)
 
             qlimit = l if l > qlimit else qlimit
 
         return qlimit
 
-    def offset(self, queries):
+    def offset(self, queries, parameters=None):
         """
         Parses the largest OFFSET clause from queries ordered by score.
 
         Args:
             queries: list of queries
+            parameters: list of dicts of named parameters to bind to placeholders
 
         Returns:
             largest offset number or 0 if not found
         """
 
         qoffset = 0
-        for query in queries:
-            # Skip non-numeric offsets (e.g. a ":n" bind parameter)
-            o = query.get("offset")
-            o = int(o) if o and o.isdigit() else 0
+        for x, query in enumerate(queries):
+            o = self.number(query.get("offset"), parameters[x] if parameters else None)
 
             # Only a query ordered first by score desc counts its offset. Any other order, or a select alias named score that replaces
             # the similarity score in the order, must see the same candidates on every page.
@@ -325,6 +322,24 @@ class Search:
                     qoffset = o
 
         return qoffset
+
+    def number(self, value, parameters):
+        """
+        Parses a LIMIT or OFFSET value. A ":name" bind parameter resolves to its bound value.
+
+        Args:
+            value: clause value
+            parameters: dict of named parameters to bind to placeholders
+
+        Returns:
+            value as an int or 0 if it isn't a non-negative integer
+        """
+
+        if isinstance(value, str) and value.startswith(":") and parameters:
+            value = parameters.get(value[1:])
+
+        value = str(value) if value is not None else ""
+        return int(value) if value.isdigit() else 0
 
     def graphsearch(self, queries, limit, weights, index):
         """

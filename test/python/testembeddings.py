@@ -509,6 +509,16 @@ class TestEmbeddings(unittest.TestCase):
         # A plain integer limit still works
         self.assertEqual(len(embeddings.search("select id from txtai order by id limit 3")), 3)
 
+        # A bound limit sets the number of similar() candidates, the same as a literal limit
+        embeddings.index([(uid, "apple " + "pie " * uid, None) for uid in range(10)])
+        query = "select id from txtai where similar('apple') limit :n"
+        self.assertEqual(len(embeddings.search(query, parameters={"n": 5})), 5)
+        self.assertEqual(len(embeddings.search(query, parameters={"n": "5"})), 5)
+
+        # Each query in a batch resolves its own bound limit
+        results = embeddings.batchsearch([query, query], parameters=[{"n": 2}, {"n": 5}])
+        self.assertEqual([len(result) for result in results], [2, 5])
+
     def testLimitZero(self):
         """
         Test that a computed limit of 0 (e.g. remaining page slots or a quota) returns no results instead of
@@ -624,9 +634,15 @@ class TestEmbeddings(unittest.TestCase):
         results = embeddings.search("select id from txtai where similar('apple') order by score desc, id limit 3 offset 3")
         self.assertEqual([x["id"] for x in results], ["3", "4", "5"])
 
-        # A bind parameter offset is not a number, so it does not add candidates
+        # Bind parameter offsets add their bound value to the number of candidates
         results = embeddings.search("select id from txtai where similar('apple') limit 3 offset :n", parameters={"n": 0})
         self.assertEqual([x["id"] for x in results], ["0", "1", "2"])
+
+        results = embeddings.search("select id from txtai where similar('apple') limit 3 offset :n", parameters={"n": 3})
+        self.assertEqual([x["id"] for x in results], ["3", "4", "5"])
+
+        results = embeddings.search("select id from txtai where similar('apple') limit :l offset :o", parameters={"l": 3, "o": 6})
+        self.assertEqual([x["id"] for x in results], ["6", "7", "8"])
 
         # Each query in a batch gets its own page
         queries = [f"select id from txtai where similar('apple') limit 3{offset}" for offset in [" offset 3", " offset 6", ""]]
