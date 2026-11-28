@@ -796,7 +796,7 @@ class Embeddings:
         if self.scoring:
             self.scoring.close()
             self.scoring = None
-        
+
         # Create scoring instance for word vectors term weighting
         scoring = self.config.get("scoring") if self.config else None
         self.scoring = self.createscoring() if scoring and not self.hassparse() else None
