@@ -111,9 +111,13 @@ class TestOptional(unittest.TestCase):
         """
 
         from txtai.agent import Agent
+        from txtai.agent.tool import WebSearchTool
 
         with self.assertRaises(ImportError):
             Agent(llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=1)
+
+        with self.assertRaises(ImportError):
+            WebSearchTool()
 
     def testANN(self):
         """

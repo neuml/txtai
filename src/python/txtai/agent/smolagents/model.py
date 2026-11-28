@@ -9,7 +9,7 @@ from enum import Enum
 from smolagents import ChatMessage, Model, get_clean_message_list, tool_role_conversions
 from smolagents.models import get_tool_call_from_text, remove_content_after_stop_sequences
 
-from ..pipeline import LLM
+from ...pipeline import LLM
 
 
 class PipelineModel(Model):
