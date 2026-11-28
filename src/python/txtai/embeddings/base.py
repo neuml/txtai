@@ -792,7 +792,7 @@ class Embeddings:
         # Dimensionality reduction model
         self.reducer = None
 
-        # Always close scoring since it has two paths for creation: sparse and word vector weighting
+        # Always close existing scoring since it has two paths for creation: sparse and word vectors term weighting
         if self.scoring:
             self.scoring.close()
             self.scoring = None
