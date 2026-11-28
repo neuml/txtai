@@ -648,6 +648,22 @@ class TestAgent(unittest.TestCase):
         with open(path, "rb") as f:
             self.assertEqual(f.read(), b"bye\r\nworld\r\n")
 
+    def testToolsEditEmptySearch(self):
+        """
+        Test the edit tool rejects an empty search string
+        """
+
+        path = os.path.join(tempfile.gettempdir(), "agent_tools_empty.txt")
+        with open(path, "w", encoding="utf-8") as f:
+            f.write("hello world\n")
+
+        # An empty search string must raise an error and leave the file unchanged
+        with self.assertRaises(ValueError):
+            ToolFactory.default("edit")(path, "", "bye")
+
+        with open(path, "r", encoding="utf-8") as f:
+            self.assertEqual(f.read(), "hello world\n")
+
     def testToolsEmbeddings(self):
         """
         Test adding Embeddings as a tool
