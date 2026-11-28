@@ -792,9 +792,14 @@ class Embeddings:
         # Dimensionality reduction model
         self.reducer = None
 
+        # Always close scoring since it has two paths for creation: sparse and word vector weighting
+        if self.scoring:
+            self.scoring.close()
+            self.scoring = None
+        
         # Create scoring instance for word vectors term weighting
         scoring = self.config.get("scoring") if self.config else None
-        self.scoring = self.createscoring() if scoring and not self.hassparse() else self.scoring
+        self.scoring = self.createscoring() if scoring and not self.hassparse() else None
 
         # Dense vectors - transforms data to embeddings vectors
         self.model = self.loadvectors() if self.config else None
@@ -830,8 +835,8 @@ class Embeddings:
         # Initialize ANN, will be created after index transformations complete
         self.ann = None
 
-        # Create scoring only if the scoring config is for a sparse index, also frees scoring left over from a reindex
-        if self.hassparse() or (self.scoring and not self.config.get("scoring")):
+        # Create scoring only if the scoring config is for a sparse index
+        if self.hassparse():
             self.scoring = self.createscoring()
 
         # Create subindexes, if necessary
