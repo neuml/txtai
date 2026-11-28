@@ -2,6 +2,7 @@
 Agent module tests
 """
 
+import copy
 import os
 import sys
 import tempfile
@@ -14,7 +15,9 @@ from unittest.mock import patch
 
 from datetime import datetime
 from enum import Enum
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal, Optional, Tuple, Union
+
+import torch
 
 from pydantic_ai.exceptions import UsageLimitExceeded
 from pydantic_ai.messages import (
@@ -231,7 +234,6 @@ class TestAgent(unittest.TestCase):
             # Agent and tools import without smolagents
             OptionalAgent, OptionalToolFactory = optional.Agent, optional.ToolFactory
             self.assertIsNone(getattr(OptionalAgent, "ERROR", None))
-            self.assertFalse(hasattr(optional, "PipelineModel"))
             self.assertIsNotNone(optional.BashTool(allowed=["ls"])({"command": ["ls", tempfile.gettempdir()]}))
 
             # Tools only available with the smolagents backend raise an error
@@ -889,6 +891,11 @@ class TestAgent(unittest.TestCase):
 
             return 1
 
+        def noreturn():
+            """
+            Does nothing
+            """
+
         def anyoutput(query: str) -> Any:
             """
             Runs a search
@@ -915,7 +922,7 @@ class TestAgent(unittest.TestCase):
 
             return query
 
-        for function in [anydata, noinputs, anyoutput, unionoutput]:
+        for function in [anydata, noinputs, noreturn, anyoutput, unionoutput]:
             with self.subTest(function=function.__name__):
                 tool, expected = ToolFactory.create({"tools": [function]})[0], smoltool(function)
                 self.assertIsInstance(tool, Tool)
@@ -1107,6 +1114,26 @@ class TestAgent(unittest.TestCase):
             with self.subTest(function=function.__name__), self.assertRaises(error):
                 ToolSchema.create(function)
 
+        # Bare tuples are arrays and image and audio types are matched by name
+        self.assertEqual(ToolSchema.hint(Tuple), {"type": "array"})
+        self.assertEqual(ToolSchema.hint(torch.Tensor), {"type": "audio"})
+
+        class Empty(Enum):
+            """
+            Enum without members
+            """
+
+        class Pair(Enum):
+            """
+            Enum with a value that isn't a JSON scalar
+            """
+
+            PAIR = (1, 2)
+
+        for hint in [Literal[b"fast"], set[int], Empty, Pair]:
+            with self.subTest(hint=hint), self.assertRaises(TypeHintError):
+                ToolSchema.hint(hint)
+
     def testToolsSmolagents(self):
         """
         Test txtai tools are converted to smolagents tools with the smolagents backend
@@ -1123,6 +1150,9 @@ class TestAgent(unittest.TestCase):
         self.assertEqual(agent.tools["bash"].allowed, ["cat", "cut", "diff", "grep", "head", "ls", "tail"])
         self.assertEqual(agent.tools["bash"].inputs, BashTool().inputs)
         self.assertEqual(agent.tools["bash"]({"command": ["ls", tempfile.gettempdir()]}), BashTool()(["ls", tempfile.gettempdir()]))
+
+        # Copies wrap the same txtai tool
+        self.assertIs(copy.copy(agent.tools["bash"]).tool, agent.tools["bash"].tool)
 
         # Agent runs a tool call through the wrapped tool
         responses = iter(

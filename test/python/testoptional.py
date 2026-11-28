@@ -115,6 +115,11 @@ class TestOptional(unittest.TestCase):
         with self.assertRaises(ImportError):
             Agent(llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=1)
 
+        from txtai.agent.tool import WebSearchTool
+
+        with self.assertRaises(ImportError):
+            WebSearchTool()
+
     def testANN(self):
         """
         Test missing ANN dependencies
