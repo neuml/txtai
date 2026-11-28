@@ -103,25 +103,6 @@ class TestWorkflow(unittest.TestCase):
             self.assertEqual(list(app.workflow("test", ["x"])), ["Hi x"])
             self.assertEqual(config, expected)
 
-    def testFactoryConfig(self):
-        """
-        Test that factories preserve task, argument and stream configuration
-        """
-
-        def action(values, suffix):
-            return [value + suffix for value in values]
-
-        args = ["!"]
-        task = {"action": action, "args": args}
-        config = {"tasks": [dict(task, task="")], "stream": {"task": "stream", "action": iter, "batch": True}}
-        expected = copy.deepcopy(config)
-        for _ in range(2):
-            self.assertEqual(TaskFactory.create(task, "")(["x"]), ["x!"])
-            self.assertIs(task["action"], action)
-            self.assertIs(task["args"], args)
-            self.assertEqual(list(WorkflowFactory.create(config, "test")(["x"])), ["x!"])
-            self.assertEqual(config, expected)
-
     def testBaseWorkflow(self):
         """
         Test a basic workflow
@@ -207,63 +188,6 @@ class TestWorkflow(unittest.TestCase):
         results = list(workflow([2, 4]))
         self.assertEqual(results, [(2, 2), (4, 4)])
 
-    def testIteratorActions(self):
-        """
-        Test multi-action tasks reject iterators without consuming inputs or running actions
-        """
-
-        for merge, generator in product(["hstack", "vstack", "concat", None], [False, True]):
-            with self.subTest(merge=merge, generator=generator):
-                elements = (x for x in [1, 2]) if generator else iter([1, 2])
-                calls = []
-                task = Task([lambda values, calls=calls: calls.append(True) or list(values)] * 2, merge=merge)
-                with self.assertRaisesRegex(ValueError, "Iterator inputs are not supported for multi-action tasks"):
-                    task(elements)
-                self.assertEqual(calls, [])
-                self.assertEqual(list(elements), [1, 2])
-
-    def testIteratorColumns(self):
-        """
-        Test iterators are rejected before extracting per-action columns
-        """
-
-        elements = iter([(1, 10), (2, 20)])
-        task = Task([list, list], column={0: 0, 1: 1}, unpack=False)
-        with self.assertRaisesRegex(ValueError, "Iterator inputs are not supported for multi-action tasks"):
-            task(elements)
-        self.assertEqual(list(elements), [(1, 10), (2, 20)])
-
-    def testIteratorSingleAction(self):
-        """
-        Test single-action and no-action tasks retain lazy iterator inputs
-        """
-
-        elements = iter([1, 2, 3])
-        self.assertIs(Task()(elements), elements)
-        self.assertEqual(Task(lambda values: [next(values)])(elements), [1])
-        self.assertEqual(list(elements), [2, 3])
-
-    def testStreamMultiActionWorkflow(self):
-        """
-        Test streamed inputs fail before downstream sequential or concurrent actions run
-        """
-
-        for concurrency in [None, "thread", "process"]:
-            with self.subTest(concurrency=concurrency):
-                workflow = Workflow([StreamTask(lambda value: iter([value])), Task([Nop(), Nop()], concurrency=concurrency)], batch=2)
-                with self.assertRaisesRegex(ValueError, "Iterator inputs are not supported for multi-action tasks"):
-                    list(workflow([1, 2, 3]))
-
-    def testIteratorWorkflowBatches(self):
-        """
-        Test workflow-level iterators remain supported through bounded batches
-        """
-
-        for concurrency in [None, "thread", "process"]:
-            with self.subTest(concurrency=concurrency):
-                workflow = Workflow([Task([Nop(), Nop()], concurrency=concurrency)], batch=2)
-                self.assertEqual(list(workflow(iter([1, 2, 3]))), [(1, 1), (2, 2), (3, 3)])
-
     def testConsoleWorkflow(self):
         """
         Test a console task
@@ -344,18 +268,24 @@ class TestWorkflow(unittest.TestCase):
         results = list(workflow([1]))
         self.assertEqual(results[0], 1)
 
-    def testFileWorkflow(self):
+    def testFactoryConfig(self):
         """
-        Test a file task
+        Test that factories preserve task, argument and stream configuration
         """
 
-        with tempfile.NamedTemporaryFile() as temp:
-            # String and non-string elements
-            inputs = [temp.name, "http://example.com", 5, None, "no match here"]
+        def action(values, suffix):
+            return [value + suffix for value in values]
 
-            workflow = Workflow([FileTask()])
-            results = list(workflow(inputs))
-            self.assertEqual(results, inputs)
+        args = ["!"]
+        task = {"action": action, "args": args}
+        config = {"tasks": [dict(task, task="")], "stream": {"task": "stream", "action": iter, "batch": True}}
+        expected = copy.deepcopy(config)
+        for _ in range(2):
+            self.assertEqual(TaskFactory.create(task, "")(["x"]), ["x!"])
+            self.assertIs(task["action"], action)
+            self.assertIs(task["args"], args)
+            self.assertEqual(list(WorkflowFactory.create(config, "test")(["x"])), ["x!"])
+            self.assertEqual(config, expected)
 
     def testFileURIWorkflow(self):
         """
@@ -372,27 +302,18 @@ class TestWorkflow(unittest.TestCase):
             mixed = "File://" + uri[len("file://") :]
             self.assertEqual(list(workflow([str(path), uri, upper, mixed])), ["research note"] * 4)
 
-    def testFilteredPackingScales(self):
+    def testFileWorkflow(self):
         """
-        Test that packing a batch does not repeatedly compare all process positions.
+        Test a file task
         """
 
-        class Position(int):
-            """Integer position that counts equality comparisons."""
+        with tempfile.NamedTemporaryFile() as temp:
+            # String and non-string elements
+            inputs = [temp.name, "http://example.com", 5, None, "no match here"]
 
-            comparisons = 0
-            __hash__ = int.__hash__
-
-            def __eq__(self, other):
-                Position.comparisons += 1
-                return super().__eq__(other)
-
-        positions = [Position(index) for index in range(128)]
-        results = [str(index) for index in positions]
-        indexed = list(zip(positions, results))
-
-        self.assertEqual(Task().filteredpack(results, indexed, positions), results)
-        self.assertLessEqual(Position.comparisons, len(positions) * 2)
+            workflow = Workflow([FileTask()])
+            results = list(workflow(inputs))
+            self.assertEqual(results, inputs)
 
     def testFilteredPackingResults(self):
         """
@@ -416,6 +337,28 @@ class TestWorkflow(unittest.TestCase):
         workflow = Workflow([Task(lambda values: [None for _ in values], select="keep")])
         self.assertEqual(list(workflow(["keep", "skip"])), [None, "skip"])
 
+    def testFilteredPackingScales(self):
+        """
+        Test that packing a batch does not repeatedly compare all process positions.
+        """
+
+        class Position(int):
+            """Integer position that counts equality comparisons."""
+
+            comparisons = 0
+            __hash__ = int.__hash__
+
+            def __eq__(self, other):
+                Position.comparisons += 1
+                return super().__eq__(other)
+
+        positions = [Position(index) for index in range(128)]
+        results = [str(index) for index in positions]
+        indexed = list(zip(positions, results))
+
+        self.assertEqual(Task().filteredpack(results, indexed, positions), results)
+        self.assertLessEqual(Position.comparisons, len(positions) * 2)
+
     def testImageWorkflow(self):
         """
         Test an image task
@@ -434,6 +377,77 @@ class TestWorkflow(unittest.TestCase):
 
         with self.assertRaises(TypeError):
             Task(invalid=True)
+
+    def testIteratorActions(self):
+        """
+        Test multi-action tasks reject iterators without consuming inputs or running actions
+        """
+
+        for merge, generator in product(["hstack", "vstack", "concat", None], [False, True]):
+            with self.subTest(merge=merge, generator=generator):
+                elements = (x for x in [1, 2]) if generator else iter([1, 2])
+                calls = []
+                task = Task([lambda values, calls=calls: calls.append(True) or list(values)] * 2, merge=merge)
+                with self.assertRaisesRegex(ValueError, "Iterator inputs are not supported for multi-action tasks"):
+                    task(elements)
+                self.assertEqual(calls, [])
+                self.assertEqual(list(elements), [1, 2])
+
+    def testIteratorColumns(self):
+        """
+        Test iterators are rejected before extracting per-action columns
+        """
+
+        elements = iter([(1, 10), (2, 20)])
+        task = Task([list, list], column={0: 0, 1: 1}, unpack=False)
+        with self.assertRaisesRegex(ValueError, "Iterator inputs are not supported for multi-action tasks"):
+            task(elements)
+        self.assertEqual(list(elements), [(1, 10), (2, 20)])
+
+    def testIteratorSingleAction(self):
+        """
+        Test single-action and no-action tasks retain lazy iterator inputs
+        """
+
+        elements = iter([1, 2, 3])
+        self.assertIs(Task()(elements), elements)
+        self.assertEqual(Task(lambda values: [next(values)])(elements), [1])
+        self.assertEqual(list(elements), [2, 3])
+
+    def testIteratorWorkflowBatches(self):
+        """
+        Test workflow-level iterators remain supported through bounded batches
+        """
+
+        for concurrency in [None, "thread", "process"]:
+            with self.subTest(concurrency=concurrency):
+                workflow = Workflow([Task([Nop(), Nop()], concurrency=concurrency)], batch=2)
+                self.assertEqual(list(workflow(iter([1, 2, 3]))), [(1, 1), (2, 2), (3, 3)])
+
+    def testMergeUnbalancedWorkflow(self):
+        """
+        Test merge tasks with unbalanced outputs (i.e. one action produce more output than another for same input).
+        """
+
+        nop = Nop()
+        segment1 = Segmentation(sentences=True)
+
+        task = Task([nop, segment1])
+
+        # Test hstack
+        workflow = Workflow([task])
+        results = list(workflow(["This is a test sentence. And another sentence to split."]))
+        self.assertEqual(
+            results, [("This is a test sentence. And another sentence to split.", ["This is a test sentence.", "And another sentence to split."])]
+        )
+
+        # Test vstack
+        task.merge = "vstack"
+        workflow = Workflow([task])
+        results = list(workflow(["This is a test sentence. And another sentence to split."]))
+        self.assertEqual(
+            results, ["This is a test sentence. And another sentence to split.", "This is a test sentence.", "And another sentence to split."]
+        )
 
     def testMergeWorkflow(self):
         """
@@ -493,30 +507,16 @@ class TestWorkflow(unittest.TestCase):
         results = list(task([1, 2]))
         self.assertEqual(results, ["Widget", "Gadget"])
 
-    def testMergeUnbalancedWorkflow(self):
+    def testNumpyListWorkflow(self):
         """
-        Test merge tasks with unbalanced outputs (i.e. one action produce more output than another for same input).
+        Test a vstack merge of numpy and torch action outputs with list inputs
         """
 
-        nop = Nop()
-        segment1 = Segmentation(sentences=True)
-
-        task = Task([nop, segment1])
-
-        # Test hstack
-        workflow = Workflow([task])
-        results = list(workflow(["This is a test sentence. And another sentence to split."]))
-        self.assertEqual(
-            results, [("This is a test sentence. And another sentence to split.", ["This is a test sentence.", "And another sentence to split."])]
-        )
-
-        # Test vstack
-        task.merge = "vstack"
-        workflow = Workflow([task])
-        results = list(workflow(["This is a test sentence. And another sentence to split."]))
-        self.assertEqual(
-            results, ["This is a test sentence. And another sentence to split.", "This is a test sentence.", "And another sentence to split."]
-        )
+        # pylint: disable=E1101
+        for function in [lambda x, y: np.power(np.array(x), y), lambda x, y: torch.pow(torch.tensor(x), y)]:
+            task = Task([lambda x, f=function: f(x, 2), lambda x, f=function: f(x, 3)], merge="vstack")
+            results = list(Workflow([task])([2, 4]))
+            self.assertEqual([int(x) for x in results], [4, 8, 16, 64])
 
     def testNumpyWorkflow(self):
         """
@@ -540,16 +540,28 @@ class TestWorkflow(unittest.TestCase):
         results = list(workflow(np.array([2, 4, 6])))
         self.assertTrue(np.array_equal(np.array(results), np.array([[4, 16, 36], [8, 64, 216]])))
 
-    def testNumpyListWorkflow(self):
+    def testRetrieveLocalFilenames(self):
         """
-        Test a vstack merge of numpy and torch action outputs with list inputs
+        Test that local filenames are preserved instead of parsed as URLs
         """
 
-        # pylint: disable=E1101
-        for function in [lambda x, y: np.power(np.array(x), y), lambda x, y: torch.pow(torch.tensor(x), y)]:
-            task = Task([lambda x, f=function: f(x, 2), lambda x, f=function: f(x, 3)], merge="vstack")
-            results = list(Workflow([task])([2, 4]))
-            self.assertEqual([int(x) for x in results], [4, 8, 16, 64])
+        with tempfile.TemporaryDirectory(dir=".") as directory:
+            directory = os.path.relpath(directory)
+            names = ["report#1.txt", "report#2.txt", "report;1.txt", "plain.txt"]
+            paths = [os.path.join(directory, name) for name in names]
+            for path, name in zip(paths, names):
+                with open(path, "w", encoding="utf-8") as output:
+                    output.write(name)
+
+            for flatten, prefix, safeopen in product((True, False), ("", "file://"), (False, directory)):
+                with self.subTest(flatten=flatten, prefix=prefix, safeopen=safeopen):
+                    task = RetrieveTask(directory=os.path.join(directory, "output"), flatten=flatten, safeopen=safeopen)
+                    results = list(Workflow([task])([prefix + path for path in paths]))
+
+                    self.assertEqual([os.path.basename(path) for path in results], names)
+                    for path, name in zip(results, names):
+                        with open(path, encoding="utf-8") as result:
+                            self.assertEqual(result.read(), name)
 
     def testRetrieveWorkflow(self):
         """
@@ -591,28 +603,35 @@ class TestWorkflow(unittest.TestCase):
                 self.assertTrue(os.path.isfile(path))
                 self.assertTrue(path.endswith("c.example.com"))
 
-    def testRetrieveLocalFilenames(self):
+    def testScheduleElapsedWorkflow(self):
         """
-        Test that local filenames are preserved instead of parsed as URLs
+        Test that an elapsed cron deadline still runs its scheduled task.
         """
 
-        with tempfile.TemporaryDirectory(dir=".") as directory:
-            directory = os.path.relpath(directory)
-            names = ["report#1.txt", "report#2.txt", "report;1.txt", "plain.txt"]
-            paths = [os.path.join(directory, name) for name in names]
-            for path, name in zip(paths, names):
-                with open(path, "w", encoding="utf-8") as output:
-                    output.write(name)
+        start = datetime(2026, 1, 1, tzinfo=timezone.utc)
+        executed = []
+        workflow = Workflow([Task(action=executed.append)])
 
-            for flatten, prefix, safeopen in product((True, False), ("", "file://"), (False, directory)):
-                with self.subTest(flatten=flatten, prefix=prefix, safeopen=safeopen):
-                    task = RetrieveTask(directory=os.path.join(directory, "output"), flatten=flatten, safeopen=safeopen)
-                    results = list(Workflow([task])([prefix + path for path in paths]))
+        with patch("txtai.workflow.base.croniter", return_value=croniter("* * * * * *", start)):
+            with patch("txtai.workflow.base.time.time", return_value=start.timestamp() + 1.01):
+                workflow.schedule("* * * * * *", ["test"], 1)
 
-                    self.assertEqual([os.path.basename(path) for path in results], names)
-                    for path, name in zip(results, names):
-                        with open(path, encoding="utf-8") as result:
-                            self.assertEqual(result.read(), name)
+        self.assertEqual(executed, [["test"]])
+
+    def testScheduleErrorWorkflow(self):
+        """
+        Test workflow schedules with errors
+        """
+
+        def action(elements):
+            raise FileNotFoundError
+
+        # Test workflow proceeds after exception raised
+        with self.assertLogs() as logs:
+            workflow = Workflow([Task(action=action)])
+            workflow.schedule("* * * * * *", ["test"], 1)
+
+        self.assertIn("FileNotFoundError", " ".join(logs.output))
 
     def testScheduleWorkflow(self):
         """
@@ -647,35 +666,35 @@ class TestWorkflow(unittest.TestCase):
 
         self.assertIn("a sentence to segment", output.getvalue())
 
-    def testScheduleElapsedWorkflow(self):
+    def testSelectCase(self):
         """
-        Test that an elapsed cron deadline still runs its scheduled task.
-        """
-
-        start = datetime(2026, 1, 1, tzinfo=timezone.utc)
-        executed = []
-        workflow = Workflow([Task(action=executed.append)])
-
-        with patch("txtai.workflow.base.croniter", return_value=croniter("* * * * * *", start)):
-            with patch("txtai.workflow.base.time.time", return_value=start.timestamp() + 1.01):
-                workflow.schedule("* * * * * *", ["test"], 1)
-
-        self.assertEqual(executed, [["test"]])
-
-    def testScheduleErrorWorkflow(self):
-        """
-        Test workflow schedules with errors
+        Test select patterns match case insensitively
         """
 
-        def action(elements):
-            raise FileNotFoundError
+        task = Task(lambda values: [value.upper() for value in values], select=r"\.WAV$")
+        self.assertEqual(task(["a.wav", "b.WAV", "c.txt"]), ["A.WAV", "B.WAV", "c.txt"])
 
-        # Test workflow proceeds after exception raised
-        with self.assertLogs() as logs:
-            workflow = Workflow([Task(action=action)])
-            workflow.schedule("* * * * * *", ["test"], 1)
+        task = Task(lambda values: [value.upper() for value in values], select=r"\.wav$")
+        self.assertEqual(task(["a.wav", "b.WAV", "c.txt"]), ["A.WAV", "B.WAV", "c.txt"])
 
-        self.assertIn("FileNotFoundError", " ".join(logs.output))
+    def testServiceFilteredBatch(self):
+        """
+        Test that filtered batches only send matching inputs
+        """
+
+        task = ServiceTask(url="http://example", select=r"\.pdf$")
+
+        response = Mock()
+        response.content = b'["processed"]'
+        response.headers = {"Content-Type": "application/json"}
+        response.json.return_value = ["processed"]
+
+        with patch("txtai.workflow.task.service.requests.post", return_value=response) as post:
+            self.assertEqual(task(["notes.txt"]), ["notes.txt"])
+            post.assert_not_called()
+
+            self.assertEqual(task(["notes.txt", "report.pdf"]), ["notes.txt", "processed"])
+            post.assert_called_once_with("http://example", json=["report.pdf"], timeout=30)
 
     def testServiceParamsFalsy(self):
         """
@@ -695,17 +714,6 @@ class TestWorkflow(unittest.TestCase):
 
         self.assertEqual(post.call_args.kwargs["json"], {"limit": 0, "stream": False, "text": "value", "query": "value"})
         self.assertEqual(params, {"limit": 0, "stream": False, "text": None, "query": ""})
-
-    def testStorageWorkflow(self):
-        """
-        Test a storage task
-        """
-
-        workflow = Workflow([StorageTask()])
-
-        results = list(workflow(["local://" + Utils.PATH, "test string"]))
-
-        self.assertEqual(len(results), 22)
 
     def testStorageTaggedWorkflow(self):
         """
@@ -737,6 +745,28 @@ class TestWorkflow(unittest.TestCase):
         results = list(workflow([("id2", "test string", "tag2")]))
         self.assertEqual(results, [("id2", "test string", "tag2")])
 
+    def testStorageWorkflow(self):
+        """
+        Test a storage task
+        """
+
+        workflow = Workflow([StorageTask()])
+
+        results = list(workflow(["local://" + Utils.PATH, "test string"]))
+
+        self.assertEqual(len(results), 22)
+
+    def testStreamMultiActionWorkflow(self):
+        """
+        Test streamed inputs fail before downstream sequential or concurrent actions run
+        """
+
+        for concurrency in [None, "thread", "process"]:
+            with self.subTest(concurrency=concurrency):
+                workflow = Workflow([StreamTask(lambda value: iter([value])), Task([Nop(), Nop()], concurrency=concurrency)], batch=2)
+                with self.assertRaisesRegex(ValueError, "Iterator inputs are not supported for multi-action tasks"):
+                    list(workflow([1, 2, 3]))
+
     def testTemplateInput(self):
         """
         Test template task input
@@ -766,6 +796,67 @@ class TestWorkflow(unittest.TestCase):
         workflow = Workflow([TemplateTask()])
         results = list(workflow(["prompt"]))
         self.assertEqual(results[0], "prompt")
+
+    def testTemplateRag(self):
+        """
+        Test rag template task
+        """
+
+        # Test outputs
+        workflow = Workflow([RagTask(template="This is a {text}")])
+        results = list(workflow(["prompt"]))
+        self.assertEqual(results[0], {"query": "prompt", "question": "This is a prompt"})
+
+        # Test partial outputs
+        workflow = Workflow([RagTask(template="This is a {text}")])
+        results = list(workflow([{"query": "query", "question": "prompt"}]))
+        self.assertEqual(results[0], {"query": "query", "question": "This is a prompt"})
+
+        # Test additional template parameters
+        workflow = Workflow([RagTask(template="This is a {text} with another {param}")])
+        results = list(workflow([{"query": "query", "question": "prompt", "param": "value"}]))
+        self.assertEqual(results[0], {"query": "query", "question": "This is a prompt with another value", "param": "value"})
+
+    def testTemplateRagRepeatedInput(self):
+        """
+        Test that repeated input references are formatted independently across batches
+        """
+
+        for batch in (1, 2):
+            with self.subTest(batch=batch):
+                workflow = Workflow([RagTask(template="This is a {text}")], batch=batch)
+                request = {"query": "query", "question": "prompt"}
+                original = dict(request)
+                expected = {"query": "query", "question": "This is a prompt"}
+
+                results = list(workflow([request, request]))
+                self.assertEqual(results, [expected, expected])
+                self.assertEqual(request, original)
+                self.assertIsNot(results[0], results[1])
+
+    def testTemplateRagReusableInput(self):
+        """
+        Test that rag template inputs can be reused without changing earlier results
+        """
+
+        workflow = Workflow([RagTask(template="This is a {text} with another {param}")])
+        for packed in (False, True):
+            with self.subTest(packed=packed):
+                request = {"query": "query", "question": "prompt", "param": "value"}
+                original = dict(request)
+                expected = {"query": "query", "question": "This is a prompt with another value", "param": "value"}
+                inputs = [("id", request, "tag")] if packed else [request]
+                expected = [("id", expected, "tag")] if packed else [expected]
+
+                first = list(workflow(inputs))
+                self.assertEqual(first, expected)
+                self.assertEqual(request, original)
+
+                second = list(workflow(inputs))
+                self.assertEqual(second, expected)
+                self.assertEqual(first, expected)
+                self.assertEqual(request, original)
+                self.assertIsNot(first[0][1] if packed else first[0], request)
 
     def testTemplateRules(self):
         """
@@ -805,67 +896,6 @@ class TestWorkflow(unittest.TestCase):
 
         workflow = Workflow([TemplateTask(template="This is a {text}", rules={"status": ""})])
         self.assertEqual(list(workflow([{"status": ""}])), [""])
-
-    def testTemplateRag(self):
-        """
-        Test rag template task
-        """
-
-        # Test outputs
-        workflow = Workflow([RagTask(template="This is a {text}")])
-        results = list(workflow(["prompt"]))
-        self.assertEqual(results[0], {"query": "prompt", "question": "This is a prompt"})
-
-        # Test partial outputs
-        workflow = Workflow([RagTask(template="This is a {text}")])
-        results = list(workflow([{"query": "query", "question": "prompt"}]))
-        self.assertEqual(results[0], {"query": "query", "question": "This is a prompt"})
-
-        # Test additional template parameters
-        workflow = Workflow([RagTask(template="This is a {text} with another {param}")])
-        results = list(workflow([{"query": "query", "question": "prompt", "param": "value"}]))
-        self.assertEqual(results[0], {"query": "query", "question": "This is a prompt with another value", "param": "value"})
-
-    def testTemplateRagReusableInput(self):
-        """
-        Test that rag template inputs can be reused without changing earlier results
-        """
-
-        workflow = Workflow([RagTask(template="This is a {text} with another {param}")])
-        for packed in (False, True):
-            with self.subTest(packed=packed):
-                request = {"query": "query", "question": "prompt", "param": "value"}
-                original = dict(request)
-                expected = {"query": "query", "question": "This is a prompt with another value", "param": "value"}
-                inputs = [("id", request, "tag")] if packed else [request]
-                expected = [("id", expected, "tag")] if packed else [expected]
-
-                first = list(workflow(inputs))
-                self.assertEqual(first, expected)
-                self.assertEqual(request, original)
-
-                second = list(workflow(inputs))
-                self.assertEqual(second, expected)
-                self.assertEqual(first, expected)
-                self.assertEqual(request, original)
-                self.assertIsNot(first[0][1] if packed else first[0], request)
-
-    def testTemplateRagRepeatedInput(self):
-        """
-        Test that repeated input references are formatted independently across batches
-        """
-
-        for batch in (1, 2):
-            with self.subTest(batch=batch):
-                workflow = Workflow([RagTask(template="This is a {text}")], batch=batch)
-                request = {"query": "query", "question": "prompt"}
-                original = dict(request)
-                expected = {"query": "query", "question": "This is a prompt"}
-
-                results = list(workflow([request, request]))
-                self.assertEqual(results, [expected, expected])
-                self.assertEqual(request, original)
-                self.assertIsNot(results[0], results[1])
 
     def testTensorTransformWorkflow(self):
         """
@@ -916,6 +946,23 @@ class TestWorkflow(unittest.TestCase):
         workflow = Workflow([UrlTask()])
         results = list(workflow(["file://" + Utils.PATH + "/books.jpg"]))
         self.assertTrue(results[0].endswith("books.jpg"))
+
+    def testYamlError(self):
+        """
+        Test reading a YAML workflow with errors.
+        """
+
+        # Read from string
+        config = """
+        # Workflow definitions
+        workflow:
+            error:
+                tasks:
+                    - action: error
+        """
+
+        with self.assertRaises(KeyError):
+            API(config)
 
     def testYamlFunctionWorkflow(self):
         """
@@ -980,6 +1027,15 @@ class TestWorkflow(unittest.TestCase):
             "And another sentence to split.",
         )
 
+    def testYamlTransformWorkflow(self):
+        """
+        Test reading a YAML transform workflow in Python.
+        """
+
+        # Test search
+        app = API(self.config)
+        self.assertEqual(len(list(app.workflow("transform", ["text"]))[0]), 128)
+
     def testYamlWorkflowTask(self):
         """
         Test YAML workflow with a workflow task
@@ -1003,29 +1059,3 @@ class TestWorkflow(unittest.TestCase):
 
         app = API(workflow)
         self.assertEqual(list(app.workflow("flow", [1, 2])), [2, 4])
-
-    def testYamlTransformWorkflow(self):
-        """
-        Test reading a YAML transform workflow in Python.
-        """
-
-        # Test search
-        app = API(self.config)
-        self.assertEqual(len(list(app.workflow("transform", ["text"]))[0]), 128)
-
-    def testYamlError(self):
-        """
-        Test reading a YAML workflow with errors.
-        """
-
-        # Read from string
-        config = """
-        # Workflow definitions
-        workflow:
-            error:
-                tasks:
-                    - action: error
-        """
-
-        with self.assertRaises(KeyError):
-            API(config)

@@ -53,6 +53,9 @@ class ServiceTask(Task):
             self.extract = [self.extract] if isinstance(self.extract, str) else self.extract
 
     def execute(self, elements, executor=None):
+        if self.select and isinstance(elements, list) and not elements:
+            return super().execute(elements, executor)
+
         if self.batch:
             response = self.request(elements)
 

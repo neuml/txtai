@@ -208,6 +208,26 @@ class TestCluster(unittest.TestCase):
         uid = self.client.get(f"search?query={query}&limit=1&weights=0.5&index=default&parameters={params}&graph=False").json()[0]["id"]
         self.assertEqual(uid, 4)
 
+    def testSearchBatch(self):
+        """
+        Test cluster batch search
+        """
+
+        results = self.client.post(
+            "batchsearch",
+            json={
+                "queries": ["feel good story", "climate change"],
+                "limit": 1,
+                "weights": 0.5,
+                "index": "default",
+                "parameters": [{"x": 1}, {"x": 2}],
+                "graph": False,
+            },
+        ).json()
+
+        uids = [result[0]["id"] for result in results]
+        self.assertEqual(uids, [4, 1])
+
     def testSearchLimit(self):
         """
         Test cluster search honors a SQL LIMIT clause
@@ -231,9 +251,21 @@ class TestCluster(unittest.TestCase):
             self.assertEqual(len(cluster.search("select id, score from txtai where similar('test')", 5)), 5)
             self.assertEqual(len(cluster.search("test")), 10)
 
+            # A bound LIMIT takes precedence the same as a literal LIMIT
+            bound = query.replace("limit 20", "limit :n")
+            self.assertEqual(len(cluster.search(bound, parameters={"n": 20})), 20)
+            self.assertEqual(len(cluster.search(bound, 10, parameters={"n": "2"})), 2)
+
+            # Request limit is used when the LIMIT parameter isn't bound
+            self.assertEqual(len(cluster.search(bound, 5, parameters={"m": 20})), 5)
+
         with patch.object(Cluster, "execute", return_value=[[shard, shard], [shard, shard]]):
             results = cluster.batchsearch([query, "test"], 10)
             self.assertEqual([len(result) for result in results], [20, 10])
+
+            # Each query resolves its own bound LIMIT
+            results = cluster.batchsearch([bound, bound], parameters=[{"n": 20}, {"n": 2}])
+            self.assertEqual([len(result) for result in results], [20, 2])
 
     def testSearchParameters(self):
         """
@@ -272,26 +304,6 @@ class TestCluster(unittest.TestCase):
             path, data = httpd.requests[-1]
             self.assertEqual(path, "/batchsearch")
             self.assertEqual(data["weights"], 0.0)
-
-    def testSearchBatch(self):
-        """
-        Test cluster batch search
-        """
-
-        results = self.client.post(
-            "batchsearch",
-            json={
-                "queries": ["feel good story", "climate change"],
-                "limit": 1,
-                "weights": 0.5,
-                "index": "default",
-                "parameters": [{"x": 1}, {"x": 2}],
-                "graph": False,
-            },
-        ).json()
-
-        uids = [result[0]["id"] for result in results]
-        self.assertEqual(uids, [4, 1])
 
     def testShard(self):
         """

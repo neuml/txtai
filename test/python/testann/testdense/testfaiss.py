@@ -135,6 +135,31 @@ class TestFaiss(DenseTest):
         self.assertLessEqual(expected, ann.backend.nlist)
         self.assertEqual(ann.nprobe(), expected)
 
+    def testFaissNprobeWrapped(self):
+        """
+        Test the probe count used by an IVF index behind a PCA transform
+        """
+
+        # pylint: disable=C0415
+        from faiss import extract_index_ivf
+
+        ann, rng = self.faissmodel(512, {"components": "PCA8,IVF4,Flat", "nprobe": 2})
+        queries = rng.random((16, 8), dtype=np.float32)
+        self.normalize(queries)
+        index = extract_index_ivf(ann.backend)
+
+        ann.search(queries, 1)
+        self.assertEqual(index.nprobe, 2)
+
+        # Without an override the default probes all four lists
+        del ann.config["faiss"]["nprobe"]
+        index.nprobe = 4
+        _, ids = ann.backend.search(queries, 1)
+        index.nprobe = 1
+        results = ann.search(queries, 1)
+        self.assertEqual(index.nprobe, 4)
+        self.assertEqual([row[0][0] for row in results], ids[:, 0].tolist())
+
     def testFaissQuantizeDisabled(self):
         """
         Test that quantize: false disables Faiss storage quantization

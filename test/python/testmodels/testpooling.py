@@ -82,35 +82,6 @@ class TestPooling(unittest.TestCase):
         self.assertEqual(pool.centersettings({"scope": "batch"}, empty, True), {"scope": "batch"})
         self.assertEqual(pool.centersettings({"scope": "document"}, empty, True), {"scope": "document"})
 
-    def testLateEncoderSettings(self):
-        """
-        Test late pooling fixed encoder settings
-        """
-
-        pool = PoolingFactory.create({"path": "neuml/colbert-bert-tiny", "device": self.device, "modelargs": {"muvera": None}})
-        lemur = {"path": "artifact"}
-        muvera = {"repetitions": 5}
-
-        self.assertIsNone(pool.encodersettings(None, "lemur"))
-        self.assertIsNone(pool.encodersettings(False, "lemur"))
-        self.assertEqual(pool.encodersettings("artifact", "lemur"), {"path": "artifact"})
-        self.assertIs(pool.encodersettings(lemur, "lemur"), lemur)
-
-        self.assertIsNone(pool.encodersettings(None, "muvera"))
-        self.assertIsNone(pool.encodersettings(False, "muvera"))
-        self.assertEqual(pool.encodersettings(True, "muvera"), {})
-        self.assertIs(pool.encodersettings(muvera, "muvera"), muvera)
-
-        for value in (True, 1):
-            with self.subTest(lemur=value):
-                with self.assertRaisesRegex(ValueError, "^lemur expects a path string or a dict of settings$"):
-                    pool.encodersettings(value, "lemur")
-
-        for value in ("settings", 1):
-            with self.subTest(muvera=value):
-                with self.assertRaisesRegex(ValueError, "^muvera expects a boolean or a dict of settings$"):
-                    pool.encodersettings(value, "muvera")
-
     def testLateCenterDisabled(self):
         """
         Test omitted and explicitly disabled centering are byte-identical
@@ -219,6 +190,35 @@ class TestPooling(unittest.TestCase):
             with self.subTest(center=center):
                 with self.assertRaisesRegex(ValueError, message):
                     pool.centersettings(center, linear, True)
+
+    def testLateEncoderSettings(self):
+        """
+        Test late pooling fixed encoder settings
+        """
+
+        pool = PoolingFactory.create({"path": "neuml/colbert-bert-tiny", "device": self.device, "modelargs": {"muvera": None}})
+        lemur = {"path": "artifact"}
+        muvera = {"repetitions": 5}
+
+        self.assertIsNone(pool.encodersettings(None, "lemur"))
+        self.assertIsNone(pool.encodersettings(False, "lemur"))
+        self.assertEqual(pool.encodersettings("artifact", "lemur"), {"path": "artifact"})
+        self.assertIs(pool.encodersettings(lemur, "lemur"), lemur)
+
+        self.assertIsNone(pool.encodersettings(None, "muvera"))
+        self.assertIsNone(pool.encodersettings(False, "muvera"))
+        self.assertEqual(pool.encodersettings(True, "muvera"), {})
+        self.assertIs(pool.encodersettings(muvera, "muvera"), muvera)
+
+        for value in (True, 1):
+            with self.subTest(lemur=value):
+                with self.assertRaisesRegex(ValueError, "^lemur expects a path string or a dict of settings$"):
+                    pool.encodersettings(value, "lemur")
+
+        for value in ("settings", 1):
+            with self.subTest(muvera=value):
+                with self.assertRaisesRegex(ValueError, "^muvera expects a boolean or a dict of settings$"):
+                    pool.encodersettings(value, "muvera")
 
     def testLateSettings(self):
         """

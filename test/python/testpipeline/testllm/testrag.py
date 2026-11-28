@@ -91,19 +91,6 @@ class TestRAG(unittest.TestCase):
         answers = self.rag([(question, question, question, False)], self.data)
         self.assertIsNone(answers[0][1])
 
-    @unittest.skipIf(platform.system() == "Darwin", "Quantized models not supported on macOS")
-    def testQuantize(self):
-        """
-        Test qa extraction backed by a quantized model
-        """
-
-        rag = RAG(self.embeddings, "distilbert-base-cased-distilled-squad", True)
-
-        question = "How many home runs?"
-
-        answers = rag([(question, question, question, True)], self.data)
-        self.assertIsNotNone(answers[0][1])
-
     def testOutputs(self):
         """
         Test output formatting rules
@@ -163,6 +150,19 @@ class TestRAG(unittest.TestCase):
 
         prompts = rag.prompts(["How many HRs?"], [self.data])[0]
         self.assertEqual([x["role"] for x in prompts], ["system", "user"])
+
+    @unittest.skipIf(platform.system() == "Darwin", "Quantized models not supported on macOS")
+    def testQuantize(self):
+        """
+        Test qa extraction backed by a quantized model
+        """
+
+        rag = RAG(self.embeddings, "distilbert-base-cased-distilled-squad", True)
+
+        question = "How many home runs?"
+
+        answers = rag([(question, question, question, True)], self.data)
+        self.assertIsNotNone(answers[0][1])
 
     def testQueryTokens(self):
         """

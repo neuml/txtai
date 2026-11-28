@@ -34,6 +34,7 @@ class Transform:
         self.delete = embeddings.delete
         self.model = embeddings.model
         self.database = embeddings.database
+        self.multivector = embeddings.multivector
         self.graph = embeddings.graph
         self.indexes = embeddings.indexes
         self.scoring = embeddings.scoring if embeddings.issparse() else None
@@ -203,6 +204,10 @@ class Transform:
         # Load batch into graph
         if self.graph:
             self.graph.insert(batch, self.offset)
+
+        # Load batch into stored multi-vectors
+        if self.multivector:
+            self.multivector.insert(batch, self.offset)
 
         # Increment offset
         self.offset += offset

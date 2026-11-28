@@ -6,7 +6,9 @@ import os
 import unittest
 import types
 
-from unittest.mock import patch
+from concurrent.futures import ThreadPoolExecutor
+from threading import Event
+from unittest.mock import MagicMock, patch
 
 from txtai.app import Application
 from txtai.embeddings import Documents, Embeddings
@@ -68,6 +70,41 @@ class TestApp(unittest.TestCase):
                 finally:
                     embeddings.close()
 
+    def testConcurrentFlush(self):
+        """
+        A caller waiting for the lock can find its document queue already flushed.
+        """
+
+        for operation in ("index", "upsert"):
+            with self.subTest(operation=operation):
+                self.checkConcurrentFlush(operation)
+
+    def checkConcurrentFlush(self, operation):
+        """Check two callers flushing the same queue."""
+
+        app = Application({"writable": True, "embeddings": {"keyword": True, "content": True}})
+        app.add([{"id": "doc", "text": "apple"}])
+        waiting = Event()
+        lock = app.lock
+
+        def acquire():
+            waiting.set()
+            return lock.acquire()
+
+        # Hold the real lock until the second caller is ready to flush.
+        with ThreadPoolExecutor(max_workers=1) as pool, patch.object(app, "lock", MagicMock()) as gate:
+            gate.__enter__.side_effect = acquire
+            gate.__exit__.side_effect = lambda *_: lock.release()
+            with lock:
+                flush = getattr(app, operation)
+                future = pool.submit(flush)
+                self.assertTrue(waiting.wait(5))
+                flush()
+            future.result(timeout=5)
+
+        self.assertEqual(app.search("apple")[0]["id"], "doc")
+        app.embeddings.close()
+
     def testConfig(self):
         """
         Test a file not found config exception
@@ -90,6 +127,28 @@ class TestApp(unittest.TestCase):
 
         # Check that application instance is not None
         self.assertIsNotNone(app.pipelines["testapp.TestPipeline"].application)
+
+    def testReindexAutoId(self):
+        """
+        Rebuilding a content index must not reuse a surviving document's ID.
+        """
+
+        for explicit in (False, True):
+            with self.subTest(explicit=explicit):
+                app = Application({"writable": True, "reindex": True, "embeddings": {"keyword": True, "content": True}})
+                with app.embeddings:
+                    texts = ["alpha", "beta", "gamma"]
+                    app.add([{"id": i, "text": text} for i, text in enumerate(texts)] if explicit else texts)
+                    app.index()
+                    app.delete(["1"])
+                    if explicit:
+                        self.assertNotIn("autoid", app.embeddings.config)
+                    app.reindex({"keyword": True})
+                    app.add(["delta"])
+                    app.upsert()
+
+                    rows = app.search("select id, text from txtai order by id")
+                    self.assertEqual([(row["id"], row["text"]) for row in rows], [("0", "alpha"), ("2", "gamma"), ("3", "delta")])
 
     def testStream(self):
         """

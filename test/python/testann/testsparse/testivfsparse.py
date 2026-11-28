@@ -80,6 +80,31 @@ class TestIVFSparse(SparseTest):
         self.assertLessEqual(len(ann.blocks), 15)
         ann.close()
 
+    def testIVFSparseAppendMaxima(self):
+        """
+        Test appended rows update block maxima before query probing
+        """
+
+        # Build two distinct blocks and preserve their initial summaries
+        ann = SparseANNFactory.create({"backend": "ivfsparse", "ivfsparse": {"nlist": 2, "nprobe": 1}})
+        ann.index(csr_matrix([[1, 0, 0]] * 40 + [[0, 1, 0]] * 40, dtype=np.float64))
+        before = ann.centroids.copy()
+
+        # Append a row whose maximum differs from the full block maximum
+        ann.append(csr_matrix([[0.5, 0, 2]], dtype=np.float64))
+        self.assertEqual(ann.search(csr_matrix([[0, 0.1, 1]], dtype=np.float64), 1)[0], [(80, 2.0)])
+        cluster = next(key for key, ids in ann.ids.items() if 80 in ids)
+        np.testing.assert_array_equal(ann.centroids[cluster].toarray(), [[1, 0, 2]])
+        np.testing.assert_array_equal(ann.centroids[1 - cluster].toarray(), before[1 - cluster].toarray())
+
+        # Touch the other block while retaining the previous maximum
+        ann.append(csr_matrix([[0, 2, 0]], dtype=np.float64))
+        for key, block in ann.blocks.items():
+            np.testing.assert_array_equal(ann.centroids[key].toarray(), block.max(axis=0).toarray())
+        self.assertEqual(ann.centroids.format, "csr")
+        self.assertEqual(ann.centroids.shape, (2, 3))
+        ann.close()
+
     def testIVFSparseDeleteArray(self):
         """
         Test IVFSparse with ids deleted using a NumPy array
@@ -104,6 +129,117 @@ class TestIVFSparse(SparseTest):
 
         # Close ANN
         ann.close()
+
+    def testIVFSparseDeletedResults(self):
+        """Search only returns live IDs, even for zero or negative matches."""
+        data = csr_matrix([[1, 0], [0, 1], [-1, 0]], dtype=np.float32)
+        ann = SparseANNFactory.create({"backend": "ivfsparse"})
+        ann.index(data)
+        ann.delete([0])
+
+        self.assertEqual(ann.search(data[:1], 3), [[(1, 0.0), (2, -1.0)]])
+        ann.delete([1, 2])
+        self.assertEqual(ann.search(data[:1], 3), [[]])
+        ann.close()
+
+    def testIVFSparseMixedDtypes(self):
+        """
+        Test float32 and float64 queries after appending float64 rows
+        """
+
+        # Index float32 rows and append a float64 row
+        ann = SparseANNFactory.create({"backend": "ivfsparse"})
+        ann.index(csr_matrix([[1, 0], [0, 1]], dtype=np.float32))
+        ann.append(csr_matrix([[0.5, 0.5]], dtype=np.float64))
+
+        # Validate scores for both query types without losing the existing rows
+        for dtype in [np.float32, np.float64]:
+            results = ann.search(csr_matrix([[1, 0]], dtype=dtype), 3)[0]
+            self.assertEqual(results, [(0, 1.0), (2, 0.5), (1, 0.0)])
+
+        ann.close()
+
+    def testIVFSparseMultiWorker(self):
+        """
+        Check that pooled batch searches preserve single-worker scores and query order.
+        """
+
+        ann = SparseANNFactory.create({"backend": "ivfsparse"})
+        ann.index(csr_matrix([[1, 0], [0, 1]], dtype=np.float32))
+        queries = csr_matrix([[1, 0], [0, 1]] * 32, dtype=np.float32)
+
+        with patch("os.cpu_count", return_value=1), patch("txtai.ann.sparse.ivfsparse.ThreadPool", side_effect=AssertionError("unexpected pool")):
+            expected = ann.search(queries, 1)
+
+        with patch("os.cpu_count", return_value=2):
+            self.assertEqual(ann.search(queries, 1), expected)
+
+        self.assertEqual(expected, [[(0, 1.0)], [(1, 1.0)]] * 32)
+        ann.close()
+
+    def testIVFSparseNFeatures(self):
+        """
+        Test IVFSparse nfeatures setting limits model training to the top n features
+        """
+
+        # Generate test data
+        data = self.generate(500, 100)
+
+        # Capture the feature count passed to model training
+        features = []
+        fit = MiniBatchKMeans.fit
+
+        def logfit(self, x, *args, **kwargs):
+            features.append(x.shape[1])
+            return fit(self, x, *args, **kwargs)
+
+        # nfeatures unset trains on the full feature space
+        ann = SparseANNFactory.create({"backend": "ivfsparse", "ivfsparse": {"nlist": 2}})
+        with patch("txtai.ann.sparse.ivfsparse.MiniBatchKMeans.fit", logfit):
+            ann.index(data)
+        ann.close()
+
+        # nfeatures limits training to the top n features
+        ann = SparseANNFactory.create({"backend": "ivfsparse", "ivfsparse": {"nlist": 2, "nfeatures": 10}})
+        with patch("txtai.ann.sparse.ivfsparse.MiniBatchKMeans.fit", logfit):
+            ann.index(data)
+        ann.close()
+
+        self.assertEqual(features, [100, 10])
+
+    def testIVFSparseNlistOverCount(self):
+        """
+        Test IVFSparse caps the cluster count at the number of training rows
+        """
+
+        # Fewer training rows than the requested cluster count
+        data = csr_matrix(np.eye(5, 20, dtype=np.float32))
+
+        ann = SparseANNFactory.create({"backend": "ivfsparse", "ivfsparse": {"nlist": 10, "nprobe": 10}})
+        ann.index(data)
+
+        # The index builds with at most one cluster per training row
+        self.assertLessEqual(len(ann.blocks), data.shape[0])
+        self.assertLessEqual(ann.centroids.shape[0], data.shape[0])
+
+        # Search still returns the exact match
+        matches = ann.search(data[0], 3)[0]
+        self.assertEqual(matches[0][0], 0)
+        self.assertAlmostEqual(matches[0][1], 1.0, places=5)
+
+        ann.close()
+
+    def testIVFSparseProbeCount(self):
+        """The default probe count must still search a block above the exact-search threshold."""
+        data = csr_matrix(np.eye(2, dtype=np.float32)[np.arange(5001) % 2])
+        ann = SparseANNFactory.create({"backend": "ivfsparse", "ivfsparse": {"nlist": 2, "minpoints": 512}})
+        ann.index(data)
+
+        matches = ann.search(data[:1], 1)[0]
+        self.assertEqual(len(matches), 1)
+        uid, score = matches[0]
+        self.assertEqual(uid % 2, 0)
+        self.assertEqual(score, 1.0)
 
     def testIVFSparseSortOrder(self):
         """
@@ -146,74 +282,20 @@ class TestIVFSparse(SparseTest):
 
         ann.close()
 
-    def testIVFSparseNFeatures(self):
+    def testIVFSparseZeroProbeCount(self):
         """
-        Test IVFSparse nfeatures setting limits model training to the top n features
-        """
-
-        # Generate test data
-        data = self.generate(500, 100)
-
-        # Capture the feature count passed to model training
-        features = []
-        fit = MiniBatchKMeans.fit
-
-        def logfit(self, x, *args, **kwargs):
-            features.append(x.shape[1])
-            return fit(self, x, *args, **kwargs)
-
-        # nfeatures unset trains on the full feature space
-        ann = SparseANNFactory.create({"backend": "ivfsparse", "ivfsparse": {"nlist": 2}})
-        with patch("txtai.ann.sparse.ivfsparse.MiniBatchKMeans.fit", logfit):
-            ann.index(data)
-        ann.close()
-
-        # nfeatures limits training to the top n features
-        ann = SparseANNFactory.create({"backend": "ivfsparse", "ivfsparse": {"nlist": 2, "nfeatures": 10}})
-        with patch("txtai.ann.sparse.ivfsparse.MiniBatchKMeans.fit", logfit):
-            ann.index(data)
-        ann.close()
-
-        self.assertEqual(features, [100, 10])
-
-    def testIVFSparseMixedDtypes(self):
-        """
-        Test float32 and float64 queries after appending float64 rows
+        Test IVFSparse with an explicit nprobe setting of zero
         """
 
-        # Index float32 rows and append a float64 row
-        ann = SparseANNFactory.create({"backend": "ivfsparse"})
-        ann.index(csr_matrix([[1, 0], [0, 1]], dtype=np.float32))
-        ann.append(csr_matrix([[0.5, 0.5]], dtype=np.float64))
+        # Two populated clusters with orthogonal rows
+        data = csr_matrix(np.eye(4, 8, dtype=np.float32))
 
-        # Validate scores for both query types without losing the existing rows
-        for dtype in [np.float32, np.float64]:
-            results = ann.search(csr_matrix([[1, 0]], dtype=dtype), 3)[0]
-            self.assertEqual(results, [(0, 1.0), (2, 0.5), (1, 0.0)])
+        ann = SparseANNFactory.create({"backend": "ivfsparse", "ivfsparse": {"nlist": 2, "nprobe": 0}})
+        ann.index(data)
 
-        ann.close()
+        # A zero probe count scans no blocks, force at least one block to be searched
+        self.assertEqual(ann.nprobe(), 1)
+        matches = ann.search(data[:1], 1)[0]
+        self.assertEqual(matches, [(0, 1.0)])
 
-    def testIVFSparseAppendMaxima(self):
-        """
-        Test appended rows update block maxima before query probing
-        """
-
-        # Build two distinct blocks and preserve their initial summaries
-        ann = SparseANNFactory.create({"backend": "ivfsparse", "ivfsparse": {"nlist": 2, "nprobe": 1}})
-        ann.index(csr_matrix([[1, 0, 0]] * 40 + [[0, 1, 0]] * 40, dtype=np.float64))
-        before = ann.centroids.copy()
-
-        # Append a row whose maximum differs from the full block maximum
-        ann.append(csr_matrix([[0.5, 0, 2]], dtype=np.float64))
-        self.assertEqual(ann.search(csr_matrix([[0, 0.1, 1]], dtype=np.float64), 1)[0], [(80, 2.0)])
-        cluster = next(key for key, ids in ann.ids.items() if 80 in ids)
-        np.testing.assert_array_equal(ann.centroids[cluster].toarray(), [[1, 0, 2]])
-        np.testing.assert_array_equal(ann.centroids[1 - cluster].toarray(), before[1 - cluster].toarray())
-
-        # Touch the other block while retaining the previous maximum
-        ann.append(csr_matrix([[0, 2, 0]], dtype=np.float64))
-        for key, block in ann.blocks.items():
-            np.testing.assert_array_equal(ann.centroids[key].toarray(), block.max(axis=0).toarray())
-        self.assertEqual(ann.centroids.format, "csr")
-        self.assertEqual(ann.centroids.shape, (2, 3))
         ann.close()

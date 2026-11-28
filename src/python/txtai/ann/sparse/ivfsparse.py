@@ -146,8 +146,6 @@ class IVFSparse(ANN):
         # Search with float32 queries
         queries = queries.astype(np.float32, copy=False)
 
-        results = []
-
         # Calculate number of threads using a thread batch size of 32
         threads = queries.shape[0] // 32
         threads = min(max(threads, 1), os.cpu_count())
@@ -155,13 +153,12 @@ class IVFSparse(ANN):
         # Approximate search
         blockids = self.topn(queries, self.centroids, self.nprobe())[0] if self.centroids is not None else None
 
-        # This method is able to run as multiple threads due to a number of numpy/scipy method calls that drop the GIL.
-        results = []
-        with ThreadPool(threads) as pool:
-            for result in pool.starmap(self.scan, [(x, limit, blockids[i] if blockids is not None else None) for i, x in enumerate(queries)]):
-                results.append(result)
+        scans = [(query, limit, blockids[i] if blockids is not None else None) for i, query in enumerate(queries)]
+        if threads == 1:
+            return [self.scan(*args) for args in scans]
 
-        return results
+        with ThreadPool(threads) as pool:
+            return pool.starmap(self.scan, scans)
 
     def count(self):
         return self.size() - len(self.deletes)
@@ -292,9 +289,10 @@ class IVFSparse(ANN):
         # Dot product similarity
         scores = safe_sparse_dot(queries, data.T, dense_output=True)
 
-        # Clear deletes
-        if deletes is not None:
-            scores[:, deletes] = 0
+        # Exclude deleted rows from both ranking and the result limit
+        if deletes is not None and len(deletes):
+            scores[:, deletes] = -np.inf
+            limit = min(limit, scores.shape[1] - len(deletes))
 
         # Get top n matching indices and scores
         indices = np.argpartition(-scores, limit if limit < scores.shape[1] else scores.shape[1] - 1)[:, :limit]
@@ -342,7 +340,8 @@ class IVFSparse(ANN):
     def nlist(self, count, train):
         """
         Calculates the number of clusters for this IVFSparse index. Note that the final number of clusters
-        could be lower as duplicate cluster centroids are filtered out.
+        could be lower as duplicate cluster centroids are filtered out and the count is capped at the
+        number of training rows.
 
         Args:
             count: initial dataset size
@@ -355,8 +354,8 @@ class IVFSparse(ANN):
         # Get data size
         default = 1 if count <= 5000 else self.cells(train)
 
-        # Number of clusters to create
-        return self.setting("nlist", default)
+        # Number of clusters to create, capped at the number of training rows
+        return min(self.setting("nlist", default), max(train, 1))
 
     def nprobe(self):
         """
@@ -369,8 +368,9 @@ class IVFSparse(ANN):
         # Get size of embeddings index
         size = self.size()
 
+        # Require at least one probe, a probe count of zero scans no blocks
         default = 6 if size <= 5000 else self.cells(size) // 16
-        return self.setting("nprobe", default)
+        return max(1, self.setting("nprobe", default))
 
     def cells(self, count):
         """

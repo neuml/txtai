@@ -2,7 +2,7 @@
 Skill imports
 """
 
-from smolagents import Tool
+from .base import Tool
 
 # Core library imports
 from ...util import Library
@@ -31,7 +31,7 @@ class SkillTool(Tool):
         self.name = metadata["name"]
         self.description = metadata["description"]
         self.inputs = {"request": {"type": "string", "description": "The user requested action"}}
-        self.output_type = "any"
+        self.output = "any"
         self.target = content
 
         # Validate parameters and initialize tool

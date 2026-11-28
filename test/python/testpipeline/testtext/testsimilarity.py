@@ -69,24 +69,14 @@ class TestSimilarity(unittest.TestCase):
         uid = similarity(premise, [entailment, contradiction], labels=["1"])[0][0]
         self.assertEqual(uid, 0)
 
-    def testCrossEncoderProbability(self):
+    def testCrossEncoderLabelsInvalid(self):
         """
-        Test cross-encoder labels rank candidates by the requested label's probability, not its raw logit
+        Test cross-encoder raises an error when no requested label matches the model
         """
 
         similarity = Similarity("prajjwal1/bert-medium-mnli", crossencode=True)
-
-        premise = "A dog is running in the park."
-        texts = ["The dog is chasing a ball in the park.", "It is raining.", "Nobody is running."]
-
-        # "Nobody is running." has the highest entailment logit but the lowest entailment probability
-        for multilabel in [True, None, False]:
-            result = similarity(premise, texts, multilabel=multilabel, labels=["1"])
-            self.assertEqual([uid for uid, _ in result], [0, 1, 2])
-
-        # Raw scores are the entailment probabilities
-        result = similarity(premise, texts, multilabel=None, labels=["1"])
-        self.assertAlmostEqual(result[0][1], 0.052, places=3)
+        with self.assertRaises(ValueError):
+            similarity("A dog is running in the park.", ["An animal is outside."], labels=["not-a-real-label"])
 
     def testCrossEncoderLabelsOrder(self):
         """
@@ -111,14 +101,24 @@ class TestSimilarity(unittest.TestCase):
         self.assertEqual(similarity(premise, texts, labels=["LABEL_1"]), expected)
         self.assertEqual(similarity(premise, texts, labels=["1"]), expected)
 
-    def testCrossEncoderLabelsInvalid(self):
+    def testCrossEncoderProbability(self):
         """
-        Test cross-encoder raises an error when no requested label matches the model
+        Test cross-encoder labels rank candidates by the requested label's probability, not its raw logit
         """
 
         similarity = Similarity("prajjwal1/bert-medium-mnli", crossencode=True)
-        with self.assertRaises(ValueError):
-            similarity("A dog is running in the park.", ["An animal is outside."], labels=["not-a-real-label"])
+
+        premise = "A dog is running in the park."
+        texts = ["The dog is chasing a ball in the park.", "It is raining.", "Nobody is running."]
+
+        # "Nobody is running." has the highest entailment logit but the lowest entailment probability
+        for multilabel in [True, None, False]:
+            result = similarity(premise, texts, multilabel=multilabel, labels=["1"])
+            self.assertEqual([uid for uid, _ in result], [0, 1, 2])
+
+        # Raw scores are the entailment probabilities
+        result = similarity(premise, texts, multilabel=None, labels=["1"])
+        self.assertAlmostEqual(result[0][1], 0.052, places=3)
 
     def testLateEncoder(self):
         """

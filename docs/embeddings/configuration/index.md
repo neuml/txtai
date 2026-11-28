@@ -42,6 +42,10 @@ General configuration that doesn't fit elsewhere.
 
 An accomplying graph index can be created with an embeddings database. This enables topic modeling, path traversal and more. [NetworkX](https://github.com/networkx/networkx) is the default graph index.
 
+## [Multi-vector](./multivector)
+
+Optionally persist token rows, score supplied candidate ids or search all stored documents with a late interaction model.
+
 ## [Scoring](./scoring)
 
 Sparse keyword indexing and word vectors term weighting.

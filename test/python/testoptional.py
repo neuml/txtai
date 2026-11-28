@@ -111,9 +111,13 @@ class TestOptional(unittest.TestCase):
         """
 
         from txtai.agent import Agent
+        from txtai.agent.tool import WebSearchTool
 
         with self.assertRaises(ImportError):
             Agent(llm="hf-internal-testing/tiny-random-LlamaForCausalLM", max_steps=1)
+
+        with self.assertRaises(ImportError):
+            WebSearchTool()
 
     def testANN(self):
         """
@@ -177,16 +181,6 @@ class TestOptional(unittest.TestCase):
         with self.assertRaises(ImportError):
             import txtai.api
 
-    def testConsole(self):
-        """
-        Test missing console dependencies
-        """
-
-        from txtai.console import Console
-
-        with self.assertRaises(ImportError):
-            Console()
-
     def testCloud(self):
         """
         Test missing cloud dependencies
@@ -196,6 +190,16 @@ class TestOptional(unittest.TestCase):
 
         with self.assertRaises(ImportError):
             ObjectStorage(None)
+
+    def testConsole(self):
+        """
+        Test missing console dependencies
+        """
+
+        from txtai.console import Console
+
+        with self.assertRaises(ImportError):
+            Console()
 
     def testDatabase(self):
         """
@@ -353,16 +357,6 @@ class TestOptional(unittest.TestCase):
         with self.assertRaises(ImportError):
             Translation().detect(["test"])
 
-    def testSerialize(self):
-        """
-        Test missing msgpack dependency
-        """
-
-        from txtai.serialize import MessagePack
-
-        with self.assertRaises(ImportError):
-            MessagePack()
-
     def testScoring(self):
         """
         Test missing scoring dependencies
@@ -372,6 +366,16 @@ class TestOptional(unittest.TestCase):
 
         with self.assertRaises(ImportError):
             ScoringFactory.create({"method": "pgtext"})
+
+    def testSerialize(self):
+        """
+        Test missing msgpack dependency
+        """
+
+        from txtai.serialize import MessagePack
+
+        with self.assertRaises(ImportError):
+            MessagePack()
 
     def testVectors(self):
         """

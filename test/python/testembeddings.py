@@ -243,6 +243,20 @@ class TestEmbeddings(unittest.TestCase):
         self.embeddings.index([(0, {"text": ""}, None)])
         self.assertTrue(self.embeddings.search("test"))
 
+    @patch("txtai.embeddings.index.indexes.Documents", wraps=Documents)
+    def testEmptySubindexBatch(self, documents):
+        """
+        Test a first batch with no subindex documents followed by a batch with data
+        """
+
+        with Embeddings({"keyword": True, "content": True, "batch": 1, "indexes": {"terms": {"keyword": True}}}) as embeddings:
+            # First batch has no text, so nothing is queued for the subindexes
+            embeddings.index([{"id": 0, "title": "no text"}, {"id": 1, "text": "apple"}])
+
+            # Both batches share one documents queue, no temporary file is left behind
+            self.assertEqual(documents.call_count, 1)
+            self.assertEqual(embeddings.search("select id from txtai where similar('apple', 'terms')")[0]["id"], "1")
+
     def testEmptySubindexes(self):
         """
         Test empty index and upsert with subindexes
@@ -262,20 +276,6 @@ class TestEmbeddings(unittest.TestCase):
             embeddings.index([])
             self.assertEqual(embeddings.indexes.terms.count(), 0)
             self.assertEqual(embeddings.search("apple", index="terms"), [])
-
-    @patch("txtai.embeddings.index.indexes.Documents", wraps=Documents)
-    def testEmptySubindexBatch(self, documents):
-        """
-        Test a first batch with no subindex documents followed by a batch with data
-        """
-
-        with Embeddings({"keyword": True, "content": True, "batch": 1, "indexes": {"terms": {"keyword": True}}}) as embeddings:
-            # First batch has no text, so nothing is queued for the subindexes
-            embeddings.index([{"id": 0, "title": "no text"}, {"id": 1, "text": "apple"}])
-
-            # Both batches share one documents queue, no temporary file is left behind
-            self.assertEqual(documents.call_count, 1)
-            self.assertEqual(embeddings.search("select id from txtai where similar('apple', 'terms')")[0]["id"], "1")
 
     def testExternal(self):
         """
@@ -313,6 +313,26 @@ class TestEmbeddings(unittest.TestCase):
         # Run search
         uid = embeddings.search(data[4], 1)[0][0]
         self.assertEqual(uid, 4)
+
+        # Precomputed query scores are cosine similarities
+        score = embeddings.search(data[4] * 10, 1)[0][1]
+        self.assertAlmostEqual(score, 1.0, places=5)
+
+    def testExternalPrecomputedScore(self):
+        """
+        Test similarity with external pre-computed vectors is unchanged by positive scaling
+        """
+
+        embeddings = Embeddings({"method": "external"})
+
+        query = np.array([1.0, 1.0], dtype=np.float32)
+        data = np.array([[3.0, 4.0], [2.0, 1.0], [1.0, 0.0]], dtype=np.float32)
+
+        # Scaling a candidate vector doesn't change its direction, so the ranking must not change
+        for rows in [data, data * np.array([[1.0], [10.0], [1.0]], dtype=np.float32)]:
+            results = embeddings.similarity(query, list(rows))
+            self.assertEqual([uid for uid, _ in results], [0, 1, 2])
+            self.assertTrue(np.allclose([score for _, score in results], [0.989949, 0.948683, 0.707107]))
 
     def testHybrid(self):
         """
@@ -489,6 +509,16 @@ class TestEmbeddings(unittest.TestCase):
         # A plain integer limit still works
         self.assertEqual(len(embeddings.search("select id from txtai order by id limit 3")), 3)
 
+        # A bound limit sets the number of similar() candidates, the same as a literal limit
+        embeddings.index([(uid, "apple " + "pie " * uid, None) for uid in range(10)])
+        query = "select id from txtai where similar('apple') limit :n"
+        self.assertEqual(len(embeddings.search(query, parameters={"n": 5})), 5)
+        self.assertEqual(len(embeddings.search(query, parameters={"n": "5"})), 5)
+
+        # Each query in a batch resolves its own bound limit
+        results = embeddings.batchsearch([query, query], parameters=[{"n": 2}, {"n": 5}])
+        self.assertEqual([len(result) for result in results], [2, 5])
+
     def testLimitZero(self):
         """
         Test that a computed limit of 0 (e.g. remaining page slots or a quota) returns no results instead of
@@ -604,9 +634,15 @@ class TestEmbeddings(unittest.TestCase):
         results = embeddings.search("select id from txtai where similar('apple') order by score desc, id limit 3 offset 3")
         self.assertEqual([x["id"] for x in results], ["3", "4", "5"])
 
-        # A bind parameter offset is not a number, so it does not add candidates
+        # Bind parameter offsets add their bound value to the number of candidates
         results = embeddings.search("select id from txtai where similar('apple') limit 3 offset :n", parameters={"n": 0})
         self.assertEqual([x["id"] for x in results], ["0", "1", "2"])
+
+        results = embeddings.search("select id from txtai where similar('apple') limit 3 offset :n", parameters={"n": 3})
+        self.assertEqual([x["id"] for x in results], ["3", "4", "5"])
+
+        results = embeddings.search("select id from txtai where similar('apple') limit :l offset :o", parameters={"l": 3, "o": 6})
+        self.assertEqual([x["id"] for x in results], ["6", "7", "8"])
 
         # Each query in a batch gets its own page
         queries = [f"select id from txtai where similar('apple') limit 3{offset}" for offset in [" offset 3", " offset 6", ""]]
@@ -664,6 +700,9 @@ class TestEmbeddings(unittest.TestCase):
         reducer(query)
         self.assertFalse(np.array_equal(query, original))
 
+        # Test that reduced vectors are normalized
+        self.assertTrue(np.allclose(np.linalg.norm(query, axis=1), 1.0))
+
         # Test model with multiple PCA components
         reducer = Reducer(data, 3)
 
@@ -674,6 +713,24 @@ class TestEmbeddings(unittest.TestCase):
         # Run test
         reducer(query)
         self.assertFalse(np.array_equal(query, original))
+        self.assertAlmostEqual(np.linalg.norm(query), 1.0, places=5)
+
+        # Test that a batch of reduced vectors is normalized
+        batch = np.random.rand(3, 5).astype(np.float32)
+        reducer(batch)
+        self.assertTrue(np.allclose(np.linalg.norm(batch, axis=1), 1.0))
+
+        # Test that a zero vector stays a zero vector
+        query = np.zeros(5, dtype=np.float32)
+        reducer(query)
+        self.assertTrue(np.array_equal(query, np.zeros(5, dtype=np.float32)))
+
+        # Test that vectors fully removed by the model stay zero vectors
+        reducer = Reducer(np.array([[1, 0], [1, 0], [1, 0]], dtype=np.float32), 1)
+
+        batch = np.array([[1, 0], [0, 1], [0, 0]], dtype=np.float32)
+        reducer(batch)
+        self.assertTrue(np.array_equal(batch, np.array([[0, 0], [0, 1], [0, 0]], dtype=np.float32)))
 
     @patch.dict(os.environ, {"ALLOW_PICKLE": "True"})
     def testReducerLegacy(self):
@@ -701,6 +758,22 @@ class TestEmbeddings(unittest.TestCase):
         # Run test
         reducer(query)
         self.assertFalse(np.array_equal(query, original))
+
+    def testReducerSearch(self):
+        """
+        Test that search scores are cosine similarities when principal components are removed
+        """
+
+        embeddings = Embeddings({"path": "sentence-transformers/nli-mpnet-base-v2", "pca": 1, "backend": "numpy"})
+        embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        # Stored vectors are normalized
+        self.assertTrue(np.allclose(np.linalg.norm(embeddings.ann.backend, axis=1), 1.0))
+
+        # Search score for a document is equal to the cosine similarity of the query and document vectors
+        uid, score = embeddings.search("feel good story", 1)[0]
+        query, document = embeddings.transform("feel good story"), embeddings.transform(self.data[uid])
+        self.assertAlmostEqual(score, float(query.dot(document) / (np.linalg.norm(query) * np.linalg.norm(document))), places=5)
 
     def testSave(self):
         """

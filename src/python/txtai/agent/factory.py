@@ -2,9 +2,10 @@
 Factory module
 """
 
-from smolagents import CodeAgent, ToolCallingAgent
+from ..util import Resolver
 
-from .model import PipelineModel
+from .pydanticai import PydanticProcess
+from .smolagents import SmolagentsProcess
 from .tool import ToolFactory
 
 
@@ -26,14 +27,42 @@ class ProcessFactory:
             agent process runner
         """
 
-        constructor = ToolCallingAgent
-        method = config.pop("method", None)
-        if method == "code":
-            constructor = CodeAgent
+        # Get agent backend
+        backend = config.pop("backend", "smolagents")
 
-        # Create model backed by LLM pipeline
+        # smolagents converts tools to its own format
+        if backend == "smolagents":
+            return SmolagentsProcess.create(config)
+
+        # LLM model path, configuration or instance
         model = config.pop("model", config.pop("llm", None))
-        model = PipelineModel(**model) if isinstance(model, dict) else PipelineModel(model)
 
-        # Create the agent process
-        return constructor(tools=ToolFactory.create(config), model=model, **config)
+        # txtai tools
+        tools = ToolFactory.create(config)
+
+        # Pydantic AI
+        if backend == "pydantic":
+            return PydanticProcess(model, tools, **config)
+
+        # Resolve custom backend
+        return ProcessFactory.resolve(backend, model, tools, config)
+
+    @staticmethod
+    def resolve(backend, model, tools, config):
+        """
+        Attempt to resolve a custom backend.
+
+        Args:
+            backend: backend class
+            model: LLM model path, configuration or instance
+            tools: list of txtai tools
+            config: agent configuration
+
+        Returns:
+            agent process runner
+        """
+
+        try:
+            return Resolver()(backend)(model, tools, **config)
+        except Exception as e:
+            raise ImportError(f"Unable to resolve agent backend: '{backend}'") from e

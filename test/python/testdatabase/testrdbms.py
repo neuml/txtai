@@ -131,19 +131,6 @@ class Common:
             result = self.embeddings.search("feel good story", 1)[0]
             self.assertEqual(result["text"], self.data[4])
 
-        def testColumns(self):
-            """
-            Test custom text/object columns
-            """
-
-            embeddings = Embeddings({"keyword": True, "content": self.backend, "columns": {"text": "value"}})
-            data = [{"value": x} for x in self.data]
-            embeddings.index([(uid, text, None) for uid, text in enumerate(data)])
-
-            # Run search
-            result = embeddings.search("lottery", 1)[0]
-            self.assertEqual(result["text"], self.data[4])
-
         def testClose(self):
             """
             Test embeddings close
@@ -170,6 +157,19 @@ class Common:
             # Test embeddings is empty
             self.assertIsNone(embeddings.ann)
             self.assertIsNone(embeddings.database)
+
+        def testColumns(self):
+            """
+            Test custom text/object columns
+            """
+
+            embeddings = Embeddings({"keyword": True, "content": self.backend, "columns": {"text": "value"}})
+            data = [{"value": x} for x in self.data]
+            embeddings.index([(uid, text, None) for uid, text in enumerate(data)])
+
+            # Run search
+            result = embeddings.search("lottery", 1)[0]
+            self.assertEqual(result["text"], self.data[4])
 
         def testData(self):
             """
@@ -255,6 +255,13 @@ class Common:
             self.assertEqual(result["text"], self.data[4])
             self.assertEqual(len(result.get("tokens")), 8)
 
+        def testExplainEmpty(self):
+            """
+            Test query explain with no filtering criteria
+            """
+
+            self.assertEqual(self.embeddings.explain("select * from txtai limit 1")[0]["id"], "0")
+
         def testExplainSimilarArgs(self):
             """
             Test query explain ignores extra similar clause arguments
@@ -269,13 +276,6 @@ class Common:
                 result = self.embeddings.explain(f"select id, text, score from txtai where {query}", limit=1)[0]
                 self.assertEqual(result["text"], self.data[4])
                 self.assertEqual(result["tokens"], expected["tokens"])
-
-        def testExplainEmpty(self):
-            """
-            Test query explain with no filtering criteria
-            """
-
-            self.assertEqual(self.embeddings.explain("select * from txtai limit 1")[0]["id"], "0")
 
         def testExpressions(self):
             """
@@ -693,6 +693,31 @@ class Common:
             result = embeddings.search("lottery ticket", 1)[0]
             self.assertEqual(result["text"], self.data[4])
 
+        def testReindexSave(self):
+            """
+            Test save to the same path after a reindex
+            """
+
+            # Generate temp file path
+            index = os.path.join(tempfile.gettempdir(), f"embeddings.{self.category()}.reindex")
+
+            # Create and save a keyword index
+            embeddings = Embeddings({"keyword": True, "content": self.backend})
+            embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+            embeddings.save(index)
+
+            # Saving over the previous terms database requires it to be closed
+            embeddings.reindex({"keyword": True})
+            embeddings.save(index)
+            embeddings.close()
+
+            # Search for best match
+            embeddings = Embeddings()
+            embeddings.load(index)
+            result = embeddings.search("lottery ticket", 1)[0]
+            self.assertEqual(result["text"], self.data[4])
+            embeddings.close()
+
         def testReindexStore(self):
             """
             Test reindex when the JSON data doesn't store the text column
@@ -791,6 +816,44 @@ class Common:
             # Filtering on the field still drops those rows
             self.assertEqual([x["id"] for x in embeddings.search("select id from txtai where length is not null")], ["1"])
 
+        def testSparse(self):
+            """
+            Test sparse vector search
+            """
+
+            # Build data array
+            data = [(uid, text, None) for uid, text in enumerate(self.data)]
+
+            # Index data with sparse vectors
+            embeddings = Embeddings({"sparse": "sparse-encoder-testing/splade-bert-tiny-nq", "content": self.backend})
+            embeddings.index(data)
+
+            # Run search
+            result = embeddings.search("lottery ticket", 1)[0]
+            self.assertEqual(result["text"], data[4][1])
+
+            # Test count method
+            self.assertEqual(embeddings.count(), len(data))
+
+            # Generate temp file path
+            index = os.path.join(tempfile.gettempdir(), f"embeddings.{self.category()}.sparse")
+
+            # Test load/save
+            embeddings.save(index)
+            embeddings.load(index)
+
+            # Run search
+            result = embeddings.search("lottery ticket", 1)[0]
+            self.assertEqual(result["text"], data[4][1])
+
+            # Update data
+            data[0] = (0, "Feel good story: baby panda born", None)
+            embeddings.upsert([data[0]])
+
+            # Search for best match
+            result = embeddings.search("feel good story", 1)[0]
+            self.assertEqual(result["text"], data[0][1])
+
         def testSQL(self):
             """
             Test running a SQL query
@@ -887,44 +950,6 @@ class Common:
             self.assertEqual(sorted(int(x["id"]) for x in results), list(range(11)))
 
             embeddings.close()
-
-        def testSparse(self):
-            """
-            Test sparse vector search
-            """
-
-            # Build data array
-            data = [(uid, text, None) for uid, text in enumerate(self.data)]
-
-            # Index data with sparse vectors
-            embeddings = Embeddings({"sparse": "sparse-encoder-testing/splade-bert-tiny-nq", "content": self.backend})
-            embeddings.index(data)
-
-            # Run search
-            result = embeddings.search("lottery ticket", 1)[0]
-            self.assertEqual(result["text"], data[4][1])
-
-            # Test count method
-            self.assertEqual(embeddings.count(), len(data))
-
-            # Generate temp file path
-            index = os.path.join(tempfile.gettempdir(), f"embeddings.{self.category()}.sparse")
-
-            # Test load/save
-            embeddings.save(index)
-            embeddings.load(index)
-
-            # Run search
-            result = embeddings.search("lottery ticket", 1)[0]
-            self.assertEqual(result["text"], data[4][1])
-
-            # Update data
-            data[0] = (0, "Feel good story: baby panda born", None)
-            embeddings.upsert([data[0]])
-
-            # Search for best match
-            result = embeddings.search("feel good story", 1)[0]
-            self.assertEqual(result["text"], data[0][1])
 
         def testSubindex(self):
             """

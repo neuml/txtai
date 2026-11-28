@@ -3,6 +3,7 @@ External module tests
 """
 
 import os
+import tempfile
 import unittest
 
 from unittest.mock import patch
@@ -65,6 +66,56 @@ class TestExternal(unittest.TestCase):
         with open(stream, "rb") as queue:
             self.assertEqual(np.load(queue).shape, (500, 768))
 
+    def testIndexCheckpoint(self):
+        """
+        Test a changed precomputed vector is reindexed when resuming a checkpoint
+        """
+
+        original = np.zeros(1536, dtype=np.float32)
+        original[759] = 1
+        updated = np.zeros_like(original)
+        updated[761] = 1
+
+        with tempfile.TemporaryDirectory() as checkpoint:
+            for vector in (original, updated):
+                embeddings = Embeddings({"method": "external", "backend": "numpy"})
+                embeddings.index([("doc", vector, None)], checkpoint=checkpoint)
+                self.assertEqual(embeddings.search(vector, 1), [("doc", 1.0)])
+
+    def testMethod(self):
+        """
+        Test method is derived when transform function passed
+        """
+
+        model = VectorsFactory.create({"transform": lambda _: [[0.0, 1.0]]}, None)
+        self.assertTrue(isinstance(model, External))
+
+    def testPrecomputed(self):
+        """
+        Test precomputed vectors are normalized the same way as encoded vectors
+        """
+
+        data = [np.array([3.0, 4.0], dtype=np.float32), np.array([20.0, 10.0], dtype=np.float32)]
+
+        # Precomputed arrays skip encoding but must still be normalized
+        embeddings = self.model.batchtransform([(None, x, None) for x in data])
+        self.assertTrue(np.allclose(embeddings, [[0.6, 0.8], [0.894427, 0.447214]]))
+
+        # Same output as the indexing path, which runs vectorize
+        self.assertTrue(np.allclose(embeddings, self.model.vectorize(data, "data")))
+
+    def testPrecomputedOptions(self):
+        """
+        Test precomputed vectors are truncated and quantized the same way as encoded vectors
+        """
+
+        data = [np.array([0.3, -0.4, 0.5, 0.1], dtype=np.float32), np.array([-1.0, 2.0, 0.5, 3.0], dtype=np.float32)]
+
+        for config in [{"dimensionality": 2}, {"quantize": 8}, {"dimensionality": 2, "quantize": 1}]:
+            model = VectorsFactory.create({"method": "external", **config}, None)
+            embeddings = model.batchtransform([(None, x, None) for x in data])
+            self.assertTrue(np.array_equal(embeddings, model.vectorize(data, "data")), config)
+
     def testQuantizeSimilarity(self):
         """
         Test similarity with quantized vectors scores the same as search
@@ -89,11 +140,3 @@ class TestExternal(unittest.TestCase):
 
         transform = VectorsFactory.create({"transform": "testvectors.testdense.testexternal.Transform"}, None)
         self.assertTrue(np.array_equal(transform.encode(["test"]), np.array([[0.0, 1.0]])))
-
-    def testMethod(self):
-        """
-        Test method is derived when transform function passed
-        """
-
-        model = VectorsFactory.create({"transform": lambda _: [[0.0, 1.0]]}, None)
-        self.assertTrue(isinstance(model, External))

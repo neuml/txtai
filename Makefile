@@ -44,6 +44,7 @@ coverage:
 	coverage run -m unittest discover -v -k testgraph -s ${TEST_DIR}
 	coverage run -m unittest discover -v -k testlibrary -s ${TEST_DIR}
 	coverage run -m unittest discover -v -k testmodels -s ${TEST_DIR}
+	coverage run -m unittest discover -v -k testmultivector -s ${TEST_DIR}
 	coverage run -m unittest discover -v -k testoptional -s ${TEST_DIR}
 	coverage run -m unittest discover -v -k testpipeline.testaudio -s ${TEST_DIR}
 	coverage run -m unittest discover -v -k testpipeline.testdata -s ${TEST_DIR}

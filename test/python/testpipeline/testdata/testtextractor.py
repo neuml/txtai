@@ -21,6 +21,19 @@ class TestTextractor(unittest.TestCase):
     Textractor tests.
     """
 
+    def testChonkie(self):
+        """
+        Test a chonkie chunker
+        """
+
+        # Test chonkie chunking
+        textractor = Textractor(chunker="sentence", chunk_size=5, chunk_overlap=0)
+        self.assertEqual(textractor("This is a test. And another test."), ["This is a test.", "And another test."])
+
+        # Test bad chunker throws an exception
+        with self.assertRaises(AttributeError):
+            textractor = Textractor(chunker="badchunker")
+
     def testClean(self):
         """
         Test text cleaning method
@@ -37,65 +50,6 @@ class TestTextractor(unittest.TestCase):
         # Disable text cleaning
         textractor = Textractor(cleantext=False, minlength=10)
         self.assertEqual(textractor(" a  b  c "), " a  b  c ")
-
-    def testChonkie(self):
-        """
-        Test a chonkie chunker
-        """
-
-        # Test chonkie chunking
-        textractor = Textractor(chunker="sentence", chunk_size=5, chunk_overlap=0)
-        self.assertEqual(textractor("This is a test. And another test."), ["This is a test.", "And another test."])
-
-        # Test bad chunker throws an exception
-        with self.assertRaises(AttributeError):
-            textractor = Textractor(chunker="badchunker")
-
-    def testDefault(self):
-        """
-        Test default text extraction
-        """
-
-        # Text input
-        textractor = Textractor(backend=None)
-        text = textractor(Utils.PATH + "/tabular.csv")
-        self.assertEqual(len(text), 125)
-
-        # Markdown input
-        textractor = Textractor(sections=True)
-        sections = textractor("# Heading 1\nText1\n\n# Heading 2\nText2\n")
-
-        # Check number of sections is as expected
-        self.assertEqual(len(sections), 2)
-
-    def testFileURI(self):
-        """
-        Test encoded file URIs and plain paths with literal percent sequences.
-        """
-
-        with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "notes %20 #1.html"
-            path.write_text("<html><body><p>research note</p></body></html>", encoding="utf-8")
-            textractor = Textractor(backend=None)
-
-            self.assertEqual(textractor(str(path)), "research note")
-            self.assertEqual(textractor(path.as_uri()), "research note")
-
-    def testDownloadError(self):
-        """
-        Test failed remote retrieval leaves no temporary file
-        """
-
-        textractor = Textractor()
-        error = URLError("download failed")
-
-        with tempfile.TemporaryDirectory() as directory:
-            with patch("tempfile.tempdir", directory), patch.object(textractor.safeopen, "retrieve", side_effect=error):
-                with self.assertRaises(URLError) as raised:
-                    textractor("https://example.com/missing.pdf")
-
-            self.assertIs(raised.exception, error)
-            self.assertEqual(os.listdir(directory), [])
 
     def testConversionError(self):
         """
@@ -117,6 +71,23 @@ class TestTextractor(unittest.TestCase):
             self.assertIs(raised.exception, error)
             self.assertEqual(os.listdir(directory), [])
 
+    def testDefault(self):
+        """
+        Test default text extraction
+        """
+
+        # Text input
+        textractor = Textractor(backend=None)
+        text = textractor(Utils.PATH + "/tabular.csv")
+        self.assertEqual(len(text), 125)
+
+        # Markdown input
+        textractor = Textractor(sections=True)
+        sections = textractor("# Heading 1\nText1\n\n# Heading 2\nText2\n")
+
+        # Check number of sections is as expected
+        self.assertEqual(len(sections), 2)
+
     def testDocling(self):
         """
         Test docling backend
@@ -128,29 +99,34 @@ class TestTextractor(unittest.TestCase):
         text = textractor(Utils.PATH + "/article.pdf")
         self.assertTrue("## Introducing txtai" in text)
 
-    def testLines(self):
+    def testDownloadError(self):
         """
-        Test extraction to lines
-        """
-
-        textractor = Textractor(lines=True)
-
-        # Extract text as lines
-        lines = textractor(Utils.PATH + "/article.pdf")
-
-        # Check number of lines is as expected
-        self.assertEqual(len(lines), 35)
-
-    def testLiteParse(self):
-        """
-        Test liteparse backend
+        Test failed remote retrieval leaves no temporary file
         """
 
-        textractor = Textractor(backend="liteparse")
+        textractor = Textractor()
+        error = URLError("download failed")
 
-        # Extract text and check for Markdown formatting
-        text = textractor(Utils.PATH + "/article.pdf")
-        self.assertTrue("# Introducing txtai" in text)
+        with tempfile.TemporaryDirectory() as directory:
+            with patch("tempfile.tempdir", directory), patch.object(textractor.safeopen, "retrieve", side_effect=error):
+                with self.assertRaises(URLError) as raised:
+                    textractor("https://example.com/missing.pdf")
+
+            self.assertIs(raised.exception, error)
+            self.assertEqual(os.listdir(directory), [])
+
+    def testFileURI(self):
+        """
+        Test encoded file URIs and plain paths with literal percent sequences.
+        """
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "notes %20 #1.html"
+            path.write_text("<html><body><p>research note</p></body></html>", encoding="utf-8")
+            textractor = Textractor(backend=None)
+
+            self.assertEqual(textractor(str(path)), "research note")
+            self.assertEqual(textractor(path.as_uri()), "research note")
 
     def testHTML(self):
         """
@@ -210,6 +186,20 @@ class TestTextractor(unittest.TestCase):
             "|Header1|Header2|\n|---|---|\n|Test1 \\| Test2|`a\\|b`|",
         )
 
+        # Cells with more than one block are joined with a space so the row stays on one line
+        self.assertMarkdown(
+            "<table><tr><th>Header1</th><th>Header2</th></tr><tr><td>Test1</td><td><p>Test2</p><p>Test3</p></td></tr></table>",
+            "|Header1|Header2|\n|---|---|\n|Test1|Test2 Test3|",
+        )
+        self.assertMarkdown(
+            "<table><tr><th>Header1</th><th>Header2</th></tr><tr><td>Test1</td><td><ul><li>Test2</li><li>Test3</li></ul></td></tr></table>",
+            "|Header1|Header2|\n|---|---|\n|Test1|- Test2 - Test3|",
+        )
+        self.assertMarkdown(
+            "<table><tr><th>Header1</th><th>Header2</th></tr><tr><td>Test1</td><td><dl><dt>Test2</dt><dd>Test3</dd></dl></td></tr></table>",
+            "|Header1|Header2|\n|---|---|\n|Test1|Test2 Test3|",
+        )
+
         # Ignore list
         self.assertMarkdown("<aside>This is a test</aside>", "")
 
@@ -249,19 +239,6 @@ class TestTextractor(unittest.TestCase):
             "|Header1|Header2|\n|---|---|\n|Test1 Test2|Test3|",
         )
 
-    def testHTMLNestedArticles(self):
-        """
-        Test nested articles are processed once while independent articles are kept.
-        """
-
-        textractor = Textractor(backend=None, paragraphs=True)
-        for html, expected in [
-            ("<article><p>Post</p><article><p>Comment</p></article></article>", ["Post", "Comment"]),
-            ("<article><p>Comment</p></article><article><p>Comment</p></article>", ["Comment", "Comment"]),
-        ]:
-            with self.subTest(html=html):
-                self.assertEqual(textractor(f"<html><body>{html}</body></html>"), expected)
-
     def testHTMLArticleDefinitionList(self):
         """
         Test article definition lists, such as the API signatures in Sphinx documentation
@@ -275,6 +252,29 @@ class TestTextractor(unittest.TestCase):
             "<dd><p>Serialize obj</p></dd></dl><dl><dt>Term</dt><dd>Definition</dd></dl></article></body></html>"
         )
         self.assertEqual(textractor(html), "Functions\n\njson.dump(*obj* )\n\nSerialize obj\n\nTerm\n\nDefinition")
+
+    def testHTMLArticleListSpan(self):
+        """
+        Test article list items with text wrapped in inline elements
+        """
+
+        textractor = Textractor()
+
+        for section in ["article", "main"]:
+            with self.subTest(section=section):
+                html = f"<html><body><{section}><p>Test</p><ul><li><span>Test1</span></li><li><span>Test2</span></li></ul></{section}></body></html>"
+                self.assertEqual(textractor(html), "Test\n\n- Test1\n- Test2")
+
+        # Nested lists
+        html = "<html><body><article><p>Test</p><ol><li><span>Test1</span><ul><li><span>Test2</span></li></ul></li></ol></article></body></html>"
+        self.assertEqual(textractor(html), "Test\n\n1. Test1\n\t- Test2")
+
+        # Link only list items are still skipped
+        html = (
+            "<html><body><article><p>Test</p><ul><li><span>Test1</span></li>"
+            "<li><span><a href='link'>Home</a></span></li></ul></article></body></html>"
+        )
+        self.assertEqual(textractor(html), "Test\n\n- Test1")
 
     def testHTMLArticleSpan(self):
         """
@@ -303,29 +303,6 @@ class TestTextractor(unittest.TestCase):
         textractor = Textractor(paragraphs=True)
         html = "<html><body><article><p><span>Test1</span></p><p><span>Test2</span></p></article></body></html>"
         self.assertEqual(textractor(html), ["Test1", "Test2"])
-
-    def testHTMLArticleListSpan(self):
-        """
-        Test article list items with text wrapped in inline elements
-        """
-
-        textractor = Textractor()
-
-        for section in ["article", "main"]:
-            with self.subTest(section=section):
-                html = f"<html><body><{section}><p>Test</p><ul><li><span>Test1</span></li><li><span>Test2</span></li></ul></{section}></body></html>"
-                self.assertEqual(textractor(html), "Test\n\n- Test1\n- Test2")
-
-        # Nested lists
-        html = "<html><body><article><p>Test</p><ol><li><span>Test1</span><ul><li><span>Test2</span></li></ul></li></ol></article></body></html>"
-        self.assertEqual(textractor(html), "Test\n\n1. Test1\n\t- Test2")
-
-        # Link only list items are still skipped
-        html = (
-            "<html><body><article><p>Test</p><ul><li><span>Test1</span></li>"
-            "<li><span><a href='link'>Home</a></span></li></ul></article></body></html>"
-        )
-        self.assertEqual(textractor(html), "Test\n\n- Test1")
 
     def testHTMLListStart(self):
         """
@@ -356,6 +333,43 @@ class TestTextractor(unittest.TestCase):
         textractor = Textractor()
         html = "<html><head><meta name='description'></head><body><p>This is a test</p></body></html>"
         self.assertEqual(textractor(html), "This is a test")
+
+    def testHTMLNestedArticles(self):
+        """
+        Test nested articles are processed once while independent articles are kept.
+        """
+
+        textractor = Textractor(backend=None, paragraphs=True)
+        for html, expected in [
+            ("<article><p>Post</p><article><p>Comment</p></article></article>", ["Post", "Comment"]),
+            ("<article><p>Comment</p></article><article><p>Comment</p></article>", ["Comment", "Comment"]),
+        ]:
+            with self.subTest(html=html):
+                self.assertEqual(textractor(f"<html><body>{html}</body></html>"), expected)
+
+    def testLines(self):
+        """
+        Test extraction to lines
+        """
+
+        textractor = Textractor(lines=True)
+
+        # Extract text as lines
+        lines = textractor(Utils.PATH + "/article.pdf")
+
+        # Check number of lines is as expected
+        self.assertEqual(len(lines), 35)
+
+    def testLiteParse(self):
+        """
+        Test liteparse backend
+        """
+
+        textractor = Textractor(backend="liteparse")
+
+        # Extract text and check for Markdown formatting
+        text = textractor(Utils.PATH + "/article.pdf")
+        self.assertTrue("# Introducing txtai" in text)
 
     def testParagraphs(self):
         """

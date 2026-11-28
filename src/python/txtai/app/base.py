@@ -492,8 +492,8 @@ class Application:
         if not self.config.get("writable"):
             raise ReadOnlyError("Attempting to index a read-only index (writable != True)")
 
-        if self.embeddings and self.documents:
-            with self.lock:
+        with self.lock:
+            if self.embeddings and self.documents:
                 # Reset index
                 self.indexes(False)
 
@@ -521,8 +521,8 @@ class Application:
         if not self.config.get("writable"):
             raise ReadOnlyError("Attempting to upsert a read-only index (writable != True)")
 
-        if self.embeddings and self.documents:
-            with self.lock:
+        with self.lock:
+            if self.embeddings and self.documents:
                 # Run upsert
                 self.embeddings.upsert(self.documents)
 

@@ -53,7 +53,7 @@ extras["dev"] = [
     "pylint",
 ]
 
-extras["agent"] = ["beautifulsoup4>=4.9.3", "jinja2>=3.1.6", "mcp<2.0", "mcpadapt>=0.1.0", "smolagents>=1.23"]
+extras["agent"] = ["beautifulsoup4>=4.9.3", "jinja2>=3.1.6", "mcp<2.0", "mcpadapt>=0.1.0", "pydantic-ai-slim>=2.0.0", "smolagents>=1.23"]
 
 extras["ann"] = [
     "annoy>=1.16.3",
@@ -76,6 +76,7 @@ extras["api"] = [
     "fastapi>=0.94.0",
     "fastapi-mcp>=0.4.0",
     "httpx>=0.28.1",
+    "mcp<2.0",
     "pillow>=7.1.2",
     "python-multipart>=0.0.7",
     "uvicorn>=0.12.1",

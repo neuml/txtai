@@ -2,7 +2,7 @@
 Function imports
 """
 
-from smolagents import Tool
+from .base import Tool
 
 
 class FunctionTool(Tool):
@@ -23,12 +23,8 @@ class FunctionTool(Tool):
         self.name = config["name"]
         self.description = config["description"]
         self.inputs = config["inputs"]
-        self.output_type = config.get("output", config.get("output_type", "any"))
+        self.output = config.get("output", config.get("output_type", "any"))
         self.target = config["target"]
-
-        # pylint: disable=C0103
-        # Skip forward signature validation
-        self.skip_forward_signature_validation = True
 
         # Validate parameters and initialize tool
         super().__init__()

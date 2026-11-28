@@ -12,3 +12,11 @@ repos:
     hooks:
     - id: black
       language_version: python3
+  - repo: local
+    hooks:
+      - id: sorttests
+        name: sorttests
+        entry: python sorttests.py
+        language: system
+        files: '(^|/)test[^/]+\.py$'
+        pass_filenames: true

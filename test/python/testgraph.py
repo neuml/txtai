@@ -72,27 +72,6 @@ class TestGraph(unittest.TestCase):
         path = graph.showpath(4, 5)
         self.assertEqual(len(path), 2)
 
-    def testTopicLabelCollision(self):
-        """
-        Distinct term sets that generate the same label must retain all members.
-        """
-
-        topics = Topics({})
-        entries = [(["a_b", "c"], [1, 2]), (["other"], [3, 4, 5]), (["a", "b_c"], [6, 7])]
-        result = topics.merge(entries)
-        self.assertEqual(list(result), ["a_b_c", "other"])
-        self.assertEqual(result["a_b_c"], [1, 2, 6, 7])
-        self.assertEqual(result["other"], [3, 4, 5])
-
-    def testTopicReorderedTerms(self):
-        """
-        Equal term sets still merge regardless of their order.
-        """
-
-        topics = Topics({})
-        result = topics.merge([(["one", "two"], [1]), (["two", "one"], [2])])
-        self.assertEqual(result, {"one_two": [1, 2]})
-
     def testCommunity(self):
         """
         Test community detection
@@ -113,36 +92,6 @@ class TestGraph(unittest.TestCase):
         graph.config = {"topics": {"algorithm": "lpa"}}
         graph.addtopics()
         self.assertEqual(sum((len(graph.topics[x]) for x in graph.topics)), 6)
-
-    def testCommunityUnmatchedNodes(self):
-        """
-        Test that nodes matching none of their community's topic terms are still kept
-        """
-
-        graph = GraphFactory.create({})
-        graph.initialize()
-
-        # Three nodes share vocabulary, one shares none of it
-        texts = {
-            "n1": "machine learning models train on data",
-            "n2": "machine learning training data pipelines",
-            "n3": "learning models and training data",
-            "unmatched": "zzz",
-        }
-        for uid, text in texts.items():
-            graph.addnode(uid, text=text)
-
-        community = list(texts)
-        centrality = {"n1": 0.9, "n2": 0.8, "n3": 0.7, "unmatched": 0.1}
-
-        topics = Topics({"labels": "bm25", "terms": 4})
-        _, members = topics.score(graph, 0, community, centrality)
-
-        # No node may be dropped - term search only scores nodes matching a topic term
-        self.assertEqual(sorted(members), sorted(community))
-
-        # Scored nodes still rank ahead of unmatched ones
-        self.assertEqual(members[-1], "unmatched")
 
     def testCommunityStopwords(self):
         """
@@ -182,6 +131,36 @@ class TestGraph(unittest.TestCase):
         self.assertTrue(graph.topics)
         self.assertFalse([name for name in graph.topics if "python" in name])
 
+    def testCommunityUnmatchedNodes(self):
+        """
+        Test that nodes matching none of their community's topic terms are still kept
+        """
+
+        graph = GraphFactory.create({})
+        graph.initialize()
+
+        # Three nodes share vocabulary, one shares none of it
+        texts = {
+            "n1": "machine learning models train on data",
+            "n2": "machine learning training data pipelines",
+            "n3": "learning models and training data",
+            "unmatched": "zzz",
+        }
+        for uid, text in texts.items():
+            graph.addnode(uid, text=text)
+
+        community = list(texts)
+        centrality = {"n1": 0.9, "n2": 0.8, "n3": 0.7, "unmatched": 0.1}
+
+        topics = Topics({"labels": "bm25", "terms": 4})
+        _, members = topics.score(graph, 0, community, centrality)
+
+        # No node may be dropped - term search only scores nodes matching a topic term
+        self.assertEqual(sorted(members), sorted(community))
+
+        # Scored nodes still rank ahead of unmatched ones
+        self.assertEqual(members[-1], "unmatched")
+
     def testCustomBackend(self):
         """
         Test resolving a custom backend
@@ -209,6 +188,21 @@ class TestGraph(unittest.TestCase):
             graph = GraphFactory.create({"backend": "notfound.graph"})
             graph.initialize()
 
+    def testCypherKeywordFormatting(self):
+        """
+        Test that valid Cypher formatting variants reach the graph search.
+        """
+
+        embeddings = Embeddings(keyword=True, content=True, graph={"backend": "networkx", "limit": 1})
+        embeddings.index([("0", "machine learning", None), ("1", "machine learning applications", None)])
+
+        for query in ("match (n) return n.id", "MATCH\t(n)\nRETURN\n n.id"):
+            with self.subTest(query=query):
+                self.assertCountEqual(embeddings.search(query), [{"n.id": "0"}, {"n.id": "1"}])
+
+        results = embeddings.search("machine learning")
+        self.assertCountEqual([row["id"] for row in results], ["0", "1"])
+
     def testDatabase(self):
         """
         Test creating a Graph backed by a relational database
@@ -235,12 +229,16 @@ class TestGraph(unittest.TestCase):
         # Attribute changes must be written through to the database
         graph.addattribute(0, "field", "updated")
         graph.addattribute(0, "label", "new")
+        graph.addattribute(1, "label", "removed")
+        self.assertEqual(graph.removeattribute(1, "label"), "removed")
+        self.assertIsNone(graph.removeattribute(1, "label"))
 
         # Test save/load
         graph.save(None)
         graph.load(None)
         self.assertEqual(list(graph.scan()), [str(x) for x in range(5)])
         self.assertEqual(graph.node(0), {"field": "updated", "label": "new"})
+        self.assertEqual(graph.node(1), {"field": 1})
         self.assertEqual(graph.edgecount(), 10)
 
         # Test remove node
@@ -670,38 +668,6 @@ class TestGraph(unittest.TestCase):
         )
         self.assertEqual(list(results.scan())[0], 4)
 
-    def testCypherKeywordFormatting(self):
-        """
-        Test that valid Cypher formatting variants reach the graph search.
-        """
-
-        embeddings = Embeddings(keyword=True, content=True, graph={"backend": "networkx", "limit": 1})
-        embeddings.index([("0", "machine learning", None), ("1", "machine learning applications", None)])
-
-        for query in ("match (n) return n.id", "MATCH\t(n)\nRETURN\n n.id"):
-            with self.subTest(query=query):
-                self.assertCountEqual(embeddings.search(query), [{"n.id": "0"}, {"n.id": "1"}])
-
-        results = embeddings.search("machine learning")
-        self.assertCountEqual([row["id"] for row in results], ["0", "1"])
-
-    def testSearchLimitZero(self):
-        """
-        Test that a computed limit of 0 (e.g. remaining page slots or a quota) returns no results instead of
-        falling back to the default
-        """
-
-        self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
-
-        results = self.embeddings.search(
-            """
-            MATCH (A)-[]->(B)
-            RETURN A, B
-        """,
-            limit=0,
-        )
-        self.assertEqual(len(results), 0)
-
     def testSearchBatch(self):
         """
         Test batch search
@@ -748,6 +714,23 @@ class TestGraph(unittest.TestCase):
 
         self.assertEqual(sorted(results.scan()), [0, 1, 2])
         self.assertEqual(results.edgecount(), 2)
+
+    def testSearchLimitZero(self):
+        """
+        Test that a computed limit of 0 (e.g. remaining page slots or a quota) returns no results instead of
+        falling back to the default
+        """
+
+        self.embeddings.index([(uid, text, None) for uid, text in enumerate(self.data)])
+
+        results = self.embeddings.search(
+            """
+            MATCH (A)-[]->(B)
+            RETURN A, B
+        """,
+            limit=0,
+        )
+        self.assertEqual(len(results), 0)
 
     def testSearchManySimilar(self):
         """
@@ -926,6 +909,27 @@ class TestGraph(unittest.TestCase):
         self.assertIsNotNone(result["category"])
         self.assertIsNotNone(result["topic"])
         self.assertIsNotNone(result["topicrank"])
+
+    def testTopicLabelCollision(self):
+        """
+        Distinct term sets that generate the same label must retain all members.
+        """
+
+        topics = Topics({})
+        entries = [(["a_b", "c"], [1, 2]), (["other"], [3, 4, 5]), (["a", "b_c"], [6, 7])]
+        result = topics.merge(entries)
+        self.assertEqual(list(result), ["a_b_c", "other"])
+        self.assertEqual(result["a_b_c"], [1, 2, 6, 7])
+        self.assertEqual(result["other"], [3, 4, 5])
+
+    def testTopicReorderedTerms(self):
+        """
+        Equal term sets still merge regardless of their order.
+        """
+
+        topics = Topics({})
+        result = topics.merge([(["one", "two"], [1]), (["two", "one"], [2])])
+        self.assertEqual(result, {"one_two": [1, 2]})
 
     def testUpsert(self):
         """

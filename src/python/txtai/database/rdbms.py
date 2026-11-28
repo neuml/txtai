@@ -111,6 +111,9 @@ class RDBMS(Database):
             # Finish reindex operation
             self.reindexend(name)
 
+            # Recreate expression indexes dropped with the previous sections table
+            self.createindexes()
+
     def save(self, path):
         if self.connection:
             self.connection.commit()
@@ -342,7 +345,7 @@ class RDBMS(Database):
                 self.insertdocument(uid, json.dumps(data, allow_nan=False), tags, entry)
 
         # If text and object are both available, load object as it won't otherwise be used
-        if document.get(self.text) is not None and obj:
+        if document.get(self.text) is not None and obj is not None:
             self.loadobject(uid, obj, tags, entry)
 
         # Return value to use for section - use text if available otherwise use object

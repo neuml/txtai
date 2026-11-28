@@ -2,7 +2,7 @@
 Write imports
 """
 
-from smolagents import Tool
+from .base import Tool
 
 
 class WriteTool(Tool):
@@ -23,7 +23,7 @@ class WriteTool(Tool):
             "path": {"type": "string", "description": "Output file path"},
             "content": {"type": "string", "description": "File content to write"},
         }
-        self.output_type = "any"
+        self.output = "any"
 
         # Validate parameters and initialize tool
         super().__init__()

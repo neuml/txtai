@@ -31,7 +31,7 @@ class HuggingFaceHub(Cloud):
             # Otherwise return repository metadata
             return huggingface_hub.model_info(repo_id=self.config["container"], revision=self.config.get("revision"), token=self.config.get("token"))
 
-        except huggingface_hub.utils.RepositoryNotFoundError:
+        except (huggingface_hub.utils.RepositoryNotFoundError, huggingface_hub.utils.RevisionNotFoundError, huggingface_hub.utils.EntryNotFoundError):
             return None
 
     def load(self, path=None):
@@ -76,7 +76,10 @@ class HuggingFaceHub(Cloud):
 
         # Get and read .gitattributes file
         path = huggingface_hub.hf_hub_download(
-            repo_id=self.config["container"], filename=os.path.basename(".gitattributes"), token=self.config.get("token")
+            repo_id=self.config["container"],
+            filename=os.path.basename(".gitattributes"),
+            revision=self.config.get("revision"),
+            token=self.config.get("token"),
         )
 
         with open(path, "r", encoding="utf-8") as f:
@@ -95,7 +98,11 @@ class HuggingFaceHub(Cloud):
 
             # Upload file
             huggingface_hub.upload_file(
-                repo_id=self.config["container"], token=self.config.get("token"), path_or_fileobj=attributes, path_in_repo=os.path.basename(path)
+                repo_id=self.config["container"],
+                revision=self.config.get("revision"),
+                token=self.config.get("token"),
+                path_or_fileobj=attributes,
+                path_in_repo=os.path.basename(path),
             )
 
             # Remove temporary file

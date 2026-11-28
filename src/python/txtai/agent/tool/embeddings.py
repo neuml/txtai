@@ -2,7 +2,7 @@
 Embeddings module
 """
 
-from smolagents import Tool
+from .base import Tool
 
 from ...embeddings import Embeddings
 
@@ -27,7 +27,7 @@ Each result has keys 'id', 'text', 'score'."""
 
         # Input and output descriptions
         self.inputs = {"query": {"type": "string", "description": "The search query to perform."}}
-        self.output_type = "any"
+        self.output = "any"
 
         # Load embeddings instance
         self.embeddings = self.load(config)

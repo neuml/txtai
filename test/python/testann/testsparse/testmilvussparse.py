@@ -69,25 +69,6 @@ class TestMilvusSparse(SparseTest):
         # Close ANN
         ann.close()
 
-    def testMilvusSparseScores(self):
-        """
-        Test MilvusSparse scores are exact inner products
-        """
-
-        # Create ANN
-        data = self.generate(50, 30522)
-        ann = SparseANNFactory.create({"backend": "milvussparse", "dimensions": 30522})
-        ann.index(data)
-
-        # Validate scores against exact inner products
-        expected = (data[:5] @ data.T).toarray()
-        for x, results in enumerate(ann.search(data[:5], 10)):
-            for uid, score in results:
-                self.assertAlmostEqual(score, expected[x, uid], places=5)
-
-        # Close ANN
-        ann.close()
-
     def testMilvusSparseInvalid(self):
         """
         Test MilvusSparse rejects invalid vectors without modifying the index
@@ -108,6 +89,25 @@ class TestMilvusSparse(SparseTest):
         # Validate a valid append after a rejected append uses the next id
         ann.append(csr_matrix([[0.0, 1.0]]))
         self.assertEqual(ann.search(csr_matrix([[0.0, 1.0]]), 1), [[(1, 1.0)]])
+
+        # Close ANN
+        ann.close()
+
+    def testMilvusSparseScores(self):
+        """
+        Test MilvusSparse scores are exact inner products
+        """
+
+        # Create ANN
+        data = self.generate(50, 30522)
+        ann = SparseANNFactory.create({"backend": "milvussparse", "dimensions": 30522})
+        ann.index(data)
+
+        # Validate scores against exact inner products
+        expected = (data[:5] @ data.T).toarray()
+        for x, results in enumerate(ann.search(data[:5], 10)):
+            for uid, score in results:
+                self.assertAlmostEqual(score, expected[x, uid], places=5)
 
         # Close ANN
         ann.close()
