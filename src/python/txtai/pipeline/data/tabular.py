@@ -70,6 +70,7 @@ class Tabular(Pipeline):
             # Dict
             if isinstance(item, dict):
                 dicts.append(item)
+                results.append(None)
 
             # List of dicts
             elif isinstance(item, list):
@@ -84,7 +85,16 @@ class Tabular(Pipeline):
             if not isinstance(data, list):
                 return rows
 
-            results.extend(rows)
+            # Put each dictionary record back at its original input position.
+            records = iter(rows)
+            count = 2 if isinstance(self.content, list) or self.content else 1
+            ordered = []
+            for result in results:
+                if result is None:
+                    ordered.extend(next(records) for _ in range(count))
+                else:
+                    ordered.append(result)
+            results = ordered
 
         return results[0] if not isinstance(data, list) else results
 
