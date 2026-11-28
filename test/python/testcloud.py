@@ -10,6 +10,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 from huggingface_hub import hf_hub_download
+from huggingface_hub.utils import EntryNotFoundError, RevisionNotFoundError
 from txtai.cloud import Cloud, HuggingFaceHub, ObjectStorage
 from txtai.embeddings import Embeddings
 
@@ -61,6 +62,20 @@ class TestCloud(unittest.TestCase):
 
         # pylint: disable=E1120
         self.runHub("huggingface-hub")
+
+    @patch("huggingface_hub.model_info")
+    @patch("huggingface_hub.get_hf_file_metadata")
+    def testHubMissing(self, metadata, info):
+        """
+        Test huggingface-hub exists with a missing file or revision
+        """
+
+        metadata.side_effect = EntryNotFoundError("missing file")
+        info.side_effect = RevisionNotFoundError("missing revision", response=Mock())
+
+        cloud = HuggingFaceHub({"container": "neuml/txtai-intro", "revision": "missing"})
+        self.assertFalse(cloud.exists("index.tar.gz"))
+        self.assertFalse(cloud.exists())
 
     @patch("huggingface_hub.hf_hub_download")
     @patch("huggingface_hub.upload_file")
