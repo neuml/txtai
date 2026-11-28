@@ -251,9 +251,21 @@ class TestCluster(unittest.TestCase):
             self.assertEqual(len(cluster.search("select id, score from txtai where similar('test')", 5)), 5)
             self.assertEqual(len(cluster.search("test")), 10)
 
+            # A bound LIMIT takes precedence the same as a literal LIMIT
+            bound = query.replace("limit 20", "limit :n")
+            self.assertEqual(len(cluster.search(bound, parameters={"n": 20})), 20)
+            self.assertEqual(len(cluster.search(bound, 10, parameters={"n": "2"})), 2)
+
+            # Request limit is used when the LIMIT parameter isn't bound
+            self.assertEqual(len(cluster.search(bound, 5, parameters={"m": 20})), 5)
+
         with patch.object(Cluster, "execute", return_value=[[shard, shard], [shard, shard]]):
             results = cluster.batchsearch([query, "test"], 10)
             self.assertEqual([len(result) for result in results], [20, 10])
+
+            # Each query resolves its own bound LIMIT
+            results = cluster.batchsearch([bound, bound], parameters=[{"n": 20}, {"n": 2}])
+            self.assertEqual([len(result) for result in results], [20, 2])
 
     def testSearchParameters(self):
         """
