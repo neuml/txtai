@@ -111,6 +111,9 @@ class RDBMS(Database):
             # Finish reindex operation
             self.reindexend(name)
 
+            # Recreate expression indexes dropped with the previous sections table
+            self.createindexes()
+
     def save(self, path):
         if self.connection:
             self.connection.commit()
