@@ -79,7 +79,7 @@ class Cluster:
         results = self.aggregate(query, results)
 
         # Limit results
-        return results[: self.limit(query, limit)]
+        return results[: self.limit(query, limit, parameters)]
 
     def batchsearch(self, queries, limit=None, weights=None, index=None, parameters=None, graph=False):
         """
@@ -122,24 +122,28 @@ class Cluster:
                 result.extend(section[x])
 
             # Aggregate, sort and limit results
-            results.append(self.aggregate(query, result)[: self.limit(query, limit)])
+            results.append(self.aggregate(query, result)[: self.limit(query, limit, parameters[x] if parameters else None)])
 
         return results
 
-    def limit(self, query, limit):
+    def limit(self, query, limit, parameters=None):
         """
         Gets the maximum number of results for a query. A SQL LIMIT clause takes precedence over the
-        limit parameter, which matches how each shard runs the query.
+        limit parameter, which matches how each shard runs the query. A ":name" LIMIT resolves to its bound value.
 
         Args:
             query: input query
             limit: maximum results
+            parameters: dict of named parameters to bind to placeholders
 
         Returns:
             maximum number of results
         """
 
         qlimit = SQL()(query).get("limit")
+        if qlimit and qlimit.startswith(":") and isinstance(parameters, dict):
+            qlimit = str(parameters.get(qlimit[1:], ""))
+
         return int(qlimit) if qlimit and qlimit.isdigit() else (limit if limit else 10)
 
     def add(self, documents):
